@@ -1,0 +1,27 @@
+# ============================================
+# Docker Compose — Development Overrides
+# ============================================
+version: "3.8"
+
+services:
+  frontend:
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  core-service:
+    volumes:
+      - ./services/core-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  ai-service:
+    volumes:
+      - ./services/ai-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  recommendation-service:
+    volumes:
+      - ./services/recommendation-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload

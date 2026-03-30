@@ -1,0 +1,7 @@
+from fastapi import APIRouter
+
+from app.api.v1.endpoints import parse
+
+api_router = APIRouter()
+
+api_router.include_router(parse.router, prefix="/parse", tags=["NLP Parsing"])
