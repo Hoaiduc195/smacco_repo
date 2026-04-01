@@ -7,7 +7,8 @@ from app.services.groq_client import GroqClient
 
 SYSTEM_PROMPT = (
     "You are a helpful travel and local guide assistant. "
-    "Answer clearly and concisely in Vietnamese."
+    "Answer clearly and concisely in Vietnamese. "
+    "Return plain text only (no Markdown, no bullet points, no code blocks)."
 )
 
 

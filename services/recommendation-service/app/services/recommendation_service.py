@@ -2,6 +2,8 @@ from typing import Optional, List
 
 from app.core.database import get_database
 from app.schemas.recommendation import RecommendationItem
+from app.services.google_places_client import GooglePlacesClient
+from app.core.config import settings
 
 
 class RecommendationEngine:
@@ -10,6 +12,9 @@ class RecommendationEngine:
     and returns the top recommendations.
     """
 
+    def __init__(self) -> None:
+        self.google_client = GooglePlacesClient()
+
     async def recommend(
         self,
         location: Optional[str] = None,
@@ -17,21 +22,30 @@ class RecommendationEngine:
         budget: Optional[str] = None,
         limit: int = 10,
     ) -> List[RecommendationItem]:
+        # Try Google Places first if key and location are available
+        if settings.GOOGLE_MAPS_API_KEY and location:
+            google_results = await self.google_client.search_lodging(
+                location_text=location,
+                place_type=place_type,
+                budget=budget,
+                limit=limit,
+            )
+            if google_results:
+                return google_results
+
+        # Fallback to local DB
         db = await get_database()
         collection = db["places"]
 
-        # Build query filter
         query = {}
         if location:
             query["addressCache"] = {"$regex": location, "$options": "i"}
         if place_type:
             query["type"] = place_type
 
-        # Query database
         cursor = collection.find(query).limit(limit)
         places = await cursor.to_list(length=limit)
 
-        # Rank results by combined score
         results = []
         for place in places:
             score = self._calculate_score(place)
@@ -45,7 +59,6 @@ class RecommendationEngine:
                 )
             )
 
-        # Sort by score descending
         results.sort(key=lambda x: x.score, reverse=True)
         return results
 

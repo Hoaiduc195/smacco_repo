@@ -148,6 +148,12 @@ export default function ChatWidget() {
                 rows={2}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.metaKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder="Hỏi AI về địa điểm, lịch trình, món ăn..."
                 className="flex-1 resize-none px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />

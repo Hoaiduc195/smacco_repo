@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     # Groq LLM
     GROQ_API_KEY: str = ""
     GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
-    GROQ_MODEL: str = "llama3-70b-8192"
+    # llama3-70b-8192 has been decommissioned; default to supported model
+    GROQ_MODEL: str = "llama-3.1-70b-versatile"
     GROQ_TIMEOUT: float = 20.0
     GROQ_STREAMING_ENABLED: bool = True
 

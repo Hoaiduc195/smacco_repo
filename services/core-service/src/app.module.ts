@@ -12,13 +12,14 @@ import { HealthModule } from './modules/health/health.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import firebaseConfig from './config/firebase.config';
+import googleConfig from './config/google.config';
 
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, firebaseConfig],
+      load: [appConfig, databaseConfig, firebaseConfig, googleConfig],
     }),
 
     // Database

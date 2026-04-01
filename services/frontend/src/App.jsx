@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import PlaceDetailPage from './pages/PlaceDetailPage';
 import LoginPage from './pages/LoginPage';
+import RecommendationPage from './pages/RecommendationPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="places/:id" element={<PlaceDetailPage />} />
+            <Route path="recommendations" element={<RecommendationPage />} />
           </Route>
         </Routes>
       </AuthProvider>

@@ -23,6 +23,11 @@ services:
     container_name: frontend
     ports:
       - "3000:3000"
+    working_dir: /app
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    command: npm run dev
     env_file:
       - ./services/frontend/.env
     networks:
@@ -38,6 +43,10 @@ services:
       - ./services/core-service/.env
     depends_on:
       - mongo
+    volumes:
+      - ./services/core-service:/app
+      - /app/node_modules
+    command: npm run start:dev
     networks:
       - app-network
 
@@ -51,6 +60,9 @@ services:
       - ./services/ai-service/.env
     depends_on:
       - mongo
+    volumes:
+      - ./services/ai-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - app-network
 
@@ -64,6 +76,9 @@ services:
       - ./services/recommendation-service/.env
     depends_on:
       - mongo
+    volumes:
+      - ./services/recommendation-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
     networks:
       - app-network
 
