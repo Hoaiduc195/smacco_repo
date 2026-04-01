@@ -1,7 +1,6 @@
 # ============================================
 # Docker Compose — Development Overrides
 # ============================================
-version: "3.8"
 
 services:
   frontend:

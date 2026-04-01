@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { AiQueryDto } from './dto/ai-query.dto';
+import { AxiosResponse } from 'axios';
 
 @Injectable()
 export class AiIntegrationService {
@@ -12,13 +13,14 @@ export class AiIntegrationService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.aiServiceUrl = this.configService.get<string>('app.aiServiceUrl');
+    this.aiServiceUrl =
+      this.configService.get<string>('app.aiServiceUrl') ||  'http://localhost:8000';
   }
 
   async processQuery(aiQueryDto: AiQueryDto) {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.aiServiceUrl}/api/v1/parse`, {
+        this.httpService.post<any>(`${this.aiServiceUrl}/api/v1/parse`, {
           text: aiQueryDto.text,
           userId: aiQueryDto.userId,
         }),

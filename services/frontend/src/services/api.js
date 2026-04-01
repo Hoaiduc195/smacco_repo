@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { auth } from './firebase';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -9,10 +10,27 @@ const apiClient = axios.create({
 
 // Request interceptor — attach Firebase token
 apiClient.interceptors.request.use(async (config) => {
-  // TODO: Get Firebase token from auth context
-  // const token = await getFirebaseToken();
-  // if (token) config.headers.Authorization = `Bearer ${token}`;
+  try {
+    if (auth.currentUser) {
+      const token = await auth.currentUser.getIdToken();
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (error) {
+    console.error('Error getting Firebase token:', error);
+  }
   return config;
 });
+
+// Response interceptor — handle errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Unauthorized - redirect to login
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;
