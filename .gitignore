@@ -45,3 +45,7 @@ htmlcov/
 tmp/
 temp/
 meeting_note_text.txt
+
+
+# Github agents
+.github

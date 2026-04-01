@@ -4,6 +4,10 @@
 
 services:
   frontend:
+    build:
+      context: ./services/frontend
+      target: builder
+    working_dir: /app
     volumes:
       - ./services/frontend:/app
       - /app/node_modules
