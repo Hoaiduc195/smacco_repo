@@ -106,25 +106,23 @@ export default function RecommendationPage() {
               <label className="text-sm text-gray-600 flex items-center gap-2">
                 <Compass className="w-4 h-4" /> Khu vực (địa chỉ/tọa độ)
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="VD: Hà Nội, 10.7626,106.6602"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleUseCurrentLocation}
-                  disabled={locating}
-                  className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-60"
-                  title="Lấy vị trí hiện tại"
-                >
-                  <LocateFixed className="w-4 h-4" />
-                  {locating ? 'Đang lấy' : 'Gần tôi'}
-                </button>
-              </div>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="VD: Hà Nội, 10.7626,106.6602"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={locating}
+                className="inline-flex items-center justify-start gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-60 w-fit"
+                title="Lấy vị trí hiện tại"
+              >
+                <LocateFixed className="w-4 h-4" />
+                {locating ? 'Đang lấy vị trí...' : 'Gần tôi'}
+              </button>
             </div>
 
             <div className="flex flex-col gap-2">

@@ -1,5 +1,14 @@
 import apiClient from './api';
 
+const poiCache = new Map();
+const POI_FILTERS = {
+  hotel: '["tourism"="hotel"]',
+  resort: '["tourism"="resort"]',
+  homestay: '["tourism"="guest_house"]',
+  restaurant: '["amenity"="restaurant"]',
+  cafe: '["amenity"="cafe"]',
+};
+
 /**
  * PlaceService handles all place-related API calls
  * This service manages data fetching from the backend and handles API errors
@@ -101,10 +110,60 @@ export const reverseGeocode = async (lat, lng) => {
   }
 };
 
+// Fetch nearby POIs directly from Overpass to enrich the map layer
+export const fetchNearbyPois = async (lat, lng, radius = 1500, categories = ['hotel', 'resort', 'homestay', 'restaurant', 'cafe']) => {
+  if (!lat || !lng) return [];
+  const normalizedCategories = categories.filter((c) => POI_FILTERS[c]);
+  if (!normalizedCategories.length) return [];
+
+  const cacheKey = `${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${normalizedCategories.join(',')}`;
+  if (poiCache.has(cacheKey)) return poiCache.get(cacheKey);
+
+  const query = `[out:json][timeout:25];(${normalizedCategories
+    .map((cat) => `node${POI_FILTERS[cat]}(around:${radius},${lat},${lng});`)
+    .join('')});out center;`;
+
+  try {
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: query,
+    });
+    const data = await response.json();
+
+    const pois = data.elements
+      .filter((el) => el.lat || el.center)
+      .map((el) => {
+        const category = normalizedCategories.find((cat) => {
+          const filter = POI_FILTERS[cat];
+          return filter.includes('"tourism"')
+            ? el.tags?.tourism && filter.includes(el.tags.tourism)
+            : el.tags?.amenity && filter.includes(el.tags.amenity);
+        });
+        return {
+          id: `poi-${el.id}`,
+          name: el.tags?.name || 'POI',
+          address: el.tags?.['addr:full'] || el.tags?.['addr:street'] || el.tags?.['addr:city'],
+          lat: el.lat || el.center?.lat,
+          lng: el.lon || el.center?.lon,
+          category: category || 'default',
+        };
+      })
+      .filter((poi) => poi.lat && poi.lng);
+
+    poiCache.set(cacheKey, pois);
+    return pois;
+  } catch (error) {
+    console.error('Error fetching POIs from Overpass:', error);
+    return [];
+  }
+};
+
 export default {
   searchPlaces,
   getNearbyPlaces,
   getPlaceDetails,
   getPlaceReviews,
   reverseGeocode,
+  fetchNearbyPois,
 };

@@ -1,24 +1,7 @@
 import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client, Language, LatLngLiteral } from '@googlemaps/google-maps-services-js';
-
-export interface GooglePlace {
-  locationId: string;
-  name: string;
-  address?: string;
-  location?: LatLngLiteral;
-  rating?: number;
-  userRatingsTotal?: number;
-  priceLevel?: number;
-  types?: string[];
-}
-
-export interface SearchParams {
-  query?: string;
-  location?: LatLngLiteral;
-  radius?: number;
-  budget?: 'low' | 'mid' | 'high';
-}
+import { AccommodationProvider, PlaceResult, SearchParams } from './accommodation-provider.interface';
 
 const PRICE_BY_BUDGET: Record<string, number[]> = {
   low: [0, 1],
@@ -27,7 +10,7 @@ const PRICE_BY_BUDGET: Record<string, number[]> = {
 };
 
 @Injectable()
-export class GoogleMapsService {
+export class GoogleMapsService implements AccommodationProvider {
   private readonly client: Client;
   private readonly apiKey: string;
   private readonly language: Language;
@@ -42,7 +25,7 @@ export class GoogleMapsService {
     this.timeoutMs = this.configService.get<number>('google.timeoutMs') ?? 5000;
   }
 
-  async searchAccommodations(params: SearchParams): Promise<GooglePlace[]> {
+  async searchAccommodations(params: SearchParams): Promise<PlaceResult[]> {
     if (!this.apiKey) {
       throw new BadRequestException('Google Maps API key is not configured');
     }
@@ -67,11 +50,13 @@ export class GoogleMapsService {
 
       const allowedPrices = params.budget ? PRICE_BY_BUDGET[params.budget] : undefined;
 
-      return response.data.results
-        .filter((r) =>
+      const results = response.data.results ?? [];
+
+      return results
+        .filter((r: any) =>
           allowedPrices ? (r.price_level !== undefined && allowedPrices.includes(r.price_level)) : true,
         )
-        .map((r) => ({
+        .map((r: any): PlaceResult => ({
           locationId: r.place_id ?? '',
           name: r.name ?? 'Unknown',
           address: r.formatted_address ?? r.vicinity,
@@ -79,7 +64,7 @@ export class GoogleMapsService {
           rating: r.rating,
           userRatingsTotal: r.user_ratings_total,
           priceLevel: r.price_level,
-          // SDK returns AddressType[]; stringify to align with our GooglePlace interface
+          // SDK returns AddressType[]; stringify to align with our PlaceResult interface
           types: r.types?.map(String),
         }));
     } catch (err: any) {

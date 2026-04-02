@@ -1,6 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PlacesService } from '../places/places.service';
-import { GoogleMapsService } from './google-maps.service';
+import {
+  ACCOMMODATION_PROVIDERS,
+  AccommodationProvider,
+} from './accommodation-provider.interface';
 
 export interface SearchFilters {
   q?: string;
@@ -15,25 +18,26 @@ export class SearchService {
 
   constructor(
     private readonly placesService: PlacesService,
-    private readonly googleMapsService: GoogleMapsService,
+    @Inject(ACCOMMODATION_PROVIDERS)
+    private readonly providers: AccommodationProvider[],
   ) {}
 
   async search(filters: SearchFilters) {
     const budget = this.normalizeBudget(filters.budget);
 
-    // Prefer Google Maps search for accommodation
-    try {
-      const queryParts = [filters.q, filters.type, filters.location].filter(Boolean);
-      const query = queryParts.length ? queryParts.join(' ') : 'lodging';
+    const queryParts = [filters.q, filters.type, filters.location].filter(Boolean);
+    const query = queryParts.length ? queryParts.join(' ') : 'lodging';
 
-      const googleResults = await this.googleMapsService.searchAccommodations({
-        query,
-        budget,
-      });
-
-      if (googleResults.length) return googleResults;
-    } catch (error) {
-      this.logger.warn(`Google search failed, falling back to local DB: ${error}`);
+    for (const provider of this.providers) {
+      try {
+        const results = await provider.searchAccommodations({
+          query,
+          budget,
+        });
+        if (results.length) return results;
+      } catch (error) {
+        this.logger.warn(`Provider ${provider.constructor.name} failed: ${error}`);
+      }
     }
 
     // Fallback to local DB search

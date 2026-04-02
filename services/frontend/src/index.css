@@ -14,3 +14,11 @@ body, html, #root {
   margin: 0;
   padding: 0;
 }
+
+.tile-fade.leaflet-tile {
+  transition: opacity 0.35s ease;
+}
+
+.poi-icon {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
+}
