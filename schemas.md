@@ -9,6 +9,8 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- ================================
 -- USERS
 -- ================================
+-- Prisma model: `User` (maps to table `app_users`)
+-- Prisma model name changed from `AppUser` to `User` in schema.prisma
 CREATE TABLE app_users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     firebase_uid TEXT UNIQUE NOT NULL,
@@ -22,6 +24,7 @@ CREATE INDEX idx_app_users_firebase_uid ON app_users(firebase_uid);
 -- ================================
 -- PLACES
 -- ================================
+-- Prisma model: `Place` (maps to table `places`)
 CREATE TABLE places (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -48,6 +51,7 @@ CREATE INDEX idx_places_categories ON places USING GIN(categories);
 -- ================================
 -- REVIEWS
 -- ================================
+-- Prisma model: `Review` (maps to table `reviews`)
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     place_id UUID REFERENCES places(id) ON DELETE CASCADE,
@@ -63,6 +67,7 @@ CREATE INDEX idx_reviews_place_id ON reviews(place_id);
 -- ================================
 -- FILES
 -- ================================
+-- Prisma model: `File` (maps to table `files`)
 CREATE TABLE files (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES app_users(id) ON DELETE SET NULL,
@@ -86,6 +91,7 @@ CREATE INDEX idx_files_status ON files(file_status);
 -- ================================
 -- CHUNKS (CORE RAG TABLE)
 -- ================================
+-- Prisma model: `Chunk` (maps to table `chunks`)
 CREATE TABLE chunks (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -119,6 +125,7 @@ ON chunks USING hnsw (embedding vector_cosine_ops);
 -- ================================
 -- CONVERSATIONS
 -- ================================
+-- Prisma model: `Conversation` (maps to table `conversations`)
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     place_id UUID REFERENCES places(id) ON DELETE CASCADE,
@@ -131,6 +138,7 @@ CREATE INDEX idx_conversations_place_id ON conversations(place_id);
 -- ================================
 -- MESSAGES
 -- ================================
+-- Prisma model: `Message` (maps to table `messages`)
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,

@@ -39,14 +39,13 @@ services:
     container_name: core-service
     ports:
       - "3001:3001"
+    # Run Prisma migrations (or push) on container start, then start the app
+    command: sh -c "npx prisma migrate deploy || npx prisma db push; node dist/main"
     env_file:
       - ./services/core-service/.env
     depends_on:
       - postgres
-    volumes:
-      - ./services/core-service:/app
-      - /app/node_modules
-    command: npm run start:dev
+    # In development, mounts and watch command are provided by docker-compose.override.yml
     networks:
       - app-network
 
@@ -84,7 +83,7 @@ services:
 
   # ── PostgreSQL ──────────────────────────────
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: postgres
     ports:
       - "5433:5432"
@@ -94,6 +93,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-accommodation_db}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./infra/scripts/seed-db.sql:/docker-entrypoint-initdb.d/seed-db.sql:ro
     networks:
       - app-network
 
