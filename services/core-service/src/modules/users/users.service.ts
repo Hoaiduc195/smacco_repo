@@ -8,7 +8,14 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    return this.prisma.user.create({ data: createUserDto });
+    const data: any = {
+      firebaseUid: createUserDto.firebaseUid ?? `anon_${Date.now()}`,
+      email: createUserDto.email,
+      displayName: createUserDto.name,
+      createdAt: undefined,
+    };
+
+    return this.prisma.user.create({ data });
   }
 
   async findAll() {

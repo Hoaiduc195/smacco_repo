@@ -8,7 +8,17 @@ export class PlacesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createPlaceDto: CreatePlaceDto) {
-    return this.prisma.place.create({ data: createPlaceDto });
+    const data: any = {
+      source: 'user',
+      sourcePlaceId: createPlaceDto.locationId,
+      placeName: createPlaceDto.nameCache,
+      placeAddress: createPlaceDto.addressCache,
+      categories: createPlaceDto.type ? [createPlaceDto.type] : [],
+      lat: createPlaceDto.coordinates?.lat ?? 0,
+      lng: createPlaceDto.coordinates?.lng ?? 0,
+    };
+
+    return this.prisma.place.create({ data });
   }
 
   async findAll(filters?: { type?: string; city?: string }) {
