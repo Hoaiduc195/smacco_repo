@@ -1,129 +1,87 @@
 # Accommodation Discovery Platform
 
-A microservices-based web application for discovering accommodations and dining spots.
+A microservices-based web app for discovering accommodations and dining spots with map search, AI chat, and recommendations.
 
-## Architecture Overview
+## Big Picture
+
+- React SPA for users to search places, plan trips, and chat with AI.
+- Nginx gateway routes /api/v1 traffic to backend services.
+- Core service provides the main REST API for users, places, reviews, and search.
+- AI service handles chat and NLP parsing, and calls the recommendation service.
+- Recommendation service ranks results using Google Maps (optional) or PostgreSQL fallback.
+- PostgreSQL stores core entities; Firestore stores client-managed trips and saved items.
+
+## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐
-│   Frontend   │────▶│  API Gateway  │
-│  React/Vite  │     │    (Nginx)    │
-└─────────────┘     └──────┬───────┘
-                           │
-            ┌──────────────┼──────────────┐
-            ▼              ▼              ▼
-    ┌──────────────┐ ┌───────────┐ ┌────────────────┐
-    │ Core Service │ │AI Service │ │ Recommendation │
-    │   (NestJS)   │ │ (FastAPI) │ │   (FastAPI)    │
-    └──────┬───────┘ └─────┬─────┘ └───────┬────────┘
-           │               │               │
-           ▼               ▼               ▼
-    ┌──────────────────────────────────────────┐
-    │           MongoDB / PostgreSQL            │
-    └──────────────────────────────────────────┘
+Frontend (React/Vite)
+  -> API Gateway (Nginx)
+     -> Core Service (NestJS)
+     -> AI Service (FastAPI)
+        -> Recommendation Service (FastAPI)
+   -> PostgreSQL
+  -> Firebase Auth + Firestore (client-side)
+  -> External APIs (OSRM, Nominatim, optional Google Maps)
 ```
+
+## Services and Roles
+
+- frontend: UI, auth, map interaction, trip management, streaming chat
+- core-service: users, places, reviews, search, AI proxy
+- ai-service: chat and NLP parsing
+- recommendation-service: ranking and recommendations
+- gateway: single entry point and reverse proxy
+- postgres: persistence for core entities
+
+## Request Flow
+
+- Frontend -> Gateway -> Core Service for places, reviews, search.
+- Frontend -> Gateway -> AI Service for chat and parsing.
+- AI Service -> Recommendation Service for ranked results.
+- Core Service + Recommendation Service -> PostgreSQL.
+- Frontend -> Firebase Auth/Firestore for user session and trip data.
+
+## Key Endpoints (via Gateway)
+
+- /api/v1/users, /places, /reviews, /search, /health -> core-service
+- /api/v1/ai/* -> ai-service
+- /api/v1/recommendations/* -> recommendation-service
 
 ## Tech Stack
 
-| Layer          | Technology                     |
-| -------------- | ------------------------------ |
-| Frontend       | React (Vite) + TailwindCSS     |
-| Core Service   | Node.js + NestJS               |
-| AI Service     | Python + FastAPI               |
-| Recommendation | Python + FastAPI               |
-| Database       | MongoDB                        |
-| Auth           | Firebase Auth                  |
-| Maps           | OpenStreetMap (Leaflet)         |
-| Gateway        | Nginx                          |
-| Deployment     | Docker + Docker Compose        |
+- Frontend: React, Vite, TailwindCSS, Leaflet
+- Backend: NestJS, FastAPI
+- Database: PostgreSQL
+- Auth: Firebase Auth (client) + Firebase Admin (server)
+- Gateway: Nginx
+- Infra: Docker, Docker Compose
 
 ## Quick Start
 
 ```bash
-# Clone the repo
-git clone <repo-url>
-cd accommodation-discovery
-
-# Copy environment files
 cp .env.example .env
 cp services/core-service/.env.example services/core-service/.env
 cp services/ai-service/.env.example services/ai-service/.env
 cp services/recommendation-service/.env.example services/recommendation-service/.env
 cp services/frontend/.env.example services/frontend/.env
 
-# Start all services
-docker-compose up --build
-
-# Or use Makefile
 make dev
 ```
 
-## Services
+## Environment Notes
 
-| Service              | Port | Description                          |
-| -------------------- | ---- | ------------------------------------ |
-| Frontend             | 3000 | React SPA                            |
-| API Gateway          | 80   | Nginx reverse proxy                  |
-| Core Service         | 3001 | User, Places, Reviews, Search        |
-| AI Service           | 8000 | NLP parsing, intent extraction       |
-| Recommendation       | 8001 | Ranking & recommendation engine      |
-| MongoDB              | 27017| Database                             |
+- GROQ_API_KEY is required for ai-service.
+- GOOGLE_MAPS_API_KEY is optional for recommendation-service.
+- PostgreSQL credentials come from root .env.
 
-## Project Structure
-
-```
-accommodation-discovery/
-├── services/                    # All microservices
-│   ├── frontend/                # React + Vite + TailwindCSS
-│   ├── core-service/            # NestJS backend
-│   ├── ai-service/              # FastAPI NLP service
-│   └── recommendation-service/  # FastAPI recommendation engine
-├── gateway/                     # Nginx API Gateway
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── conf.d/
-│       └── default.conf         # Reverse proxy routing rules
-├── packages/                    # Shared code
-│   └── shared/                  # Shared types & utilities
-│       └── src/
-│           ├── types/           # Shared TypeScript types
-│           └── constants/       # Shared constants
-├── infra/                       # Infrastructure scripts
-│   └── scripts/
-│       └── seed-db.sh           # DB init & seed script
-├── docker-compose.yml           # Production orchestration
-├── docker-compose.dev.yml       # Development overrides
-├── Makefile                     # Convenience commands
-├── .gitignore
-└── .env.example                 # Environment template
-```
-
-## Development
+## Testing
 
 ```bash
-# Start in dev mode (with hot reload)
-make dev
-
-# Stop all services
-make down
-
-# Rebuild a specific service
-make rebuild service=core-service
-
-# View logs
-make logs service=ai-service
-
-# Run tests
 make test
 ```
 
-## Contributing
+## Known Limitations
 
-1. Create a feature branch from `main`
-2. Follow the naming convention: `feature/<service>/<description>`
-3. Each service has its own test suite — run tests before committing
-4. Submit a PR with clear description
-
-## License
-
-MIT
+- AI conversation history is in-memory and resets on restart.
+- Recommendation quality degrades without Google Maps.
+- CORS is permissive in dev and should be tightened for production.

@@ -1,12 +1,21 @@
-from motor.motor_asyncio import AsyncIOMotorClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-_client = None
+Base = declarative_base()
+
+engine = create_async_engine(
+    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
+    pool_pre_ping=True,
+)
+
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
 
 
-async def get_database():
-    """Get MongoDB database connection."""
-    global _client
-    if _client is None:
-        _client = AsyncIOMotorClient(settings.MONGO_URI)
-    return _client.get_default_database()
+async def get_session() -> AsyncSession:
+    async with AsyncSessionLocal() as session:
+        yield session

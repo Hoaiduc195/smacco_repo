@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('database', () => ({
-  uri: process.env.MONGO_URI || 'mongodb://localhost:27017/accommodation_db',
+  url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/accommodation_db?schema=public',
 }));

@@ -37,7 +37,7 @@ Parse: text -> NLP filters -> recommendation client call -> merged response.
 - httpx
 - Groq API
 - recommendation-service
-- Optional Mongo-related packages are present but core conversation state is in-memory
+- Conversation state is in-memory; database integration is optional
 
 ## Important Logic
 - Conversation store enforces TTL and max message window.

@@ -1,7 +1,7 @@
 # Module: recommendation-service
 
 ## Purpose
-FastAPI recommendation engine that ranks places from Google Places and/or MongoDB by quality and relevance.
+FastAPI recommendation engine that ranks places from Google Places and/or PostgreSQL by quality and relevance.
 
 ## TL;DR
 - Accepts location/type/budget filters.
@@ -15,7 +15,7 @@ FastAPI recommendation engine that ranks places from Google Places and/or MongoD
 - services/recommendation-service/app/api/v1/endpoints/recommend.py -> recommend endpoint
 - services/recommendation-service/app/services/recommendation_service.py -> ranking pipeline, scoring, distance logic
 - services/recommendation-service/app/services/google_places_client.py -> Google Places integration
-- services/recommendation-service/app/core/database.py -> MongoDB connection
+- services/recommendation-service/app/core/database.py -> PostgreSQL async connection
 - services/recommendation-service/app/schemas/recommendation.py -> request/response schema
 - services/recommendation-service/app/core/config.py -> env configuration
 
@@ -24,11 +24,11 @@ FastAPI recommendation engine that ranks places from Google Places and/or MongoD
 - GET /health -> service health
 
 ## Data Flow
-Request -> validate filter payload -> fetch candidates (Google Places, fallback/augment with MongoDB) -> compute score per candidate -> sort by score (+ distance when available) -> return top N.
+Request -> validate filter payload -> fetch candidates (Google Places, fallback/augment with PostgreSQL) -> compute score per candidate -> sort by score (+ distance when available) -> return top N.
 
 ## Dependencies
 - FastAPI, Pydantic, Uvicorn
-- Motor/PyMongo (MongoDB)
+- SQLAlchemy + asyncpg (PostgreSQL)
 - googlemaps client library
 - External: Google Maps Places API
 
@@ -39,6 +39,6 @@ Request -> validate filter payload -> fetch candidates (Google Places, fallback/
 - Blocking external API calls are isolated to avoid stalling async request path.
 
 ## Notes
-- Works without Google key via MongoDB-only fallback, with reduced freshness/coverage.
+- Works without Google key via PostgreSQL-only fallback, with reduced freshness/coverage.
 - Location parsing supports coordinate strings; invalid coordinates are rejected/ignored by validation rules.
 - CORS is open by default and should be restricted in production.

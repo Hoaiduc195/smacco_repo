@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     PORT: int = 8000
 
-    # MongoDB
-    MONGO_URI: str = "mongodb://localhost:27017/accommodation_db"
+    # PostgreSQL
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/accommodation_db"
 
     # External services
     RECOMMENDATION_SERVICE_URL: str = "http://localhost:8001"

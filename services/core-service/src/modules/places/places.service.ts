@@ -1,44 +1,41 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Place, PlaceDocument } from './entities/place.entity';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 
 @Injectable()
 export class PlacesService {
-  constructor(
-    @InjectModel(Place.name) private readonly placeModel: Model<PlaceDocument>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async create(createPlaceDto: CreatePlaceDto): Promise<Place> {
-    const place = new this.placeModel(createPlaceDto);
-    return place.save();
+  async create(createPlaceDto: CreatePlaceDto) {
+    return this.prisma.place.create({ data: createPlaceDto });
   }
 
-  async findAll(filters?: { type?: string; city?: string }): Promise<Place[]> {
-    const query: any = {};
-    if (filters?.type) query.type = filters.type;
-    if (filters?.city) query['addressCache'] = { $regex: filters.city, $options: 'i' };
-    return this.placeModel.find(query).exec();
+  async findAll(filters?: { type?: string; city?: string }) {
+    const where: any = {};
+    if (filters?.type) where.type = filters.type;
+    if (filters?.city) {
+      where.addressCache = { contains: filters.city, mode: 'insensitive' };
+    }
+    return this.prisma.place.findMany({ where });
   }
 
-  async findOne(id: string): Promise<Place> {
-    const place = await this.placeModel.findById(id).exec();
+  async findOne(id: string) {
+    const place = await this.prisma.place.findUnique({ where: { id } });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
     return place;
   }
 
-  async update(id: string, updatePlaceDto: UpdatePlaceDto): Promise<Place> {
-    const place = await this.placeModel
-      .findByIdAndUpdate(id, updatePlaceDto, { new: true })
-      .exec();
+  async update(id: string, updatePlaceDto: UpdatePlaceDto) {
+    const place = await this.prisma.place.update({
+      where: { id },
+      data: updatePlaceDto,
+    });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
     return place;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.placeModel.findByIdAndDelete(id).exec();
-    if (!result) throw new NotFoundException(`Place #${id} not found`);
+    await this.prisma.place.delete({ where: { id } });
   }
 }

@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AppUser {
+  id           String   @id @default(uuid()) @db.Uuid
+  firebaseUid  String   @unique @map("firebase_uid")
+  email        String?  @db.Text
+  displayName  String?  @map("display_name") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  reviews       Review[]
+  files         File[]
+  chunks        Chunk[]
+  conversations Conversation[]
+
+  @@map("app_users")
+  @@index([firebaseUid], map: "idx_app_users_firebase_uid")
+}
+
+model Place {
+  id           String   @id @default(uuid()) @db.Uuid
+  source       String   @db.Text
+  sourcePlaceId String? @map("source_place_id") @db.Text
+  placeName    String   @map("place_name") @db.Text
+  placeAddress String?  @map("place_address") @db.Text
+  categories   String[]
+  lat          Float
+  lng          Float
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+
+  reviews       Review[]
+  files         File[]
+  chunks        Chunk[]
+  conversations Conversation[]
+
+  @@map("places")
+  @@index([lat, lng], map: "idx_places_location")
+}
+
+model Review {
+  id         String   @id @default(uuid()) @db.Uuid
+  placeId    String   @map("place_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  rating     Int
+  reviewText String?  @map("review_text") @db.Text
+  source     String   @default("user") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  AppUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("reviews")
+  @@index([placeId], map: "idx_reviews_place_id")
+}
+
+model File {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  placeId    String   @map("place_id") @db.Uuid
+  fileName   String?  @map("file_name") @db.Text
+  mimeType   String?  @map("mime_type") @db.Text
+  fileSize   Int?     @map("file_size")
+  storageUrl String?  @map("storage_url") @db.Text
+  fileStatus String   @map("file_status") @db.Text
+  errorMessage String? @map("error_message") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  AppUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("files")
+  @@index([placeId], map: "idx_files_place_id")
+  @@index([fileStatus], map: "idx_files_status")
+}
+
+model Chunk {
+  id         String   @id @default(uuid()) @db.Uuid
+  placeId    String   @map("place_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  sourceType String   @map("source_type") @db.Text
+  sourceId   String   @map("source_id") @db.Uuid
+  chunkIndex Int?     @map("chunk_index")
+  content    String   @db.Text
+  tokenCount Int?     @map("token_count")
+  metadata   Json?
+  embedding  Unsupported("vector")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  AppUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("chunks")
+  @@index([placeId], map: "idx_chunks_place_id")
+  @@index([sourceType], map: "idx_chunks_source_type")
+  @@index([sourceId], map: "idx_chunks_source_id")
+}
+
+model Conversation {
+  id        String   @id @default(uuid()) @db.Uuid
+  placeId   String   @map("place_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  AppUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  @@map("conversations")
+  @@index([placeId], map: "idx_conversations_place_id")
+}
+
+model Message {
+  id               String   @id @default(uuid()) @db.Uuid
+  conversationId   String   @map("conversation_id") @db.Uuid
+  senderRole       String   @map("sender_role") @db.Text
+  messageText      String   @map("message_text") @db.Text
+  retrievedChunkIds String[] @map("retrieved_chunk_ids") @db.Uuid
+  tokenInput       Int?     @map("token_input")
+  tokenOutput      Int?     @map("token_output")
+  latencyMs        Int?     @map("latency_ms")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+  @@index([conversationId], map: "idx_messages_conversation_id")
+}

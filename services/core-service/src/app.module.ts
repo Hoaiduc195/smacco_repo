@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
+import { PrismaModule } from './prisma/prisma.module';
 
 import { UsersModule } from './modules/users/users.module';
 import { PlacesModule } from './modules/places/places.module';
@@ -24,13 +24,7 @@ import osmConfig from './config/osm.config';
     }),
 
     // Database
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('database.uri'),
-      }),
-    }),
+    PrismaModule,
 
     // Feature modules
     UsersModule,

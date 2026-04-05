@@ -9,7 +9,7 @@ export const PORTS = {
   AI_SERVICE: 8000,
   RECOMMENDATION_SERVICE: 8001,
   GATEWAY: 80,
-  MONGO: 27017,
+  POSTGRES: 5432,
 } as const;
 
 // ── Place Types ──────────────────────────────

@@ -1,7 +1,9 @@
 from typing import Optional, List
 import math
 
-from app.core.database import get_database
+from sqlalchemy import select
+from app.core.database import get_session
+from app.models.place import Place
 from app.schemas.recommendation import RecommendationItem
 from app.services.google_places_client import GooglePlacesClient
 from app.core.config import settings
@@ -9,7 +11,7 @@ from app.core.config import settings
 
 class RecommendationEngine:
     """
-    Recommendation engine that queries MongoDB, ranks results,
+    Recommendation engine that queries PostgreSQL, ranks results,
     and returns the top recommendations.
     """
 
@@ -35,17 +37,17 @@ class RecommendationEngine:
                 return google_results
 
         # Fallback to local DB
-        db = await get_database()
-        collection = db["places"]
-
-        query = {}
+        query = select(Place)
         if location:
-            query["addressCache"] = {"$regex": location, "$options": "i"}
+            query = query.where(Place.addressCache.ilike(f"%{location}%"))
         if place_type:
-            query["type"] = place_type
+            query = query.where(Place.type == place_type)
+        query = query.limit(limit)
 
-        cursor = collection.find(query).limit(limit)
-        places = await cursor.to_list(length=limit)
+        async for session in get_session():
+            result = await session.execute(query)
+            places = result.scalars().all()
+            break
 
         requested_location = self._parse_location(location)
 
@@ -55,12 +57,12 @@ class RecommendationEngine:
             lat, lng = self._extract_coordinates(place)
             results.append(
                 RecommendationItem(
-                    location_id=str(place.get("_id", "")),
-                    name=place.get("nameCache", "Unknown"),
-                    address=place.get("addressCache", ""),
-                    rating=place.get("metrics", {}).get("averageRating", 0),
+                    location_id=str(place.id),
+                    name=place.nameCache or "Unknown",
+                    address=place.addressCache or "",
+                    rating=(place.metrics or {}).get("averageRating", 0),
                     score=score,
-                    type=place.get("type"),
+                    type=place.type,
                     lat=lat,
                     lng=lng,
                 )
@@ -96,13 +98,9 @@ class RecommendationEngine:
             return None
         return {"lat": lat, "lng": lng}
 
-    def _extract_coordinates(self, place: dict) -> tuple:
-        lat = place.get("lat")
-        lng = place.get("lng")
-        if lat is None or lng is None:
-            lat = place.get("latitude")
-            lng = place.get("longitude")
-        return lat, lng
+    def _extract_coordinates(self, place: Place) -> tuple:
+        coords = place.coordinates or {}
+        return coords.get("lat"), coords.get("lng")
 
     def _distance_km(self, lat1: float, lng1: float, lat2: Optional[float], lng2: Optional[float]) -> float:
         if lat2 is None or lng2 is None:
@@ -117,9 +115,9 @@ class RecommendationEngine:
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return radius_km * c
 
-    def _calculate_score(self, place: dict) -> float:
+    def _calculate_score(self, place: Place) -> float:
         """Calculate recommendation score based on metrics."""
-        metrics = place.get("metrics", {})
+        metrics = place.metrics or {}
         rating = metrics.get("averageRating", 0)
         promotes = metrics.get("totalPromotes", 0)
         reviews = metrics.get("totalReviews", 0)

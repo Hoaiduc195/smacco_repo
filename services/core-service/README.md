@@ -1,11 +1,11 @@
 # Module: core-service
 
 ## Purpose
-NestJS backend gateway for users, places, reviews, search, and AI-integration APIs with MongoDB persistence and provider-based place search.
+NestJS backend gateway for users, places, reviews, search, and AI-integration APIs with PostgreSQL persistence and provider-based place search.
 
 ## TL;DR
 - Primary API service exposing /api/v1 routes.
-- Uses MongoDB (Mongoose) for core entities.
+- Uses PostgreSQL (Prisma) for core entities.
 - Verifies Firebase tokens for protected endpoints.
 - Search pipeline supports multi-provider fallback and budget normalization.
 
@@ -41,12 +41,12 @@ NestJS backend gateway for users, places, reviews, search, and AI-integration AP
 - GET /api/v1/health
 
 ## Data Flow
-Request -> global validation/auth/logging -> module controller -> service -> MongoDB/external provider call -> normalized response.
+Request -> global validation/auth/logging -> module controller -> service -> PostgreSQL/external provider call -> normalized response.
 Search path attempts configured providers and applies query filters/budget mapping before returning result set.
 
 ## Dependencies
 - NestJS, class-validator, Swagger
-- Mongoose + MongoDB
+- Prisma + PostgreSQL
 - Firebase Admin SDK (token verification)
 - Axios/HTTP clients for downstream AI/recommendation/provider calls
 - External providers: OSM/Google (search), AI service
