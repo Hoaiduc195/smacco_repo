@@ -10,9 +10,19 @@ const DEFAULT_CENTER = { lat: 21.0285, lng: 105.8542 };
 
 const TILE_LAYERS = {
   standard: {
-    label: 'OSM',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attr: '© OpenStreetMap contributors',
+    label: 'Voyager',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attr: '© OpenStreetMap contributors © CARTO',
+  },
+  clean: {
+    label: 'Positron',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attr: '© OpenStreetMap contributors © CARTO',
+  },
+  terrain: {
+    label: 'Terrain',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attr: '© OpenStreetMap contributors, SRTM | OpenTopoMap',
   },
 };
 
@@ -68,12 +78,23 @@ const UserLocationMarker = ({ userLocation }) => {
   );
 };
 
-const FitBounds = ({ places, userLocation, route }) => {
+const ownedPlaceIcon = L.divIcon({
+  className: 'owned-place-marker',
+  html: '<div style="background:#1d4ed8;width:18px;height:18px;border-radius:6px;border:2px solid white;box-shadow:0 6px 16px rgba(29,78,216,0.35)"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+});
+
+const FitBounds = ({ places, ownedPlaces, userLocation, route, disabled }) => {
   const map = useMap();
   useEffect(() => {
+    if (disabled) return;
     const points = [];
     if (userLocation?.lat && userLocation?.lng) points.push([userLocation.lat, userLocation.lng]);
     places.forEach((p) => {
+      if (p.lat && p.lng) points.push([p.lat, p.lng]);
+    });
+    ownedPlaces.forEach((p) => {
       if (p.lat && p.lng) points.push([p.lat, p.lng]);
     });
     if (route && route.length) {
@@ -82,7 +103,79 @@ const FitBounds = ({ places, userLocation, route }) => {
     if (!points.length) return;
     const bounds = L.latLngBounds(points);
     map.fitBounds(bounds, { padding: [50, 50] });
-  }, [map, places, userLocation, route]);
+  }, [map, places, ownedPlaces, userLocation, route, disabled]);
+  return null;
+};
+
+const FocusToPosition = ({ focusTarget }) => {
+  const map = useMap();
+  const lastFocusIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!focusTarget?.lat || !focusTarget?.lng) return;
+    if (focusTarget.id && focusTarget.id === lastFocusIdRef.current) return;
+    lastFocusIdRef.current = focusTarget.id || `${focusTarget.lat}:${focusTarget.lng}`;
+    map.flyTo([focusTarget.lat, focusTarget.lng], focusTarget.zoom || 15, {
+      duration: 0.65,
+      easeLinearity: 0.25,
+    });
+  }, [focusTarget, map]);
+
+  return null;
+};
+
+const FollowUserLocation = ({ enabled, userLocation, zoomLevel = 18 }) => {
+  const map = useMap();
+  const hasFocusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      hasFocusedRef.current = false;
+      return;
+    }
+    if (!userLocation?.lat || !userLocation?.lng) return;
+
+    const next = [userLocation.lat, userLocation.lng];
+    if (!hasFocusedRef.current) {
+      map.flyTo(next, zoomLevel, {
+        duration: 0.6,
+        easeLinearity: 0.25,
+      });
+      hasFocusedRef.current = true;
+      return;
+    }
+
+    map.flyTo(next, zoomLevel, {
+      duration: 0.5,
+      easeLinearity: 0.25,
+    });
+  }, [enabled, map, userLocation, zoomLevel]);
+
+  return null;
+};
+
+const UserMapInteraction = ({ onUserMapInteraction }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!onUserMapInteraction) return undefined;
+
+    const handleDragStart = () => onUserMapInteraction('pan');
+    const handleZoomStart = (event) => {
+      if (event?.originalEvent) {
+        onUserMapInteraction('zoom');
+      }
+    };
+
+    map.on('dragstart', handleDragStart);
+    map.on('zoomstart', handleZoomStart);
+
+    return () => {
+      map.off('dragstart', handleDragStart);
+      map.off('zoomstart', handleZoomStart);
+    };
+  }, [map, onUserMapInteraction]);
+
   return null;
 };
 
@@ -122,35 +215,22 @@ const TileLayerManager = ({ mapStyle, cacheRef, onLoading, onLoaded }) => {
   return null;
 };
 
-const MapControls = ({ onZoomIn, onZoomOut }) => (
-  <div className="pointer-events-none absolute inset-0">
-    <div className="absolute bottom-4 right-4 pointer-events-auto flex flex-col gap-2">
-      <button
-        onClick={onZoomIn}
-        className="bg-white rounded-lg shadow-lg border border-gray-200 w-11 h-11 flex items-center justify-center text-gray-800 hover:bg-gray-50"
-        aria-label="Phóng to"
-      >
-        +
-      </button>
-      <button
-        onClick={onZoomOut}
-        className="bg-white rounded-lg shadow-lg border border-gray-200 w-11 h-11 flex items-center justify-center text-gray-800 hover:bg-gray-50"
-        aria-label="Thu nhỏ"
-      >
-        −
-      </button>
-    </div>
-  </div>
-);
-
 export default function MapComponent({
   userLocation,
+  followUserLocation = false,
+  currentLocationZoom = 18,
+  onUserMapInteraction,
   onMarkerClick,
+  onDirectionsRequested,
   places = [],
   selectedPlaceId,
+  ownedPlaces = [],
+  onOwnedMarkerClick,
   route = [],
   mapStyle = 'standard',
   pois = [],
+  focusTarget,
+  disableAutoFit = false,
   invalidateKey,
 }) {
   const mapRef = useRef(null);
@@ -185,11 +265,48 @@ export default function MapComponent({
               <div className="font-semibold text-sm">{place.name}</div>
               {place.address && <div className="text-xs text-gray-600">{place.address}</div>}
               {place.rating && <div className="text-xs">⭐ {place.rating}</div>}
+              <button
+                type="button"
+                onClick={() => onDirectionsRequested?.(place)}
+                className="mt-1 px-2.5 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Chỉ đường
+              </button>
             </div>
           </Popup>
         </Marker>
       )),
-    [onMarkerClick, places, selectedPlaceId]
+    [onDirectionsRequested, onMarkerClick, places, selectedPlaceId]
+  );
+
+  const ownedMarkers = useMemo(
+    () =>
+      ownedPlaces.map((place) => (
+        <Marker
+          key={place.id || `${place.lat}-${place.lng}`}
+          position={[place.lat, place.lng]}
+          icon={ownedPlaceIcon}
+          eventHandlers={{
+            click: () => onOwnedMarkerClick?.(place),
+          }}
+        >
+          <Popup>
+            <div className="space-y-1">
+              <div className="font-semibold text-sm">{place.name}</div>
+              {place.address && <div className="text-xs text-gray-600">{place.address}</div>}
+              <div className="text-xs text-blue-700">Địa điểm đã lưu</div>
+              <button
+                type="button"
+                onClick={() => onDirectionsRequested?.(place)}
+                className="mt-1 px-2.5 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Chỉ đường
+              </button>
+            </div>
+          </Popup>
+        </Marker>
+      )),
+    [onOwnedMarkerClick, ownedPlaces]
   );
 
   const poiMarkers = useMemo(
@@ -205,11 +322,18 @@ export default function MapComponent({
               <div className="font-semibold text-sm">{poi.name || 'Địa điểm'}</div>
               {poi.address && <div className="text-xs text-gray-600">{poi.address}</div>}
               <div className="text-xs text-gray-500 uppercase">{poi.category}</div>
+              <button
+                type="button"
+                onClick={() => onDirectionsRequested?.(poi)}
+                className="mt-1 px-2.5 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Chỉ đường
+              </button>
             </div>
           </Popup>
         </Marker>
       )),
-    [pois]
+    [onDirectionsRequested, pois]
   );
 
   return (
@@ -230,19 +354,24 @@ export default function MapComponent({
         <MarkerClusterGroup chunkedLoading spiderfyOnMaxZoom disableClusteringAtZoom={18} maxClusterRadius={40}>
           {poiMarkers}
           {placeMarkers}
+          {ownedMarkers}
         </MarkerClusterGroup>
 
         {route && route.length ? (
           <Polyline positions={route} color="#2563eb" weight={5} opacity={0.7} />
         ) : null}
 
-        <FitBounds places={places} userLocation={userLocation} route={route} />
+        <FocusToPosition focusTarget={focusTarget} />
+        <FollowUserLocation enabled={followUserLocation} userLocation={userLocation} zoomLevel={currentLocationZoom} />
+        <UserMapInteraction onUserMapInteraction={onUserMapInteraction} />
+        <FitBounds
+          places={places}
+          ownedPlaces={ownedPlaces}
+          userLocation={userLocation}
+          route={route}
+          disabled={disableAutoFit}
+        />
       </MapContainer>
-
-      <MapControls
-        onZoomIn={() => mapRef.current?.zoomIn()}
-        onZoomOut={() => mapRef.current?.zoomOut()}
-      />
     </div>
   );
 }

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronsLeft, ChevronsRight, StretchHorizontal } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export default function SidebarOverlay({
   isOpen,
   width,
   minWidth = 320,
   maxWidth = 560,
+  isMobile = false,
+  topOffset = 88,
   onToggle,
   onWidthChange,
   onResizeStateChange,
-  header,
   children,
 }) {
   const [dragging, setDragging] = useState(false);
@@ -56,55 +57,63 @@ export default function SidebarOverlay({
     if (!dragging) onResizeStateChange?.(false);
   }, [dragging, onResizeStateChange]);
 
-  const panelWidth = isOpen ? width : 56;
+  const panelWidth = isMobile ? 'min(92vw, 430px)' : width;
 
   return (
-    <div
-      className="absolute left-4 top-4 bottom-4 z-30 flex"
-      style={{ width: panelWidth }}
-    >
+    <>
       <div
-        className={`relative h-full bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden flex flex-col transition-[width,transform,opacity] duration-250 ease-out ${
-          dragging ? 'transition-none' : ''
-        } ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-90 translate-x-[-6px]'}`}
-        style={{ width: panelWidth }}
+        className={`absolute z-30 flex transition-all duration-300 ease-in-out ${
+          isMobile ? 'left-2 bottom-3' : 'left-3 sm:left-4 bottom-3 sm:bottom-4'
+        } ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        style={{
+          width: panelWidth,
+          top: isMobile ? topOffset + 8 : topOffset,
+          transform: isOpen ? 'translateX(0)' : 'translateX(calc(-100% - 20px))',
+        }}
       >
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-          <div className="min-w-0 flex-1">{header}</div>
-          <div className="flex items-center gap-2">
-            {isOpen && (
-              <button
-                onClick={() => onWidthChange?.(clampWidth(width >= 440 ? 340 : width + 50))}
-                className="p-3 text-gray-600 hover:text-gray-800 border border-gray-200 rounded-xl"
-                aria-label="Điều chỉnh độ rộng danh sách"
-                title="Điều chỉnh độ rộng danh sách"
-              >
-                <StretchHorizontal className="w-5 h-5" />
-              </button>
-            )}
+        <div
+          className={`relative h-full bg-white/95 border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-[width] duration-300 ease-in-out backdrop-blur-md ${
+            dragging ? 'transition-none' : ''
+          }`}
+          style={{ width: panelWidth }}
+        >
+          <div className="px-3 py-3 border-b border-slate-100 flex items-center justify-end bg-gradient-to-r from-white to-sky-50">
             <button
-              onClick={() => onToggle?.(!isOpen)}
-              className="p-3 text-gray-700 hover:text-gray-900"
-              aria-label={isOpen ? 'Thu gọn danh sách' : 'Mở danh sách'}
+              onClick={() => onToggle?.(false)}
+              className="p-2.5 text-slate-700 hover:text-slate-900"
+              aria-label="Thu gọn danh sách"
             >
-              {isOpen ? <ChevronsLeft className="w-6 h-6" /> : <ChevronsRight className="w-6 h-6" />}
+              <ChevronsLeft className="w-6 h-6" />
             </button>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 bg-white/80 backdrop-blur-sm">
-          {children}
-        </div>
-
-        {isOpen ? (
-          <div
-            onMouseDown={handleMouseDown}
-            className="absolute top-0 right-[-8px] h-full w-4 cursor-col-resize flex items-center justify-center"
-          >
-            <div className="h-14 w-2 rounded-full bg-gray-200 shadow" />
+          <div className="flex-1 overflow-y-auto px-4 py-3 bg-white/70 backdrop-blur-sm">
+            {children}
           </div>
-        ) : null}
+
+          {isOpen && !isMobile ? (
+            <div
+              onMouseDown={handleMouseDown}
+              className="absolute top-0 right-[-8px] h-full w-4 cursor-col-resize flex items-center justify-center"
+            >
+              <div className="h-14 w-2 rounded-full bg-sky-200 shadow" />
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>
+
+      {!isOpen ? (
+        <button
+          onClick={() => onToggle?.(true)}
+          className={`absolute z-30 p-2.5 rounded-r-xl bg-white/95 border border-slate-200 shadow-lg text-slate-700 hover:text-slate-900 transition-all duration-200 ease-in-out ${
+            isMobile ? 'left-0 top-28' : 'left-0 top-24'
+          }`}
+          aria-label="Mở danh sách"
+          title="Mở danh sách"
+        >
+          <ChevronsRight className="w-6 h-6" />
+        </button>
+      ) : null}
+    </>
   );
 }

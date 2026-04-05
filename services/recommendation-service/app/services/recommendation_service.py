@@ -1,4 +1,5 @@
 from typing import Optional, List
+import math
 
 from app.core.database import get_database
 from app.schemas.recommendation import RecommendationItem
@@ -46,9 +47,12 @@ class RecommendationEngine:
         cursor = collection.find(query).limit(limit)
         places = await cursor.to_list(length=limit)
 
+        requested_location = self._parse_location(location)
+
         results = []
         for place in places:
             score = self._calculate_score(place)
+            lat, lng = self._extract_coordinates(place)
             results.append(
                 RecommendationItem(
                     location_id=str(place.get("_id", "")),
@@ -56,11 +60,62 @@ class RecommendationEngine:
                     address=place.get("addressCache", ""),
                     rating=place.get("metrics", {}).get("averageRating", 0),
                     score=score,
+                    type=place.get("type"),
+                    lat=lat,
+                    lng=lng,
                 )
             )
 
-        results.sort(key=lambda x: x.score, reverse=True)
+        results.sort(
+            key=lambda item: (
+                -item.score,
+                self._distance_km(
+                    requested_location["lat"],
+                    requested_location["lng"],
+                    item.lat,
+                    item.lng,
+                )
+                if requested_location and item.lat is not None and item.lng is not None
+                else float("inf"),
+            )
+        )
         return results
+
+    def _parse_location(self, location: Optional[str]) -> Optional[dict]:
+        if not location:
+            return None
+        parts = [part.strip() for part in location.split(",")]
+        if len(parts) != 2:
+            return None
+        try:
+            lat = float(parts[0])
+            lng = float(parts[1])
+        except ValueError:
+            return None
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            return None
+        return {"lat": lat, "lng": lng}
+
+    def _extract_coordinates(self, place: dict) -> tuple:
+        lat = place.get("lat")
+        lng = place.get("lng")
+        if lat is None or lng is None:
+            lat = place.get("latitude")
+            lng = place.get("longitude")
+        return lat, lng
+
+    def _distance_km(self, lat1: float, lng1: float, lat2: Optional[float], lng2: Optional[float]) -> float:
+        if lat2 is None or lng2 is None:
+            return float("inf")
+        radius_km = 6371.0
+        d_lat = math.radians(lat2 - lat1)
+        d_lng = math.radians(lng2 - lng1)
+        a = (
+            math.sin(d_lat / 2) ** 2
+            + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lng / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return radius_km * c
 
     def _calculate_score(self, place: dict) -> float:
         """Calculate recommendation score based on metrics."""

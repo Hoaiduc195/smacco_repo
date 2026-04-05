@@ -26,7 +26,33 @@ export const searchPlaces = async (query, lat, lng, limit = 20) => {
         limit,
       },
     });
-    return response.data;
+    const data = response.data;
+
+    // Normalize shape from multiple providers so SearchPage can always compute routes.
+    const normalized = Array.isArray(data)
+      ? data
+      : (Array.isArray(data?.results) ? data.results : []);
+
+    return normalized.map((item, index) => {
+      const latValue = item.lat ?? item.latitude ?? item.location?.lat;
+      const lngValue = item.lng ?? item.longitude ?? item.location?.lng;
+
+      return {
+        ...item,
+        id: item.id || item.location_id || item.locationId || `place-${index}`,
+        location_id: item.location_id || item.locationId || item.id || `place-${index}`,
+        name: item.name || item.title || 'Địa điểm',
+        address: item.address || item.formatted_address || item.vicinity || '',
+        lat: latValue,
+        lng: lngValue,
+        latitude: item.latitude ?? latValue,
+        longitude: item.longitude ?? lngValue,
+        type: item.type || item.primaryType || item.category,
+        rating: item.rating,
+        imageUrl: item.imageUrl || item.image_url,
+        priceLevel: item.priceLevel ?? item.price_level,
+      };
+    });
   } catch (error) {
     console.error('Backend search failed, using Nominatim:', error);
     // Fallback to Nominatim API for open-source search
@@ -47,7 +73,7 @@ export const searchPlaces = async (query, lat, lng, limit = 20) => {
       }));
     } catch (nominatimError) {
       console.error('Nominatim search also failed:', nominatimError);
-      throw new Error('Could not search places. Please try again.');
+      throw new Error('Không thể tìm kiếm địa điểm. Vui lòng thử lại.');
     }
   }
 };
@@ -63,10 +89,10 @@ export const getNearbyPlaces = async (lat, lng, radius = 1000, limit = 20) => {
         limit,
       },
     });
-    return response.data;
+    return response.data; // Returning nearby places data
   } catch (error) {
     console.error('Error fetching nearby places:', error);
-    throw new Error('Could not load nearby places. Please try again.');
+    throw new Error('Không thể tải địa điểm lân cận. Vui lòng thử lại.');
   }
 };
 
@@ -77,7 +103,7 @@ export const getPlaceDetails = async (placeId) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching place details:', error);
-    throw new Error('Could not load place details. Please try again.');
+    throw new Error('Không thể tải thông tin địa điểm. Vui lòng thử lại.');
   }
 };
 

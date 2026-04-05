@@ -13,6 +13,8 @@ body, html, #root {
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Segoe UI', 'Inter', sans-serif;
+  background: linear-gradient(140deg, #020617, #0f172a 35%, #082f49 100%);
 }
 
 .tile-fade.leaflet-tile {
@@ -21,4 +23,92 @@ body, html, #root {
 
 .poi-icon {
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 8px;
+  margin: 0 8px 8px 0 !important;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chatPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floaty {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes softIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  opacity: 0;
+  animation: cardEnter 0.36s ease forwards;
+}
+
+.animate-chat-pop {
+  animation: chatPop 0.24s ease;
+}
+
+.animate-chat-message {
+  animation: messageRise 0.2s ease;
+}
+
+.animate-floaty {
+  animation: floaty 2.6s ease-in-out infinite;
+}
+
+.animate-soft-in {
+  animation: softIn 0.22s ease-in-out;
 }

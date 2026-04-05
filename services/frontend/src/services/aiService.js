@@ -26,7 +26,7 @@ export const streamChat = async ({
       headers.Authorization = `Bearer ${token}`;
     }
   } catch (err) {
-    console.error('Failed to get Firebase token for streaming:', err);
+    console.error('Không thể lấy Firebase token cho luồng phản hồi:', err);
   }
 
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
@@ -37,7 +37,7 @@ export const streamChat = async ({
   });
 
   if (!response.ok || !response.body) {
-    const message = `Stream request failed: ${response.status} ${response.statusText}`;
+    const message = `Yêu cầu luồng thất bại: ${response.status} ${response.statusText}`;
     onError?.(new Error(message));
     throw new Error(message);
   }
@@ -57,7 +57,7 @@ export const streamChat = async ({
       try {
         const parsed = JSON.parse(payload);
         if (parsed.error || parsed.detail) {
-          const message = parsed.error || parsed.detail || 'Streaming error';
+          const message = parsed.error || parsed.detail || 'Lỗi phản hồi luồng';
           onError?.(new Error(message));
           onDone?.(parsed);
           continue;
@@ -67,7 +67,7 @@ export const streamChat = async ({
           onDone?.(parsed);
         }
       } catch (err) {
-        console.error('Failed to parse stream chunk:', err, payload);
+        console.error('Không thể phân tích đoạn dữ liệu luồng:', err, payload);
       }
     }
   };
@@ -83,7 +83,7 @@ export const streamChat = async ({
     processBuffer();
     onDone?.();
   } catch (err) {
-    if (err.name === 'AbortError') return; // aborted by caller
+    if (err.name === 'AbortError') return; // Bị hủy từ phía caller
     onError?.(err);
     throw err;
   }

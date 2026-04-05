@@ -1,11 +1,12 @@
 import apiClient from './api';
 
 // Fetch recommendations from recommendation-service via gateway
-export const getRecommendations = async ({ location, type, budget } = {}) => {
+export const getRecommendations = async ({ location, type, budget, radius } = {}) => {
   const payload = {
     location: location || undefined,
     type: type || undefined,
     budget: budget || undefined,
+    radius: radius || undefined,
   };
 
   try {

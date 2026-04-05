@@ -14,6 +14,9 @@ class RecommendationItem(BaseModel):
     address: Optional[str] = None
     rating: Optional[float] = None
     score: float = 0.0
+    type: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 
 class RecommendResponse(BaseModel):

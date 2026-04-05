@@ -72,9 +72,9 @@ export default function RecommendationMap({ places = [], userLocation, mapStyle 
       url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
       attr: '© OpenStreetMap, Tiles courtesy of Humanitarian OpenStreetMap Team',
     },
-    terrain: {
-      url: 'https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg',
-      attr: 'Map tiles by Stamen Design, CC BY 3.0 — Map data © OpenStreetMap',
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attr: 'Tiles © Esri',
     },
   };
 

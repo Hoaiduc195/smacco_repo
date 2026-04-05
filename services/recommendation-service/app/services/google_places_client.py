@@ -28,6 +28,32 @@ class GooglePlacesClient:
             return True
         return price_level in allowed
 
+    def _parse_location(self, location_text: Optional[str]) -> Optional[dict]:
+        if not location_text:
+            return None
+        parts = [part.strip() for part in location_text.split(',')]
+        if len(parts) != 2:
+            return None
+        try:
+            lat = float(parts[0])
+            lng = float(parts[1])
+        except ValueError:
+            return None
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            return None
+        return {"lat": lat, "lng": lng}
+
+    def _primary_type(self, types: Optional[list], place_type: Optional[str]) -> Optional[str]:
+        if place_type:
+            return place_type
+        if not types:
+            return None
+        ignored = {"lodging", "point_of_interest", "establishment"}
+        for value in types:
+            if value not in ignored:
+                return value
+        return types[0]
+
     async def search_lodging(
         self,
         location_text: Optional[str],
@@ -38,17 +64,20 @@ class GooglePlacesClient:
         if not self.client or not location_text:
             return []
 
+        parsed_location = self._parse_location(location_text)
         # Run blocking googlemaps calls in a thread
-        geocode = await asyncio.to_thread(
-            self.client.geocode,
-            location_text,
-            language=settings.GOOGLE_MAPS_LANGUAGE,
-            region=settings.GOOGLE_MAPS_REGION,
-        )
-        if not geocode:
-            return []
+        location = parsed_location
+        if not location:
+            geocode = await asyncio.to_thread(
+                self.client.geocode,
+                location_text,
+                language=settings.GOOGLE_MAPS_LANGUAGE,
+                region=settings.GOOGLE_MAPS_REGION,
+            )
+            if not geocode:
+                return []
+            location = geocode[0]["geometry"]["location"]
 
-        location = geocode[0]["geometry"]["location"]
         nearby = await asyncio.to_thread(
             self.client.places_nearby,
             location=location,
@@ -72,6 +101,9 @@ class GooglePlacesClient:
                     address=r.get("vicinity") or r.get("formatted_address"),
                     rating=rating,
                     score=score,
+                    type=self._primary_type(r.get("types"), place_type),
+                    lat=(r.get("geometry", {}).get("location", {}) or {}).get("lat"),
+                    lng=(r.get("geometry", {}).get("location", {}) or {}).get("lng"),
                 )
             )
         return items
