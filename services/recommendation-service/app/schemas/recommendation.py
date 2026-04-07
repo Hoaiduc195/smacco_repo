@@ -13,6 +13,7 @@ class RecommendationItem(BaseModel):
     name: str
     address: Optional[str] = None
     rating: Optional[float] = None
+    image_url: Optional[str] = None
     score: float = 0.0
     type: Optional[str] = None
     lat: Optional[float] = None

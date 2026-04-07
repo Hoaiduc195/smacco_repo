@@ -51,7 +51,7 @@ export class SearchService {
     if (!budget) return undefined;
     const value = budget.toLowerCase();
     if (['low', 'cheap', 'budget'].includes(value)) return 'low';
-    if (['mid', 'medium', 'midrange', 'mid-range'].includes(value)) return 'mid';
+    if (['mid', 'medium', 'midrange', 'mid  -range'].includes(value)) return 'mid';
     if (['high', 'luxury', 'premium'].includes(value)) return 'high';
     return undefined;
   }
