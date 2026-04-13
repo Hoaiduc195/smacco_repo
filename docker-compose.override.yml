@@ -3,10 +3,11 @@
 # ============================================
 
 services:
-  app:
+  backend:
+    build: ./backend
     command: sh -c "npx prisma migrate deploy || npx prisma db push; npm run start:dev"
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development

@@ -1,27 +1,34 @@
 # ============================================
 # Docker Compose — Modular Monolith
 # ============================================
-# Only 2 containers: app + postgres (was 6 in microservices)
+# Separate frontend + backend + postgres services
 
 services:
-  # ── Monolith Application ─────────────────────
-  app:
-    build: .
-    container_name: accommodation-app
+  frontend:
+    build: ./frontend
+    container_name: accommodation-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    container_name: accommodation-backend
     ports:
       - "3001:3001"
     env_file:
       - .env
     depends_on:
       - postgres
-    command: sh -c "npx prisma migrate deploy || npx prisma db push; node dist/main"
     networks:
       - app-network
 
-  # ── PostgreSQL ───────────────────────────────
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: postgres
+    container_name: accommodation-postgres
     ports:
       - "5433:5432"
     environment:
