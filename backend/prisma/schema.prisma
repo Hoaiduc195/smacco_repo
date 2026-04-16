@@ -19,6 +19,9 @@ model User {
   files         File[]
   chunks        Chunk[]
   conversations Conversation[]
+  questions     Question[]
+  answers       Answer[]
+  answerVotes   AnswerVote[]
 
   @@map("app_users")
   @@index([firebaseUid], map: "idx_app_users_firebase_uid")
@@ -40,6 +43,7 @@ model Place {
   files         File[]
   chunks        Chunk[]
   conversations Conversation[]
+  questions     Question[]
 
   @@map("places")
   @@index([lat, lng], map: "idx_places_location")
@@ -59,6 +63,58 @@ model Review {
 
   @@map("reviews")
   @@index([placeId], map: "idx_reviews_place_id")
+}
+
+model Question {
+  id           String   @id @default(uuid()) @db.Uuid
+  placeId      String   @map("place_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  title        String?  @map("title") @db.Text
+  questionText String   @map("question_text") @db.Text
+  status       String   @default("open") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
+
+  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  user  User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  answers Answer[]
+
+  @@map("questions")
+  @@index([placeId], map: "idx_questions_place_id")
+}
+
+model Answer {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  answerText String   @map("answer_text") @db.Text
+  upvotes    Int      @default(0) @map("upvotes")
+  downvotes  Int      @default(0) @map("downvotes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  votes    AnswerVote[]
+
+  @@map("answers")
+  @@index([questionId], map: "idx_answers_question_id")
+}
+
+model AnswerVote {
+  id       String   @id @default(uuid()) @db.Uuid
+  answerId String   @map("answer_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  vote     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("answer_votes")
+  @@unique([answerId, userId], map: "uq_answer_votes_answer_id_user_id")
+  @@index([answerId], map: "idx_answer_votes_answer_id")
+  @@index([userId], map: "idx_answer_votes_user_id")
 }
 
 model File {
