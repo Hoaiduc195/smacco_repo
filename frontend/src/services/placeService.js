@@ -118,6 +118,19 @@ export const getPlaceReviews = async (placeId) => {
   }
 };
 
+// Get user reviews
+export const getUserReviews = async (userId) => {
+  try {
+    const response = await apiClient.get('/reviews', {
+      params: { userId },
+    });
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    return [];
+  }
+};
+
 // Reverse geocoding - get place info from coordinates
 export const reverseGeocode = async (lat, lng) => {
   try {
@@ -190,6 +203,7 @@ export default {
   getNearbyPlaces,
   getPlaceDetails,
   getPlaceReviews,
+  getUserReviews,
   reverseGeocode,
   fetchNearbyPois,
 };

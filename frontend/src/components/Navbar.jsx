@@ -75,22 +75,6 @@ export default function Navbar({ onSearch, onSearchInputChange, searchQuery = ''
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/trips')}
-          className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/25 text-white bg-white/10 hover:bg-white/20 transition-colors"
-        >
-          <Route className="w-4 h-4" />
-          Chuyến đi
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/recommendations')}
-          className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-cyan-200/30 text-white bg-cyan-400/15 hover:bg-cyan-300/20 transition-colors"
-        >
-          <Sparkles className="w-4 h-4" />
-          Gợi ý
-        </button>
       </div>
 
       {/* User Menu */}
@@ -112,6 +96,17 @@ export default function Navbar({ onSearch, onSearchInputChange, searchQuery = ''
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500 truncate">{userEmail}</p>
             </div>
+
+            <button
+              onClick={() => {
+                navigate('/profile');
+                setShowUserMenu(false);
+              }}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+            >
+              <User className="w-4 h-4" />
+              Trang cá nhân
+            </button>
 
             <button
               onClick={handleLogout}

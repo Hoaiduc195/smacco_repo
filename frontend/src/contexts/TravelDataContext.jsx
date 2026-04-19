@@ -1,16 +1,16 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { normalizeFirestoreError } from '../services/firestoreError';
-import {
-  subscribeTrips,
-  createTrip as createTripDoc,
-  updateTrip,
-} from '../services/tripService';
 import {
   subscribeOwnedPlaces,
   saveOwnedPlace as saveOwnedPlaceDoc,
   removeOwnedPlace as removeOwnedPlaceDoc,
 } from '../services/ownedPlaceService';
+import {
+  subscribeCheckIns,
+  saveCheckIn as saveCheckInDoc,
+  removeCheckIn as removeCheckInDoc,
+} from '../services/checkInService';
 import { upsertUserProfile } from '../services/userProfileService';
 
 const TravelDataContext = createContext(null);
@@ -25,17 +25,15 @@ export function useTravelData() {
 
 export function TravelDataProvider({ children }) {
   const { currentUser } = useAuth();
-  const [trips, setTrips] = useState([]);
   const [ownedPlaces, setOwnedPlaces] = useState([]);
-  const [activeTripId, setActiveTripId] = useState(null);
+  const [checkIns, setCheckIns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!currentUser) {
-      setTrips([]);
       setOwnedPlaces([]);
-      setActiveTripId(null);
+      setCheckIns([]);
       return;
     }
 
@@ -46,65 +44,34 @@ export function TravelDataProvider({ children }) {
       console.error('Không thể cập nhật hồ sơ người dùng', err);
     });
 
-    const unsubTrips = subscribeTrips(
-      currentUser.uid,
-      (nextTrips) => {
-        setTrips(nextTrips);
-        setLoading(false);
-      },
-      (err) => {
-        setError(normalizeFirestoreError(err, 'Không thể tải danh sách chuyến đi.'));
-        setLoading(false);
-      }
-    );
-
     const unsubOwnedPlaces = subscribeOwnedPlaces(
       currentUser.uid,
       (nextOwnedPlaces) => {
         setOwnedPlaces(nextOwnedPlaces);
+        // Only stop loading if both subs are done or just one? Let's keep it simple.
+        setLoading(false);
       },
       (err) => {
         setError(normalizeFirestoreError(err, 'Không thể tải địa điểm đã lưu.'));
+        setLoading(false);
+      }
+    );
+
+    const unsubCheckIns = subscribeCheckIns(
+      currentUser.uid,
+      (nextCheckIns) => {
+        setCheckIns(nextCheckIns);
+      },
+      (err) => {
+        console.error('Error subscribing to check-ins:', err);
       }
     );
 
     return () => {
-      unsubTrips?.();
       unsubOwnedPlaces?.();
+      unsubCheckIns?.();
     };
   }, [currentUser]);
-
-  const activeTrip = useMemo(
-    () => trips.find((trip) => trip.id === activeTripId) || null,
-    [activeTripId, trips]
-  );
-
-  const createTrip = async ({ name, destination }) => {
-    if (!currentUser) {
-      setError('Vui lòng đăng nhập để tạo chuyến đi.');
-      return null;
-    }
-
-    try {
-      setError('');
-      const result = await createTripDoc(currentUser.uid, { name, destination });
-      setActiveTripId(result.id);
-      return result;
-    } catch (err) {
-      setError(normalizeFirestoreError(err, 'Không thể tạo chuyến đi.'));
-      throw err;
-    }
-  };
-
-  const assignAccommodation = async (tripId, accommodation) => {
-    try {
-      setError('');
-      await updateTrip(tripId, { accommodation });
-    } catch (err) {
-      setError(normalizeFirestoreError(err, 'Không thể cập nhật nơi ở.'));
-      throw err;
-    }
-  };
 
   const saveOwnedPlace = async (place) => {
     if (!currentUser) {
@@ -131,18 +98,40 @@ export function TravelDataProvider({ children }) {
     }
   };
 
+  const saveCheckIn = async (place) => {
+    if (!currentUser) {
+      setError('Vui lòng đăng nhập để check-in.');
+      return null;
+    }
+
+    try {
+      setError('');
+      return await saveCheckInDoc(currentUser.uid, place);
+    } catch (err) {
+      setError(normalizeFirestoreError(err, 'Không thể thực hiện check-in.'));
+      throw err;
+    }
+  };
+
+  const removeCheckIn = async (checkInId) => {
+    try {
+      setError('');
+      await removeCheckInDoc(checkInId);
+    } catch (err) {
+      setError(normalizeFirestoreError(err, 'Không thể xóa check-in.'));
+      throw err;
+    }
+  };
+
   const value = {
     loading,
     error,
-    trips,
-    activeTrip,
-    activeTripId,
-    setActiveTripId,
     ownedPlaces,
-    createTrip,
-    assignAccommodation,
+    checkIns,
     saveOwnedPlace,
     removeOwnedPlace,
+    saveCheckIn,
+    removeCheckIn,
   };
 
   return <TravelDataContext.Provider value={value}>{children}</TravelDataContext.Provider>;

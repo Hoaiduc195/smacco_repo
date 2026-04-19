@@ -7,6 +7,7 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceChatPanel from '../components/PlaceChatPanel';
 import SidebarOverlay from '../components/SidebarOverlay';
 import { searchPlaces, getNearbyPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
+import { getRecommendations } from '../services/recommendationService';
 import { getRoute } from '../services/routingService';
 import { fetchPlaceImage } from '../services/serpService';
 import { useTravelData } from '../contexts/TravelDataContext';
@@ -24,14 +25,12 @@ const NAVBAR_HEIGHT = 80;
 
 export default function HomePage() {
   const {
-    trips,
-    activeTripId,
-    setActiveTripId,
-    createTrip,
-    assignAccommodation,
     ownedPlaces,
+    checkIns,
     saveOwnedPlace,
     removeOwnedPlace,
+    saveCheckIn,
+    removeCheckIn,
     error: travelError,
   } = useTravelData();
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +40,6 @@ export default function HomePage() {
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
-  const [mapStyle, setMapStyle] = useState('standard');
   const [mapFocusTarget, setMapFocusTarget] = useState(null);
   const [followUserLocation, setFollowUserLocation] = useState(false);
   const [disableAutoFit, setDisableAutoFit] = useState(false);
@@ -61,9 +59,37 @@ export default function HomePage() {
   const lastPoiKeyRef = useRef('');
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
-  const [tripName, setTripName] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+
+  // Unified Filter State
+  const [placeType, setPlaceType] = useState('');
+  const [budget, setBudget] = useState('');
+  const [radius, setRadius] = useState('');
+
+  const PLACE_TYPES = [
+    { value: '', label: 'Tất cả loại' },
+    { value: 'hotel', label: 'Khách sạn' },
+    { value: 'hostel', label: 'Nhà nghỉ' },
+    { value: 'homestay', label: 'Homestay' },
+    { value: 'restaurant', label: 'Nhà hàng' },
+    { value: 'cafe', label: 'Cà phê' },
+  ];
+
+  const BUDGET_OPTIONS = [
+    { value: '', label: 'Ngân sách' },
+    { value: 'budget', label: 'Tiết kiệm' },
+    { value: 'midrange', label: 'Trung bình' },
+    { value: 'premium', label: 'Cao cấp' },
+  ];
+
+  const RADIUS_OPTIONS = [
+    { value: '', label: 'Bán kính' },
+    { value: '2', label: '2 km' },
+    { value: '5', label: '5 km' },
+    { value: '10', label: '10 km' },
+    { value: '20', label: '20 km' },
+  ];
 
   useEffect(() => {
     const syncMobile = () => {
@@ -114,6 +140,7 @@ export default function HomePage() {
         stopTrackingUserLocation();
       }
       if (nextState === APP_STATES.ON_SEARCH) {
+        setIsSidebarOpen(true);
         setFollowUserLocation(false);
         stopTrackingUserLocation();
       }
@@ -216,6 +243,14 @@ export default function HomePage() {
     [ownedPlaces]
   );
 
+  const checkInsByPlaceId = useMemo(() => {
+    const map = {};
+    checkIns.forEach((ci) => {
+      map[ci.placeId] = ci;
+    });
+    return map;
+  }, [checkIns]);
+
   const visiblePlaces = useMemo(() => places.map((p) => ({
     ...p,
     type: p.type || 'hotel',
@@ -276,26 +311,10 @@ export default function HomePage() {
   // Get current location
   const getCurrentLocation = requestCurrentLocation;
 
-  // Load nearby places
-  const loadNearbyPlaces = async (location) => {
-    try {
-      setIsSearching(true);
-      const nearbyPlaces = await getNearbyPlaces(location.lat, location.lng);
-      setPlaces(nearbyPlaces);
-      setError('');
-      setSelectedPlaceId(null);
-      setRoute([]);
-    } catch (err) {
-      setError(err.message);
-      console.error('Error loading nearby places:', err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Handle search
-  const handleSearch = async (query) => {
-    if (!query.trim()) {
+  // Unified Search Logic
+  const performUnifiedSearch = useCallback(async (query, filters = {}) => {
+    // If everything is empty, reset
+    if (!query.trim() && !filters.type && !filters.budget && !filters.radius) {
       setPlaces([]);
       setError('');
       setIsSidebarOpen(false);
@@ -309,39 +328,45 @@ export default function HomePage() {
       setIsSearching(true);
       setError('');
       setIsSidebarOpen(true);
-      const searchResults = await searchPlaces(query, userLocation?.lat, userLocation?.lng);
-      setPlaces(searchResults);
+
+      const results = await getRecommendations({
+        query: query.trim() || undefined,
+        location: userLocation ? `${userLocation.lat},${userLocation.lng}` : undefined,
+        type: filters.type || undefined,
+        budget: filters.budget || undefined,
+        radius: filters.radius || undefined,
+      });
+
+      setPlaces(results);
       setSelectedPlaceId(null);
       setRoute([]);
     } catch (err) {
       setError(err.message);
-      console.error('Search error:', err);
+      console.error('Unified search error:', err);
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [userLocation, transitionTo]);
 
-  // Handle search submission from navbar
+  // Handle search text changes
   useEffect(() => {
     if (rehydratedRef.current) {
       rehydratedRef.current = false;
       return;
     }
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery);
-    } else {
-      setPlaces([]);
-      setError('');
-    }
-  }, [searchQuery]);
+    
+    const timeoutId = setTimeout(() => {
+      performUnifiedSearch(searchQuery, { type: placeType, budget, radius });
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, placeType, budget, radius, performUnifiedSearch]);
 
   const handleSearchInputChange = useCallback(
     (value) => {
-      if (value?.trim()) {
-        transitionTo(APP_STATES.ON_SEARCH);
-        return;
-      }
-      if (appState === APP_STATES.ON_SEARCH) {
+      // We no longer open the sidebar immediately when typing starts.
+      // The sidebar will open in performUnifiedSearch when Enter is pressed.
+      if (!value?.trim() && appState === APP_STATES.ON_SEARCH) {
         transitionTo(APP_STATES.IDLE);
       }
     },
@@ -368,10 +393,10 @@ export default function HomePage() {
     }
   }, [travelError]);
 
-  // Handle marker click - navigate to place detail
+  // Handle marker click - open place detail in new tab
   const handleMarkerClick = (place) => {
     setSelectedPlaceId(place.id);
-    navigate(`/places/${place.id}`, { state: { place } });
+    window.open(`/places/${place.id}`, '_blank');
   };
 
   const handleSelectPlace = (place) => {
@@ -382,8 +407,7 @@ export default function HomePage() {
 
   const handleShowPlaceDetails = (place) => {
     setSelectedPlaceId(place.id);
-    setShowPlaceDetailPanel(true);
-    focusMapAt({ lat: place.lat, lng: place.lng }, 15);
+    window.open(`/places/${place.id}`, '_blank');
   };
 
   const handleChat = (place) => {
@@ -403,46 +427,16 @@ export default function HomePage() {
     }
   };
 
-  const handleCreateTrip = async () => {
-    if (!selectedPlace) {
-      setError('Hãy chọn một địa điểm để tạo chuyến đi.');
-      return;
-    }
-
+  const handleToggleCheckIn = async (place) => {
     try {
-      setError('');
-      await createTrip({
-        name: tripName.trim() || selectedPlace.name,
-        destination: {
-          id: selectedPlace.id,
-          name: selectedPlace.name,
-          address: selectedPlace.address || null,
-          lat: selectedPlace.lat,
-          lng: selectedPlace.lng,
-        },
-      });
-      setTripName('');
+      const existing = checkInsByPlaceId[place.id];
+      if (existing) {
+        await removeCheckIn(existing.id);
+      } else {
+        await saveCheckIn(place);
+      }
     } catch (err) {
-      setError(err?.message || 'Không thể tạo chuyến đi.');
-    }
-  };
-
-  const handleAssignAccommodation = async (place) => {
-    if (!activeTripId) {
-      setError('Hãy chọn chuyến đi trước khi gán nơi ở.');
-      return;
-    }
-    try {
-      setError('');
-      await assignAccommodation(activeTripId, {
-        id: place.id,
-        name: place.name,
-        address: place.address || null,
-        lat: place.lat,
-        lng: place.lng,
-      });
-    } catch (err) {
-      setError(err?.message || 'Không thể cập nhật nơi ở cho chuyến đi.');
+      setError(err?.message || 'Không thể thực hiện check-in.');
     }
   };
 
@@ -551,7 +545,7 @@ export default function HomePage() {
             }}
             selectedPlaceId={selectedPlaceId}
             route={route}
-            mapStyle={mapStyle}
+            mapStyle="standard"
             pois={pois}
             focusTarget={mapFocusTarget}
             disableAutoFit={disableAutoFit}
@@ -560,20 +554,6 @@ export default function HomePage() {
         </div>
 
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,6,23,0.14)_0%,transparent_28%,transparent_72%,rgba(2,6,23,0.14)_100%)] pointer-events-none" />
-
-        <div className="absolute right-4 sm:right-6 z-20 animate-soft-in" style={{ top: NAVBAR_HEIGHT + 16 }}>
-          <button
-            onClick={() => {
-              const order = ['standard', 'clean', 'terrain'];
-              const next = order[(order.indexOf(mapStyle) + 1) % order.length];
-              setMapStyle(next);
-            }}
-            title="Đổi kiểu bản đồ"
-            className="p-3 bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 hover:bg-white transition-all duration-200 ease-in-out"
-          >
-            <Layers3 className="w-5 h-5" />
-          </button>
-        </div>
 
         {/* Sidebar overlay */}
         <SidebarOverlay
@@ -676,8 +656,46 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              <div className="mb-3 rounded-xl border border-cyan-100 bg-cyan-50/80 px-3 py-2 text-xs text-cyan-800">
-                <p>Tìm kiếm để hiển thị các địa điểm.</p>
+              {/* Unified Search Filters */}
+              <div className="mb-4 grid grid-cols-3 gap-2">
+                <select
+                  value={placeType}
+                  onChange={(e) => setPlaceType(e.target.value)}
+                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
+                >
+                  {PLACE_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+                <select
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
+                >
+                  {BUDGET_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+                <select
+                  value={radius}
+                  onChange={(e) => setRadius(e.target.value)}
+                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
+                >
+                  {RADIUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </select>
+              </div>
+
+              <div className="mb-3 rounded-xl border border-cyan-100 bg-cyan-50/80 px-3 py-2 text-xs text-cyan-800 flex items-center justify-between">
+                <p>Kết quả tìm kiếm & gợi ý</p>
+                {(placeType || budget || radius || searchQuery) && (
+                  <button 
+                    onClick={() => {
+                      setSearchQuery('');
+                      setPlaceType('');
+                      setBudget('');
+                      setRadius('');
+                    }}
+                    className="text-cyan-600 hover:text-cyan-800 font-medium"
+                  >
+                    Xóa lọc
+                  </button>
+                )}
               </div>
 
               {isSearching ? (
@@ -714,8 +732,8 @@ export default function HomePage() {
                     onDirections={() => handleDirections(place)}
                     onSave={() => handleToggleOwnedPlace(place)}
                     isSaved={Boolean(ownedPlaceBySource[place.id])}
-                    onAssignToTrip={() => handleAssignAccommodation(place)}
-                    disableAssign={!activeTripId}
+                    onCheckIn={() => handleToggleCheckIn(place)}
+                    isCheckedIn={Boolean(checkInsByPlaceId[place.id])}
                     showActions={false}
                   />
                 ))}

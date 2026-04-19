@@ -7,8 +7,7 @@ import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import PlaceDetailPage from './pages/PlaceDetailPage';
 import LoginPage from './pages/LoginPage';
-import RecommendationPage from './pages/RecommendationPage';
-import TripsPage from './pages/TripsPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -17,6 +16,22 @@ function App() {
         <TravelDataProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/places/:id"
+              element={
+                <ProtectedRoute>
+                  <PlaceDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={
@@ -27,9 +42,6 @@ function App() {
             >
               <Route index element={<HomePage />} />
               <Route path="search" element={<SearchPage />} />
-              <Route path="places/:id" element={<PlaceDetailPage />} />
-              <Route path="recommendations" element={<RecommendationPage />} />
-              <Route path="trips" element={<TripsPage />} />
             </Route>
           </Routes>
         </TravelDataProvider>

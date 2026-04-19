@@ -16,9 +16,8 @@ export default function PlaceCard({
   onNavigate,
   onSave,
   isSaved,
-  onAssignToTrip,
-  disableAssign,
-  tripActionLabel = 'Thêm vào chuyến đi',
+  onCheckIn,
+  isCheckedIn,
   travelTimeMinutes,
   showActions = true,
 }) {
@@ -105,7 +104,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onSave?.();
             }}
-            className={`inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border ${
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border ${
               isSaved
                 ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
                 : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -113,6 +112,23 @@ export default function PlaceCard({
           >
             {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
             {isSaved ? 'Đã lưu' : 'Lưu'}
+          </button>
+        ) : null}
+        {onCheckIn ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCheckIn?.();
+            }}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border ${
+              isCheckedIn
+                ? 'border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <MapPin className={`w-4 h-4 ${isCheckedIn ? 'fill-blue-500' : ''}`} />
+            {isCheckedIn ? 'Đã check-in' : 'Check-in'}
           </button>
         ) : null}
         {onChat ? (
@@ -149,19 +165,6 @@ export default function PlaceCard({
             className="px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
           >
             Chi tiết
-          </button>
-        ) : null}
-        {onAssignToTrip ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAssignToTrip?.();
-            }}
-            disabled={disableAssign}
-            className="px-3 py-2 text-sm rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {tripActionLabel}
           </button>
         ) : null}
       </div> : null}

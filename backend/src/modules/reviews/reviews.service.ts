@@ -17,10 +17,16 @@ export class ReviewsService {
     return this.prisma.review.create({ data });
   }
 
-  async findAll(locationId?: string) {
-    const where = locationId ? { placeId: locationId } : {};
+  async findAll(locationId?: string, userId?: string) {
+    const where: any = {};
+    if (locationId) where.placeId = locationId;
+    if (userId) where.userId = userId;
+
     return this.prisma.review.findMany({
       where,
+      include: {
+        place: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

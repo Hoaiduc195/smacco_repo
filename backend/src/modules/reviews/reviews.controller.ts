@@ -16,10 +16,11 @@ export class ReviewsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get reviews (optionally by location)' })
+  @ApiOperation({ summary: 'Get reviews (optionally by location or user)' })
   @ApiQuery({ name: 'locationId', required: false })
-  findAll(@Query('locationId') locationId?: string) {
-    return this.reviewsService.findAll(locationId);
+  @ApiQuery({ name: 'userId', required: false })
+  findAll(@Query('locationId') locationId?: string, @Query('userId') userId?: string) {
+    return this.reviewsService.findAll(locationId, userId);
   }
 
   @Get(':id')
