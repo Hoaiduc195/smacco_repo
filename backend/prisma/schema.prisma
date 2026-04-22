@@ -22,6 +22,7 @@ model User {
   questions     Question[]
   answers       Answer[]
   answerVotes   AnswerVote[]
+  presences     Presence[]
 
   @@map("app_users")
   @@index([firebaseUid], map: "idx_app_users_firebase_uid")
@@ -36,6 +37,10 @@ model Place {
   categories   String[]
   lat          Float
   lng          Float
+  priceLevel    Int?     @map("price_level")
+  coverImageUrl String?  @map("cover_image_url") @db.Text
+  averageRating Float?   @map("average_rating")
+  reviewCount   Int      @default(0) @map("review_count")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @map("updated_at")
 
@@ -44,6 +49,7 @@ model Place {
   chunks        Chunk[]
   conversations Conversation[]
   questions     Question[]
+  presences     Presence[]
 
   @@map("places")
   @@index([lat, lng], map: "idx_places_location")
@@ -189,4 +195,19 @@ model Message {
 
   @@map("messages")
   @@index([conversationId], map: "idx_messages_conversation_id")
+}
+
+model Presence {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  placeId   String   @map("place_id") @db.Uuid
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("presences")
+  @@index([placeId], map: "idx_presences_place_id")
+  @@index([userId], map: "idx_presences_user_id")
 }
