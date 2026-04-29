@@ -16,66 +16,44 @@ const POI_FILTERS = {
 
 // Search places using backend API or Nominatim for fallback
 export const searchPlaces = async (query, lat, lng, limit = 20) => {
-  try {
-    // Try backend first
-    const response = await apiClient.get('/places/search', {
-      params: {
-        q: query,
-        lat,
-        lng,
-        limit,
-      },
-    });
-    const data = response.data;
-
-    // Normalize shape from multiple providers so SearchPage can always compute routes.
-    const normalized = Array.isArray(data)
-      ? data
-      : (Array.isArray(data?.results) ? data.results : []);
-
-    return normalized.map((item, index) => {
-      const latValue = item.lat ?? item.latitude ?? item.location?.lat;
-      const lngValue = item.lng ?? item.longitude ?? item.location?.lng;
-
-      return {
-        ...item,
-        id: item.id || item.location_id || item.locationId || `place-${index}`,
-        location_id: item.location_id || item.locationId || item.id || `place-${index}`,
-        name: item.name || item.title || 'Địa điểm',
-        address: item.address || item.formatted_address || item.vicinity || '',
-        lat: latValue,
-        lng: lngValue,
-        latitude: item.latitude ?? latValue,
-        longitude: item.longitude ?? lngValue,
-        type: item.type || item.primaryType || item.category,
-        rating: item.rating,
-        imageUrl: item.imageUrl || item.image_url,
-        priceLevel: item.priceLevel ?? item.price_level,
-      };
-    });
-  } catch (error) {
-    console.error('Backend search failed, using Nominatim:', error);
-    // Fallback to Nominatim API for open-source search
-    try {
-      const nominatimResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          query
-        )}&format=json&limit=${limit}`
-      );
-      const data = await nominatimResponse.json();
-      return data.map((item) => ({
-        id: `nominatim-${item.osm_id}`,
-        name: item.display_name.split(',')[0],
-        address: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-        type: item.type,
-      }));
-    } catch (nominatimError) {
-      console.error('Nominatim search also failed:', nominatimError);
-      throw new Error('Không thể tìm kiếm địa điểm. Vui lòng thử lại.');
-    }
-  }
+  // Mock data for offline/frontend testing ONLY
+  const MOCK_PLACES = [
+    {
+      id: '1',
+      name: 'Hồ Gươm',
+      address: 'Hà Nội',
+      lat: 21.0285,
+      lng: 105.8542,
+      type: 'lake',
+      rating: 4.8,
+      imageUrl: 'https://via.placeholder.com/400x250?text=Ho+Guom',
+      priceLevel: 0,
+    },
+    {
+      id: '2',
+      name: 'Bến Nhà Rồng',
+      address: 'TP.HCM',
+      lat: 10.7626,
+      lng: 106.7041,
+      type: 'museum',
+      rating: 4.5,
+      imageUrl: 'https://via.placeholder.com/400x250?text=Ben+Nha+Rong',
+      priceLevel: 1,
+    },
+    {
+      id: '3',
+      name: 'Chùa Thiên Mụ',
+      address: 'Huế',
+      lat: 16.476,
+      lng: 107.579,
+      type: 'pagoda',
+      rating: 4.7,
+      imageUrl: 'https://via.placeholder.com/400x250?text=Thien+Mu',
+      priceLevel: 0,
+    },
+  ];
+  // Luôn trả về toàn bộ mock data
+  return MOCK_PLACES;
 };
 
 // Get nearby places

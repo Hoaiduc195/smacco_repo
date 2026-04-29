@@ -7,7 +7,7 @@ import PlaceCard from '../components/PlaceCard';
 import PlaceChatPanel from '../components/PlaceChatPanel';
 import SidebarOverlay from '../components/SidebarOverlay';
 import { searchPlaces, getNearbyPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
-import { getRecommendations } from '../services/recommendationService';
+// import { getRecommendations } from '../services/recommendationService';
 import { getRoute } from '../services/routingService';
 import { fetchPlaceImage } from '../services/serpService';
 import { useTravelData } from '../contexts/TravelDataContext';
@@ -52,6 +52,7 @@ export default function HomePage() {
   const [appState, setAppState] = useState(APP_STATES.IDLE);
   const [sidebarWidth, setSidebarWidth] = useState(384);
   const [isResizing, setIsResizing] = useState(false);
+    const [budget, setBudget] = useState('');
   const [mapInvalidateTick, setMapInvalidateTick] = useState(0);
   const invalidateTimerRef = useRef(null);
   const [pois, setPois] = useState([]);
@@ -62,34 +63,10 @@ export default function HomePage() {
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
 
-  // Unified Filter State
+  const [locationInput, setLocationInput] = useState('');
   const [placeType, setPlaceType] = useState('');
-  const [budget, setBudget] = useState('');
-  const [radius, setRadius] = useState('');
-
-  const PLACE_TYPES = [
-    { value: '', label: 'Tất cả loại' },
-    { value: 'hotel', label: 'Khách sạn' },
-    { value: 'hostel', label: 'Nhà nghỉ' },
-    { value: 'homestay', label: 'Homestay' },
-    { value: 'restaurant', label: 'Nhà hàng' },
-    { value: 'cafe', label: 'Cà phê' },
-  ];
-
-  const BUDGET_OPTIONS = [
-    { value: '', label: 'Ngân sách' },
-    { value: 'budget', label: 'Tiết kiệm' },
-    { value: 'midrange', label: 'Trung bình' },
-    { value: 'premium', label: 'Cao cấp' },
-  ];
-
-  const RADIUS_OPTIONS = [
-    { value: '', label: 'Bán kính' },
-    { value: '2', label: '2 km' },
-    { value: '5', label: '5 km' },
-    { value: '10', label: '10 km' },
-    { value: '20', label: '20 km' },
-  ];
+  const [rating, setRating] = useState('');
+  const [customNote, setCustomNote] = useState('');
 
   useEffect(() => {
     const syncMobile = () => {
@@ -312,9 +289,10 @@ export default function HomePage() {
   const getCurrentLocation = requestCurrentLocation;
 
   // Unified Search Logic
+  // Sử dụng mock data thay cho API thật
   const performUnifiedSearch = useCallback(async (query, filters = {}) => {
-    // If everything is empty, reset
-    if (!query.trim() && !filters.type && !filters.budget && !filters.radius) {
+    // Nếu không có gì, reset
+    if (!query.trim() && !filters.type && !filters.rating && !filters.locationInput && !filters.customNote) {
       setPlaces([]);
       setError('');
       setIsSidebarOpen(false);
@@ -329,14 +307,8 @@ export default function HomePage() {
       setError('');
       setIsSidebarOpen(true);
 
-      const results = await getRecommendations({
-        query: query.trim() || undefined,
-        location: userLocation ? `${userLocation.lat},${userLocation.lng}` : undefined,
-        type: filters.type || undefined,
-        budget: filters.budget || undefined,
-        radius: filters.radius || undefined,
-      });
-
+      // Gọi mock searchPlaces thay vì getRecommendations
+      const results = await searchPlaces(query.trim());
       setPlaces(results);
       setSelectedPlaceId(null);
       setRoute([]);
@@ -346,21 +318,17 @@ export default function HomePage() {
     } finally {
       setIsSearching(false);
     }
-  }, [userLocation, transitionTo]);
+  }, [transitionTo]);
 
-  // Handle search text changes
-  useEffect(() => {
-    if (rehydratedRef.current) {
-      rehydratedRef.current = false;
-      return;
-    }
-    
-    const timeoutId = setTimeout(() => {
-      performUnifiedSearch(searchQuery, { type: placeType, budget, radius });
-    }, 400);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, placeType, budget, radius, performUnifiedSearch]);
+  const handleSearchSubmit = useCallback((queryToSearch) => {
+    setSearchQuery(queryToSearch);
+    performUnifiedSearch(queryToSearch, {
+      type: placeType,
+      rating,
+      locationInput,
+      customNote,
+    });
+  }, [performUnifiedSearch, placeType, rating, locationInput, customNote, setSearchQuery]);
 
   const handleSearchInputChange = useCallback(
     (value) => {
@@ -522,7 +490,23 @@ export default function HomePage() {
         className="absolute top-0 left-0 right-0"
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onSearch={handleSearchSubmit}
         onSearchInputChange={handleSearchInputChange}
+        locationInput={locationInput}
+        setLocationInput={setLocationInput}
+        placeType={placeType}
+        setPlaceType={setPlaceType}
+        rating={rating}
+        setRating={setRating}
+        customNote={customNote}
+        setCustomNote={setCustomNote}
+        onClearFilters={() => {
+          setSearchQuery('');
+          setPlaceType('');
+          setRating('');
+          setLocationInput('');
+          setCustomNote('');
+        }}
       />
 
       <div className="absolute inset-0 bg-slate-100 overflow-hidden">
@@ -656,46 +640,9 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* Unified Search Filters */}
-              <div className="mb-4 grid grid-cols-3 gap-2">
-                <select
-                  value={placeType}
-                  onChange={(e) => setPlaceType(e.target.value)}
-                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
-                >
-                  {PLACE_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-                <select
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
-                >
-                  {BUDGET_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-                <select
-                  value={radius}
-                  onChange={(e) => setRadius(e.target.value)}
-                  className="text-xs h-9 bg-white border border-slate-200 rounded-lg px-2 outline-none focus:ring-2 focus:ring-cyan-300"
-                >
-                  {RADIUS_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-              </div>
 
               <div className="mb-3 rounded-xl border border-cyan-100 bg-cyan-50/80 px-3 py-2 text-xs text-cyan-800 flex items-center justify-between">
                 <p>Kết quả tìm kiếm & gợi ý</p>
-                {(placeType || budget || radius || searchQuery) && (
-                  <button 
-                    onClick={() => {
-                      setSearchQuery('');
-                      setPlaceType('');
-                      setBudget('');
-                      setRadius('');
-                    }}
-                    className="text-cyan-600 hover:text-cyan-800 font-medium"
-                  >
-                    Xóa lọc
-                  </button>
-                )}
               </div>
 
               {isSearching ? (

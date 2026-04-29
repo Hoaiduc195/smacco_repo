@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, Send, X, Loader2, RotateCcw } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, RotateCcw, Tag } from 'lucide-react';
 import useStreamingChat from '../hooks/useStreamingChat';
+import TaggedPlacesBar from './TaggedPlacesBar';
+import TagPlaceModal from './TagPlaceModal';
+import { useConversation } from '../contexts/ConversationContext';
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const {
     messages,
     input,
@@ -19,6 +24,7 @@ export default function ChatWidget() {
       { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
     ],
   });
+  const { tagPlace, conversations, selectConversation, selectedConversationId } = useConversation();
   const bottomRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -38,21 +44,93 @@ export default function ChatWidget() {
     abortStreaming();
   };
 
+  // Drag-and-drop: handle drop placeId
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const placeId = e.dataTransfer.getData('placeId');
+    if (placeId) tagPlace(placeId);
+    // Auto-open chat if not open
+    if (!isOpen) setIsOpen(true);
+  };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isDragOver) setIsDragOver(true);
+  };
+  const handleDragLeave = () => setIsDragOver(false);
+
   return (
     <div className="fixed bottom-3 sm:bottom-4 right-3 sm:right-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none">
       {isOpen && (
-        <div className="w-[min(24rem,calc(100vw-1.5rem))] h-[min(460px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden pointer-events-auto animate-chat-pop">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                <MessageCircle className="w-4 h-4" />
+        <div
+          className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-row overflow-hidden pointer-events-auto animate-chat-pop transition-all duration-300 ${isDragOver ? 'ring-4 ring-blue-400/60' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          {showHistory && (
+            <div className="w-56 border-r border-gray-200 bg-gray-50 flex flex-col relative shrink-0">
+              <div className="p-3 font-semibold text-gray-700 border-b flex justify-between items-center">
+                <span>Lịch sử chat</span>
+                <button
+                  type="button"
+                  onClick={() => setShowHistory(false)}
+                  className="p-1 rounded-md hover:bg-gray-200 text-gray-600"
+                  title="Đóng lịch sử"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">AI Chat</p>
-                <p className="text-xs text-gray-500">Hỏi gì cũng được về chuyến đi</p>
+              <div className="flex-1 overflow-y-auto">
+                {conversations && conversations.length > 0 ? (
+                  conversations.map((conv) => (
+                    <button
+                      key={conv.id}
+                      onClick={() => selectConversation(conv.id)}
+                      className={`w-full text-left px-4 py-3 border-b text-sm hover:bg-blue-50 transition-colors ${selectedConversationId === conv.id ? 'bg-blue-100 font-bold text-blue-900' : 'text-gray-700'}`}
+                    >
+                      {conv.title || `Hội thoại ${conv.id}`}
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-4 text-gray-400 text-sm text-center">Chưa có hội thoại nào</div>
+                )}
               </div>
             </div>
+          )}
+
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+              <div className="flex items-center gap-2">
+                {!showHistory && (
+                  <button
+                    type="button"
+                    onClick={() => setShowHistory(true)}
+                    className="p-1.5 mr-1 rounded-lg hover:bg-blue-100 text-blue-600 transition-colors"
+                    title="Mở lịch sử chat"
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                  </button>
+                )}
+                <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 line-clamp-1">AI Chat</p>
+                  <p className="text-xs text-gray-500 line-clamp-1">Hỏi gì cũng được về chuyến đi</p>
+                </div>
+              </div>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setShowTagModal(true)}
+                className="p-1 rounded-lg hover:bg-blue-100"
+                title="Tag địa điểm vào hội thoại"
+              >
+                <Tag className="w-4 h-4 text-blue-500" />
+              </button>
               <button
                 type="button"
                 onClick={clearConversation}
@@ -73,6 +151,9 @@ export default function ChatWidget() {
               </button>
             </div>
           </div>
+
+          {/* Bar hiển thị các địa điểm đã tag */}
+          <TaggedPlacesBar />
 
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50">
             {messages.map((msg, idx) => (
@@ -138,16 +219,18 @@ export default function ChatWidget() {
               </div>
             )}
           </form>
+          <TagPlaceModal open={showTagModal} onClose={() => setShowTagModal(false)} />
+          </div>
         </div>
       )}
 
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="w-14 h-14 rounded-full bg-blue-600 shadow-xl text-white flex items-center justify-center hover:bg-blue-700 pointer-events-auto animate-floaty"
+        className={`w-14 h-14 rounded-full shadow-xl text-white flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 ${isOpen ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'}`}
         title={isOpen ? 'Đóng chat' : 'Mở chat'}
       >
-        <MessageCircle className="w-6 h-6" />
+        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
       </button>
     </div>
   );

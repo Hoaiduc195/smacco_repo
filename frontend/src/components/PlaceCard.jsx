@@ -35,6 +35,29 @@ export default function PlaceCard({
       onClick={onSelect}
       role="button"
       tabIndex={0}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('placeId', place.id);
+        e.dataTransfer.effectAllowed = 'copy';
+        // Custom drag preview: only icon + text
+        const dragPreview = document.createElement('div');
+        dragPreview.style.position = 'absolute';
+        dragPreview.style.top = '-1000px';
+        dragPreview.style.left = '-1000px';
+        dragPreview.style.padding = '8px 16px';
+        dragPreview.style.background = '#fff';
+        dragPreview.style.borderRadius = '9999px';
+        dragPreview.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+        dragPreview.style.fontWeight = 'bold';
+        dragPreview.style.fontSize = '14px';
+        dragPreview.style.color = '#2563eb';
+        dragPreview.style.display = 'flex';
+        dragPreview.style.alignItems = 'center';
+        dragPreview.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='#2563eb' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='10' r='3'/><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/></svg>` + `<span style='margin-left:8px;'>${place.name}</span>`;
+        document.body.appendChild(dragPreview);
+        e.dataTransfer.setDragImage(dragPreview, 10, 18);
+        setTimeout(() => document.body.removeChild(dragPreview), 0);
+      }}
     >
       <div className="flex gap-3">
         <img
