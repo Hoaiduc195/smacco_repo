@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api/v1';
 export const chat = async ({ text, conversationId } = {}) => {
   const response = await apiClient.post('/ai/chat', {
     text,
-    conversation_id: conversationId,
+    conversationId,
   });
   return response.data;
 };
@@ -32,7 +32,7 @@ export const streamChat = async ({
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ text, conversation_id: conversationId }),
+    body: JSON.stringify({ text, conversationId }),
     signal,
   });
 
@@ -63,7 +63,7 @@ export const streamChat = async ({
           continue;
         }
         onChunk?.(parsed);
-        if (parsed.finish_reason) {
+        if (parsed.finishReason || parsed.finish_reason) {
           onDone?.(parsed);
         }
       } catch (err) {

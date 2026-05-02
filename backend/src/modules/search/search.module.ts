@@ -3,7 +3,6 @@ import { HttpModule } from '@nestjs/axios';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { PlacesModule } from '../places/places.module';
-import { GoogleMapsService } from './google-maps.service';
 import { OsmPlacesService } from './osm-places.service';
 import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
 
@@ -18,12 +17,11 @@ import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
   controllers: [SearchController],
   providers: [
     SearchService,
-    GoogleMapsService,
     OsmPlacesService,
     {
       provide: ACCOMMODATION_PROVIDERS,
-      useFactory: (google: GoogleMapsService, osm: OsmPlacesService) => [google, osm],
-      inject: [GoogleMapsService, OsmPlacesService],
+      useFactory: (osm: OsmPlacesService) => [osm],
+      inject: [OsmPlacesService],
     },
   ],
   exports: [SearchService],

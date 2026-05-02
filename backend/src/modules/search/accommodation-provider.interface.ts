@@ -1,4 +1,7 @@
-import { LatLngLiteral } from '@googlemaps/google-maps-services-js';
+export interface LatLngLiteral {
+  lat: number;
+  lng: number;
+}
 
 export interface PlaceResult {
   locationId: string;
@@ -14,6 +17,7 @@ export interface PlaceResult {
 
 export interface SearchParams {
   query?: string;
+  type?: string;
   location?: LatLngLiteral;
   radius?: number;
   budget?: 'low' | 'mid' | 'high';

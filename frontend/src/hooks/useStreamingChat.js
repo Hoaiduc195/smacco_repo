@@ -7,6 +7,7 @@ export default function useStreamingChat({
   initialMessages = [],
   initialConversationId = null,
   buildPrompt,
+  onSearchAction,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
@@ -59,13 +60,16 @@ export default function useStreamingChat({
             setIsStreaming(false);
             return;
           }
-          if (chunk?.conversation_id) {
-            setConversationId((prev) => prev || chunk.conversation_id);
+          if (chunk?.searchAction && typeof onSearchAction === 'function') {
+            onSearchAction(chunk.searchAction);
+          }
+          if (chunk?.conversationId || chunk?.conversation_id) {
+            setConversationId((prev) => prev || chunk.conversationId || chunk.conversation_id);
           }
           if (chunk?.delta) {
             appendAssistantDelta(chunk.delta);
           }
-          if (chunk?.finish_reason) {
+          if (chunk?.finishReason || chunk?.finish_reason) {
             setIsStreaming(false);
           }
         },

@@ -168,17 +168,28 @@ model Chunk {
 
 model Conversation {
   id        String   @id @default(uuid()) @db.Uuid
-  placeId   String   @map("place_id") @db.Uuid
   userId    String?  @map("user_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
-  place Place   @relation(fields: [placeId], references: [id], onDelete: Cascade)
   user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
   messages Message[]
+  placeReferences ConversationPlaceReference[]
 
   @@map("conversations")
-  @@index([placeId], map: "idx_conversations_place_id")
 }
+
+model ConversationPlaceReference {
+  id              String   @id @default(uuid()) @db.Uuid
+  conversationId  String   @map("conversation_id") @db.Uuid
+  placeId         String   @map("place_id") @db.Uuid
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  place         Place        @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("conversation_place_references")
+  @@index([conversationId], map: "idx_cpr_conversation_id")
+  @@index([placeId], map: "idx_cpr_place_id")
+  @@unique([conversationId, placeId], map: "uq_cpr_conversation_place")
 
 model Message {
   id               String   @id @default(uuid()) @db.Uuid

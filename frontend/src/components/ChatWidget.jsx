@@ -23,6 +23,10 @@ export default function ChatWidget() {
     initialMessages: [
       { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
     ],
+    onSearchAction: (action) => {
+      // Dispatch custom event so HomePage can intercept and perform the search
+      window.dispatchEvent(new CustomEvent('app:ai-search', { detail: action }));
+    }
   });
   const { tagPlace, conversations, selectConversation, selectedConversationId } = useConversation();
   const bottomRef = useRef(null);

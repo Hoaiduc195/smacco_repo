@@ -21,7 +21,12 @@ export class OsmPlacesService implements AccommodationProvider {
   }
 
   async searchAccommodations(params: SearchParams): Promise<PlaceResult[]> {
-    const query = params.query?.trim() || 'hotel';
+    let defaultTerm = 'places';
+    if (params.type === 'accommodation') defaultTerm = 'hotel';
+    else if (params.type === 'food') defaultTerm = 'restaurant';
+    else if (params.type === 'attraction') defaultTerm = 'attraction';
+
+    const query = params.query?.trim() || defaultTerm;
 
     const searchParams: any = {
       q: query,

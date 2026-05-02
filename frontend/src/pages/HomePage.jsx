@@ -342,6 +342,29 @@ export default function HomePage() {
   );
 
   useEffect(() => {
+    const handleAiSearch = (e) => {
+      const filters = e.detail;
+      const query = filters.query || '';
+      
+      // Update Navbar states so the UI reflects the AI's parsed search
+      setSearchQuery(query);
+      if (filters.type) setPlaceType(filters.type);
+      if (filters.location) setLocationInput(filters.location);
+      if (filters.budget) setCustomNote(filters.budget === 'cheap' ? 'Giá rẻ' : filters.budget === 'medium' ? 'Tầm trung' : 'Sang trọng');
+
+      performUnifiedSearch(query, {
+        type: filters.type || placeType,
+        locationInput: filters.location || locationInput,
+        customNote: filters.budget || customNote,
+        rating
+      });
+    };
+
+    window.addEventListener('app:ai-search', handleAiSearch);
+    return () => window.removeEventListener('app:ai-search', handleAiSearch);
+  }, [performUnifiedSearch, placeType, locationInput, customNote, rating]);
+
+  useEffect(() => {
     const payload = { searchQuery, places, userLocation };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [searchQuery, places, userLocation]);

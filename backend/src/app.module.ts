@@ -6,7 +6,6 @@ import { PrismaModule } from './prisma/prisma.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import firebaseConfig from './config/firebase.config';
-import googleConfig from './config/google.config';
 import osmConfig from './config/osm.config';
 import groqConfig from './config/groq.config';
 
@@ -18,7 +17,6 @@ import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
 
 // Feature modules — ported from Python services
-import { ChatModule } from './modules/chat/chat.module';
 import { AiModule } from './modules/ai/ai.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 
@@ -32,7 +30,7 @@ import { ContributionsModule } from './modules/contributions/contributions.modul
     // ── Configuration ─────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, firebaseConfig, googleConfig, osmConfig, groqConfig],
+      load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig],
     }),
 
     // ── Database ──────────────────────────────────
@@ -46,7 +44,6 @@ import { ContributionsModule } from './modules/contributions/contributions.modul
     HealthModule,
 
     // ── Ported modules (from Python services) ─────
-    ChatModule,
     AiModule,
     RecommendationsModule,
 

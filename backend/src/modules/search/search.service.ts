@@ -37,6 +37,7 @@ export class SearchService {
       const providerRequests = this.providers.map((provider) =>
         provider.searchAccommodations({
           query,
+          type: filters.type,
           budget,
           latitude: filters.latitude,
           longitude: filters.longitude,

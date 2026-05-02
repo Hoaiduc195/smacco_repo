@@ -16,4 +16,5 @@ export interface StreamChunkDto {
   conversationId: string;
   delta: string;
   finishReason?: string;
+  searchAction?: any;
 }
