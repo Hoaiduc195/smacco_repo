@@ -15,45 +15,34 @@ const POI_FILTERS = {
  */
 
 // Search places using backend API or Nominatim for fallback
-export const searchPlaces = async (query, lat, lng, limit = 20) => {
-  // Mock data for offline/frontend testing ONLY
-  const MOCK_PLACES = [
-    {
-      id: '1',
-      name: 'Hồ Gươm',
-      address: 'Hà Nội',
-      lat: 21.0285,
-      lng: 105.8542,
-      type: 'lake',
-      rating: 4.8,
-      imageUrl: 'https://via.placeholder.com/400x250?text=Ho+Guom',
-      priceLevel: 0,
-    },
-    {
-      id: '2',
-      name: 'Bến Nhà Rồng',
-      address: 'TP.HCM',
-      lat: 10.7626,
-      lng: 106.7041,
-      type: 'museum',
-      rating: 4.5,
-      imageUrl: 'https://via.placeholder.com/400x250?text=Ben+Nha+Rong',
-      priceLevel: 1,
-    },
-    {
-      id: '3',
-      name: 'Chùa Thiên Mụ',
-      address: 'Huế',
-      lat: 16.476,
-      lng: 107.579,
-      type: 'pagoda',
-      rating: 4.7,
-      imageUrl: 'https://via.placeholder.com/400x250?text=Thien+Mu',
-      priceLevel: 0,
-    },
-  ];
-  // Luôn trả về toàn bộ mock data
-  return MOCK_PLACES;
+export const searchPlaces = async (query, filters = {}) => {
+  try {
+    const response = await apiClient.get('/search', {
+      params: {
+        q: query || undefined,
+        type: filters.type || undefined,
+        location: filters.locationInput || undefined,
+        budget: filters.budget || undefined,
+      },
+    });
+    
+    // Transform backend PlaceResult to the expected frontend format
+    return response.data.map(place => ({
+      id: place.locationId,
+      name: place.name,
+      address: place.address,
+      lat: place.location?.lat,
+      lng: place.location?.lng,
+      type: place.types?.[0] || 'default',
+      rating: place.rating,
+      priceLevel: place.priceLevel,
+      source: place.source,
+      sourcePlaceId: place.sourcePlaceId
+    }));
+  } catch (error) {
+    console.error('Error searching places:', error);
+    throw new Error('Không thể tìm kiếm địa điểm. Vui lòng thử lại.');
+  }
 };
 
 // Get nearby places

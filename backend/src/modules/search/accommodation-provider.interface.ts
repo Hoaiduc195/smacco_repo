@@ -13,6 +13,8 @@ export interface PlaceResult {
   priceLevel?: number;
   types?: string[];
   imageUrl?: string;
+  source?: string;
+  sourcePlaceId?: string;
 }
 
 export interface SearchParams {

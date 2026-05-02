@@ -34,7 +34,6 @@ export default function Navbar({
   locationInput, setLocationInput,
   placeType, setPlaceType,
   rating, setRating,
-  customNote, setCustomNote,
   onClearFilters
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -120,7 +119,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showFilters || placeType || rating || locationInput || customNote ? 'text-cyan-600 bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showFilters || placeType || rating || locationInput ? 'text-cyan-600 bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
               title="Bộ lọc nâng cao"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -136,7 +135,7 @@ export default function Navbar({
                 <SlidersHorizontal className="w-4 h-4 text-cyan-600" />
                 Bộ lọc tìm kiếm
               </h3>
-              {(placeType || rating || locationInput || customNote || localSearchQuery) && (
+              {(placeType || rating || locationInput || localSearchQuery) && (
                 <button
                   type="button"
                   onClick={() => {
@@ -185,18 +184,6 @@ export default function Navbar({
                 >
                   {RATING_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
-              </div>
-
-              {/* Ghi chú custom */}
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-slate-700">Yêu cầu đặc biệt</label>
-                <input
-                  type="text"
-                  value={customNote}
-                  onChange={e => setCustomNote(e.target.value)}
-                  placeholder="Ví dụ: gần biển, có bãi đỗ xe..."
-                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none"
-                />
               </div>
             </div>
             

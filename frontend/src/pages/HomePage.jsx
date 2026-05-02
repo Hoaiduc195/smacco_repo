@@ -326,9 +326,8 @@ export default function HomePage() {
       type: placeType,
       rating,
       locationInput,
-      customNote,
     });
-  }, [performUnifiedSearch, placeType, rating, locationInput, customNote, setSearchQuery]);
+  }, [performUnifiedSearch, placeType, rating, locationInput, setSearchQuery]);
 
   const handleSearchInputChange = useCallback(
     (value) => {
@@ -767,3 +766,4 @@ export default function HomePage() {
     </div>
   );
 }
+

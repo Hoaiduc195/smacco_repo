@@ -21,12 +21,25 @@ export class PlacesService {
     return this.prisma.place.create({ data });
   }
 
-  async findAll(filters?: { type?: string; city?: string }) {
+  async findAll(filters?: { type?: string; city?: string; q?: string }) {
     const where: any = {};
     if (filters?.type) where.type = filters.type;
-    if (filters?.city) {
-      where.addressCache = { contains: filters.city, mode: 'insensitive' };
+    
+    if (filters?.city && filters?.q) {
+      // If both city and q are provided, search for either name matching q OR address matching city
+      where.OR = [
+        { placeName: { contains: filters.q, mode: 'insensitive' } },
+        { placeAddress: { contains: filters.city, mode: 'insensitive' } }
+      ];
+    } else {
+      if (filters?.city) {
+        where.placeAddress = { contains: filters.city, mode: 'insensitive' };
+      }
+      if (filters?.q) {
+        where.placeName = { contains: filters.q, mode: 'insensitive' };
+      }
     }
+
     return this.prisma.place.findMany({ where });
   }
 

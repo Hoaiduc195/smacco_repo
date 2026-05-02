@@ -33,7 +33,11 @@ export class SearchService {
 
     this.logger.log(`Searching for: "${query}" with budget: ${budget || 'any'}`);
 
+    let externalResults: PlaceResult[] = [];
+    let localResults: PlaceResult[] = [];
+
     try {
+      // 1. Execute DB search and External Provider searches concurrently
       const providerRequests = this.providers.map((provider) =>
         provider.searchAccommodations({
           query,
@@ -44,42 +48,92 @@ export class SearchService {
         }),
       );
 
-      const resultsArray = await Promise.allSettled(providerRequests);
+      const dbRequest = this.placesService.findAll({
+        type: filters.type,
+        city: filters.location,
+        q: filters.q,
+      });
 
-      const allResults: PlaceResult[] = resultsArray
-        .filter((res): res is PromiseFulfilledResult<PlaceResult[]> => res.status === 'fulfilled')
-        .flatMap((res) => res.value);
+      const [dbPlaces, ...resultsArray] = await Promise.all([
+        dbRequest.catch(err => {
+          this.logger.error(`Database search failed: ${err.message}`);
+          return []; // Return empty array on DB failure to not block external search
+        }),
+        ...providerRequests.map(p => p.catch(err => {
+          this.logger.error(`External provider search failed: ${err.message}`);
+          return []; // Return empty array on provider failure
+        }))
+      ]);
 
-      if (allResults.length > 0) {
-        return this.deduplicateResults(allResults);
-      }
+      // 2. Process Local Results
+      localResults = (dbPlaces as any[]).map((p: any): PlaceResult => ({
+        locationId: p.id,
+        sourcePlaceId: p.sourcePlaceId, // Keep source ID to deduplicate against external
+        name: p.placeName || 'Unknown',
+        address: p.placeAddress,
+        location: p.lat && p.lng ? { lat: p.lat, lng: p.lng } : undefined,
+        types: p.categories,
+        source: p.source || 'internal', // Mark as internal
+      }));
+
+      // 3. Process External Results
+      externalResults = resultsArray.flatMap(res => res as PlaceResult[]);
+
     } catch (error) {
-      this.logger.error(`Search process failed: ${(error as any).message}`);
+      this.logger.error(`Search process failed critically: ${(error as any).message}`);
     }
 
-    this.logger.log('No results from external providers, falling back to local database');
-    const dbPlaces = await this.placesService.findAll({
-      type: filters.type,
-      city: filters.location,
-    });
-
-    return dbPlaces.map((p: any): PlaceResult => ({
-      locationId: p.id,
-      name: p.placeName || 'Unknown',
-      address: p.placeAddress,
-      location: p.lat && p.lng ? { lat: p.lat, lng: p.lng } : undefined,
-      types: p.categories,
-    }));
+    // 4. Merge and Deduplicate (Prioritizing Local Results)
+    return this.mergeAndPrioritizeLocal(localResults, externalResults);
   }
 
-  private deduplicateResults(results: PlaceResult[]): PlaceResult[] {
-    const seen = new Set();
-    return results.filter((item) => {
-      const duplicateKey = item.locationId || `${item.name}-${item.location?.lat}-${item.location?.lng}`;
-      if (seen.has(duplicateKey)) return false;
-      seen.add(duplicateKey);
-      return true;
-    });
+  private mergeAndPrioritizeLocal(localResults: PlaceResult[], externalResults: PlaceResult[]): PlaceResult[] {
+    const finalResults: PlaceResult[] = [...localResults];
+    const seenKeys = new Set<string>();
+
+    // 1. Add all local results to the "seen" set
+    for (const localPlace of localResults) {
+      // Create a composite key for local places: usually by sourcePlaceId if it came from an external source originally
+      if (localPlace.sourcePlaceId) {
+        seenKeys.add(localPlace.sourcePlaceId);
+      }
+      
+      // Also index by name + coordinates to catch rough matches
+      if (localPlace.location?.lat && localPlace.location?.lng) {
+        const coordKey = `${localPlace.name.toLowerCase()}-${localPlace.location.lat.toFixed(3)}-${localPlace.location.lng.toFixed(3)}`;
+        seenKeys.add(coordKey);
+      }
+    }
+
+    // 2. Iterate through external results and only add if they haven't been "seen" in local DB
+    for (const extPlace of externalResults) {
+      const extSourceId = extPlace.locationId; // Assuming locationId from external is the source ID
+      
+      let isDuplicate = false;
+      
+      if (extSourceId && seenKeys.has(extSourceId)) {
+        isDuplicate = true;
+      }
+      
+      if (!isDuplicate && extPlace.location?.lat && extPlace.location?.lng) {
+        const coordKey = `${extPlace.name.toLowerCase()}-${extPlace.location.lat.toFixed(3)}-${extPlace.location.lng.toFixed(3)}`;
+        if (seenKeys.has(coordKey)) {
+          isDuplicate = true;
+        }
+      }
+
+      if (!isDuplicate) {
+        finalResults.push(extPlace);
+        
+        // Mark as seen to deduplicate against other external providers
+        if (extSourceId) seenKeys.add(extSourceId);
+        if (extPlace.location?.lat && extPlace.location?.lng) {
+          seenKeys.add(`${extPlace.name.toLowerCase()}-${extPlace.location.lat.toFixed(3)}-${extPlace.location.lng.toFixed(3)}`);
+        }
+      }
+    }
+
+    return finalResults;
   }
 
   private normalizeBudget(budget?: string): 'low' | 'mid' | 'high' | undefined {

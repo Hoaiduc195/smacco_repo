@@ -54,8 +54,15 @@ export default function ChatWidget() {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    const placeId = e.dataTransfer.getData('placeId');
-    if (placeId) tagPlace(placeId);
+    const placeData = e.dataTransfer.getData('placeData');
+    if (placeData) {
+      try {
+        const place = JSON.parse(placeData);
+        tagPlace(place);
+      } catch (err) {
+        console.error('Lỗi khi parse placeData', err);
+      }
+    }
     // Auto-open chat if not open
     if (!isOpen) setIsOpen(true);
   };

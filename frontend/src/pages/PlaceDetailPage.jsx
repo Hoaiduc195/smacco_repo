@@ -122,16 +122,12 @@ export default function PlaceDetailPage() {
       )}
 
       {/* Hero Section */}
-      <div className="relative h-[300px] sm:h-[450px] w-full overflow-hidden group">
-        <img 
-          src={place.imageUrl || placeholderImg} 
-          alt={place.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+      <div className="relative h-[300px] sm:h-[450px] w-full overflow-hidden group bg-slate-200 flex items-center justify-center">
+        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==')]"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-        
-        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12">          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {place.categories?.map(cat => (
