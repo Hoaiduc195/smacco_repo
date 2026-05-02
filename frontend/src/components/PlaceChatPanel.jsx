@@ -1,4 +1,5 @@
 import { X, Send, Loader2, RotateCcw } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 
 export default function PlaceChatPanel({ place, onClose }) {
@@ -59,13 +60,13 @@ export default function PlaceChatPanel({ place, onClose }) {
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] px-3 py-2 rounded-2xl whitespace-pre-wrap animate-chat-message ${
+              className={`max-w-[85%] px-3 py-2 rounded-2xl animate-chat-message ${
                 msg.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
+                  ? 'bg-blue-600 text-white rounded-br-sm whitespace-pre-wrap'
+                  : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm prose prose-sm prose-blue max-w-none'
               }`}
             >
-              {msg.content}
+              {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
             </div>
           </div>
         ))}

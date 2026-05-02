@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, Send, X, Loader2, RotateCcw, Tag } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import TaggedPlacesBar from './TaggedPlacesBar';
 import TagPlaceModal from './TagPlaceModal';
@@ -173,13 +174,19 @@ export default function ChatWidget() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap shadow-sm animate-chat-message ${
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm'
+                      ? 'bg-blue-600 text-white rounded-br-sm whitespace-pre-wrap'
+                      : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm prose prose-sm prose-blue max-w-none'
                   }`}
                 >
-                  {msg.content || (isStreaming && msg.role === 'assistant' ? 'Đang soạn...' : '')}
+                  {msg.role === 'user' ? (
+                    msg.content
+                  ) : (
+                    <ReactMarkdown>
+                      {msg.content || (isStreaming && msg.role === 'assistant' ? 'Đang soạn...' : '')}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}

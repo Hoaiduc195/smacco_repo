@@ -35,12 +35,17 @@ export class GroqClientService {
    */
   async chat(
     messages: ChatMessage[],
+    options?: { response_format?: { type: string } }
   ): Promise<{ content: string; finishReason?: string; usage?: Record<string, number> }> {
-    const payload = {
+    const payload: any = {
       model: this.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       stream: false,
     };
+
+    if (options?.response_format) {
+      payload.response_format = options.response_format;
+    }
 
     const response = await axios.post(`${this.baseUrl}/chat/completions`, payload, {
       headers: this.headers(),

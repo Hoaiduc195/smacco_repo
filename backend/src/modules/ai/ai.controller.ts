@@ -7,7 +7,7 @@ import { NlpService } from './nlp.service';
 import { RecommendationsService } from '../recommendations/recommendations.service';
 import { ParseRequestDto } from './dto/parse-request.dto';
 import { ParseResponseDto } from './dto/parse-response.dto';
-import { ChatService } from './chat.service';
+import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 import { ChatRequestDto } from './dto/chat-request.dto';
 
 @ApiTags('AI')
@@ -16,7 +16,7 @@ export class AiController {
   constructor(
     private readonly nlpService: NlpService,
     private readonly recommendationsService: RecommendationsService,
-    private readonly chatService: ChatService,
+    private readonly orchestrator: AiOrchestratorService,
   ) {}
 
   @Post('parse')
@@ -50,10 +50,10 @@ export class AiController {
   @ApiOperation({ summary: 'Send a chat message to the AI assistant' })
   async chat(@Body() request: ChatRequestDto) {
     try {
-      return await this.chatService.chat(request);
+      return await this.orchestrator.processQuery(request);
     } catch (error) {
       throw new HttpException(
-        `Chat service error: ${(error as Error).message}`,
+        `Orchestrator error: ${(error as Error).message}`,
         HttpStatus.BAD_GATEWAY,
       );
     }
@@ -68,7 +68,7 @@ export class AiController {
     res.setHeader('X-Accel-Buffering', 'no');
 
     try {
-      for await (const chunk of this.chatService.streamChat(request)) {
+      for await (const chunk of this.orchestrator.streamQuery(request)) {
         const payload = JSON.stringify(chunk);
         res.write(`data: ${payload}\n\n`);
       }

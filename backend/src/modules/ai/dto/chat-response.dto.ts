@@ -10,6 +10,7 @@ export interface ChatResponseDto {
   usagePromptTokens?: number;
   usageCompletionTokens?: number;
   messages?: ChatMessage[];
+  searchAction?: any;
 }
 
 export interface StreamChunkDto {
