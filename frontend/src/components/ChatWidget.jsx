@@ -75,13 +75,12 @@ export default function ChatWidget() {
 
   return (
     <div className="fixed bottom-3 sm:bottom-4 right-3 sm:right-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none">
-      {isOpen && (
-        <div
-          className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-row overflow-hidden pointer-events-auto animate-chat-pop transition-all duration-300 ${isDragOver ? 'ring-4 ring-blue-400/60' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
+      <div
+        className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-blue-400/60' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
           {showHistory && (
             <div className="w-56 border-r border-gray-200 bg-gray-50 flex flex-col relative shrink-0">
               <div className="p-3 font-semibold text-gray-700 border-b flex justify-between items-center">
@@ -240,7 +239,6 @@ export default function ChatWidget() {
           <TagPlaceModal open={showTagModal} onClose={() => setShowTagModal(false)} />
           </div>
         </div>
-      )}
 
       <button
         type="button"
