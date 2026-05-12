@@ -7,7 +7,7 @@ description: >
 license: MIT
 metadata:
   author: Hoaiduc195
-  version: 2.0.0
+  version: 3.0.0
 ---
 
 # Persistent Project Memory System (PPMS)
@@ -24,10 +24,18 @@ All memory files are stored in the `.ppms/` directory at the project root:
 
 ```
 .ppms/
-├── architecture.md          # Full architecture description
-├── architecture-short.md    # Condensed version for quick AI reading
-└── log.md                   # Chronological changelog
+├── architecture-<branch>.md   # Full architecture description (per branch)
+└── log-<branch>.md            # Chronological changelog (per branch)
 ```
+
+**Branch naming convention**: The `<branch>` part is derived from the current
+git branch name by replacing `/` with `-`.
+Examples:
+- Branch `main` -> `architecture-main.md`, `log-main.md`
+- Branch `feat/improve_parsing` -> `architecture-feat-improve-parsing.md`, `log-feat-improve-parsing.md`
+- Branch `fix/auth-bug` -> `architecture-fix-auth-bug.md`, `log-fix-auth-bug.md`
+
+To get the current branch name, run: `git branch --show-current`
 
 If the `.ppms/` directory or any of the files do not exist, the agent **MUST create them automatically**.
 
@@ -37,24 +45,27 @@ If the `.ppms/` directory or any of the files do not exist, the agent **MUST cre
 
 When starting a session, if `.ppms/` or any files inside are missing:
 
-1. **Scan the entire project** to understand the architecture:
+1. **Determine current branch** by running `git branch --show-current`.
+
+2. **Scan the entire project** to understand the architecture:
    - Read `package.json`, `tsconfig.json`, `prisma/schema.prisma`, `docker-compose.yml`, and other config files (if they exist).
    - Browse directory structure: `src/`, `app/`, `pages/`, `api/`, `server/`, `client/`, etc.
    - Identify frameworks, libraries, and technologies in use.
    - Discover API routes/endpoints, database schemas, and main modules.
 
-2. **Create all 3 files** following the formats defined below.
+3. **Create the required files** following the formats defined below.
 
 ---
 
 ## File Formats
 
-### 1. `.ppms/architecture.md` — Full Architecture
+### 1. `.ppms/architecture-<branch>.md` — Full Architecture
 
 ```md
 # Project Architecture: [Project Name]
 
 > Last updated: [YYYY-MM-DD HH:MM]
+> Branch: [branch-name]
 
 ## Overview
 Brief description of the project's purpose (1-3 sentences).
@@ -110,41 +121,9 @@ Describe main tables/collections and their relationships.
 
 ---
 
-### 2. `.ppms/architecture-short.md` — Condensed Architecture
+### 2. `.ppms/log-<branch>.md` — Changelog
 
-A short version of `architecture.md`, **max 50 lines**, so the AI can read it in seconds:
-
-```md
-# [Project Name] — Quick Architecture Reference
-
-> Updated: [YYYY-MM-DD HH:MM]
-
-## Stack
-- FE: [framework] | BE: [framework] | DB: [database] | ORM: [orm]
-
-## Modules
-- **Frontend**: [module1], [module2], …
-- **Backend**: [module1], [module2], …
-
-## Key Endpoints
-- `GET /api/…` → …
-- `POST /api/…` → …
-
-## DB Tables
-- `users`, `posts`, … (key relationships)
-
-## Completed Features
-- Feature 1, Feature 2, …
-
-## In Progress
-- Feature X
-```
-
----
-
-### 3. `.ppms/log.md` — Changelog
-
-Records all changes in chronological order (newest entries at the top):
+Records all changes for the current branch in chronological order (newest entries at the top):
 
 ```md
 # Project Changelog
@@ -153,6 +132,7 @@ Records all changes in chronological order (newest entries at the top):
 
 ## [YYYY-MM-DD HH:MM] — Short title
 
+- **Branch**: `branch-name`
 - **Prompt**: Summary of the user's request (1-2 sentences)
 - **Changes**:
   - Change description 1
@@ -171,24 +151,28 @@ Records all changes in chronological order (newest entries at the top):
 
 ### BEFORE each task
 
-1. Read `.ppms/architecture-short.md` for quick project context.
-2. If more detail is needed, read `.ppms/architecture.md`.
-3. Read `.ppms/log.md` (last 5-10 entries) to understand recent changes.
+1. Determine the current branch with `git branch --show-current`.
+2. Read `.ppms/architecture-<branch>.md` for project context.
+   - If the file for this branch doesn't exist yet, check if another branch's
+     architecture file exists and use it as a starting point, then create the
+     new branch-specific file.
+3. Read `.ppms/log-<branch>.md` (last 5-10 entries) to understand recent changes.
+   - If the log file for this branch doesn't exist yet, create a new one.
 
 ### DURING the task
 
 - Track all architectural changes, new files, deleted files, new endpoints, etc.
-- If changes affect the architecture, plan to update the architecture files.
+- If changes affect the architecture, plan to update the architecture file.
 
 ### AFTER each task (MANDATORY)
 
 The agent **MUST complete ALL** of the following steps before ending the session:
 
-#### Step 1: Update `.ppms/log.md`
+#### Step 1: Update `.ppms/log-<branch>.md`
 - Add a new entry **at the top of the file** (after the title) using the format above.
 - Use the user's local timezone for the timestamp.
 
-#### Step 2: Update `.ppms/architecture.md` (if architecture changed)
+#### Step 2: Update `.ppms/architecture-<branch>.md` (if architecture changed)
 Update if any of the following occurred:
 - Added/removed/changed a dependency or framework
 - Added/removed/modified an API endpoint
@@ -196,9 +180,6 @@ Update if any of the following occurred:
 - Added/removed a module, component, or service
 - Changed database schema
 - Added a new feature or completed an existing one
-
-#### Step 3: Update `.ppms/architecture-short.md`
-- Keep it in sync with `architecture.md` but concise.
 
 ---
 
@@ -212,7 +193,7 @@ The agent must update PPMS when:
    - "update architecture"
    - "refresh ppms"
 
-When triggered on request, the agent must **re-scan the entire project** and update all 3 files.
+When triggered on request, the agent must **re-scan the entire project** and update all files.
 
 ---
 
@@ -220,8 +201,9 @@ When triggered on request, the agent must **re-scan the entire project** and upd
 
 1. **NEVER** skip updating PPMS after making code changes.
 2. **DO NOT** place memory files outside the `.ppms/` directory.
-3. **DO NOT** delete old entries in `log.md` — only add new ones at the top.
+3. **DO NOT** delete old entries in log files — only add new ones at the top.
 4. **ALWAYS** check if `.ppms/` exists before reading/writing.
-5. If unsure whether architecture changed → **update it to be safe**.
-6. Timestamps in `log.md` must use the user's local timezone.
-7. `architecture-short.md` must always stay in sync with `architecture.md`.
+5. If unsure whether architecture changed -> **update it to be safe**.
+6. Timestamps in log files must use the user's local timezone.
+7. **Both architecture and log files are branch-specific.** Always use the correct branch name in the filename.
+8. When switching branches, read the architecture and log files for that branch. If they don't exist, create new ones (architecture can optionally be based on the closest parent branch's file).
