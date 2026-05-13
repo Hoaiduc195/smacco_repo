@@ -41,66 +41,86 @@ A modular monolith web application for discovering accommodations and dining spo
   - `TagPlaceModal` / `TaggedPlacesBar` — Place tagging UI
   - `ProtectedRoute` — Auth guard wrapper
   - `ErrorBoundary` — Error boundary component
-- **Services** (12):
-  - `api.js` — Axios base instance
-  - `aiService.js` — AI chat & parse endpoints
-  - `placeService.js` — Place CRUD & search
-  - `checkInService.js` — Presence check-in/out
-  - `ownedPlaceService.js` — User-owned place management
-  - `recommendationService.js` — Recommendation API calls
-  - `routingService.js` — Directions / routing
-  - `serpService.js` — Search engine results
-  - `userProfileService.js` — User profile operations
-  - `firebase.js` — Firebase client init
-  - `firestoreError.js` — Firestore error handler (+ test)
-- **Hooks** (3): `useDebounce`, `useStreamingChat` (+ test)
-- **Layouts** (1): `MainLayout`
+# Project Architecture: AI Travel Assistant (mono repo)
+
+> Last updated: 2026-05-13 15:10
+> Branch: feat/improve_parsing
+
+## Overview
+
+This repository implements an AI-assisted travel/places search and recommendation system. It provides a web frontend (React + Vite) and a NestJS backend that orchestrates AI workflows (intent routing, tool execution, response composition), hybrid search (SQL + vector), and recommendation scoring.
+
+## Tech Stack
+
+| Component   | Technology                 | Version / Notes |
+|-------------|---------------------------:|-----------------:|
+| Frontend    | React, Vite, TailwindCSS   | —                |
+| Backend     | NestJS (TypeScript)        | —                |
+| Database    | PostgreSQL                 | —                |
+| Vector DB  | pgvector (extension)       | stored in Postgres |
+| ORM         | Prisma                     | migrations in `prisma/` |
+| LLM / AI    | Groq (external LLM) / LLM prompts in `ai/` | — |
+| Dev / Infra | Docker Compose             | `docker-compose*.yml` |
+
+## System Architecture
+
+### Frontend
+- **Framework**: React + Vite
+- **UI**: Components under `frontend/src/components` (ChatWidget, MapComponent, PlaceCard, Navbar, etc.)
+- **State & Context**: `AuthContext`, `ConversationContext`, `TravelDataContext`
+- **Routing / Pages**: `frontend/src/pages` — Home, Login, PlaceDetail, Profile
 
 ### Backend
-- **Framework**: NestJS 10 (TypeScript)
-- **Module structure** (10 feature modules):
-  1. `UsersModule` — User management (Firebase Auth sync)
-  2. `PlacesModule` — Place CRUD operations
-  3. `ReviewsModule` — User review management
-  4. `SearchModule` — Multi-provider search (Google Maps + OSM)
-  5. `AiModule` — AI chat (streaming + non-streaming), NLP intent parsing
-  6. `RecommendationsModule` — Place ranking engine
-  7. `RagModule` — Retrieval-Augmented Generation (chunk management)
-  8. `PresenceModule` — User presence tracking at places
-  9. `ContributionsModule` — User-contributed file management
-  10. `HealthModule` — Health check endpoint
-- **Infrastructure modules**: `PrismaModule` (database), `ConfigModule` (global config)
-- **Config files**: `app`, `database`, `firebase`, `osm`, `groq`
-- **Authentication**: Firebase Admin SDK (JWT verification)
-- **Middleware**: CORS enabled via NestJS
+- **Framework**: NestJS (module-based)
+- **Module structure** (in `backend/src/modules`): `ai`, `search`, `places`, `recommendations`, `reviews`, `users`, `presence`, `rag`, `contributions`, `health`
+- **AI Orchestration**: `ai/orchestration` contains `GroqTaskRouterService`, `WorkflowEngineService`, `GroqResponseComposerService`, and tools (moved to `src/common/tools/`).
+- **Database & Persistence**: Prisma client is provided via `prisma/prisma.module.ts` and `prisma/prisma.service.ts`. Schema located at `prisma/schema.prisma` with migrations in `prisma/migrations/`.
 
 ### Frontend ↔ Backend Interaction
-- REST API over HTTP (Axios client → NestJS controllers)
-- SSE (Server-Sent Events) for AI chat streaming (`/api/v1/ai/chat/stream`)
-- Frontend runs on port 3000, backend on port 3001
-- Firebase for client-side auth; backend verifies Firebase JWT tokens
+- Primary communication: REST JSON APIs (NestJS controllers)
+- Streaming: Server-Sent Events (SSE) used for chat/AI streaming responses
+- Authentication: token-based (see `Auth` implementations in `users` module)
 
-## API Endpoints
+## API Endpoints (representative)
 
-| Method | Path                            | Description                     | Auth |
-|--------|---------------------------------|---------------------------------|------|
-| GET    | `/api/v1/health`                | Health check                    | No   |
-| GET    | `/api/v1/users`                 | List users                      | Yes  |
-| POST   | `/api/v1/users`                 | Create/sync user                | Yes  |
-| GET    | `/api/v1/places`                | List/search places              | Yes  |
-| POST   | `/api/v1/places`                | Create place                    | Yes  |
-| GET    | `/api/v1/reviews`               | List reviews                    | Yes  |
-| POST   | `/api/v1/reviews`               | Create review                   | Yes  |
-| GET    | `/api/v1/search`                | Multi-provider search           | Yes  |
-| POST   | `/api/v1/ai/chat`               | AI chat (non-streaming)         | Yes  |
-| POST   | `/api/v1/ai/chat/stream`        | AI chat (SSE streaming)         | Yes  |
-| POST   | `/api/v1/ai/parse`              | NLP parse + recommendations     | Yes  |
-| POST   | `/api/v1/ai/rag/chunks`         | Upload RAG chunks               | Yes  |
-| GET    | `/api/v1/ai/rag/chunks`         | List RAG chunks                 | Yes  |
-| POST   | `/api/v1/recommendations`       | Get recommendations             | Yes  |
-| GET    | `/api/v1/presence/:placeId`     | Get presence at place           | Yes  |
-| POST   | `/api/v1/presence/:placeId`     | Check in at place               | Yes  |
-| DELETE | `/api/v1/presence/:placeId`     | Check out from place            | Yes  |
+| Method | Path                   | Description                               | Auth |
+|--------|------------------------|-------------------------------------------|------|
+| GET    | /health                | Health check                              | no   |
+| POST   | /ai/chat               | Start AI chat / orchestration workflow    | yes  |
+| GET    | /search                | Basic search (optionally runs recommendations) | no/yes configurable |
+| GET    | /places/:id            | Place detail                              | no   |
+
+Full list of controllers can be found under `backend/src/modules/*`.
+
+## Database Schema
+
+- Prisma schema: `prisma/schema.prisma` — contains `Place` model, user/identity models, and embedding/vector fields used for semantic search.
+- Migrations are stored in `prisma/migrations/`.
+
+## Completed Features
+- [x] AI Orchestration (Router -> Engine -> Composer)
+- [x] Hybrid search (database + external providers)
+- [x] Unified tools interface (`IUnifiedTool`) under `src/common/tools`
+
+## In-Progress / Recent Work
+- [ ] Improve intent parsing for detailed place types (current branch)
+- [ ] UX improvements: multi-select place-type filter, PlaceCard icon updates
+
+## Directory Structure (top-level)
+
+```
+backend/
+frontend/
+prisma/
+docs/
+.ppms/
+src/  (backend source under backend/src/)
+skills/
+```
+
+## Notes
+- This architecture snapshot is a documentation artifact generated by an automated PPMS sync. For code-level details, inspect `backend/src/modules` and `frontend/src`.
+
 | POST   | `/api/v1/contributions/files`   | Upload contributed file         | Yes  |
 | GET    | `/api/v1/contributions/files`   | List contributed files           | Yes  |
 | GET    | `/api/docs`                     | Swagger UI                      | No   |
@@ -157,6 +177,8 @@ mono/
 │   │   ├── main.ts
 │   │   ├── app.module.ts
 │   │   ├── common/
+│   │   │   ├── tools/      (tool.interface.ts, tool-registry.service.ts, search/geocode/recommend tools, amenities/proximity tools)
+│   │   │   └── utils/      (geo.util.ts, vietnam-filter.ts)
 │   │   ├── config/         (app, database, firebase, osm, groq)
 │   │   ├── prisma/         (PrismaModule + PrismaService)
 │   │   └── modules/

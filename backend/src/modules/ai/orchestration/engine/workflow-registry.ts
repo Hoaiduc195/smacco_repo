@@ -31,7 +31,8 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
           budget: '{{params.budget}}',
           anchorLocation: '{{geocode_anchor.data.location}}',
           anchorLabel: '{{geocode_anchor.data.label}}',
-          maxResults: 5
+          query: '{{params.query}}',
+          maxResults: 10
         }
       }
     ]

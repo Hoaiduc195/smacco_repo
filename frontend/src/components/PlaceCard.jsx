@@ -26,6 +26,50 @@ export default function PlaceCard({
     return reviews.slice(0, 2).map((r) => r.comment || r.text || '').filter(Boolean).join(' · ');
   }, [reviews]);
 
+  const placeType = place.type?.toLowerCase();
+  const getIconAndColor = (type) => {
+    switch (type) {
+      case 'hotel':
+        return {
+          bg: 'bg-blue-100', text: 'text-blue-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 22v-6.57"/><path d="M12 11h.01"/><path d="M12 7h.01"/><path d="M14 15.43V22"/><path d="M15 16a5 5 0 0 0-6 0"/><path d="M16 11h.01"/><path d="M16 7h.01"/><path d="M8 11h.01"/><path d="M8 7h.01"/><rect x="4" y="2" width="16" height="20" rx="2"/></svg>
+        };
+      case 'resort':
+        return {
+          bg: 'bg-teal-100', text: 'text-teal-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8"/><path d="M9 20h6"/><path d="M2 12h20"/></svg>
+        };
+      case 'villa':
+        return {
+          bg: 'bg-purple-100', text: 'text-purple-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 20v-6a2 2 0 0 0-2-2h-3.83a2 2 0 0 1-1.42-.59L12 8.59l-2.75 2.82a2 2 0 0 1-1.42.59H4a2 2 0 0 0-2 2v6"/><path d="M2 20h20"/><path d="M12 2v7"/></svg>
+        };
+      case 'homestay':
+        return {
+          bg: 'bg-amber-100', text: 'text-amber-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        };
+      case 'restaurant':
+      case 'cafe':
+        return {
+          bg: 'bg-red-100', text: 'text-red-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        };
+      case 'park':
+      case 'tourist_attraction':
+        return {
+          bg: 'bg-green-100', text: 'text-green-600',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 10v.2A3 3 0 0 1 8.9 16v0H5v0h0a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L14 3l-3 4.3a1 1 0 0 0 .8 1.7H12l-2 3.3a1 1 0 0 0 .8 1.7H11l-2 5h4Z"/></svg>
+        };
+      default:
+        return {
+          bg: 'bg-slate-100', text: 'text-slate-500',
+          icon: <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        };
+    }
+  };
+  const iconConfig = getIconAndColor(placeType);
+
   return (
     <div
       className={`w-full text-left p-3 rounded-2xl border transition flex flex-col gap-3 bg-white/95 animate-card-enter ${
@@ -60,17 +104,8 @@ export default function PlaceCard({
       }}
     >
       <div className="flex gap-3">
-        <div className={`w-24 h-24 rounded-xl flex-shrink-0 flex items-center justify-center ${
-          place.type === 'hotel' ? 'bg-blue-100 text-blue-600' :
-          place.type === 'resort' ? 'bg-green-100 text-green-600' :
-          place.type === 'homestay' ? 'bg-amber-100 text-amber-600' :
-          place.type === 'restaurant' ? 'bg-red-100 text-red-600' :
-          'bg-slate-100 text-slate-500'
-        }`}>
-          {place.type === 'hotel' ? <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 22v-6.57"/><path d="M12 11h.01"/><path d="M12 7h.01"/><path d="M14 15.43V22"/><path d="M15 16a5 5 0 0 0-6 0"/><path d="M16 11h.01"/><path d="M16 7h.01"/><path d="M8 11h.01"/><path d="M8 7h.01"/><rect x="4" y="2" width="16" height="20" rx="2"/></svg> :
-           place.type === 'resort' ? <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 22 2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2 2 2"/><path d="M13.1 14.3 11 12l2.3-2.3a2.4 2.4 0 0 1 3.4 0l3 3a2.4 2.4 0 0 1 0 3.4Z"/><path d="m5 11 4.5-4.5a2.1 2.1 0 0 1 2.9 0l1.4 1.4"/><path d="M4 14v4"/><path d="M8 14v4"/></svg> :
-           place.type === 'restaurant' ? <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg> :
-           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>}
+        <div className={`w-24 h-24 rounded-xl flex-shrink-0 flex items-center justify-center ${iconConfig.bg} ${iconConfig.text}`}>
+          {iconConfig.icon}
         </div>
         <div className="flex-1 min-w-0 space-y-1">
           <div className="font-semibold text-gray-900 line-clamp-1">{place.name}</div>

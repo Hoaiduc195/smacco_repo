@@ -45,17 +45,6 @@ export default function ChatWidget() {
   } = useConversation();
   const bottomRef = useRef(null);
   const scrollRef = useRef(null);
-  const [autoScroll, setAutoScroll] = useState(true);
-
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    if (autoScroll) {
-      scrollToBottom();
-    }
-  }, [messages, isOpen, autoScroll]);
 
   useEffect(() => {
     if (conversationId && conversationId !== selectedConversationId) {
@@ -97,7 +86,6 @@ export default function ChatWidget() {
 
   const handleSend = async (e) => {
     e?.preventDefault();
-    setAutoScroll(true);
     await sendMessage();
   };
 
@@ -268,12 +256,6 @@ export default function ChatWidget() {
           <div
             ref={scrollRef}
             className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50"
-            onScroll={() => {
-              const el = scrollRef.current;
-              if (!el) return;
-              const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-              setAutoScroll(distance <= 80);
-            }}
           >
             {messages.map((msg, idx) => (
               <div

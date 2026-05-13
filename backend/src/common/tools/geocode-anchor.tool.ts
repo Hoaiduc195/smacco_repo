@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
-import { ITool, ToolInput, ToolOutput } from './tool.interface';
+import { IUnifiedTool, UnifiedToolInput, UnifiedToolOutput } from './tool.interface';
 
 @Injectable()
-export class GeocodeAnchorTool implements ITool {
+export class GeocodeAnchorTool implements IUnifiedTool {
   readonly id = 'geocode_anchor';
   readonly description = 'Geocodes a landmark or place name using Goong.';
   private readonly logger = new Logger(GeocodeAnchorTool.name);
@@ -12,7 +12,7 @@ export class GeocodeAnchorTool implements ITool {
 
   constructor(private readonly http: HttpService, private readonly configService: ConfigService) {}
 
-  async execute(inputs: ToolInput): Promise<ToolOutput> {
+  async execute(inputs: UnifiedToolInput): Promise<UnifiedToolOutput> {
     const query = typeof inputs.query === 'string' ? inputs.query.trim() : '';
     if (!query) {
       return { status: 'success', data: null };

@@ -29,23 +29,32 @@ export class AiOrchestratorService {
     const route = await this.router.route(request.text, history);
     
     let searchAction;
+    let toolResults: Record<string, any> = {};
+    const workflow = WORKFLOW_REGISTRY[route.workflowId];
+
+    // 2. Workflow Engine: Execute tools if steps exist (runs BEFORE composing response)
+    if (workflow && workflow.steps.length > 0) {
+      const execution = await this.engine.executeWorkflow(workflow, route.parameters);
+      toolResults = execution.stepResults;
+    }
+
     if (route.workflowId === 'SEARCH_PLACES') {
+      const recommendStep = workflow?.steps?.find(s => s.tool === 'recommend_places');
+      const searchStep = workflow?.steps?.find(s => s.tool === 'hybrid_search');
+
+      const recommendedData = recommendStep ? toolResults[recommendStep.id]?.data : null;
+      const searchData = searchStep ? toolResults[searchStep.id]?.data : null;
+
+      const places = recommendedData?.items || searchData || [];
+
       searchAction = {
         isSearch: true,
         query: route.parameters.query || request.text,
         location: route.parameters.location,
         type: route.parameters.type,
         budget: route.parameters.budget,
+        results: places,
       };
-    }
-
-    let toolResults = {};
-    const workflow = WORKFLOW_REGISTRY[route.workflowId];
-
-    // 2. Workflow Engine: Execute tools if steps exist
-    if (workflow && workflow.steps.length > 0) {
-      const execution = await this.engine.executeWorkflow(workflow, route.parameters);
-      toolResults = execution.stepResults;
     }
 
     // 3. Response Composer: Generate final text
@@ -78,32 +87,40 @@ export class AiOrchestratorService {
 
     // 1. Task Router
     const route = await this.router.route(request.text, history);
-    
-    // Yield search intent immediately to frontend so it can update UI
+
+    let toolResults: Record<string, any> = {};
+    const workflow = WORKFLOW_REGISTRY[route.workflowId];
+
+    // 2. Workflow Engine (Executes BEFORE yielding anything to frontend)
+    if (workflow && workflow.steps.length > 0) {
+      const execution = await this.engine.executeWorkflow(workflow, route.parameters);
+      toolResults = execution.stepResults;
+    }
+
+    // Yield structured search data after tools complete
     if (route.workflowId === 'SEARCH_PLACES') {
+      const recommendStep = workflow?.steps?.find(s => s.tool === 'recommend_places');
+      const searchStep = workflow?.steps?.find(s => s.tool === 'hybrid_search');
+
+      const recommendedData = recommendStep ? toolResults[recommendStep.id]?.data : null;
+      const searchData = searchStep ? toolResults[searchStep.id]?.data : null;
+
+      const places = recommendedData?.items || searchData || [];
+
       const searchAction = {
         isSearch: true,
         query: route.parameters.query || request.text,
         location: route.parameters.location,
         type: route.parameters.type,
         budget: route.parameters.budget,
+        results: places,
       };
-      
+
       yield {
         conversationId,
         delta: '',
         searchAction,
       } as any;
-    }
-
-    let toolResults = {};
-    const workflow = WORKFLOW_REGISTRY[route.workflowId];
-
-    // 2. Workflow Engine (Executes BEFORE streaming text begins)
-    // Note: Tools are executed synchronously first, then the LLM composes stream
-    if (workflow && workflow.steps.length > 0) {
-      const execution = await this.engine.executeWorkflow(workflow, route.parameters);
-      toolResults = execution.stepResults;
     }
 
     // 3. Response Composer Stream

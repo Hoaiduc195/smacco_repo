@@ -127,8 +127,8 @@ export default function Navbar({
         </form>
 
         {/* Dropdown Bộ lọc nâng cao */}
-        {showFilters && setLocationInput && (
-          <div className="absolute top-full mt-2 w-full rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.6)] z-50 p-4 backdrop-blur animate-in fade-in slide-in-from-top-2">
+        {setLocationInput && (
+          <div className={`absolute top-full mt-2 w-full rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.6)] z-50 p-4 backdrop-blur origin-top transition-all duration-300 ease-out ${showFilters ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-[0.98] -translate-y-2 pointer-events-none invisible'}`}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
@@ -155,7 +155,7 @@ export default function Navbar({
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               {/* Vị trí */}
-              <div>
+              <div className="col-span-2">
                 <label className="block text-xs font-semibold mb-1 text-slate-700">Vị trí / Khu vực</label>
                 <div className="relative">
                   <input
@@ -172,42 +172,99 @@ export default function Navbar({
               </div>
               
               {/* Thể loại lưu trú */}
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-slate-700">Loại địa điểm</label>
-                <select
-                  value={placeType}
-                  onChange={e => setPlaceType(e.target.value)}
-                  className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
-                >
-                  {PLACE_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+              <div className="col-span-2">
+                <label className="block text-xs font-semibold mb-2 text-slate-700">Loại địa điểm (có thể chọn nhiều)</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPlaceType('')}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border ${!placeType ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    Tất cả
+                  </button>
+                  {PLACE_TYPES.filter(opt => opt.value !== '').map((opt) => {
+                    const isSelected = placeType.split(',').includes(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          const currentTypes = placeType ? placeType.split(',') : [];
+                          let newTypes;
+                          if (isSelected) {
+                            newTypes = currentTypes.filter(t => t !== opt.value);
+                          } else {
+                            newTypes = [...currentTypes, opt.value];
+                          }
+                          setPlaceType(newTypes.join(','));
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border ${isSelected ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm transform scale-[1.02]' : 'bg-white text-slate-600 border-slate-200 hover:border-cyan-300 hover:bg-cyan-50'}`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Chi phí */}
-              <div className="col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-semibold mb-1 text-slate-700">Chi phí dự kiến</label>
-                  <span className="text-xs font-semibold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2.5 py-0.5 rounded-full">
+              <div className="col-span-2 mt-2">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-xs font-semibold text-slate-700">Chi phí dự kiến</label>
+                  <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
                     {budgetLevel.label}
                   </span>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 px-3 py-3">
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="1"
-                    value={budgetLevel.slider}
-                    onChange={(e) => {
-                      const nextLevel = BUDGET_LEVELS.find((level) => level.slider === Number(e.target.value)) || BUDGET_LEVELS[0];
-                      setBudget(nextLevel.value);
-                    }}
-                    className="w-full accent-cyan-600"
-                    aria-label="Chọn mức chi phí"
-                  />
-                  <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                    {BUDGET_LEVELS.map((level) => (
-                      <span key={level.value || 'any'}>{level.label}</span>
+                
+                <div className="relative pt-2 pb-4 px-2">
+                  <div className="relative h-6 flex items-center">
+                    {/* Track Background */}
+                    <div className="absolute left-0 right-0 h-2 bg-slate-100 rounded-full shadow-inner border border-slate-200 overflow-hidden pointer-events-none">
+                      <div 
+                        className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 transition-all duration-300 ease-out"
+                        style={{ width: `${(budgetLevel.slider / 3) * 100}%` }}
+                      />
+                    </div>
+
+                    {/* Range Input (Invisible but functional) */}
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="1"
+                      value={budgetLevel.slider}
+                      onChange={(e) => {
+                        const nextLevel = BUDGET_LEVELS.find((level) => level.slider === Number(e.target.value)) || BUDGET_LEVELS[0];
+                        setBudget(nextLevel.value);
+                      }}
+                      className="w-full absolute inset-0 z-20 opacity-0 cursor-pointer"
+                      aria-label="Chọn mức chi phí"
+                    />
+
+                    {/* Custom Thumb */}
+                    <div 
+                      className="absolute w-6 h-6 bg-white border-[3px] border-cyan-500 rounded-full shadow-md transition-all duration-300 ease-out z-10 flex items-center justify-center pointer-events-none"
+                      style={{ 
+                        left: `calc(${(budgetLevel.slider / 3) * 100}% + ${12 - (budgetLevel.slider / 3) * 24}px)`,
+                        transform: 'translateX(-50%)'
+                      }}
+                    >
+                      <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Labels */}
+                  <div className="mt-2 flex justify-between text-[10px] font-semibold relative z-0">
+                    {BUDGET_LEVELS.map((level, i) => (
+                      <div 
+                        key={level.value || 'any'} 
+                        className="flex flex-col items-center cursor-pointer px-2"
+                        onClick={() => setBudget(level.value)}
+                      >
+                        <span className={`mt-1 transition-all duration-200 ${budgetLevel.slider === i ? 'text-cyan-700 font-bold scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+                          {level.label}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>

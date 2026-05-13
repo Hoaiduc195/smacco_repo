@@ -21,15 +21,22 @@ export class NlpService {
   };
 
   private readonly typeKeywords: Record<string, string> = {
-    'ăn': 'food',
-    'quán ăn': 'food',
-    'nhà hàng': 'food',
-    'cafe': 'food',
-    'cà phê': 'food',
-    'khách sạn': 'accommodation',
-    'homestay': 'accommodation',
-    'chỗ ở': 'accommodation',
-    'phòng': 'accommodation',
+    'ăn': 'restaurant',
+    'quán ăn': 'restaurant',
+    'nhà hàng': 'restaurant',
+    'cafe': 'cafe',
+    'cà phê': 'cafe',
+    'khách sạn': 'hotel',
+    'homestay': 'homestay',
+    'resort': 'resort',
+    'khu nghỉ dưỡng': 'resort',
+    'villa': 'villa',
+    'biệt thự': 'villa',
+    'chỗ ở': 'hotel',
+    'phòng': 'hotel',
+    'công viên': 'park',
+    'du lịch': 'tourist_attraction',
+    'tham quan': 'tourist_attraction',
   };
 
   private readonly budgetKeywords: Record<string, string> = {

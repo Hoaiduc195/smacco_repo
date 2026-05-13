@@ -23,6 +23,6 @@ export class SearchController {
     @Query('checkInDate') checkInDate?: string,
     @Query('checkOutDate') checkOutDate?: string,
   ) {
-    return this.searchService.search({ q, type, location, budget, checkInDate, checkOutDate });
+    return this.searchService.search({ q, type, location, budget, checkInDate, checkOutDate, applyRecommendations: true });
   }
 }

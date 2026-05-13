@@ -23,8 +23,8 @@ Output JSON Schema:
     // - "location": city or region mentioned in Vietnamese (e.g. "Đà Lạt", "Hồ Chí Minh")
     // - "anchor": landmark or place the user wants to be near (e.g. "chùa ABC", "sân bay Nội Bài")
     // - "budget": "low", "mid", "high" (tương ứng rẻ/bình dân, trung bình, sang trọng/cao cấp)
-    // - "type": "accommodation", "food", "attraction"
-    // If GENERAL_CHAT, leave parameters empty.
+    // - "type": MỘT trong các loại sau: "hotel", "resort", "homestay", "villa", "restaurant", "cafe", "park", "tourist_attraction"
+    // Nếu không chắc chắn, hãy gán giá trị hợp lý nhất hoặc bỏ qua.
   }
 }
 `;

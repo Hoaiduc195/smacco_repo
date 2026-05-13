@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { X, Send, Loader2, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
@@ -24,6 +25,9 @@ export default function PlaceChatPanel({ place, onClose }) {
     buildPrompt: (userText) =>
       `You are a travel assistant. Answer about this place using provided context if any. Place name: ${place.name}. Address: ${place.address || ''}. Question: ${userText}`,
   });
+
+  const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
 
   const send = async () => {
     await sendMessage();
@@ -55,7 +59,10 @@ export default function PlaceChatPanel({ place, onClose }) {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 text-sm bg-gray-50">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-2 text-sm bg-gray-50"
+      >
         {!messages.length && <div className="text-gray-500">Hỏi bất cứ điều gì về địa điểm này.</div>}
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -76,6 +83,7 @@ export default function PlaceChatPanel({ place, onClose }) {
             <span>AI đang phản hồi...</span>
           </div>
         )}
+        <div ref={bottomRef} />
       </div>
       {error ? <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">{error}</div> : null}
       <div className="p-3 border-t flex items-center gap-2">

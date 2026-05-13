@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WorkflowDefinition } from './workflow.schema';
-import { ToolRegistryService } from '../tools/tool-registry.service';
-import { ToolOutput } from '../tools/tool.interface';
+import { ToolRegistryService } from '../../../../common/tools/tool-registry.service';
+import { UnifiedToolOutput } from '../../../../common/tools/tool.interface';
 
 export interface WorkflowExecutionResult {
   workflowId: string;
   success: boolean;
-  stepResults: Record<string, ToolOutput>;
+  stepResults: Record<string, UnifiedToolOutput>;
   error?: string;
 }
 
@@ -30,7 +30,7 @@ export class WorkflowEngineService {
       params: parameters,
     };
     
-    const stepResults: Record<string, ToolOutput> = {};
+    const stepResults: Record<string, UnifiedToolOutput> = {};
 
     for (const step of workflow.steps) {
       this.logger.debug(`Executing step: ${step.id} (Tool: ${step.tool})`);
@@ -60,7 +60,7 @@ export class WorkflowEngineService {
         }
       } catch (error: any) {
         this.logger.error(`Exception in step ${step.id}: ${error.message}`);
-        const failedOutput: ToolOutput = { status: 'error', error: error.message };
+        const failedOutput: UnifiedToolOutput = { status: 'error', error: error.message };
         stepResults[step.id] = failedOutput;
         context[step.id] = failedOutput;
       }

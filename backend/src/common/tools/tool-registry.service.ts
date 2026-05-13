@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ITool } from './tool.interface';
+import { IUnifiedTool } from './tool.interface';
 
 @Injectable()
 export class ToolRegistryService {
   private readonly logger = new Logger(ToolRegistryService.name);
-  private readonly tools = new Map<string, ITool>();
+  private readonly tools = new Map<string, IUnifiedTool>();
 
-  registerTool(tool: ITool) {
+  registerTool(tool: IUnifiedTool) {
     if (this.tools.has(tool.id)) {
       this.logger.warn(`Tool with ID ${tool.id} is already registered. Overwriting.`);
     }
@@ -14,11 +14,11 @@ export class ToolRegistryService {
     this.logger.log(`Registered tool: ${tool.id}`);
   }
 
-  getTool(id: string): ITool | undefined {
+  getTool(id: string): IUnifiedTool | undefined {
     return this.tools.get(id);
   }
 
-  getAllTools(): ITool[] {
+  getAllTools(): IUnifiedTool[] {
     return Array.from(this.tools.values());
   }
 }

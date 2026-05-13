@@ -1,5 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PlacesService } from '../places/places.service';
+import { RecommendationsService } from '../recommendations/recommendations.service';
+import { GoongPlacesService } from './goong-places.service';
 import {
   ACCOMMODATION_PROVIDERS,
   AccommodationProvider,
@@ -15,6 +17,7 @@ export interface SearchFilters {
   longitude?: number;
   checkInDate?: string;
   checkOutDate?: string;
+  applyRecommendations?: boolean;
 }
 
 @Injectable()
@@ -23,6 +26,8 @@ export class SearchService {
 
   constructor(
     private readonly placesService: PlacesService,
+    private readonly recommendationsService: RecommendationsService,
+    private readonly goongPlacesService: GoongPlacesService,
     @Inject(ACCOMMODATION_PROVIDERS)
     private readonly providers: AccommodationProvider[],
   ) {}
@@ -30,7 +35,8 @@ export class SearchService {
   async search(filters: SearchFilters): Promise<PlaceResult[]> {
     const budget = this.normalizeBudget(filters.budget);
 
-    const queryParts = [filters.q, filters.type, filters.location].filter(Boolean);
+    const typeQuery = filters.type ? filters.type.replace(/,/g, ' ') : undefined;
+    const queryParts = [filters.q, typeQuery, filters.location].filter(Boolean);
     const query = queryParts.length ? queryParts.join(' ') : 'lodging';
 
     this.logger.log(`Searching for: "${query}" with budget: ${budget || 'any'}`);
@@ -89,7 +95,41 @@ export class SearchService {
     }
 
     // 4. Merge and Deduplicate (Prioritizing Local Results)
-    return this.mergeAndPrioritizeLocal(localResults, externalResults);
+    let finalResults = this.mergeAndPrioritizeLocal(localResults, externalResults);
+
+    // 5. Apply Recommendations if requested
+    if (filters.applyRecommendations) {
+      let anchorLocation = null;
+      if (filters.location) {
+        // Geocode the location
+        const geoResults = await this.goongPlacesService.searchAccommodations({ query: filters.location });
+        if (geoResults.length > 0 && geoResults[0].location) {
+          anchorLocation = geoResults[0].location;
+        }
+      }
+
+      const ranked = await this.recommendationsService.rankPlaces(finalResults, {
+        budget,
+        anchorLocation,
+        anchorLabel: filters.location,
+        maxResults: 50 // Keep a good amount of results for basic search
+      });
+      finalResults = ranked.items;
+    }
+
+    // HARDCODE: Only return accommodation places
+    const accommodationKeywords = [
+      'hotel', 'resort', 'homestay', 'villa', 'guest_house', 'lodging', 'accommodation', 'hostel', 'motel',
+      'khách sạn', 'khu nghỉ dưỡng', 'chỗ ở', 'phòng', 'biệt thự', 'nhà nghỉ'
+    ];
+    finalResults = finalResults.filter(place => {
+      if (!place.types || place.types.length === 0) return true;
+      return place.types.some(t => 
+        accommodationKeywords.some(keyword => t.toLowerCase().includes(keyword))
+      );
+    });
+
+    return finalResults;
   }
 
   private mergeAndPrioritizeLocal(localResults: PlaceResult[], externalResults: PlaceResult[]): PlaceResult[] {

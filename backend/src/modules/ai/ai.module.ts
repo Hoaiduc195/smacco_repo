@@ -12,11 +12,11 @@ import { HttpModule } from '@nestjs/axios';
 
 // Orchestration
 import { GroqTaskRouterService } from './orchestration/router/groq-task-router.service';
-import { ToolRegistryService } from './orchestration/tools/tool-registry.service';
-import { SearchPlacesTool } from './orchestration/tools/search-places.tool';
-import { GeocodeAnchorTool } from './orchestration/tools/geocode-anchor.tool';
-import { RecommendPlacesTool } from './orchestration/tools/recommend-places.tool';
-import { RecommenderService } from './orchestration/tools/recommender.service';
+import { ToolRegistryService } from '../../common/tools/tool-registry.service';
+import { SearchPlacesTool } from '../../common/tools/search-places.tool';
+import { GeocodeAnchorTool } from '../../common/tools/geocode-anchor.tool';
+import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
+
 import { WorkflowEngineService } from './orchestration/engine/workflow-engine.service';
 import { GroqResponseComposerService } from './orchestration/composer/groq-response-composer.service';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
@@ -37,7 +37,7 @@ import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
     SearchPlacesTool,
     GeocodeAnchorTool,
     RecommendPlacesTool,
-    RecommenderService,
+
     WorkflowEngineService,
     GroqResponseComposerService,
     AiOrchestratorService,

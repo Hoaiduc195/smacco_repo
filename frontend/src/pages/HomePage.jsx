@@ -362,6 +362,34 @@ export default function HomePage() {
       if (filters.location) setLocationInput(filters.location);
       if (normalizedBudget) setBudget(normalizedBudget);
 
+      // If AI already computed results (via backend workflow), use them directly
+      // This eliminates the duplicate search call
+      if (filters.results && filters.results.length > 0) {
+        const transformed = filters.results.map(place => ({
+          id: place.locationId,
+          name: place.name,
+          address: place.address,
+          lat: place.location?.lat,
+          lng: place.location?.lng,
+          type: place.types?.[0] || place.type || 'default',
+          rating: place.rating,
+          priceLevel: place.priceLevel,
+          source: place.source,
+          sourcePlaceId: place.sourcePlaceId,
+          score: place.score,
+          reasons: place.reasons,
+        }));
+        setIsSidebarOpen(true);
+        transitionTo(APP_STATES.ON_SEARCH);
+        setDisableAutoFit(true);
+        setError('');
+        setPlaces(transformed);
+        setSelectedPlaceId(null);
+        setRoute([]);
+        return;
+      }
+
+      // Fallback: perform search manually via GET /search
       performUnifiedSearch(query, {
         type: filters.type || placeType,
         locationInput: filters.location || locationInput,
@@ -371,7 +399,7 @@ export default function HomePage() {
 
     window.addEventListener('app:ai-search', handleAiSearch);
     return () => window.removeEventListener('app:ai-search', handleAiSearch);
-  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget]);
+  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget, transitionTo]);
 
   useEffect(() => {
     const payload = { searchQuery, places, userLocation };
