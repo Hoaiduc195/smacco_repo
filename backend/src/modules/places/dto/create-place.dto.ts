@@ -26,6 +26,11 @@ export class CreatePlaceDto {
   @IsString()
   type?: string;
 
+  @ApiPropertyOptional({ example: 'goong' })
+  @IsOptional()
+  @IsString()
+  source?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

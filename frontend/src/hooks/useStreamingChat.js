@@ -104,9 +104,11 @@ export default function useStreamingChat({
 
   return {
     messages,
+    setMessages,
     input,
     setInput,
     conversationId,
+    setConversationId,
     isStreaming,
     error,
     canSend,

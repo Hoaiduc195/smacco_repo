@@ -11,6 +11,30 @@ export const chat = async ({ text, conversationId } = {}) => {
   return response.data;
 };
 
+export const listConversations = async ({ limit = 20 } = {}) => {
+  const response = await apiClient.get('/ai/conversations', {
+    params: { limit },
+  });
+  return response.data;
+};
+
+export const createConversation = async () => {
+  const response = await apiClient.post('/ai/conversations');
+  return response.data;
+};
+
+export const getConversationMessages = async (conversationId, { limit = 50 } = {}) => {
+  const response = await apiClient.get(`/ai/conversations/${conversationId}/messages`, {
+    params: { limit },
+  });
+  return response.data;
+};
+
+export const deleteConversation = async (conversationId) => {
+  const response = await apiClient.delete(`/ai/conversations/${conversationId}`);
+  return response.data;
+};
+
 export const streamChat = async ({
   text,
   conversationId,
@@ -89,4 +113,4 @@ export const streamChat = async ({
   }
 };
 
-export default { chat, streamChat };
+export default { chat, streamChat, listConversations, createConversation, getConversationMessages, deleteConversation };

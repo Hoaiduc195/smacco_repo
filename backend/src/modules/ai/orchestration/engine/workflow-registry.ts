@@ -14,6 +14,25 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
           budget: '{{params.budget}}',
           type: '{{params.type}}'
         }
+      },
+      {
+        id: 'geocode_anchor',
+        tool: 'geocode_anchor',
+        inputs: {
+          query: '{{params.anchor}}',
+          location: '{{params.location}}'
+        }
+      },
+      {
+        id: 'recommend_places',
+        tool: 'recommend_places',
+        inputs: {
+          places: '{{fetch_places.data}}',
+          budget: '{{params.budget}}',
+          anchorLocation: '{{geocode_anchor.data.location}}',
+          anchorLabel: '{{geocode_anchor.data.label}}',
+          maxResults: 5
+        }
       }
     ]
   },

@@ -33,12 +33,12 @@ export class NlpService {
   };
 
   private readonly budgetKeywords: Record<string, string> = {
-    'rẻ': 'cheap',
-    'bình dân': 'cheap',
-    'trung bình': 'medium',
-    'vừa': 'medium',
-    'sang': 'expensive',
-    'cao cấp': 'expensive',
+    'rẻ': 'low',
+    'bình dân': 'low',
+    'trung bình': 'mid',
+    'vừa': 'mid',
+    'sang': 'high',
+    'cao cấp': 'high',
   };
 
   extractFilters(text: string): ExtractedFilters {

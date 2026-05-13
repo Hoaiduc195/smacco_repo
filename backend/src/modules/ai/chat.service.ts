@@ -20,8 +20,8 @@ export class ChatService {
     private readonly groqClient: GroqClientService,
   ) {}
 
-  private buildMessages(conversationId: string, userText: string): ChatMessage[] {
-    const history = this.store.getHistory(conversationId);
+  private async buildMessages(conversationId: string, userText: string): Promise<ChatMessage[]> {
+    const history = await this.store.getHistory(conversationId);
     const messages: ChatMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];
     messages.push(...history);
     messages.push({ role: 'user', content: userText });
@@ -34,7 +34,7 @@ export class ChatService {
     - "isSearch": true
     - "location": tên địa phương/thành phố (VD: "Đà Nẵng", "Hà Nội")
     - "type": phân loại ("accommodation" cho nhà nghỉ/khách sạn/chỗ ở, "food" cho ăn uống, "attraction" cho điểm tham quan)
-    - "budget": mức giá ("cheap" cho rẻ/bình dân, "medium" cho trung bình, "expensive" cho sang trọng/cao cấp)
+    - "budget": mức giá ("low" cho rẻ/bình dân, "mid" cho trung bình, "high" cho sang trọng/cao cấp)
     - "query": câu tìm kiếm gốc
     Nếu không phải câu tìm kiếm, trả về {"isSearch": false}.
     Chỉ trả về chuỗi JSON hợp lệ, tuyệt đối không giải thích thêm.
@@ -58,13 +58,13 @@ export class ChatService {
     const intent = await this.extractFiltersUsingAi(request.text);
     const searchAction = intent?.isSearch ? intent : undefined;
 
-    const messages = this.buildMessages(conversationId, request.text);
+    const messages = await this.buildMessages(conversationId, request.text);
 
     const { content, finishReason, usage } = await this.groqClient.chat(messages);
 
     // Update history
-    this.store.append(conversationId, { role: 'user', content: request.text });
-    this.store.append(conversationId, { role: 'assistant', content });
+    await this.store.append(conversationId, { role: 'user', content: request.text });
+    await this.store.append(conversationId, { role: 'assistant', content });
 
     return {
       answer: content,
@@ -72,7 +72,7 @@ export class ChatService {
       finishReason,
       usagePromptTokens: usage?.prompt_tokens,
       usageCompletionTokens: usage?.completion_tokens,
-      messages: this.store.getHistory(conversationId),
+      messages: await this.store.getHistory(conversationId),
       searchAction,
     } as any;
   }
@@ -90,7 +90,7 @@ export class ChatService {
       } as any;
     }
 
-    const messages = this.buildMessages(conversationId, request.text);
+    const messages = await this.buildMessages(conversationId, request.text);
 
     const assistantParts: string[] = [];
 
@@ -107,8 +107,8 @@ export class ChatService {
     const fullAnswer = assistantParts.join('');
 
     // Update history after streaming completes
-    this.store.append(conversationId, { role: 'user', content: request.text });
-    this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
+    await this.store.append(conversationId, { role: 'user', content: request.text });
+    await this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
 
     yield { conversationId, delta: '', finishReason: 'stop' };
   }

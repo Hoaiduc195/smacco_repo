@@ -1,11 +1,75 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createConversation, deleteConversation as deleteConversationApi, getConversationMessages, listConversations } from '../services/aiService';
 
 const ConversationContext = createContext();
+const STORAGE_KEY = 'chat_selected_conversation';
 
 export function ConversationProvider({ children }) {
-  // Simulate a new conversation on mount
-  const [conversationId] = useState(() => `mock-conv-${Date.now()}`);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversationId, setSelectedConversationId] = useState(() =>
+    window.localStorage.getItem(STORAGE_KEY)
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [taggedPlaces, setTaggedPlaces] = useState([]);
+
+  const refreshConversations = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await listConversations({ limit: 30 });
+      setConversations(data?.conversations || []);
+    } catch (err) {
+      setError(err?.message || 'Không thể tải lịch sử hội thoại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversationId) {
+      window.localStorage.setItem(STORAGE_KEY, selectedConversationId);
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [selectedConversationId]);
+
+  const selectConversation = async (conversationId) => {
+    setSelectedConversationId(conversationId);
+    try {
+      const data = await getConversationMessages(conversationId, { limit: 80 });
+      return data?.messages || [];
+    } catch (err) {
+      setError(err?.message || 'Không thể tải tin nhắn.');
+      return [];
+    }
+  };
+
+  const startNewConversation = async () => {
+    const data = await createConversation();
+    const conversation = data?.conversation;
+    if (conversation?.id) {
+      setSelectedConversationId(conversation.id);
+      await refreshConversations();
+    }
+    return conversation;
+  };
+
+  const deleteConversation = async (conversationId) => {
+    try {
+      await deleteConversationApi(conversationId);
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null);
+      }
+      await refreshConversations();
+    } catch (err) {
+      setError(err?.message || 'Không thể xóa hội thoại.');
+    }
+  };
 
   // Tag a place by full object
   const tagPlace = (place) => {
@@ -20,7 +84,22 @@ export function ConversationProvider({ children }) {
   };
 
   return (
-    <ConversationContext.Provider value={{ conversationId, taggedPlaces, tagPlace, untagPlace }}>
+    <ConversationContext.Provider
+      value={{
+        conversations,
+        selectedConversationId,
+        setSelectedConversationId,
+        loading,
+        error,
+        refreshConversations,
+        selectConversation,
+        startNewConversation,
+        deleteConversation,
+        taggedPlaces,
+        tagPlace,
+        untagPlace,
+      }}
+    >
       {children}
     </ConversationContext.Provider>
   );

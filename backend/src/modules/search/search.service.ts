@@ -13,6 +13,8 @@ export interface SearchFilters {
   budget?: string;
   latitude?: number;
   longitude?: number;
+  checkInDate?: string;
+  checkOutDate?: string;
 }
 
 @Injectable()
@@ -43,8 +45,11 @@ export class SearchService {
           query,
           type: filters.type,
           budget,
+          locationName: filters.location,
           latitude: filters.latitude,
           longitude: filters.longitude,
+          checkInDate: filters.checkInDate,
+          checkOutDate: filters.checkOutDate,
         }),
       );
 

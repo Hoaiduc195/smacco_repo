@@ -47,12 +47,33 @@ model Place {
   reviews       Review[]
   files         File[]
   chunks        Chunk[]
-  conversations Conversation[]
+  placeReferences ConversationPlaceReference[]
   questions     Question[]
   presences     Presence[]
+  placeSources  PlaceSource[]
 
   @@map("places")
   @@index([lat, lng], map: "idx_places_location")
+}
+
+model PlaceSource {
+  id               String   @id @default(uuid()) @db.Uuid
+  placeId          String   @map("place_id") @db.Uuid
+  source           String   @db.Text
+  sourcePlaceId    String   @map("source_place_id") @db.Text
+  rawName          String?  @map("raw_name") @db.Text
+  rawAddress       String?  @map("raw_address") @db.Text
+  normalizedName   String?  @map("normalized_name") @db.Text
+  normalizedAddress String? @map("normalized_address") @db.Text
+  lat              Float?
+  lng              Float?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@map("place_sources")
+  @@unique([source, sourcePlaceId], map: "uq_place_sources_source_source_place_id")
+  @@index([placeId], map: "idx_place_sources_place_id")
 }
 
 model Review {
@@ -190,6 +211,7 @@ model ConversationPlaceReference {
   @@index([conversationId], map: "idx_cpr_conversation_id")
   @@index([placeId], map: "idx_cpr_place_id")
   @@unique([conversationId, placeId], map: "uq_cpr_conversation_place")
+}
 
 model Message {
   id               String   @id @default(uuid()) @db.Uuid

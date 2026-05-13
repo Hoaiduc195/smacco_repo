@@ -23,7 +23,7 @@ export class AiOrchestratorService {
    */
   async processQuery(request: ChatRequestDto): Promise<ChatResponseDto> {
     const conversationId = request.conversationId || this.store.createId();
-    const history = this.store.getHistory(conversationId);
+    const history = await this.store.getHistory(conversationId);
 
     // 1. Task Router: Classify intent and extract params
     const route = await this.router.route(request.text, history);
@@ -57,14 +57,14 @@ export class AiOrchestratorService {
     }, history);
 
     // Store in history
-    this.store.append(conversationId, { role: 'user', content: request.text });
-    this.store.append(conversationId, { role: 'assistant', content: composerResult.answer });
+    await this.store.append(conversationId, { role: 'user', content: request.text });
+    await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer });
 
     return {
       conversationId,
       answer: composerResult.answer,
       searchAction,
-      messages: this.store.getHistory(conversationId),
+      messages: await this.store.getHistory(conversationId),
       finishReason: 'stop'
     };
   }
@@ -74,7 +74,7 @@ export class AiOrchestratorService {
    */
   async *streamQuery(request: ChatRequestDto): AsyncGenerator<StreamChunkDto> {
     const conversationId = request.conversationId || this.store.createId();
-    const history = this.store.getHistory(conversationId);
+    const history = await this.store.getHistory(conversationId);
 
     // 1. Task Router
     const route = await this.router.route(request.text, history);
@@ -121,8 +121,8 @@ export class AiOrchestratorService {
     }
 
     const fullAnswer = assistantParts.join('');
-    this.store.append(conversationId, { role: 'user', content: request.text });
-    this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
+    await this.store.append(conversationId, { role: 'user', content: request.text });
+    await this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
 
     yield { conversationId, delta: '', finishReason: 'stop' };
   }

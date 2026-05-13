@@ -21,10 +21,13 @@ export interface SearchParams {
   query?: string;
   type?: string;
   location?: LatLngLiteral;
+  locationName?: string;
   radius?: number;
   budget?: 'low' | 'mid' | 'high';
   latitude?: number;
   longitude?: number;
+  checkInDate?: string;
+  checkOutDate?: string;
 }
 
 export interface AccommodationProvider {

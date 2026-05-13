@@ -5,13 +5,14 @@ import { SearchService } from './search.service';
 import { PlacesModule } from '../places/places.module';
 import { OsmPlacesService } from './osm-places.service';
 import { GoongPlacesService } from './goong-places.service';
+import { SerpApiHotelsService } from './serpapi-hotels.service';
 import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
 
 @Module({
   imports: [
     PlacesModule,
     HttpModule.register({
-      timeout: 5000,
+      timeout: 15000,
       maxRedirects: 5,
     }),
   ],
@@ -20,10 +21,11 @@ import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
     SearchService,
     OsmPlacesService,
     GoongPlacesService,
+    SerpApiHotelsService,
     {
       provide: ACCOMMODATION_PROVIDERS,
-      useFactory: (osm: OsmPlacesService, goong: GoongPlacesService) => [osm, goong],
-      inject: [OsmPlacesService, GoongPlacesService],
+      useFactory: (osm: OsmPlacesService, goong: GoongPlacesService, serpapi: SerpApiHotelsService) => [osm, goong, serpapi],
+      inject: [OsmPlacesService, GoongPlacesService, SerpApiHotelsService],
     },
   ],
   exports: [SearchService],

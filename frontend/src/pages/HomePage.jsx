@@ -52,7 +52,7 @@ export default function HomePage() {
   const [appState, setAppState] = useState(APP_STATES.IDLE);
   const [sidebarWidth, setSidebarWidth] = useState(384);
   const [isResizing, setIsResizing] = useState(false);
-    const [budget, setBudget] = useState('');
+  const [budget, setBudget] = useState('');
   const [mapInvalidateTick, setMapInvalidateTick] = useState(0);
   const invalidateTimerRef = useRef(null);
   const [pois, setPois] = useState([]);
@@ -65,8 +65,14 @@ export default function HomePage() {
 
   const [locationInput, setLocationInput] = useState('');
   const [placeType, setPlaceType] = useState('');
-  const [rating, setRating] = useState('');
-  const [customNote, setCustomNote] = useState('');
+  const normalizeBudget = useCallback((value) => {
+    if (!value) return '';
+    const normalized = String(value).toLowerCase();
+    if (['low', 'cheap', 'budget', 'rẻ', 'bình dân'].includes(normalized)) return 'low';
+    if (['mid', 'medium', 'midrange', 'mid-range', 'vừa', 'trung bình'].includes(normalized)) return 'mid';
+    if (['high', 'expensive', 'luxury', 'premium', 'sang trọng', 'cao cấp'].includes(normalized)) return 'high';
+    return '';
+  }, []);
 
   useEffect(() => {
     const syncMobile = () => {
@@ -292,7 +298,7 @@ export default function HomePage() {
   // Sử dụng mock data thay cho API thật
   const performUnifiedSearch = useCallback(async (query, filters = {}) => {
     // Nếu không có gì, reset
-    if (!query.trim() && !filters.type && !filters.rating && !filters.locationInput && !filters.customNote) {
+    if (!query.trim() && !filters.type && !filters.locationInput && !filters.budget) {
       setPlaces([]);
       setError('');
       setIsSidebarOpen(false);
@@ -308,7 +314,11 @@ export default function HomePage() {
       setIsSidebarOpen(true);
 
       // Gọi mock searchPlaces thay vì getRecommendations
-      const results = await searchPlaces(query.trim());
+      const results = await searchPlaces(query.trim(), {
+        type: filters.type,
+        locationInput: filters.locationInput,
+        budget: filters.budget,
+      });
       setPlaces(results);
       setSelectedPlaceId(null);
       setRoute([]);
@@ -324,10 +334,10 @@ export default function HomePage() {
     setSearchQuery(queryToSearch);
     performUnifiedSearch(queryToSearch, {
       type: placeType,
-      rating,
       locationInput,
+      budget,
     });
-  }, [performUnifiedSearch, placeType, rating, locationInput, setSearchQuery]);
+  }, [performUnifiedSearch, placeType, locationInput, budget, setSearchQuery]);
 
   const handleSearchInputChange = useCallback(
     (value) => {
@@ -344,24 +354,24 @@ export default function HomePage() {
     const handleAiSearch = (e) => {
       const filters = e.detail;
       const query = filters.query || '';
+      const normalizedBudget = normalizeBudget(filters.budget);
       
       // Update Navbar states so the UI reflects the AI's parsed search
       setSearchQuery(query);
       if (filters.type) setPlaceType(filters.type);
       if (filters.location) setLocationInput(filters.location);
-      if (filters.budget) setCustomNote(filters.budget === 'cheap' ? 'Giá rẻ' : filters.budget === 'medium' ? 'Tầm trung' : 'Sang trọng');
+      if (normalizedBudget) setBudget(normalizedBudget);
 
       performUnifiedSearch(query, {
         type: filters.type || placeType,
         locationInput: filters.location || locationInput,
-        customNote: filters.budget || customNote,
-        rating
+        budget: normalizedBudget || budget,
       });
     };
 
     window.addEventListener('app:ai-search', handleAiSearch);
     return () => window.removeEventListener('app:ai-search', handleAiSearch);
-  }, [performUnifiedSearch, placeType, locationInput, customNote, rating]);
+  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget]);
 
   useEffect(() => {
     const payload = { searchQuery, places, userLocation };
@@ -518,16 +528,13 @@ export default function HomePage() {
         setLocationInput={setLocationInput}
         placeType={placeType}
         setPlaceType={setPlaceType}
-        rating={rating}
-        setRating={setRating}
-        customNote={customNote}
-        setCustomNote={setCustomNote}
+        budget={budget}
+        setBudget={setBudget}
         onClearFilters={() => {
           setSearchQuery('');
           setPlaceType('');
-          setRating('');
           setLocationInput('');
-          setCustomNote('');
+          setBudget('');
         }}
       />
 

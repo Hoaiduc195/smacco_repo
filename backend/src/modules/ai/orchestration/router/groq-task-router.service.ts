@@ -21,7 +21,8 @@ Output JSON Schema:
     // If SEARCH_PLACES, try to extract:
     // - "query": the main intent in Vietnamese (e.g. "khách sạn", "quán cà phê", "nhà hàng hải sản")
     // - "location": city or region mentioned in Vietnamese (e.g. "Đà Lạt", "Hồ Chí Minh")
-    // - "budget": "low", "mid", "high"
+    // - "anchor": landmark or place the user wants to be near (e.g. "chùa ABC", "sân bay Nội Bài")
+    // - "budget": "low", "mid", "high" (tương ứng rẻ/bình dân, trung bình, sang trọng/cao cấp)
     // - "type": "accommodation", "food", "attraction"
     // If GENERAL_CHAT, leave parameters empty.
   }

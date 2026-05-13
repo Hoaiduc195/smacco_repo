@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle, Send, X, Loader2, RotateCcw, Tag } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, RotateCcw, Tag, Plus, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import TaggedPlacesBar from './TaggedPlacesBar';
@@ -7,13 +7,19 @@ import TagPlaceModal from './TagPlaceModal';
 import { useConversation } from '../contexts/ConversationContext';
 
 export default function ChatWidget() {
+  const defaultMessages = [
+    { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
+  ];
   const [isOpen, setIsOpen] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const {
     messages,
+    setMessages,
     input,
     setInput,
+    conversationId,
+    setConversationId,
     isStreaming,
     error,
     canSend,
@@ -21,32 +27,91 @@ export default function ChatWidget() {
     abortStreaming,
     clearConversation,
   } = useStreamingChat({
-    initialMessages: [
-      { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
-    ],
+    initialMessages: defaultMessages,
     onSearchAction: (action) => {
       // Dispatch custom event so HomePage can intercept and perform the search
       window.dispatchEvent(new CustomEvent('app:ai-search', { detail: action }));
     }
   });
-  const { tagPlace, conversations, selectConversation, selectedConversationId } = useConversation();
+  const {
+    tagPlace,
+    conversations,
+    selectConversation,
+    selectedConversationId,
+    setSelectedConversationId,
+    startNewConversation,
+    deleteConversation,
+    refreshConversations,
+  } = useConversation();
   const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (autoScroll) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen, autoScroll]);
+
+  useEffect(() => {
+    if (conversationId && conversationId !== selectedConversationId) {
+      setSelectedConversationId(conversationId);
+      refreshConversations?.();
+    }
+  }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
+
+  useEffect(() => {
+    if (!selectedConversationId) {
+      setConversationId(null);
+      setMessages(defaultMessages);
+      return;
+    }
+    let active = true;
+    const loadHistory = async () => {
+      const history = await selectConversation(selectedConversationId);
+      if (!active) return;
+      setConversationId(selectedConversationId);
+      if (history?.length) {
+        setMessages(history);
+      } else {
+        setMessages(defaultMessages);
+      }
+    };
+    loadHistory();
+    return () => {
+      active = false;
+    };
+  }, [defaultMessages, selectConversation, selectedConversationId, setConversationId, setMessages]);
+
+  useEffect(() => {
+    if (selectedConversationId || !conversations?.length) return;
+    selectConversation(conversations[0].id).then((history) => {
+      setConversationId(conversations[0].id);
+      setMessages(history?.length ? history : defaultMessages);
+    });
+  }, [conversations, defaultMessages, selectConversation, selectedConversationId, setConversationId, setMessages]);
 
   const handleSend = async (e) => {
     e?.preventDefault();
+    setAutoScroll(true);
     await sendMessage();
   };
 
   const handleAbort = () => {
     abortStreaming();
+  };
+
+  const handleNewConversation = async () => {
+    const conversation = await startNewConversation();
+    if (conversation?.id) {
+      setConversationId(conversation.id);
+      setMessages(defaultMessages);
+      setShowHistory(false);
+    }
   };
 
   // Drag-and-drop: handle drop placeId
@@ -85,6 +150,15 @@ export default function ChatWidget() {
             <div className="w-56 border-r border-gray-200 bg-gray-50 flex flex-col relative shrink-0">
               <div className="p-3 font-semibold text-gray-700 border-b flex justify-between items-center">
                 <span>Lịch sử chat</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleNewConversation}
+                    className="p-1 rounded-md hover:bg-blue-100 text-blue-600"
+                    title="Tạo hội thoại mới"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 <button
                   type="button"
                   onClick={() => setShowHistory(false)}
@@ -93,16 +167,41 @@ export default function ChatWidget() {
                 >
                   <X className="w-4 h-4" />
                 </button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto">
                 {conversations && conversations.length > 0 ? (
                   conversations.map((conv) => (
                     <button
                       key={conv.id}
-                      onClick={() => selectConversation(conv.id)}
+                      onClick={async () => {
+                        const history = await selectConversation(conv.id);
+                        setConversationId(conv.id);
+                        setMessages(history?.length ? history : defaultMessages);
+                      }}
                       className={`w-full text-left px-4 py-3 border-b text-sm hover:bg-blue-50 transition-colors ${selectedConversationId === conv.id ? 'bg-blue-100 font-bold text-blue-900' : 'text-gray-700'}`}
                     >
-                      {conv.title || `Hội thoại ${conv.id}`}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold line-clamp-1">
+                            {conv.title || `Hội thoại ${conv.id.slice(0, 8)}`}
+                          </div>
+                          {conv.lastMessage ? (
+                            <div className="text-xs text-gray-500 line-clamp-1">{conv.lastMessage}</div>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteConversation(conv.id);
+                          }}
+                          className="p-1 rounded-md hover:bg-red-50 text-red-500"
+                          title="Xóa hội thoại"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </button>
                   ))
                 ) : (
@@ -144,9 +243,9 @@ export default function ChatWidget() {
               </button>
               <button
                 type="button"
-                onClick={clearConversation}
+                onClick={handleNewConversation}
                 className="p-1 rounded-lg hover:bg-gray-100"
-                title="Làm mới hội thoại"
+                title="Tạo hội thoại mới"
               >
                 <RotateCcw className="w-4 h-4 text-gray-500" />
               </button>
@@ -166,7 +265,16 @@ export default function ChatWidget() {
           {/* Bar hiển thị các địa điểm đã tag */}
           <TaggedPlacesBar />
 
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50"
+            onScroll={() => {
+              const el = scrollRef.current;
+              if (!el) return;
+              const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
+              setAutoScroll(distance <= 80);
+            }}
+          >
             {messages.map((msg, idx) => (
               <div
                 key={idx}

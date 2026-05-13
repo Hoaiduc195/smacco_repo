@@ -6,29 +6,38 @@ import { RecommendationsModule } from '../recommendations/recommendations.module
 import { ChatService } from './chat.service';
 import { GroqClientService } from './groq-client.service';
 import { ConversationStoreService } from './conversation-store.service';
+import { ConversationsService } from './conversations.service';
 import { SearchModule } from '../search/search.module';
+import { HttpModule } from '@nestjs/axios';
 
 // Orchestration
 import { GroqTaskRouterService } from './orchestration/router/groq-task-router.service';
 import { ToolRegistryService } from './orchestration/tools/tool-registry.service';
 import { SearchPlacesTool } from './orchestration/tools/search-places.tool';
+import { GeocodeAnchorTool } from './orchestration/tools/geocode-anchor.tool';
+import { RecommendPlacesTool } from './orchestration/tools/recommend-places.tool';
+import { RecommenderService } from './orchestration/tools/recommender.service';
 import { WorkflowEngineService } from './orchestration/engine/workflow-engine.service';
 import { GroqResponseComposerService } from './orchestration/composer/groq-response-composer.service';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 
 @Module({
-  imports: [RecommendationsModule, SearchModule],
+  imports: [RecommendationsModule, SearchModule, HttpModule],
   controllers: [AiController],
   providers: [
     NlpService, 
     ChatService, 
     GroqClientService, 
     ConversationStoreService,
+    ConversationsService,
 
     // New Orchestration Providers
     GroqTaskRouterService,
     ToolRegistryService,
     SearchPlacesTool,
+    GeocodeAnchorTool,
+    RecommendPlacesTool,
+    RecommenderService,
     WorkflowEngineService,
     GroqResponseComposerService,
     AiOrchestratorService,
@@ -39,8 +48,12 @@ export class AiModule {
   constructor(
     private readonly toolRegistry: ToolRegistryService,
     private readonly searchPlacesTool: SearchPlacesTool,
+    private readonly geocodeAnchorTool: GeocodeAnchorTool,
+    private readonly recommendPlacesTool: RecommendPlacesTool,
   ) {
     // Register tools on app start
     this.toolRegistry.registerTool(this.searchPlacesTool);
+    this.toolRegistry.registerTool(this.geocodeAnchorTool);
+    this.toolRegistry.registerTool(this.recommendPlacesTool);
   }
 }

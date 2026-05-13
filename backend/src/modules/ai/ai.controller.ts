@@ -1,6 +1,6 @@
 
 
-import { Controller, Post, Body, Res, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpException, HttpStatus, Get, Param, Query, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { NlpService } from './nlp.service';
@@ -9,6 +9,7 @@ import { ParseRequestDto } from './dto/parse-request.dto';
 import { ParseResponseDto } from './dto/parse-response.dto';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 import { ChatRequestDto } from './dto/chat-request.dto';
+import { ConversationsService } from './conversations.service';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -17,6 +18,7 @@ export class AiController {
     private readonly nlpService: NlpService,
     private readonly recommendationsService: RecommendationsService,
     private readonly orchestrator: AiOrchestratorService,
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   @Post('parse')
@@ -82,5 +84,41 @@ export class AiController {
     }
 
     res.end();
+  }
+
+  @Get('conversations')
+  @ApiOperation({ summary: 'List recent chat conversations' })
+  async listConversations(@Query('limit') limit?: string) {
+    const take = Number(limit) || 20;
+    const conversations = await this.conversationsService.listConversations(take);
+    return { conversations };
+  }
+
+  @Post('conversations')
+  @ApiOperation({ summary: 'Create a new conversation' })
+  async createConversation() {
+    const conversation = await this.conversationsService.createConversation();
+    return { conversation };
+  }
+
+  @Get('conversations/:id/messages')
+  @ApiOperation({ summary: 'List messages for a conversation' })
+  async getConversationMessages(@Param('id') id: string, @Query('limit') limit?: string) {
+    const take = Number(limit) || 50;
+    const messages = await this.conversationsService.getMessages(id, take);
+    return {
+      messages: messages.map((msg) => ({
+        role: msg.senderRole,
+        content: msg.messageText,
+        createdAt: msg.createdAt,
+      })),
+    };
+  }
+
+  @Delete('conversations/:id')
+  @ApiOperation({ summary: 'Delete a conversation' })
+  async deleteConversation(@Param('id') id: string) {
+    await this.conversationsService.deleteConversation(id);
+    return { deleted: true };
   }
 }

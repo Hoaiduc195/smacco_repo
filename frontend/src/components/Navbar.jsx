@@ -16,13 +16,11 @@ const PLACE_TYPES = [
   { value: 'camping', label: 'Camping' },
 ];
 
-const RATING_OPTIONS = [
-  { value: '', label: 'Tất cả đánh giá' },
-  { value: '5', label: '5★ trở lên' },
-  { value: '4', label: '4★ trở lên' },
-  { value: '3', label: '3★ trở lên' },
-  { value: '2', label: '2★ trở lên' },
-  { value: '1', label: '1★ trở lên' },
+const BUDGET_LEVELS = [
+  { value: '', label: 'Không giới hạn', slider: 0 },
+  { value: 'low', label: 'Tiết kiệm', slider: 1 },
+  { value: 'mid', label: 'Tầm trung', slider: 2 },
+  { value: 'high', label: 'Cao cấp', slider: 3 },
 ];
 
 export default function Navbar({ 
@@ -33,9 +31,10 @@ export default function Navbar({
   className = 'sticky top-0',
   locationInput, setLocationInput,
   placeType, setPlaceType,
-  rating, setRating,
+  budget, setBudget,
   onClearFilters
 }) {
+  const budgetLevel = BUDGET_LEVELS.find((level) => level.value === budget) || BUDGET_LEVELS[0];
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
@@ -119,7 +118,7 @@ export default function Navbar({
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showFilters || placeType || rating || locationInput ? 'text-cyan-600 bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showFilters || placeType || budget || locationInput ? 'text-cyan-600 bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
               title="Bộ lọc nâng cao"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -129,20 +128,25 @@ export default function Navbar({
 
         {/* Dropdown Bộ lọc nâng cao */}
         {showFilters && setLocationInput && (
-          <div className="absolute top-full mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full mt-2 w-full rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.6)] z-50 p-4 backdrop-blur animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-cyan-600" />
-                Bộ lọc tìm kiếm
-              </h3>
-              {(placeType || rating || locationInput || localSearchQuery) && (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                  <SlidersHorizontal className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-800">Bộ lọc tìm kiếm</h3>
+                  <p className="text-[11px] text-slate-500">Tinh chỉnh nhanh theo khu vực, loại và chi phí</p>
+                </div>
+              </div>
+              {(placeType || budget || locationInput || localSearchQuery) && (
                 <button
                   type="button"
                   onClick={() => {
                     setLocalSearchQuery('');
                     if (onClearFilters) onClearFilters();
                   }}
-                  className="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1 bg-red-50 px-2 py-1 rounded"
+                  className="text-xs font-semibold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"
                 >
                   <X className="w-3 h-3" /> Xóa bộ lọc
                 </button>
@@ -153,13 +157,18 @@ export default function Navbar({
               {/* Vị trí */}
               <div>
                 <label className="block text-xs font-semibold mb-1 text-slate-700">Vị trí / Khu vực</label>
-                <input
-                  type="text"
-                  value={locationInput}
-                  onChange={e => setLocationInput(e.target.value)}
-                  placeholder="Nhập tên thành phố, khu vực..."
-                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={locationInput}
+                    onChange={e => setLocationInput(e.target.value)}
+                    placeholder="Nhập tên thành phố, khu vực..."
+                    className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    VN
+                  </span>
+                </div>
               </div>
               
               {/* Thể loại lưu trú */}
@@ -168,33 +177,52 @@ export default function Navbar({
                 <select
                   value={placeType}
                   onChange={e => setPlaceType(e.target.value)}
-                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
+                  className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
                 >
                   {PLACE_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
 
-              {/* Rating tổng thể */}
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-slate-700">Đánh giá tối thiểu</label>
-                <select
-                  value={rating}
-                  onChange={e => setRating(e.target.value)}
-                  className="w-full h-9 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
-                >
-                  {RATING_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
+              {/* Chi phí */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold mb-1 text-slate-700">Chi phí dự kiến</label>
+                  <span className="text-xs font-semibold text-cyan-700 bg-cyan-50 border border-cyan-200 px-2.5 py-0.5 rounded-full">
+                    {budgetLevel.label}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-cyan-50/40 px-3 py-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="1"
+                    value={budgetLevel.slider}
+                    onChange={(e) => {
+                      const nextLevel = BUDGET_LEVELS.find((level) => level.slider === Number(e.target.value)) || BUDGET_LEVELS[0];
+                      setBudget(nextLevel.value);
+                    }}
+                    className="w-full accent-cyan-600"
+                    aria-label="Chọn mức chi phí"
+                  />
+                  <div className="mt-2 flex justify-between text-[11px] text-slate-500">
+                    {BUDGET_LEVELS.map((level) => (
+                      <span key={level.value || 'any'}>{level.label}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <p className="text-[11px] text-slate-500">Nhấn Enter để tìm nhanh hoặc áp dụng ngay.</p>
               <button
                 type="button"
                 onClick={() => {
                   setShowFilters(false);
                   if (onSearch) onSearch(localSearchQuery);
                 }}
-                className="px-4 py-2 bg-cyan-600 text-white text-sm font-medium rounded-lg hover:bg-cyan-700 transition-colors"
+                className="px-4 py-2 bg-cyan-600 text-white text-sm font-semibold rounded-lg hover:bg-cyan-700 transition-colors"
               >
                 Áp dụng bộ lọc
               </button>

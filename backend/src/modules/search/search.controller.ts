@@ -13,12 +13,16 @@ export class SearchController {
   @ApiQuery({ name: 'type', required: false, description: 'Place type (food/accommodation)' })
   @ApiQuery({ name: 'location', required: false, description: 'Location/city name' })
   @ApiQuery({ name: 'budget', required: false, description: 'Budget range' })
+  @ApiQuery({ name: 'checkInDate', required: false, description: 'Check-in date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'checkOutDate', required: false, description: 'Check-out date (YYYY-MM-DD)' })
   search(
     @Query('q') q?: string,
     @Query('type') type?: string,
     @Query('location') location?: string,
     @Query('budget') budget?: string,
+    @Query('checkInDate') checkInDate?: string,
+    @Query('checkOutDate') checkOutDate?: string,
   ) {
-    return this.searchService.search({ q, type, location, budget });
+    return this.searchService.search({ q, type, location, budget, checkInDate, checkOutDate });
   }
 }
