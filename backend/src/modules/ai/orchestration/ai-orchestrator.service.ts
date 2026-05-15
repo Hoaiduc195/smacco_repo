@@ -52,6 +52,7 @@ export class AiOrchestratorService {
         query: route.parameters.query || request.text,
         location: route.parameters.location,
         type: route.parameters.type,
+        types: route.parameters.types || (typeof route.parameters.type === 'string' ? route.parameters.type.split(/,/) .map((s:string)=>s.trim()).filter(Boolean) : undefined),
         budget: route.parameters.budget,
         results: places,
       };

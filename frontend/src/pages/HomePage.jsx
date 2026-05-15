@@ -358,7 +358,12 @@ export default function HomePage() {
       
       // Update Navbar states so the UI reflects the AI's parsed search
       setSearchQuery(query);
-      if (filters.type) setPlaceType(filters.type);
+      // Support multiple types from AI (array) or single type (string)
+      if (Array.isArray(filters.types) && filters.types.length > 0) {
+        setPlaceType(filters.types.join(','));
+      } else if (filters.type) {
+        setPlaceType(filters.type);
+      }
       if (filters.location) setLocationInput(filters.location);
       if (normalizedBudget) setBudget(normalizedBudget);
 
@@ -391,7 +396,7 @@ export default function HomePage() {
 
       // Fallback: perform search manually via GET /search
       performUnifiedSearch(query, {
-        type: filters.type || placeType,
+        type: filters.type || (Array.isArray(filters.types) ? filters.types.join(',') : placeType),
         locationInput: filters.location || locationInput,
         budget: normalizedBudget || budget,
       });
