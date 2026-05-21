@@ -24,6 +24,8 @@ import { RecommendationsModule } from './modules/recommendations/recommendations
 import { RagModule } from './modules/rag/rag.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { ContributionsModule } from './modules/contributions/contributions.module';
+import { QuestionsModule } from './modules/questions/questions.module';
+import { SavedPlacesModule } from './modules/saved-places/saved-places.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { ContributionsModule } from './modules/contributions/contributions.modul
     RagModule,
     PresenceModule,
     ContributionsModule,
+    QuestionsModule,
+    SavedPlacesModule,
   ],
 })
 export class AppModule {}

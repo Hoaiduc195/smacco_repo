@@ -7,6 +7,7 @@ export interface PlaceResult {
   locationId: string;
   name: string;
   address?: string;
+  description?: string;
   location?: LatLngLiteral;
   rating?: number;
   userRatingsTotal?: number;

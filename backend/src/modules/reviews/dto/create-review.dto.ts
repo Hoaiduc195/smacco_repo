@@ -6,9 +6,10 @@ export class CreateReviewDto {
   @IsString()
   locationId: string;
 
-  @ApiProperty({ example: 'u123' })
+  @ApiPropertyOptional({ example: 'u123' })
+  @IsOptional()
   @IsString()
-  userId: string;
+  userId?: string;
 
   @ApiProperty({ example: 5 })
   @IsNumber()

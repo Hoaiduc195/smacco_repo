@@ -4,7 +4,6 @@ import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { PlacesModule } from '../places/places.module';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
-import { OsmPlacesService } from './osm-places.service';
 import { GoongPlacesService } from './goong-places.service';
 import { SerpApiHotelsService } from './serpapi-hotels.service';
 import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
@@ -21,13 +20,12 @@ import { ACCOMMODATION_PROVIDERS } from './accommodation-provider.interface';
   controllers: [SearchController],
   providers: [
     SearchService,
-    OsmPlacesService,
     GoongPlacesService,
     SerpApiHotelsService,
     {
       provide: ACCOMMODATION_PROVIDERS,
-      useFactory: (osm: OsmPlacesService, goong: GoongPlacesService, serpapi: SerpApiHotelsService) => [osm, goong, serpapi],
-      inject: [OsmPlacesService, GoongPlacesService, SerpApiHotelsService],
+      useFactory: (serpapi: SerpApiHotelsService) => [serpapi],
+      inject: [SerpApiHotelsService],
     },
   ],
   exports: [SearchService],

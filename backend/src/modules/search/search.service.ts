@@ -101,7 +101,6 @@ export class SearchService {
     if (filters.applyRecommendations) {
       let anchorLocation = null;
       if (filters.location) {
-        // Geocode the location
         const geoResults = await this.goongPlacesService.searchAccommodations({ query: filters.location });
         if (geoResults.length > 0 && geoResults[0].location) {
           anchorLocation = geoResults[0].location;

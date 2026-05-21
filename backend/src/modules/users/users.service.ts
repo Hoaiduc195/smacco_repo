@@ -63,4 +63,18 @@ export class UsersService {
       }
     });
   }
+
+  async findByFirebaseUid(firebaseUid: string) {
+    return this.prisma.user.findUnique({
+      where: { firebaseUid },
+    });
+  }
+
+  async upsertFromFirebaseUser(firebaseUser: { uid: string; email?: string | null; name?: string | null }) {
+    return this.upsert({
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? undefined,
+      name: firebaseUser.name ?? undefined,
+    });
+  }
 }

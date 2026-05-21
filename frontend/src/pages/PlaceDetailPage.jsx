@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, MapPin, AlertCircle, Loader, 
-  Star, Globe, Phone, Clock, Share2, 
+  Star, Globe, Phone, Clock, Share2, Bookmark,
   ThumbsUp, ThumbsDown, MessageCircle, Navigation,
-  Image as ImageIcon
+  Image as ImageIcon, Send, X, Edit3, Trash2
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import QASection from '../components/QASection';
-import { getPlaceDetails, getPlaceReviews } from '../services/placeService';
+import { getPlaceDetails, getPlaceReviews, createPlace, createReview, deleteReview } from '../services/placeService';
+import { checkInAtPlace, leaveOnsiteStatus, getMyOnsiteStatus } from '../services/presenceService';
+import { savePlace, unsavePlace, checkSavedStatus } from '../services/savedPlacesService';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function PlaceDetailPage() {
   const { id } = useParams();
@@ -20,6 +23,103 @@ export default function PlaceDetailPage() {
   const [isLoading, setIsLoading] = useState(!place);
   const [error, setError] = useState('');
   const [vote, setVote] = useState(null); // 'up' or 'down'
+  const [onsiteStatus, setOnsiteStatus] = useState(location.state?.place?.onsiteStatus || null);
+  const [onsiteLoading, setOnsiteLoading] = useState(false);
+  const [onsiteError, setOnsiteError] = useState('');
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSavingLoading, setIsSavingLoading] = useState(false);
+  const syncInProgress = useRef({});
+  const { currentUser } = useAuth();
+
+  // Review form state
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewContent, setReviewContent] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
+
+  // Derived state to determine if user is currently onsite
+  const isCurrentlyOnsite = onsiteStatus?.isActive && 
+    (onsiteStatus.placeId === id || (place && onsiteStatus.placeId === place.id));
+
+  // Automatic database synchronization for external provider search results
+  useEffect(() => {
+    if (place && place.id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(place.id)) {
+      if (syncInProgress.current[place.id]) return;
+      syncInProgress.current[place.id] = true;
+
+      const syncPlaceWithDb = async () => {
+        try {
+          const dashIndex = place.id.indexOf('-');
+          const source = dashIndex !== -1 ? place.id.substring(0, dashIndex) : 'serpapi';
+          const locationId = dashIndex !== -1 ? place.id.substring(dashIndex + 1) : place.id;
+          
+          const savedPlace = await createPlace({
+            source: source,
+            locationId: locationId,
+            nameCache: place.name,
+            addressCache: place.address,
+            type: place.type,
+            coordinates: place.lat && place.lng ? { lat: place.lat, lng: place.lng } : undefined,
+            imageUrl: place.imageUrl || place.coverImageUrl || undefined,
+          });
+          setPlace(savedPlace);
+          if (savedPlace.onsiteStatus) {
+            setOnsiteStatus(savedPlace.onsiteStatus);
+          }
+        } catch (err) {
+          console.error('Error syncing place with database:', err);
+          delete syncInProgress.current[place.id];
+        }
+      };
+      syncPlaceWithDb();
+    }
+  }, [place]);
+
+  // Restore onsite status and saved status from backend on mount or when id changes
+  useEffect(() => {
+    const fetchOnsiteStatus = async () => {
+      try {
+        const currentStatus = await getMyOnsiteStatus();
+        setOnsiteStatus(currentStatus);
+      } catch (presErr) {
+        console.warn('Failed to fetch current presence status:', presErr);
+      }
+    };
+    const fetchSavedStatus = async () => {
+      try {
+        const status = await checkSavedStatus(id);
+        setIsSaved(status.isSaved);
+      } catch (err) {
+        console.warn('Failed to fetch saved status:', err);
+      }
+    };
+    if (id) {
+      fetchOnsiteStatus();
+      fetchSavedStatus();
+    }
+  }, [id]);
+
+  const handleToggleSave = async () => {
+    if (!id) return;
+    setIsSavingLoading(true);
+    try {
+      if (isSaved) {
+        await unsavePlace(id);
+        setIsSaved(false);
+      } else {
+        await savePlace(id);
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error('Failed to toggle save status:', err);
+      alert('Không thể cập nhật trạng thái lưu địa điểm. Vui lòng thử lại sau.');
+    } finally {
+      setIsSavingLoading(false);
+    }
+  };
 
   // Load place details if not provided via state
   useEffect(() => {
@@ -36,6 +136,7 @@ export default function PlaceDetailPage() {
       setError('');
       const details = await getPlaceDetails(id);
       setPlace(details);
+
       loadReviews();
     } catch (err) {
       console.error('Error loading place details, using fallback:', err);
@@ -72,8 +173,109 @@ export default function PlaceDetailPage() {
     }
   };
 
+  const requestCurrentLocation = () =>
+    new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Trình duyệt không hỗ trợ định vị'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (geoError) => reject(geoError),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 2000,
+          timeout: 15000,
+        }
+      );
+    });
+
+  const handleConfirmOnsiteStatus = async () => {
+    try {
+      setOnsiteLoading(true);
+      setOnsiteError('');
+
+      if (isCurrentlyOnsite) {
+        const status = await leaveOnsiteStatus();
+        setOnsiteStatus(status);
+      } else {
+        let currentLocation;
+        try {
+          currentLocation = await requestCurrentLocation();
+        } catch (geoErr) {
+          console.warn('Geolocation failed, falling back to place coordinates for demo/dev mode:', geoErr);
+          if (place && place.lat && place.lng) {
+            currentLocation = { lat: place.lat, lng: place.lng };
+          } else {
+            throw new Error(geoErr?.message || 'Không thể định vị vị trí của bạn và địa điểm này chưa có tọa độ.');
+          }
+        }
+        const status = await checkInAtPlace(id, currentLocation);
+        setOnsiteStatus(status);
+      }
+    } catch (err) {
+      console.error('Error toggling onsite status:', err);
+      setOnsiteError(err?.message || 'Không thể cập nhật trạng thái onsite.');
+    } finally {
+      setOnsiteLoading(false);
+    }
+  };
+
   const handleVote = (type) => {
     setVote(prev => prev === type ? null : type);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!currentUser) {
+      setReviewError('Vui lòng đăng nhập để viết đánh giá.');
+      return;
+    }
+    if (reviewRating === 0) {
+      setReviewError('Vui lòng chọn số sao đánh giá.');
+      return;
+    }
+    if (!reviewContent.trim()) {
+      setReviewError('Vui lòng nhập nội dung đánh giá.');
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+      setReviewError('');
+      const newReview = await createReview({
+        locationId: id,
+        rating: reviewRating,
+        content: reviewContent.trim(),
+      });
+      setReviews(prev => [newReview, ...prev]);
+      setShowReviewForm(false);
+      setReviewRating(0);
+      setReviewContent('');
+    } catch (err) {
+      setReviewError(err.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này không?')) return;
+    try {
+      setDeletingReviewId(reviewId);
+      setReviewError('');
+      await deleteReview(reviewId);
+      setReviews(prev => prev.filter(r => r.id !== reviewId));
+    } catch (err) {
+      setReviewError(err.message || 'Không thể xóa đánh giá. Vui lòng thử lại.');
+    } finally {
+      setDeletingReviewId(null);
+    }
   };
 
   if (isLoading) {
@@ -175,6 +377,18 @@ export default function PlaceDetailPage() {
                 <ThumbsDown className={`w-5 h-5 ${vote === 'down' ? 'fill-white' : ''}`} />
                 <span>Không thích</span>
               </button>
+              <button 
+                onClick={handleToggleSave}
+                disabled={isSavingLoading}
+                className={`p-3 rounded-2xl border transition-all shadow-lg active:scale-95 flex items-center justify-center ${
+                  isSaved 
+                    ? 'bg-rose-500 text-white border-rose-500 shadow-rose-200 hover:bg-rose-600' 
+                    : 'bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/30'
+                }`}
+                title={isSaved ? "Bỏ lưu địa điểm" : "Lưu địa điểm"}
+              >
+                <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-white' : ''}`} />
+              </button>
               <button className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white border border-white/30 hover:bg-white/30 transition-all shadow-lg">
                 <Share2 className="w-5 h-5" />
               </button>
@@ -232,48 +446,210 @@ export default function PlaceDetailPage() {
             </section>
 
             {/* QA Section Placeholder */}
-            <QASection placeId={id} />
+            <QASection placeId={id} place={place} />
 
             {/* Reviews Section */}
             <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-slate-900">Bình luận từ cộng đồng</h2>
-                <button className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors text-sm">
-                  Viết đánh giá
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Đánh giá từ cộng đồng</h2>
+                  <p className="text-sm text-slate-500 mt-1">{reviews.length} đánh giá</p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!currentUser) {
+                      setReviewError('Vui lòng đăng nhập để viết đánh giá.');
+                      return;
+                    }
+                    setShowReviewForm(prev => !prev);
+                    setReviewError('');
+                  }}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold transition-all text-sm active:scale-95 shadow-sm ${
+                    showReviewForm
+                      ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                      : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-amber-200'
+                  }`}
+                >
+                  {showReviewForm ? (
+                    <><X className="w-4 h-4" /> Hủy</>
+                  ) : (
+                    <><Edit3 className="w-4 h-4" /> Viết đánh giá</>
+                  )}
                 </button>
               </div>
 
+              {/* Review Form */}
+              {showReviewForm && (
+                <div className="mb-8 p-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-2xl border border-amber-200/60 shadow-inner transition-all">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-md">
+                      {currentUser?.displayName?.charAt(0)?.toUpperCase() || currentUser?.email?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{currentUser?.displayName || currentUser?.email || 'Người dùng'}</p>
+                      <p className="text-xs text-slate-500">Đang viết đánh giá</p>
+                    </div>
+                  </div>
+
+                  {/* Star Rating Picker */}
+                  <div className="mb-5">
+                    <p className="text-sm font-semibold text-slate-700 mb-2">Đánh giá của bạn</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          onMouseEnter={() => setReviewHoverRating(star)}
+                          onMouseLeave={() => setReviewHoverRating(0)}
+                          className="p-1 transition-transform hover:scale-125 active:scale-95"
+                        >
+                          <Star
+                            className={`w-8 h-8 transition-colors ${
+                              star <= (reviewHoverRating || reviewRating)
+                                ? 'text-amber-400 fill-amber-400 drop-shadow-sm'
+                                : 'text-slate-300'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      {reviewRating > 0 && (
+                        <span className="ml-3 text-sm font-bold text-amber-600">
+                          {reviewRating === 1 && 'Tệ'}
+                          {reviewRating === 2 && 'Không tốt'}
+                          {reviewRating === 3 && 'Bình thường'}
+                          {reviewRating === 4 && 'Tốt'}
+                          {reviewRating === 5 && 'Tuyệt vời'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content Textarea */}
+                  <div className="mb-5">
+                    <textarea
+                      value={reviewContent}
+                      onChange={(e) => setReviewContent(e.target.value)}
+                      placeholder="Chia sẻ trải nghiệm của bạn tại đây... Bạn thích điều gì? Có điều gì cần cải thiện không?"
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-xl border border-amber-200 bg-white text-slate-800 placeholder-slate-400 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all shadow-sm"
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-slate-400">{reviewContent.length}/500 ký tự</p>
+                    </div>
+                  </div>
+
+                  {reviewError && (
+                    <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {reviewError}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => {
+                        setShowReviewForm(false);
+                        setReviewRating(0);
+                        setReviewContent('');
+                        setReviewError('');
+                      }}
+                      className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={handleSubmitReview}
+                      disabled={isSubmittingReview || reviewRating === 0 || !reviewContent.trim()}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-amber-200/50"
+                    >
+                      {isSubmittingReview ? (
+                        <><Loader className="w-4 h-4 animate-spin" /> Đang gửi...</>
+                      ) : (
+                        <><Send className="w-4 h-4" /> Gửi đánh giá</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Review error (when not showing form, e.g. not logged in) */}
+              {!showReviewForm && reviewError && (
+                <div className="mb-6 px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {reviewError}
+                </div>
+              )}
+
+              {/* Review List */}
               {reviews.length > 0 ? (
-                <div className="space-y-6">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:border-blue-200">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                            {review.author?.charAt(0).toUpperCase() || 'U'}
+                <div className="space-y-5">
+                  {reviews.map((review) => {
+                    const authorName = review.user?.displayName || review.author || 'Ẩn danh';
+                    const authorInitial = authorName.charAt(0).toUpperCase();
+                    const reviewDate = review.createdAt
+                      ? new Date(review.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                      : review.date || '';
+                    const reviewText = review.reviewText || review.text || '';
+                    const isOwnReview = currentUser && review.user?.firebaseUid && review.user.firebaseUid === currentUser.uid;
+
+                    return (
+                      <div key={review.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:border-amber-200 hover:shadow-sm group">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center font-bold text-amber-700 text-sm border border-amber-200/50">
+                              {authorInitial}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900 text-sm">{authorName}</p>
+                              <p className="text-xs text-slate-500 font-medium">{reviewDate}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{review.author}</p>
-                            <p className="text-xs text-slate-500 font-medium">{review.date}</p>
-                          </div>
+                          {review.rating && (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }, (_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < review.rating
+                                      ? 'text-amber-400 fill-amber-400'
+                                      : 'text-slate-200'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {isOwnReview && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteReview(review.id)}
+                              disabled={deletingReviewId === review.id}
+                              className="flex items-center gap-1 ml-2 px-2 py-1 rounded-lg text-xs font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                              title="Xóa đánh giá của bạn"
+                            >
+                              {deletingReviewId === review.id ? (
+                                <Loader className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                              Xóa
+                            </button>
+                          )}
                         </div>
-                        {review.rating && (
-                          <div className="px-2 py-1 bg-white border border-slate-200 rounded-lg flex items-center gap-1 shadow-sm">
-                            <span className="text-yellow-500 font-bold text-sm">★</span>
-                            <span className="text-slate-700 text-sm font-bold">{review.rating}</span>
-                          </div>
+                        {reviewText && (
+                          <p className="text-slate-700 leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                            {reviewText}
+                          </p>
                         )}
                       </div>
-                      <p className="text-slate-700 leading-relaxed text-sm bg-white p-4 rounded-xl border border-slate-100 shadow-sm italic">
-                        "{review.text}"
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <MessageCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Chưa có bình luận nào cho địa điểm này.</p>
+                <div className="text-center py-16 bg-gradient-to-br from-slate-50 to-amber-50/30 rounded-2xl border border-dashed border-slate-200">
+                  <MessageCircle className="w-14 h-14 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 font-semibold mb-1">Chưa có đánh giá nào</p>
+                  <p className="text-slate-400 text-sm">Hãy là người đầu tiên chia sẻ trải nghiệm!</p>
                 </div>
               )}
             </section>
@@ -281,6 +657,50 @@ export default function PlaceDetailPage() {
 
           {/* Right Column - Map & Quick Actions */}
           <div className="space-y-8 sticky top-32">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-slate-900">Trạng thái onsite</h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Bấm xác nhận khi bạn muốn bật trạng thái onsite cho place này.
+                  </p>
+                </div>
+                <div
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    isCurrentlyOnsite
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {isCurrentlyOnsite ? 'Đang ở đây' : 'Offsite'}
+                </div>
+              </div>
+              {isCurrentlyOnsite ? (
+                <p className="mt-3 text-sm text-slate-700">
+                  Đã xác nhận bạn đang ở tại {onsiteStatus.placeName || place.name}.
+                </p>
+              ) : (
+                <p className="mt-3 text-sm text-slate-700">Chưa xác nhận onsite. Bạn có thể làm việc đó sau bằng nút bên dưới.</p>
+              )}
+              <button
+                type="button"
+                onClick={handleConfirmOnsiteStatus}
+                disabled={onsiteLoading}
+                className={`mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-95 disabled:opacity-50 ${
+                  isCurrentlyOnsite
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                }`}
+              >
+                {onsiteLoading
+                  ? 'Đang cập nhật...'
+                  : isCurrentlyOnsite
+                  ? 'Rời khỏi địa điểm (Hủy onsite)'
+                  : 'Xác nhận đang ở đây'}
+              </button>
+              {onsiteError ? <p className="mt-3 text-sm text-red-600">{onsiteError}</p> : null}
+            </div>
+
             {/* Map Preview */}
             <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="h-64 relative bg-slate-200">

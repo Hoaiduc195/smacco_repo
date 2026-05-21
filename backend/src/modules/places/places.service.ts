@@ -16,32 +16,67 @@ export class PlacesService {
     const normalizedName = this.normalizeText(createPlaceDto.nameCache);
     const normalizedAddress = this.normalizeText(createPlaceDto.addressCache || '');
 
-    return this.prisma.$transaction(async (tx) => {
-      const existingSource = await tx.placeSource.findUnique({
-        where: {
-          source_sourcePlaceId: {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const existingSource = await tx.placeSource.findUnique({
+          where: {
+            source_sourcePlaceId: {
+              source,
+              sourcePlaceId,
+            },
+          },
+          include: { place: true },
+        });
+
+        if (existingSource) {
+          if (existingSource.place) {
+            return existingSource.place;
+          }
+          // If for some reason the place relation is null but the source record exists,
+          // let's delete the orphaned source record to clean up and allow re-creation.
+          await tx.placeSource.delete({ where: { id: existingSource.id } });
+        }
+
+        const matchedPlace = await this.findFuzzyMatch(tx, {
+          name: createPlaceDto.nameCache,
+          address: createPlaceDto.addressCache,
+          lat,
+          lng,
+        });
+
+        if (matchedPlace) {
+          await tx.placeSource.create({
+            data: {
+              placeId: matchedPlace.id,
+              source,
+              sourcePlaceId,
+              rawName: createPlaceDto.nameCache,
+              rawAddress: createPlaceDto.addressCache,
+              normalizedName,
+              normalizedAddress,
+              lat,
+              lng,
+            },
+          });
+          return matchedPlace;
+        }
+
+        const place = await tx.place.create({
+          data: {
             source,
             sourcePlaceId,
+            placeName: createPlaceDto.nameCache,
+            placeAddress: createPlaceDto.addressCache,
+            categories: createPlaceDto.type ? [createPlaceDto.type] : [],
+            lat: lat ?? 0,
+            lng: lng ?? 0,
+            coverImageUrl: createPlaceDto.imageUrl,
           },
-        },
-        include: { place: true },
-      });
+        });
 
-      if (existingSource?.place) {
-        return existingSource.place;
-      }
-
-      const matchedPlace = await this.findFuzzyMatch(tx, {
-        name: createPlaceDto.nameCache,
-        address: createPlaceDto.addressCache,
-        lat,
-        lng,
-      });
-
-      if (matchedPlace) {
         await tx.placeSource.create({
           data: {
-            placeId: matchedPlace.id,
+            placeId: place.id,
             source,
             sourcePlaceId,
             rawName: createPlaceDto.nameCache,
@@ -52,38 +87,18 @@ export class PlacesService {
             lng,
           },
         });
-        return matchedPlace;
+
+        return place;
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existing = await this.findBySourcePlaceId(sourcePlaceId, source);
+        if (existing) {
+          return existing;
+        }
       }
-
-      const place = await tx.place.create({
-        data: {
-          source,
-          sourcePlaceId,
-          placeName: createPlaceDto.nameCache,
-          placeAddress: createPlaceDto.addressCache,
-          categories: createPlaceDto.type ? [createPlaceDto.type] : [],
-          lat: lat ?? 0,
-          lng: lng ?? 0,
-          coverImageUrl: createPlaceDto.imageUrl,
-        },
-      });
-
-      await tx.placeSource.create({
-        data: {
-          placeId: place.id,
-          source,
-          sourcePlaceId,
-          rawName: createPlaceDto.nameCache,
-          rawAddress: createPlaceDto.addressCache,
-          normalizedName,
-          normalizedAddress,
-          lat,
-          lng,
-        },
-      });
-
-      return place;
-    });
+      throw error;
+    }
   }
 
   async findAll(filters?: { type?: string; city?: string; q?: string }) {
@@ -109,9 +124,45 @@ export class PlacesService {
   }
 
   async findOne(id: string) {
+    if (!this.isUuid(id)) {
+      const dashIndex = id.indexOf('-');
+      const source = dashIndex !== -1 ? id.substring(0, dashIndex) : 'serpapi';
+      const sourcePlaceId = dashIndex !== -1 ? id.substring(dashIndex + 1) : id;
+      
+      const place = await this.findBySourcePlaceId(sourcePlaceId, source);
+      if (!place) throw new NotFoundException(`Place #${id} not found`);
+      return place;
+    }
+
     const place = await this.prisma.place.findUnique({ where: { id } });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
     return place;
+  }
+
+  async findReviews(id: string) {
+    const place = await this.findOne(id);
+    return this.prisma.review.findMany({
+      where: { placeId: place.id },
+      include: {
+        place: true,
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findBySourcePlaceId(sourcePlaceId: string, source = 'serpapi') {
+    const record = await this.prisma.placeSource.findUnique({
+      where: {
+        source_sourcePlaceId: {
+          source: source.trim().toLowerCase(),
+          sourcePlaceId,
+        },
+      },
+      include: { place: true },
+    });
+
+    return record?.place ?? null;
   }
 
   async update(id: string, updatePlaceDto: UpdatePlaceDto) {
@@ -220,5 +271,9 @@ export class PlacesService {
 
   private metersToLngDelta(meters: number, lat: number): number {
     return meters / (111320 * Math.cos(this.toRad(lat)));
+  }
+
+  private isUuid(value: string): boolean {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   }
 }

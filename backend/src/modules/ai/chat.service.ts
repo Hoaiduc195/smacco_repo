@@ -20,6 +20,33 @@ export class ChatService {
     private readonly groqClient: GroqClientService,
   ) {}
 
+  async answerPlaceQuestion(params: {
+    placeName: string;
+    placeAddress?: string | null;
+    questionText: string;
+  }): Promise<string> {
+    const systemPrompt =
+      'Bạn là AI hỗ trợ hỏi đáp về địa điểm trên một trang cộng đồng kiểu Reddit. ' +
+      'Trả lời bằng tiếng Việt, ngắn gọn, hữu ích, không bịa đặt dữ kiện nếu không có thông tin. ' +
+      'Nếu thiếu dữ kiện, hãy nói rõ là bạn chưa xác nhận được và gợi ý người dùng hỏi cộng đồng onsite.';
+
+    const userPrompt = [
+      `Địa điểm: ${params.placeName}`,
+      params.placeAddress ? `Địa chỉ: ${params.placeAddress}` : null,
+      `Câu hỏi: ${params.questionText}`,
+      'Yêu cầu: trả lời như một section AI được ghim ở đầu thread, không dùng markdown quá phức tạp.',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const { content } = await this.groqClient.chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]);
+
+    return content.trim();
+  }
+
   private async buildMessages(conversationId: string, userText: string): Promise<ChatMessage[]> {
     const history = await this.store.getHistory(conversationId);
     const messages: ChatMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }];

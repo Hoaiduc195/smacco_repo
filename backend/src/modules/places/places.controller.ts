@@ -41,6 +41,12 @@ export class PlacesController {
     return this.placesService.findOne(id);
   }
 
+  @Get(':id/reviews')
+  @ApiOperation({ summary: 'Get reviews for a place' })
+  findReviews(@Param('id') id: string) {
+    return this.placesService.findReviews(id);
+  }
+
   @Put(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update place' })

@@ -27,6 +27,7 @@ export default function PlaceCard({
   }, [reviews]);
 
   const placeType = place.type?.toLowerCase();
+  const placeDescription = place.description?.trim();
   const getIconAndColor = (type) => {
     switch (type) {
       case 'hotel':
@@ -115,6 +116,11 @@ export default function PlaceCard({
               <span>{place.address}</span>
             </div>
           )}
+          {placeDescription ? (
+            <div className="text-xs text-slate-600 line-clamp-2">
+              {placeDescription}
+            </div>
+          ) : null}
           <div className="text-xs text-gray-500 flex items-center gap-3">
             {place.rating && (
               <span className="flex items-center gap-1">

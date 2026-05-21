@@ -31,6 +31,7 @@ export const searchPlaces = async (query, filters = {}) => {
       id: place.locationId,
       name: place.name,
       address: place.address,
+      description: place.description,
       lat: place.location?.lat,
       lng: place.location?.lng,
       type: place.types?.[0] || 'default',
@@ -98,12 +99,43 @@ export const getUserReviews = async (userId) => {
   }
 };
 
+// Create a new review
+export const createReview = async (reviewData) => {
+  try {
+    const response = await apiClient.post('/reviews', reviewData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating review:', error);
+    throw new Error(error.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.');
+  }
+};
+
+// Delete a review
+export const deleteReview = async (reviewId) => {
+  try {
+    await apiClient.delete(`/reviews/${reviewId}`);
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    throw new Error(error.response?.data?.message || 'Không thể xóa đánh giá. Vui lòng thử lại.');
+  }
+};
+
 // Reverse geocoding - get place info from coordinates
 export const reverseGeocode = async (lat, lng) => {
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
     );
+    
+    if (!response.ok) {
+      throw new Error(`Nominatim API responded with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Nominatim API returned non-JSON content: ${contentType}`);
+    }
+
     const data = await response.json();
     return {
       address: data.address?.road || data.display_name,
@@ -135,9 +167,19 @@ export const fetchNearbyPois = async (lat, lng, radius = 1500, categories = ['ho
       headers: { 'Content-Type': 'text/plain' },
       body: query,
     });
+
+    if (!response.ok) {
+      throw new Error(`Overpass API responded with status ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Overpass API returned non-JSON content: ${contentType}`);
+    }
+
     const data = await response.json();
 
-    const pois = data.elements
+    const pois = (data.elements || [])
       .filter((el) => el.lat || el.center)
       .map((el) => {
         const category = normalizedCategories.find((cat) => {
@@ -165,6 +207,12 @@ export const fetchNearbyPois = async (lat, lng, radius = 1500, categories = ['ho
   }
 };
 
+// Create and synchronize place
+export const createPlace = async (placeData) => {
+  const response = await apiClient.post('/places', placeData);
+  return response.data;
+};
+
 export default {
   searchPlaces,
   getNearbyPlaces,
@@ -173,4 +221,6 @@ export default {
   getUserReviews,
   reverseGeocode,
   fetchNearbyPois,
+  createPlace,
 };
+

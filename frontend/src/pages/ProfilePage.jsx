@@ -9,28 +9,44 @@ import {
   MessageSquare, 
   ChevronRight,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Bookmark
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTravelData } from '../contexts/TravelDataContext';
 import { getUserReviews } from '../services/placeService';
+import { getMyOnsiteStatus, leaveOnsiteStatus } from '../services/presenceService';
+import { getSavedPlaces, unsavePlace } from '../services/savedPlacesService';
 import Navbar from '../components/Navbar';
 import PlaceCard from '../components/PlaceCard';
 
 export default function ProfilePage() {
   const { currentUser } = useAuth();
   const { checkIns, removeCheckIn } = useTravelData();
-  const [activeTab, setActiveTab] = useState('checkins'); // 'checkins' or 'reviews'
+  const [activeTab, setActiveTab] = useState('checkins'); // 'checkins', 'saved', or 'reviews'
   const [reviews, setReviews] = useState([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [savedPlaces, setSavedPlaces] = useState([]);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
   const [error, setError] = useState('');
+  const [onsiteStatus, setOnsiteStatus] = useState(null);
+  const [onsiteLoading, setOnsiteLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (currentUser?.uid && activeTab === 'reviews') {
       loadUserReviews();
+    } else if (currentUser?.uid && activeTab === 'saved') {
+      loadSavedPlaces();
     }
   }, [currentUser, activeTab]);
+
+  useEffect(() => {
+    if (currentUser?.uid) {
+      loadSavedPlaces();
+      loadOnsiteStatus();
+    }
+  }, [currentUser]);
 
   const loadUserReviews = async () => {
     try {
@@ -43,6 +59,52 @@ export default function ProfilePage() {
       console.error(err);
     } finally {
       setIsLoadingReviews(false);
+    }
+  };
+
+  const loadSavedPlaces = async () => {
+    try {
+      setIsLoadingSaved(true);
+      setError('');
+      const data = await getSavedPlaces();
+      setSavedPlaces(data);
+    } catch (err) {
+      setError('Không thể tải danh sách địa điểm đã lưu.');
+      console.error(err);
+    } finally {
+      setIsLoadingSaved(false);
+    }
+  };
+
+  const handleUnsavePlace = async (placeId) => {
+    try {
+      await unsavePlace(placeId);
+      setSavedPlaces((prev) => prev.filter((p) => p.id !== placeId));
+    } catch (err) {
+      console.error('Failed to unsave place:', err);
+      alert('Không thể bỏ lưu địa điểm. Vui lòng thử lại sau.');
+    }
+  };
+
+  const loadOnsiteStatus = async () => {
+    try {
+      const status = await getMyOnsiteStatus();
+      setOnsiteStatus(status);
+    } catch (err) {
+      console.error(err);
+      setOnsiteStatus(null);
+    }
+  };
+
+  const handleLeaveOnsiteStatus = async () => {
+    try {
+      setOnsiteLoading(true);
+      await leaveOnsiteStatus();
+      await loadOnsiteStatus();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setOnsiteLoading(false);
     }
   };
 
@@ -88,11 +150,42 @@ export default function ProfilePage() {
                 <div className="px-4 py-2 bg-blue-50 rounded-2xl text-blue-700 text-sm font-bold">
                   {checkIns.length} Check-ins
                 </div>
+                <div className="px-4 py-2 bg-rose-50 rounded-2xl text-rose-700 text-sm font-bold">
+                  {savedPlaces.length} Đã lưu
+                </div>
                 <div className="px-4 py-2 bg-emerald-50 rounded-2xl text-emerald-700 text-sm font-bold">
                   {reviews.length || '...'} Đánh giá
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="bg-gradient-to-br from-cyan-50 to-white rounded-3xl border border-cyan-100 p-6 sm:p-7 mb-8 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wide text-cyan-700">Onsite status</p>
+              {onsiteStatus?.isActive ? (
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">
+                  Đang ở tại {onsiteStatus.placeName || 'một địa điểm'}
+                </h2>
+              ) : (
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">Chưa bật trạng thái onsite</h2>
+              )}
+              <p className="mt-2 text-sm text-slate-600">
+                Trạng thái này chỉ hiển thị khi bạn bật tại một địa điểm; trong thread, avatar của bạn sẽ được đánh dấu onsite.
+              </p>
+            </div>
+            {onsiteStatus?.isActive ? (
+              <button
+                type="button"
+                onClick={handleLeaveOnsiteStatus}
+                disabled={onsiteLoading}
+                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                {onsiteLoading ? 'Đang tắt...' : 'Tắt trạng thái onsite'}
+              </button>
+            ) : null}
           </div>
         </section>
 
@@ -107,6 +200,16 @@ export default function ProfilePage() {
             }`}
           >
             Lịch sử Check-in
+          </button>
+          <button
+            onClick={() => setActiveTab('saved')}
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === 'saved'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Địa điểm đã lưu
           </button>
           <button
             onClick={() => setActiveTab('reviews')}
@@ -153,6 +256,47 @@ export default function ProfilePage() {
                     className="mt-4 text-blue-600 font-bold hover:underline"
                   >
                     Khám phá ngay
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'saved' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isLoadingSaved ? (
+                <div className="col-span-full py-12 flex justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : savedPlaces.length > 0 ? (
+                savedPlaces.map((sp) => (
+                  <PlaceCard
+                    key={sp.id}
+                    place={{
+                      id: sp.id,
+                      name: sp.placeName,
+                      address: sp.placeAddress,
+                      type: sp.categories?.[0] || 'hotel',
+                      rating: sp.rating || 4.5,
+                      lat: sp.lat,
+                      lng: sp.lng,
+                    }}
+                    onSelect={() => navigate(`/places/${sp.id}`)}
+                    onNavigate={() => window.open(`/places/${sp.id}`, '_blank')}
+                    onSave={() => handleUnsavePlace(sp.id)}
+                    isSaved={true}
+                    showActions={true}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                  <Bookmark className="w-12 h-12 text-slate-300 mx-auto mb-4 animate-pulse" />
+                  <p className="text-slate-500 font-medium">Bạn chưa lưu địa điểm nào.</p>
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="mt-4 text-blue-600 font-bold hover:underline"
+                  >
+                    Khám phá và lưu ngay
                   </button>
                 </div>
               )}

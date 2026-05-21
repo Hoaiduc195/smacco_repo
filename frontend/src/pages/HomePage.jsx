@@ -429,7 +429,7 @@ export default function HomePage() {
   // Handle marker click - open place detail in new tab
   const handleMarkerClick = (place) => {
     setSelectedPlaceId(place.id);
-    window.open(`/places/${place.id}`, '_blank');
+    navigate(`/places/${place.id}`, { state: { place } });
   };
 
   const handleSelectPlace = (place) => {
@@ -440,7 +440,7 @@ export default function HomePage() {
 
   const handleShowPlaceDetails = (place) => {
     setSelectedPlaceId(place.id);
-    window.open(`/places/${place.id}`, '_blank');
+    navigate(`/places/${place.id}`, { state: { place } });
   };
 
   const handleChat = (place) => {

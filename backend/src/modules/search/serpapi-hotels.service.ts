@@ -43,26 +43,69 @@ export class SerpApiHotelsService implements AccommodationProvider {
 
       const properties = response.data?.properties ?? [];
 
-      return properties.map((p: any): PlaceResult => ({
-        locationId: String(p.property_id ?? `serpapi-${Math.random().toString(36).slice(2)}`),
-        sourcePlaceId: p.property_id ? String(p.property_id) : undefined,
-        name: p.name || 'Unknown Hotel',
-        address: p.address || p.location || undefined,
-        location: p.gps_coordinates
-          ? {
-              lat: Number(p.gps_coordinates.latitude),
-              lng: Number(p.gps_coordinates.longitude),
-            }
-          : undefined,
-        rating: typeof p.rating === 'number' ? p.rating : undefined,
-        userRatingsTotal: typeof p.reviews === 'number' ? p.reviews : undefined,
-        imageUrl: p.thumbnail || undefined,
-        source: 'serpapi',
-      }));
+      return properties.map((p: any): PlaceResult => {
+        const sourcePlaceId = this.resolveSourcePlaceId(p);
+        const normalizedType = this.normalizePlaceType(p);
+        const normalizedAddress = this.normalizeAddress(p);
+
+        return {
+          locationId: sourcePlaceId ? `serpapi-${sourcePlaceId}` : `serpapi-${Math.random().toString(36).slice(2)}`,
+          sourcePlaceId,
+          name: p.name || 'Unknown Hotel',
+          address: normalizedAddress,
+          description: typeof p.description === 'string' && p.description.trim() ? p.description.trim() : undefined,
+          location: p.gps_coordinates
+            ? {
+                lat: Number(p.gps_coordinates.latitude),
+                lng: Number(p.gps_coordinates.longitude),
+              }
+            : undefined,
+          rating: typeof p.rating === 'number' ? p.rating : undefined,
+          userRatingsTotal: typeof p.reviews === 'number' ? p.reviews : undefined,
+          types: normalizedType ? [normalizedType] : undefined,
+          imageUrl: p.thumbnail || undefined,
+          source: 'serpapi',
+        };
+      });
     } catch (err: any) {
       this.logger.error(`SerpAPI Search Error: ${err.message}`);
       return [];
     }
+  }
+
+  private resolveSourcePlaceId(property: any): string | undefined {
+    const value = property?.property_id ?? property?.property_token ?? property?.id;
+    return value ? String(value) : undefined;
+  }
+
+  private normalizePlaceType(property: any): string | undefined {
+    const rawType = property?.type ?? property?.property_type;
+    if (typeof rawType === 'string' && rawType.trim()) {
+      return rawType.trim();
+    }
+
+    if (typeof property?.hotel_class === 'string' && property.hotel_class.toLowerCase().includes('hotel')) {
+      return 'hotel';
+    }
+
+    return undefined;
+  }
+
+  private normalizeAddress(property: any): string | undefined {
+    const candidates = [
+      property?.address,
+      property?.formatted_address,
+      property?.full_address,
+      property?.location,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+
+    return undefined;
   }
 
   private normalizeCheckInDate(value?: string): string {
