@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { AccommodationProvider, PlaceResult, SearchParams } from './accommodation-provider.interface';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class SerpApiHotelsService implements AccommodationProvider {
-  private readonly baseUrl = 'https://serpapi.com/search.json';
+  private readonly baseUrl = 'https://serpapi.com/search';
   private readonly apiKey: string;
   private readonly logger = new Logger(SerpApiHotelsService.name);
 
@@ -13,7 +15,27 @@ export class SerpApiHotelsService implements AccommodationProvider {
     this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
   }
 
+  private getFeaturesConfig() {
+    const configPath = path.join(process.cwd(), 'serpapi-features.json');
+    const defaults = { hotelSearch: true, photos: false, reviews: true };
+    try {
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, 'utf8');
+        return { ...defaults, ...JSON.parse(content) };
+      }
+    } catch (err) {
+      // ignore config loading errors and fallback
+    }
+    return defaults;
+  }
+
   async searchAccommodations(params: SearchParams): Promise<PlaceResult[]> {
+    const config = this.getFeaturesConfig();
+    if (!config.hotelSearch) {
+      this.logger.log('SerpAPI Hotel Search is disabled by configuration.');
+      return [];
+    }
+
     if (!this.apiKey) {
       this.logger.warn('SERPAPI_API_KEY is not configured. Skipping SerpAPI search.');
       return [];
@@ -47,6 +69,8 @@ export class SerpApiHotelsService implements AccommodationProvider {
         const sourcePlaceId = this.resolveSourcePlaceId(p);
         const normalizedType = this.normalizePlaceType(p);
         const normalizedAddress = this.normalizeAddress(p);
+        const price = p.rate_per_night?.lowest ?? p.total_rate?.lowest ?? p.price;
+        const amenities = Array.isArray(p.amenities) ? p.amenities.map((a: any) => String(a)) : undefined;
 
         return {
           locationId: sourcePlaceId ? `serpapi-${sourcePlaceId}` : `serpapi-${Math.random().toString(36).slice(2)}`,
@@ -65,6 +89,8 @@ export class SerpApiHotelsService implements AccommodationProvider {
           types: normalizedType ? [normalizedType] : undefined,
           imageUrl: p.thumbnail || undefined,
           source: 'serpapi',
+          price: typeof price === 'string' && price.trim() ? price.trim() : undefined,
+          amenities,
         };
       });
     } catch (err: any) {

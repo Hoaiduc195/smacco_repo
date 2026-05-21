@@ -33,7 +33,7 @@ export default function useStreamingChat({
     });
   };
 
-  const sendMessage = async (textOverride) => {
+  const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces) => {
     const rawText = textOverride ?? input;
     const userText = rawText.trim();
     if (!userText || isStreaming) return;
@@ -52,6 +52,8 @@ export default function useStreamingChat({
       await streamChat({
         text: promptText,
         conversationId,
+        taggedPlaceIds,
+        taggedPlaces,
         signal: controller.signal,
         onChunk: (chunk) => {
           if (chunk?.error) {

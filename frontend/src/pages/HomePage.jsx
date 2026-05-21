@@ -360,9 +360,9 @@ export default function HomePage() {
       setSearchQuery(query);
       // Support multiple types from AI (array) or single type (string)
       if (Array.isArray(filters.types) && filters.types.length > 0) {
-        setPlaceType(filters.types.join(','));
+        setPlaceType(filters.types.map(t => t.trim()).join(','));
       } else if (filters.type) {
-        setPlaceType(filters.type);
+        setPlaceType(filters.type.split(',').map(t => t.trim()).join(','));
       }
       if (filters.location) setLocationInput(filters.location);
       if (normalizedBudget) setBudget(normalizedBudget);

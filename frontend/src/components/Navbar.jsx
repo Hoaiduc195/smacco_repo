@@ -183,13 +183,13 @@ export default function Navbar({
                     Tất cả
                   </button>
                   {PLACE_TYPES.filter(opt => opt.value !== '').map((opt) => {
-                    const isSelected = placeType.split(',').includes(opt.value);
+                    const isSelected = placeType.split(',').map(t => t.trim()).includes(opt.value);
                     return (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => {
-                          const currentTypes = placeType ? placeType.split(',') : [];
+                          const currentTypes = placeType ? placeType.split(',').map(t => t.trim()) : [];
                           let newTypes;
                           if (isSelected) {
                             newTypes = currentTypes.filter(t => t !== opt.value);

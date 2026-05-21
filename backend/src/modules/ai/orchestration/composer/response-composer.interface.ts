@@ -10,6 +10,12 @@ export interface ComposerContext {
   
   /** The raw results from the Workflow Engine (map of stepId -> ToolOutput) */
   toolResults: Record<string, any>; 
+
+  /** Optional tagged place IDs from the user's active session */
+  taggedPlaceIds?: string[];
+
+  /** Optional tagged place details from the user's active session */
+  taggedPlaces?: any[];
 }
 
 export interface ComposerResult {

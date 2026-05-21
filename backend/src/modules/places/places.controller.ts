@@ -47,6 +47,12 @@ export class PlacesController {
     return this.placesService.findReviews(id);
   }
 
+  @Get(':id/photos')
+  @ApiOperation({ summary: 'Get photos for a place' })
+  findPhotos(@Param('id') id: string) {
+    return this.placesService.findPhotos(id);
+  }
+
   @Put(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update place' })

@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Clock3, MessageSquare, Navigation, Star, MapPin, BookmarkPlus, BookmarkCheck } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Clock3, MessageSquare, Navigation, Star, MapPin, BookmarkPlus, BookmarkCheck, MoreVertical, Copy, Trash2 } from 'lucide-react';
 
 const placeholderImg = 'https://via.placeholder.com/400x250?text=No+Image';
 
@@ -21,6 +21,15 @@ export default function PlaceCard({
   travelTimeMinutes,
   showActions = true,
 }) {
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    if (!showDropdown) return;
+    const close = () => setShowDropdown(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [showDropdown]);
+
   const reviewText = useMemo(() => {
     if (!reviews || !reviews.length) return 'Chưa có đánh giá';
     return reviews.slice(0, 2).map((r) => r.comment || r.text || '').filter(Boolean).join(' · ');
@@ -83,6 +92,7 @@ export default function PlaceCard({
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('placeId', place.id);
+        e.dataTransfer.setData('placeData', JSON.stringify(place));
         e.dataTransfer.effectAllowed = 'copy';
         // Custom drag preview: only icon + text
         const dragPreview = document.createElement('div');
@@ -109,7 +119,57 @@ export default function PlaceCard({
           {iconConfig.icon}
         </div>
         <div className="flex-1 min-w-0 space-y-1">
-          <div className="font-semibold text-gray-900 line-clamp-1">{place.name}</div>
+          <div className="flex justify-between items-start">
+            <div className="font-semibold text-gray-900 line-clamp-1 flex-1">{place.name}</div>
+            {isSaved && (
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDropdown(!showDropdown);
+                  }}
+                  className="p-1 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition"
+                  title="Tùy chọn"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {showDropdown && (
+                  <div className="absolute right-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 font-normal text-xs text-slate-700">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDropdown(false);
+                        const copyText = `place:${place.id}:${place.name}`;
+                        navigator.clipboard.writeText(copyText).catch(err => console.error(err));
+                        window.localStorage.setItem('copied_place', JSON.stringify({ id: place.id, name: place.name }));
+                        window.dispatchEvent(new CustomEvent('app:place-copied', { detail: { id: place.id, name: place.name } }));
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-slate-500" />
+                      Sao chép
+                    </button>
+                    {onSave && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdown(false);
+                          onSave();
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 flex items-center gap-1.5 border-t border-slate-100 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           {place.address && (
             <div className="text-xs text-gray-600 line-clamp-2 flex items-center gap-1">
               <MapPin className="w-4 h-4 text-gray-500" />
@@ -121,15 +181,20 @@ export default function PlaceCard({
               {placeDescription}
             </div>
           ) : null}
-          <div className="text-xs text-gray-500 flex items-center gap-3">
+          <div className="text-xs text-gray-500 flex items-center flex-wrap gap-2">
             {place.rating && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 shrink-0">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                 {place.rating}
               </span>
             )}
-            {place.priceLevel !== undefined && <span>💲{place.priceLevel}</span>}
-            {place.type && <span className="capitalize">{place.type}</span>}
+            {place.price && (
+              <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 shrink-0 text-[11px]">
+                Từ {place.price}
+              </span>
+            )}
+            {place.priceLevel !== undefined && <span className="shrink-0">💲{place.priceLevel}</span>}
+            {place.type && <span className="capitalize shrink-0 bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 text-[10px] font-medium">{place.type}</span>}
           </div>
           {travelTimeMinutes ? (
             <div className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
@@ -138,6 +203,24 @@ export default function PlaceCard({
             </div>
           ) : null}
           <div className="text-xs text-gray-700 line-clamp-2">{reviewText}</div>
+          {place.amenities && place.amenities.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-slate-100">
+              {place.amenities.slice(0, 3).map((amenity, idx) => (
+                <span
+                  key={idx}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors border border-slate-200/60"
+                  title={amenity}
+                >
+                  {amenity}
+                </span>
+              ))}
+              {place.amenities.length > 3 && (
+                <span className="text-[10px] text-slate-400 font-medium self-center ml-0.5">
+                  +{place.amenities.length - 3} tiện ích
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {!showActions && (onDirections || onShowDetails) ? (

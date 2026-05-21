@@ -63,7 +63,9 @@ export class AiOrchestratorService {
       userQuery: request.text,
       workflowId: route.workflowId,
       parameters: route.parameters,
-      toolResults
+      toolResults,
+      taggedPlaceIds: request.taggedPlaceIds,
+      taggedPlaces: request.taggedPlaces,
     }, history);
 
     // Store in history
@@ -113,6 +115,7 @@ export class AiOrchestratorService {
         query: route.parameters.query || request.text,
         location: route.parameters.location,
         type: route.parameters.type,
+        types: route.parameters.types || (typeof route.parameters.type === 'string' ? route.parameters.type.split(/,/).map((s:string)=>s.trim()).filter(Boolean) : undefined),
         budget: route.parameters.budget,
         results: places,
       };
@@ -129,7 +132,9 @@ export class AiOrchestratorService {
       userQuery: request.text,
       workflowId: route.workflowId,
       parameters: route.parameters,
-      toolResults
+      toolResults,
+      taggedPlaceIds: request.taggedPlaceIds,
+      taggedPlaces: request.taggedPlaces,
     }, history);
 
     const assistantParts: string[] = [];

@@ -1,12 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(PlacesService.name);
+  private readonly apiKey: string;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly http: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
+  }
 
   async create(createPlaceDto: CreatePlaceDto) {
     const source = (createPlaceDto.source || 'unknown').trim().toLowerCase();
@@ -141,7 +154,24 @@ export class PlacesService {
 
   async findReviews(id: string) {
     const place = await this.findOne(id);
-    return this.prisma.review.findMany({
+
+    // Check if Google reviews have been cached yet
+    const config = this.getFeaturesConfig();
+    if (config.reviews && place.source === 'serpapi' && place.sourcePlaceId) {
+      const googleReviewsCount = await this.prisma.review.count({
+        where: { placeId: place.id, source: 'google' }
+      });
+
+      if (googleReviewsCount === 0) {
+        try {
+          await this.fetchSerpApiReviewsAndCache(place.sourcePlaceId, place.id);
+        } catch (error) {
+          this.logger.error(`Error caching SerpAPI reviews for place ${place.id}: ${error.message}`);
+        }
+      }
+    }
+
+    const reviews = await this.prisma.review.findMany({
       where: { placeId: place.id },
       include: {
         place: true,
@@ -149,6 +179,148 @@ export class PlacesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Map and parse the cached Google reviews prefix if present
+    return reviews.map((r) => {
+      if (r.source === 'google' && r.reviewText && r.reviewText.startsWith('__GOOGLE_REVIEW__::')) {
+        const parts = r.reviewText.split('::');
+        const author = parts[1] || 'Ẩn danh';
+        const date = parts[2] || '';
+        const cleanText = parts.slice(3).join('::') || '';
+        return {
+          ...r,
+          author,
+          date,
+          reviewText: cleanText,
+        };
+      }
+      return r;
+    });
+  }
+
+  async findPhotos(id: string): Promise<string[]> {
+    const place = await this.findOne(id);
+    const config = this.getFeaturesConfig();
+
+    if (config.photos && place.source === 'serpapi' && place.sourcePlaceId) {
+      try {
+        const serpApiPhotos = await this.fetchSerpApiPhotos(place.sourcePlaceId);
+        if (serpApiPhotos.length > 0) {
+          return serpApiPhotos;
+        }
+      } catch (error) {
+        this.logger.error(`Error fetching SerpAPI photos for place ${id}: ${error.message}`);
+      }
+    }
+
+    // Default optimized behavior: return the existing cover image as a single photo in an array
+    if (place.coverImageUrl) {
+      return [place.coverImageUrl];
+    }
+
+    return [];
+  }
+
+  async fetchSerpApiReviewsAndCache(propertyToken: string, placeId: string): Promise<void> {
+    if (!this.apiKey) {
+      this.logger.warn('SERPAPI_API_KEY is not configured. Skipping reviews fetch.');
+      return;
+    }
+
+    try {
+      this.logger.log(`Fetching dynamic Google Reviews from SerpAPI for placeId: ${placeId}`);
+      const response = await this.http.axiosRef.get('https://serpapi.com/search', {
+        params: {
+          engine: 'google_hotels_reviews',
+          property_token: propertyToken,
+          api_key: this.apiKey,
+          hl: 'vi',
+          gl: 'vn',
+        },
+      });
+
+      const reviews = response.data?.reviews ?? [];
+      if (reviews.length === 0) {
+        return;
+      }
+
+      const createData = reviews.map((r: any) => {
+        const author = r.user?.name || 'Ẩn danh';
+        const date = r.date || '';
+        const snippet = r.snippet || '';
+        const encodedText = `__GOOGLE_REVIEW__::${author}::${date}::${snippet}`;
+
+        return {
+          placeId,
+          rating: typeof r.rating === 'number' ? Math.round(r.rating) : 5,
+          reviewText: encodedText,
+          source: 'google',
+        };
+      });
+
+      await this.prisma.$transaction(
+        createData.map((data: any) => this.prisma.review.create({ data }))
+      );
+
+      this.logger.log(`Successfully cached ${reviews.length} Google Reviews in database for placeId: ${placeId}`);
+    } catch (error: any) {
+      this.logger.error(`SerpAPI reviews fetch error: ${error.message}`);
+    }
+  }
+
+  async fetchSerpApiPhotos(propertyToken: string): Promise<string[]> {
+    if (!this.apiKey) {
+      return [];
+    }
+
+    try {
+      this.logger.log(`Fetching dynamic Google Photos from SerpAPI for token: ${propertyToken}`);
+      const response = await this.http.axiosRef.get('https://serpapi.com/search', {
+        params: {
+          engine: 'google_hotels_photos',
+          property_token: propertyToken,
+          api_key: this.apiKey,
+        },
+      });
+
+      const photoUrls: string[] = [];
+
+      if (Array.isArray(response.data?.photos)) {
+        for (const p of response.data.photos) {
+          if (p.photo_url) photoUrls.push(p.photo_url);
+        }
+      }
+
+      if (Array.isArray(response.data?.sections)) {
+        for (const section of response.data.sections) {
+          if (Array.isArray(section.photos)) {
+            for (const p of section.photos) {
+              if (p.photo_url) photoUrls.push(p.photo_url);
+            }
+          }
+        }
+      }
+
+      const uniqueUrls = Array.from(new Set(photoUrls.filter(url => typeof url === 'string' && url.trim().length > 0)));
+      return uniqueUrls.slice(0, 15);
+    } catch (error: any) {
+      this.logger.error(`SerpAPI photos fetch error: ${error.message}`);
+      return [];
+    }
+  }
+
+  private getFeaturesConfig() {
+    const configPath = path.join(process.cwd(), 'serpapi-features.json');
+    const defaults = { hotelSearch: true, photos: false, reviews: true };
+    try {
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, 'utf8');
+        return { ...defaults, ...JSON.parse(content) };
+      }
+    } catch (err) {
+      // ignore config loading errors and fallback
+    }
+    return defaults;
   }
 
   async findBySourcePlaceId(sourcePlaceId: string, source = 'serpapi') {

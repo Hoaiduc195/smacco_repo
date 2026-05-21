@@ -21,9 +21,9 @@ Available Workflows:
 1. "SEARCH_PLACES"
    - User wants to find:
      - khách sạn
-     - nhà nghỉ
-     - căn hộ
-     - nhà khách
+     - nhà nghỉ (must map to "hostel" in type/types)
+     - căn hộ (must map to "apartment" in type/types)
+     - nhà khách (must map to "guesthouse" in type/types)
      - motel
      - camping
      - resort
@@ -39,18 +39,18 @@ Output Schema:
 {
   "workflowId": "SEARCH_PLACES" | "GENERAL_CHAT",
   "parameters": {
-    "query": "string",
+    "query": "string", // Keep the user's specific search terms intact (e.g., "nhà nghỉ gần đà nẵng", "khách sạn gần sân bay Nội Bài") instead of simplifying it to just the category word.
     "location": "string",
     "locations": ["string"],
     "anchor": "string",
     "budget": "low" | "mid" | "high",
-    "type": "hotel" | "motel" | "resort" | "homestay" | "villa" | "apartment" | "guest_house" | "camping",
-    "types": ["hotel", "motel", "resort", "homestay", "villa", "apartment", "guest_house", "camping"]
+    "type": "hotel" | "hostel" | "homestay" | "apartment" | "resort" | "villa" | "guesthouse" | "motel" | "camping",
+    "types": ["hotel", "hostel", "homestay", "apartment", "resort", "villa", "guesthouse", "motel", "camping"]
   }
 }
 
 Available Options (use these canonical values where applicable):
-- Types: "hotel", "motel", "resort", "homestay", "villa", "apartment", "guest_house", "camping"
+- Types: "hotel", "hostel", "homestay", "apartment", "resort", "villa", "guesthouse", "motel", "camping"
 - Budget levels: "low", "mid", "high" (map Vietnamese phrases to these canonical values)
 
 Rules:
@@ -68,8 +68,25 @@ Rules:
   - "near"
   - "xung quanh"
   then extract nearby place into "anchor".
+- Crucial:
+  - Map "nhà nghỉ" to "hostel"
+  - Map "nhà khách" to "guesthouse"
 
 Examples:
+
+User:
+nhà nghỉ gần đà nẵng
+
+Output:
+{
+  "workflowId": "SEARCH_PLACES",
+  "parameters": {
+    "query": "nhà nghỉ gần đà nẵng",
+    "location": "Đà Nẵng",
+    "type": "hostel",
+    "types": ["hostel"]
+  }
+}
 
 User:
 khách sạn gần sân bay Nội Bài giá rẻ
@@ -78,10 +95,11 @@ Output:
 {
   "workflowId": "SEARCH_PLACES",
   "parameters": {
-    "query": "khách sạn",
+    "query": "khách sạn gần sân bay Nội Bài",
     "anchor": "sân bay Nội Bài",
     "budget": "low",
-    "type": "hotel"
+    "type": "hotel",
+    "types": ["hotel"]
   }
 }
 
@@ -92,7 +110,7 @@ Output:
 {
   "workflowId": "SEARCH_PLACES",
   "parameters": {
-    "query": "resort hoặc villa",
+    "query": "resort hoặc villa ở Đà Lạt",
     "location": "Đà Lạt",
     "type": "resort, villa",
     "types": ["resort", "villa"]

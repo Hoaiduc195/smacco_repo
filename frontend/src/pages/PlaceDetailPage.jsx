@@ -9,7 +9,7 @@ import {
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import QASection from '../components/QASection';
-import { getPlaceDetails, getPlaceReviews, createPlace, createReview, deleteReview } from '../services/placeService';
+import { getPlaceDetails, getPlaceReviews, getPlacePhotos, createPlace, createReview, deleteReview } from '../services/placeService';
 import { checkInAtPlace, leaveOnsiteStatus, getMyOnsiteStatus } from '../services/presenceService';
 import { savePlace, unsavePlace, checkSavedStatus } from '../services/savedPlacesService';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,7 @@ export default function PlaceDetailPage() {
   const location = useLocation();
   const [place, setPlace] = useState(location.state?.place || null);
   const [reviews, setReviews] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [isLoading, setIsLoading] = useState(!place);
   const [error, setError] = useState('');
   const [vote, setVote] = useState(null); // 'up' or 'down'
@@ -127,6 +128,7 @@ export default function PlaceDetailPage() {
       loadPlaceDetails();
     } else if (place) {
       loadReviews();
+      loadPhotos();
     }
   }, [id, place]);
 
@@ -138,6 +140,7 @@ export default function PlaceDetailPage() {
       setPlace(details);
 
       loadReviews();
+      loadPhotos();
     } catch (err) {
       console.error('Error loading place details, using fallback:', err);
       // Use fallback mock data so the page still displays
@@ -170,6 +173,16 @@ export default function PlaceDetailPage() {
         { id: 'r1', author: 'Người dùng mẫu', text: 'Địa điểm này rất tuyệt vời, tôi sẽ quay lại!', rating: 5, date: '19/04/2026' },
         { id: 'r2', author: 'Khách hàng 2', text: 'Dịch vụ tốt, không gian thoáng đãng.', rating: 4, date: '18/04/2026' }
       ]);
+    }
+  };
+
+  const loadPhotos = async () => {
+    try {
+      const photosData = await getPlacePhotos(id);
+      setPhotos(photosData || []);
+    } catch (err) {
+      console.warn('Error loading photos:', err);
+      setPhotos([]);
     }
   };
 
@@ -325,8 +338,18 @@ export default function PlaceDetailPage() {
 
       {/* Hero Section */}
       <div className="relative h-[300px] sm:h-[450px] w-full overflow-hidden group bg-slate-200 flex items-center justify-center">
-        <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==')]"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        {(photos.length > 0 || place.coverImageUrl || place.imageUrl) ? (
+          <img 
+            src={photos[0] || place.coverImageUrl || place.imageUrl} 
+            alt={place.name} 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==')]"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
 
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12">          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -342,8 +365,13 @@ export default function PlaceDetailPage() {
                   </span>
                 )}
               </div>
-              <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight drop-shadow-lg tracking-tight">
-                {place.name}
+              <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight drop-shadow-lg tracking-tight inline-flex flex-wrap items-center gap-4">
+                <span>{place.name}</span>
+                {place.price && (
+                  <span className="text-lg sm:text-xl font-bold bg-emerald-500 text-white px-3.5 py-1.5 rounded-2xl shadow-xl shadow-emerald-500/20 border border-emerald-400 select-none shrink-0 self-center">
+                    Từ {place.price}
+                  </span>
+                )}
               </h1>
               <div className="flex items-center gap-4 text-white/90">
                 <div className="flex items-center gap-1.5">
@@ -443,6 +471,26 @@ export default function PlaceDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {place.amenities && place.amenities.length > 0 && (
+                <div className="mt-8 pt-8 border-t border-slate-100">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                    Tiện ích nổi bật
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {place.amenities.map((amenity, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-100/70 hover:border-slate-200 transition-colors"
+                      >
+                        <span className="text-cyan-500 select-none">✦</span>
+                        <span className="line-clamp-1">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* QA Section Placeholder */}
@@ -453,7 +501,7 @@ export default function PlaceDetailPage() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">Đánh giá từ cộng đồng</h2>
-                  <p className="text-sm text-slate-500 mt-1">{reviews.length} đánh giá</p>
+                  <p className="text-sm text-slate-500 mt-1">{reviews.filter(review => review.source !== 'google').length} đánh giá</p>
                 </div>
                 <button
                   onClick={() => {
@@ -582,9 +630,11 @@ export default function PlaceDetailPage() {
               )}
 
               {/* Review List */}
-              {reviews.length > 0 ? (
+              {reviews.filter(review => review.source !== 'google').length > 0 ? (
                 <div className="space-y-5">
-                  {reviews.map((review) => {
+                  {reviews
+                    .filter(review => review.source !== 'google')
+                    .map((review) => {
                     const authorName = review.user?.displayName || review.author || 'Ẩn danh';
                     const authorInitial = authorName.charAt(0).toUpperCase();
                     const reviewDate = review.createdAt

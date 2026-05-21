@@ -16,6 +16,8 @@ export interface PlaceResult {
   imageUrl?: string;
   source?: string;
   sourcePlaceId?: string;
+  price?: string;
+  amenities?: string[];
 }
 
 export interface SearchParams {

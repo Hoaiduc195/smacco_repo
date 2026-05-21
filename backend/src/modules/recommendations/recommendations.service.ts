@@ -195,7 +195,7 @@ export class RecommendationsService {
     if (a?.details?.categoryCount > 0) reasons.push(`${a.details.totalAmenities} tiện ích lân cận (${a.details.categoryCount} loại)`);
     const p = toolResults?.proximity_checker?.[placeId];
     if (p?.details?.distanceKm != null && p.details.distanceKm <= 5) reasons.push(`Cách ${anchorLabel || 'địa điểm mong muốn'} ${p.details.distanceKm}km`);
-    return reasons.length ? reasons : ['Xếp hạng dựa trên điểm tổng hợp'];
+    return reasons;
   }
 
   private roundScore(v: number): number { return Math.round(v * 1000) / 1000; }

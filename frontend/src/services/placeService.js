@@ -207,6 +207,17 @@ export const fetchNearbyPois = async (lat, lng, radius = 1500, categories = ['ho
   }
 };
 
+// Get place photos
+export const getPlacePhotos = async (placeId) => {
+  try {
+    const response = await apiClient.get(`/places/${placeId}/photos`);
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching place photos:', error);
+    return [];
+  }
+};
+
 // Create and synchronize place
 export const createPlace = async (placeData) => {
   const response = await apiClient.post('/places', placeData);
@@ -218,6 +229,7 @@ export default {
   getNearbyPlaces,
   getPlaceDetails,
   getPlaceReviews,
+  getPlacePhotos,
   getUserReviews,
   reverseGeocode,
   fetchNearbyPois,

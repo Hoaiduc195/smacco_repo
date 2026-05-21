@@ -30,7 +30,16 @@ export default function PlaceChatPanel({ place, onClose }) {
   const scrollRef = useRef(null);
 
   const send = async () => {
-    await sendMessage();
+    const taggedPlacePayload = [{
+      id: place.id,
+      name: place.name || place.placeName,
+      address: place.address,
+      latitude: place.latitude || place.lat || place.coordinates?.lat,
+      longitude: place.longitude || place.lng || place.coordinates?.lng,
+      rating: place.rating,
+      type: place.type || place.categories?.[0]
+    }];
+    await sendMessage(undefined, [place.id], taggedPlacePayload);
   };
 
   return (
