@@ -23,7 +23,7 @@ async function bootstrap() {
 
   // Swagger API docs
   const config = new DocumentBuilder()
-    .setTitle('Accommodation Discovery API')
+    .setTitle('Smacco API')
     .setDescription('Modular monolith API — users, places, reviews, search, AI chat, recommendations')
     .setVersion('1.0')
     .addBearerAuth()
@@ -33,7 +33,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  console.log(`🚀 Accommodation Monolith running on port ${port}`);
+  console.log(`🚀 Smacco Monolith running on port ${port}`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
 }
 

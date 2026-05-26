@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Send, Loader2, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Send, Loader2, RotateCcw, MapPin } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 
 export default function PlaceChatPanel({ place, onClose }) {
+  const navigate = useNavigate();
   const {
     messages,
     input,
@@ -82,7 +84,56 @@ export default function PlaceChatPanel({ place, onClose }) {
                   : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm prose prose-sm prose-blue max-w-none'
               }`}
             >
-              {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+              {msg.role === 'user' ? (
+                msg.content
+              ) : (
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => {
+                      let placeId = null;
+                      if (href) {
+                        const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
+                          || href.match(/\/places\/([^?#\s/]+)/)
+                          || href.match(/place:([^?#\s/]+)/);
+                        if (placeMatch) {
+                          placeId = placeMatch[1];
+                        }
+                      }
+                      if (placeId) {
+                        const placeName = String(children || '');
+                        return (
+                          <span
+                            className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-indigo-200 cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('placeId', placeId);
+                              e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
+                              e.dataTransfer.effectAllowed = 'copy';
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/places/${placeId}`);
+                              window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
+                            }}
+                            title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
+                          >
+                            <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                            {placeName}
+                          </span>
+                        );
+                      }
+                      return (
+                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" {...props}>
+                          {children}
+                        </a>
+                      );
+                    }
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
         ))}

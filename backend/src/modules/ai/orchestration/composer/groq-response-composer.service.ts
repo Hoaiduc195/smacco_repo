@@ -55,9 +55,9 @@ When responding with place results:
 ## PLACE LINKING (STRICT RULE)
 
 - Whenever you mention or suggest a place, you MUST make the place name a clickable Markdown link using this custom format: [Place Name](place:place_id).
-- Use the actual ID of the place from the tool results.
-- DO NOT use any other URL format. Always use "place:<uuid>" where <uuid> is the place's ID.
-- Ensure the link is embedded inside the place name itself (e.g. [Khách sạn A](place:123-uuid-456)).
+- Use the actual ID of the place from the tool results or context (which can be a database UUID or a SerpAPI ID like "serpapi-12345").
+- DO NOT use any other URL format. Always use "place:<place_id>" where <place_id> is the place's ID.
+- Ensure the link is embedded inside the place name itself (e.g. [Khách sạn A](place:serpapi-12345) or [Khách sạn B](place:123-uuid-456)).
 
 ---
 
@@ -113,6 +113,7 @@ export class GroqResponseComposerService implements IResponseComposer {
     if (allIds.length > 0) {
       // 1. Separate UUID IDs from non-UUID IDs to prevent database exceptions
       const uuidIds = allIds.filter(id => UUID_REGEX.test(id));
+      const nonUuidIds = allIds.filter(id => !UUID_REGEX.test(id));
 
       let dbPlaces: any[] = [];
       if (uuidIds.length > 0) {
@@ -129,13 +130,45 @@ export class GroqResponseComposerService implements IResponseComposer {
             },
           });
         } catch (err: any) {
-          this.logger.error(`Failed to load tagged places from database: ${err.message}`);
+          this.logger.error(`Failed to load tagged places from database by UUID: ${err.message}`);
+        }
+      }
+
+      // Also look up non-UUID IDs by source & sourcePlaceId
+      for (const nonUuidId of nonUuidIds) {
+        try {
+          const dashIndex = nonUuidId.indexOf('-');
+          const source = dashIndex !== -1 ? nonUuidId.substring(0, dashIndex) : 'serpapi';
+          const sourcePlaceId = dashIndex !== -1 ? nonUuidId.substring(dashIndex + 1) : nonUuidId;
+
+          const matchedPlace = await this.prisma.place.findFirst({
+            where: {
+              source: source.trim().toLowerCase(),
+              sourcePlaceId: sourcePlaceId.trim(),
+            },
+            include: {
+              reviews: {
+                orderBy: { createdAt: 'desc' },
+                take: 15,
+              },
+            },
+          });
+
+          if (matchedPlace) {
+            dbPlaces.push(matchedPlace);
+          }
+        } catch (err: any) {
+          this.logger.error(`Failed to load non-UUID place ${nonUuidId} from database: ${err.message}`);
         }
       }
 
       const dbPlacesMap = new Map<string, any>();
       for (const p of dbPlaces) {
         dbPlacesMap.set(p.id, p);
+        if (p.source && p.sourcePlaceId) {
+          dbPlacesMap.set(`${p.source}-${p.sourcePlaceId}`, p);
+          dbPlacesMap.set(p.sourcePlaceId, p);
+        }
       }
 
       // 2. Loop through all requested IDs and resolve details
@@ -146,7 +179,9 @@ export class GroqResponseComposerService implements IResponseComposer {
         if (dbPlace) {
           // Place exists in DB - use DB data and real reviews
           placesInfoList.push({
-            id: dbPlace.id,
+            id: (dbPlace.source && dbPlace.sourcePlaceId)
+              ? `${dbPlace.source}-${dbPlace.sourcePlaceId}`
+              : dbPlace.id,
             name: dbPlace.placeName,
             address: dbPlace.address,
             latitude: dbPlace.latitude,

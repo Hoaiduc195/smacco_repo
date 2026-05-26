@@ -809,15 +809,15 @@ export default function PlaceDetailPage() {
         <div className="max-w-7xl mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
-              <MapPin className="w-6 h-6 text-white" />
+              <img src="/favicon.svg" alt="Smacco Logo" className="w-6 h-6 object-contain" />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">AI Studio Maps</span>
+            <span className="text-xl font-bold text-white tracking-tight">Smacco</span>
           </div>
           <p className="text-slate-500 text-sm max-w-md mx-auto">
-            Khám phá thế giới thông minh hơn với trợ lý du lịch AI. Mọi thông tin đều được cá nhân hóa cho chuyến đi của bạn.
+            Khám phá thế giới thông minh hơn với trợ lý du lịch AI Smacco. Mọi thông tin đều được cá nhân hóa cho chuyến đi của bạn.
           </p>
           <div className="mt-8 pt-8 border-t border-white/5 text-slate-600 text-xs">
-            © 2026 AI Studio Maps. Made for the Future of Travel.
+            © 2026 Smacco. Made for the Future of Travel.
           </div>
         </div>
       </footer>

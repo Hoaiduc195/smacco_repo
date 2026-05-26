@@ -78,7 +78,9 @@ export class SearchService {
 
       // 2. Process Local Results
       localResults = (dbPlaces as any[]).map((p: any): PlaceResult => ({
-        locationId: p.id,
+        locationId: (p.source && p.source !== 'internal' && p.sourcePlaceId)
+          ? `${p.source}-${p.sourcePlaceId}`
+          : p.id,
         sourcePlaceId: p.sourcePlaceId, // Keep source ID to deduplicate against external
         name: p.placeName || 'Unknown',
         address: p.placeAddress,

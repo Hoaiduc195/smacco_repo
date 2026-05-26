@@ -141,10 +141,13 @@ export default function PlaceCard({
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowDropdown(false);
-                        const copyText = `place:${place.id}:${place.name}`;
+                        const targetId = (place.source === 'serpapi' && place.sourcePlaceId)
+                          ? `serpapi-${place.sourcePlaceId}`
+                          : place.id;
+                        const copyText = `place:${targetId}:${place.name || place.placeName}`;
                         navigator.clipboard.writeText(copyText).catch(err => console.error(err));
-                        window.localStorage.setItem('copied_place', JSON.stringify({ id: place.id, name: place.name }));
-                        window.dispatchEvent(new CustomEvent('app:place-copied', { detail: { id: place.id, name: place.name } }));
+                        window.localStorage.setItem('copied_place', JSON.stringify({ id: targetId, name: place.name || place.placeName, source: place.source, sourcePlaceId: place.sourcePlaceId }));
+                        window.dispatchEvent(new CustomEvent('app:place-copied', { detail: { id: targetId, name: place.name || place.placeName, source: place.source, sourcePlaceId: place.sourcePlaceId } }));
                       }}
                       className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
                     >

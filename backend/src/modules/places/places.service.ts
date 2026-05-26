@@ -142,8 +142,35 @@ export class PlacesService {
       const source = dashIndex !== -1 ? id.substring(0, dashIndex) : 'serpapi';
       const sourcePlaceId = dashIndex !== -1 ? id.substring(dashIndex + 1) : id;
       
-      const place = await this.findBySourcePlaceId(sourcePlaceId, source);
-      if (!place) throw new NotFoundException(`Place #${id} not found`);
+      let place = await this.findBySourcePlaceId(sourcePlaceId, source);
+      if (!place) {
+        // Automatically create a stub place in DB so it exists for reviews, saved lists, presence
+        place = await this.prisma.place.create({
+          data: {
+            source,
+            sourcePlaceId,
+            placeName: `Địa điểm #${sourcePlaceId.slice(0, 8)}`,
+            placeAddress: 'Địa chỉ đang được cập nhật',
+            categories: ['hotel'],
+            lat: 16.047,
+            lng: 108.206,
+          },
+        });
+        
+        await this.prisma.placeSource.create({
+          data: {
+            placeId: place.id,
+            source,
+            sourcePlaceId,
+            rawName: place.placeName,
+            rawAddress: place.placeAddress,
+            normalizedName: this.normalizeText(place.placeName),
+            normalizedAddress: this.normalizeText(place.placeAddress || ''),
+            lat: 16.047,
+            lng: 108.206,
+          },
+        });
+      }
       return place;
     }
 

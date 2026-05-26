@@ -89,12 +89,12 @@ export default function Navbar({
       <button
         onClick={() => navigate('/')}
         className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-11 h-11 bg-white/15 border border-white/25 rounded-xl flex items-center justify-center backdrop-blur-sm">
-          <MapPin className="w-6 h-6 text-white" />
+        <div className="w-11 h-11 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 shadow-inner">
+          <img src="/favicon.svg" alt="Smacco Logo" className="w-7 h-7 object-contain" />
         </div>
         <div className="hidden sm:block text-left">
-          <p className="text-white font-bold leading-5">AI Studio Maps</p>
-          <p className="text-cyan-100/80 text-xs">Lập kế hoạch thông minh cho chuyến đi</p>
+          <p className="text-white font-extrabold text-lg tracking-wide leading-5 font-sans bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-100 to-cyan-200">Smacco</p>
+          <p className="text-cyan-200/70 text-[10px] uppercase font-semibold tracking-wider">Lập kế hoạch thông minh</p>
         </div>
       </button>
 

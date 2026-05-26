@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Platform
 
-> Last updated: 2026-05-21 20:53
+> Last updated: 2026-05-21 21:30
 > Branch: feat/search_wf
 
 ## Overview
@@ -42,6 +42,7 @@ A modular monolith web application for discovering accommodations and dining spo
   - `savedPlacesService.js` manages save/unsave/list operations for bookmarked places.
   - Comma-separated place types in `Navbar` are split and trimmed robustly (`.map(t => t.trim())`) to prevent spacing discrepancies when multiple checkboxes/ticks are selected.
   - `HomePage.jsx` intercepts AI search actions, extracts the query, and cleans/trims types to synchronize the filter state flawlessly.
+  - `ChatWidget.jsx` and `PlaceChatPanel.jsx` intercept and parse multiple place link formats (`place:<id>` protocol, `/places/<id>` relative paths, or full host URLs like `http://localhost:3000/places/<id>`) to render custom inline MapPin badges and perform smooth programmatic routing via React Router `navigate` (preventing broken localhost:3000 links or SPA reloading).
 
 ### Backend
 - **Framework**: NestJS module-based architecture.

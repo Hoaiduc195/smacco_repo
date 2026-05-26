@@ -2,21 +2,43 @@
 
 ---
 
-## [2026-05-21 20:53] — Optimized SerpAPI Reviews Caching & Dynamic CLI Config
+## [2026-05-21 21:30] — Robust Link Parsing & Prompt Sync for SerpAPI IDs
 
 - **Branch**: `feat/search_wf`
-- **Prompt**: Optimize SerpAPI requests (250/month free tier limit) by dynamically caching Google Reviews, routing place cover images as zero-cost photos, exposing photos API, creating a dynamic CLI config toggle (`npm run config:serpapi`), and cleaning up/decoding reviews in the RAG prompt context.
+- **Prompt**: Fix broken chat widget links that reload or point to localhost:3000 by making the embedded links and tagged place IDs consistently utilize the official SerpAPI format IDs instead of database UUIDs, and update frontend parser to intercept various link formats.
+- **Changes**:
+  - **Backend - Prompt Update**: Modified `groq-response-composer.service.ts` system prompt `PLACE LINKING` rules to explicitly instruct the LLM that place IDs used in markdown links can be either a database UUID or a SerpAPI ID (`serpapi-<id>`), synchronizing backend output IDs with frontend requirements.
+  - **Frontend - Robust Link Interception**: Updated the ReactMarkdown custom `a` component inside both `ChatWidget.jsx` and `PlaceChatPanel.jsx` to parse and extract the place ID from multiple formats: `place:<id>` protocol, `/places/<id>` relative paths, or absolute URLs like `http://localhost:3000/places/<id>`. Programmatic SPA navigation using React Router `navigate` is executed for all matching cases, eliminating broken relative page reloads.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceChatPanel.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Prevents browser-default reloads and broken paths, seamlessly binding diverse AI-generated link layouts to the local React Router instance for unified single-page transitions.
+
+---
+
+## [2026-05-21 21:20] — Optimized SerpAPI Reviews Caching, RAG Non-UUID ID Mapping, & Inline Badges Navigation
+
+- **Branch**: `feat/search_wf`
+- **Prompt**: Optimize SerpAPI requests (250/month free tier limit) by dynamically caching Google Reviews, routing place cover images as zero-cost photos, exposing photos API, creating a dynamic CLI config toggle (`npm run config:serpapi`), decoding reviews in the RAG prompt context, mapping non-UUID SerpAPI IDs to cached database records, standardizing RAG output IDs to SerpAPI, and adding full routing navigation support to inline MapPin chat badges.
 - **Changes**:
   - **Backend - Caching & Lazy Fetch**: Modified `places.service.ts` to lazy-fetch and cache SerpAPI Google reviews under `source: 'google'`. Encoded reviewer details using prefix `__GOOGLE_REVIEW__::author::date::snippet` inside standard `reviewText` to bypass migration.
   - **Backend - Optimization & Photos endpoint**: Configured default fallback in `findPhotos` to return `[coverImageUrl]` and avoid hitting SerpAPI Photos engine. Added `GET /places/:id/photos` to `places.controller.ts`.
   - **Backend - CLI Config & RAG parse**: Created `config-serpapi.js` script to toggle `hotelSearch`, `photos`, and `reviews` and save them to `serpapi-features.json`. Updated `groq-response-composer.service.ts` to parse `__GOOGLE_REVIEW__::` prefix before feeding to LLM RAG prompt context.
+  - **Backend - Non-UUID RAG Resolution**: Added support in `groq-response-composer.service.ts` to lookup tagged places by non-UUID SerpAPI IDs (using source and sourcePlaceId) from PostgreSQL, mapping them correctly to cached database records to feed cached reviews to the LLM.
+  - **Backend - Standardize RAG IDs**: Standardized `placesInfoList` to output SerpAPI format IDs (e.g. `serpapi-sourcePlaceId`) instead of database UUIDs, ensuring alignment with frontend MapPin mapping.
   - **Frontend - Details UI & Photos Service**: Updated `PlaceDetailPage.jsx` to render the cover image as the elegant hero background, filter out cached Google reviews (`source === 'google'`) from the community review list, show exact native reviews count, and fetch photos via `/places/:id/photos` on mount. Added `getPlacePhotos` to `placeService.js`.
+  - **Frontend - Inline Badges & Navigation**: Integrated `useNavigate` from `react-router-dom` in `ChatWidget.jsx` and `PlaceChatPanel.jsx`, updating the custom `<ReactMarkdown>` inline MapPin click handler to trigger direct route transitions to `/places/:placeId`, eliminating localhost:3000 broken links.
 - **Modified files**:
   - `backend/src/modules/places/places.service.ts`
   - `backend/src/modules/places/places.controller.ts`
   - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
   - `frontend/src/pages/PlaceDetailPage.jsx`
   - `frontend/src/services/placeService.js`
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceChatPanel.jsx`
 - **Created files**:
   - `backend/scripts/config-serpapi.js`
   - `backend/serpapi-features.json`

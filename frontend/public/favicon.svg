@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <!-- Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Outer Glow / Background Ring -->
+  <rect x="2" y="2" width="96" height="96" rx="24" fill="url(#bg-grad)" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="2" />
+  
+  <!-- Stylized Map Pin Shape -->
+  <path d="M50,20 C60.5,20 69,28.5 69,39 C69,52 50,78 50,78 C50,78 31,52 31,39 C31,28.5 39.5,20 50,20 Z" fill="#FFFFFF" fill-opacity="0.12" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Stylized "S" curve overlay in center -->
+  <path d="M43,32 C45.5,29.5 48.5,28.5 51.5,28.5 C56.5,28.5 59.5,31.5 58,36.5 C56,43 44,45 42,51.5 C40.5,56.5 43.5,59.5 48.5,59.5 C51.5,59.5 54.5,58.5 57,56" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  
+  <!-- Pin center glowing circle -->
+  <circle cx="50" cy="39" r="4.5" fill="#22D3EE" filter="url(#glow)" />
+</svg>

@@ -6,7 +6,7 @@
 services:
   frontend:
     build: ./frontend
-    container_name: accommodation-frontend
+    container_name: smacco-frontend
     ports:
       - "3000:3000"
     depends_on:
@@ -16,7 +16,7 @@ services:
 
   backend:
     build: ./backend
-    container_name: accommodation-backend
+    container_name: smacco-backend
     ports:
       - "3001:3001"
     env_file:
@@ -34,7 +34,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-accommodation_db}
+      POSTGRES_DB: ${POSTGRES_DB:-smacco_db}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:

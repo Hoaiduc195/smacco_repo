@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Send, X, Loader2, RotateCcw, Tag, Plus, Trash2, MapPin } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
@@ -7,6 +8,7 @@ import TagPlaceModal from './TagPlaceModal';
 import { useConversation } from '../contexts/ConversationContext';
 
 export default function ChatWidget() {
+  const navigate = useNavigate();
   const defaultMessages = [
     { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
   ];
@@ -363,8 +365,16 @@ export default function ChatWidget() {
                       <ReactMarkdown
                         components={{
                           a: ({ href, children, ...props }) => {
-                            if (href && href.startsWith('place:')) {
-                              const placeId = href.replace('place:', '');
+                            let placeId = null;
+                            if (href) {
+                              const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
+                                || href.match(/\/places\/([^?#\s/]+)/)
+                                || href.match(/place:([^?#\s/]+)/);
+                              if (placeMatch) {
+                                placeId = placeMatch[1];
+                              }
+                            }
+                            if (placeId) {
                               const placeName = String(children || '');
                               return (
                                 <span
@@ -378,6 +388,7 @@ export default function ChatWidget() {
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
+                                    navigate(`/places/${placeId}`);
                                     window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
                                   }}
                                   title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"

@@ -73,8 +73,19 @@ export function ConversationProvider({ children }) {
 
   // Tag a place by full object
   const tagPlace = (place) => {
-    if (place && place.id && !taggedPlaces.some((p) => p.id === place.id)) {
-      setTaggedPlaces((prev) => [...prev, place]);
+    if (place) {
+      const normalizedId = (place.source === 'serpapi' && place.sourcePlaceId)
+        ? `serpapi-${place.sourcePlaceId}`
+        : place.id;
+      
+      const normalizedPlace = {
+        ...place,
+        id: normalizedId
+      };
+
+      if (normalizedId && !taggedPlaces.some((p) => p.id === normalizedId)) {
+        setTaggedPlaces((prev) => [...prev, normalizedPlace]);
+      }
     }
   };
 
