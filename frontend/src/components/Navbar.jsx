@@ -57,7 +57,7 @@ export default function Navbar({
     setIsLoggingOut(true);
     try {
       await logout();
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -84,28 +84,28 @@ export default function Navbar({
   const userName = currentUser?.displayName || userEmail.split('@')[0] || 'Người dùng';
 
   return (
-    <nav className={`h-20 bg-gradient-to-r from-slate-900/95 via-blue-900/95 to-cyan-900/95 border-b border-white/10 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-lg backdrop-blur ${className}`}>
+    <nav className={`h-20 border-b border-base-200 bg-base-50 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
       {/* Logo */}
       <button
         onClick={() => navigate('/')}
         className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-11 h-11 bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 rounded-xl flex items-center justify-center backdrop-blur-sm transition-all duration-300 shadow-inner">
+        <div className="w-11 h-11 bg-white hover:bg-primary-50 border border-base-200 hover:border-primary-200 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-soft">
           <img src="/favicon.svg" alt="Smacco Logo" className="w-7 h-7 object-contain" />
         </div>
         <div className="hidden sm:block text-left">
-          <p className="text-white font-extrabold text-lg tracking-wide leading-5 font-sans bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-100 to-cyan-200">Smacco</p>
-          <p className="text-cyan-200/70 text-[10px] uppercase font-semibold tracking-wider">Lập kế hoạch thông minh</p>
+          <p className="text-ink-900 font-extrabold text-lg tracking-normal leading-5 font-sans">Smacco</p>
+          <p className="text-primary-700 text-[10px] uppercase font-bold tracking-wide">Tìm lưu trú bằng AI</p>
         </div>
       </button>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-2xl hidden md:flex relative md:ml-12 lg:ml-32" ref={searchContainerRef}>
+      <div className="flex-1 max-w-2xl hidden md:flex relative md:ml-auto lg:ml-auto" ref={searchContainerRef}>
         <form onSubmit={handleSearch} className="w-full">
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm nhà hàng, quán cà phê..."
+              placeholder="Tìm homestay yên tĩnh, khách sạn trung tâm..."
               value={localSearchQuery}
               onFocus={() => setShowFilters(true)}
               onChange={(e) => {
@@ -113,12 +113,12 @@ export default function Navbar({
                 setLocalSearchQuery(nextValue);
                 onSearchInputChange?.(nextValue);
               }}
-              className="w-full pl-10 pr-10 py-3 border border-white/10 bg-white/95 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-300 text-slate-900"
+              className="input-field pl-10 pr-10 shadow-soft"
             />
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showFilters || placeType || budget || locationInput ? 'text-cyan-600 bg-cyan-100' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-colors ${showFilters || placeType || budget || locationInput ? 'text-primary-700 bg-primary-50' : 'text-ink-500 hover:text-ink-700 hover:bg-base-100'}`}
               title="Bộ lọc nâng cao"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -128,15 +128,15 @@ export default function Navbar({
 
         {/* Dropdown Bộ lọc nâng cao */}
         {setLocationInput && (
-          <div className={`absolute top-full mt-2 w-full rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.6)] z-50 p-4 backdrop-blur origin-top transition-all duration-300 ease-out ${showFilters ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-[0.98] -translate-y-2 pointer-events-none invisible'}`}>
+          <div className={`absolute top-full mt-2 w-full map-surface z-50 p-4 origin-top transition-transform duration-200 ease-out ${showFilters ? 'scale-100 translate-y-0 pointer-events-auto visible' : 'scale-[0.98] -translate-y-2 pointer-events-none invisible'}`}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 border border-primary-100">
                   <SlidersHorizontal className="w-4 h-4" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-800">Bộ lọc tìm kiếm</h3>
-                  <p className="text-[11px] text-slate-500">Tinh chỉnh nhanh theo khu vực, loại và chi phí</p>
+                  <h3 className="text-sm font-black text-ink-900">Bộ lọc lưu trú</h3>
+                  <p className="text-[11px] font-semibold text-ink-500">Tinh chỉnh theo khu vực, loại nơi ở và chi phí</p>
                 </div>
               </div>
               {(placeType || budget || locationInput || localSearchQuery) && (
@@ -146,7 +146,7 @@ export default function Navbar({
                     setLocalSearchQuery('');
                     if (onClearFilters) onClearFilters();
                   }}
-                  className="text-xs font-semibold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"
+                    className="text-xs font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"
                 >
                   <X className="w-3 h-3" /> Xóa bộ lọc
                 </button>
@@ -163,7 +163,7 @@ export default function Navbar({
                     value={locationInput}
                     onChange={e => setLocationInput(e.target.value)}
                     placeholder="Nhập tên thành phố, khu vực..."
-                    className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-cyan-300 outline-none bg-white"
+                    className="input-field h-10 rounded-xl pr-12"
                   />
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                     VN
@@ -178,7 +178,7 @@ export default function Navbar({
                   <button
                     type="button"
                     onClick={() => setPlaceType('')}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border ${!placeType ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 border ${!placeType ? 'bg-primary-600 text-white border-primary-600 shadow-sm' : 'bg-white text-ink-500 border-base-200 hover:bg-base-50'}`}
                   >
                     Tất cả
                   </button>
@@ -198,7 +198,7 @@ export default function Navbar({
                           }
                           setPlaceType(newTypes.join(','));
                         }}
-                        className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 border ${isSelected ? 'bg-cyan-600 text-white border-cyan-600 shadow-sm transform scale-[1.02]' : 'bg-white text-slate-600 border-slate-200 hover:border-cyan-300 hover:bg-cyan-50'}`}
+                        className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 border ${isSelected ? 'bg-primary-600 text-white border-primary-600 shadow-sm transform scale-[1.02]' : 'bg-white text-ink-500 border-base-200 hover:border-primary-200 hover:bg-primary-50'}`}
                       >
                         {opt.label}
                       </button>
@@ -211,7 +211,7 @@ export default function Navbar({
               <div className="col-span-2 mt-2">
                 <div className="flex items-center justify-between mb-3">
                   <label className="block text-xs font-semibold text-slate-700">Chi phí dự kiến</label>
-                  <span className="text-[10px] font-bold text-cyan-700 bg-cyan-100 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                  <span className="text-[10px] font-black text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-full uppercase tracking-wide">
                     {budgetLevel.label}
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export default function Navbar({
                     {/* Track Background */}
                     <div className="absolute left-0 right-0 h-2 bg-slate-100 rounded-full shadow-inner border border-slate-200 overflow-hidden pointer-events-none">
                       <div 
-                        className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 transition-all duration-300 ease-out"
+                        className="h-full bg-gradient-to-r from-primary-500 to-accent-500 transition-all duration-300 ease-out"
                         style={{ width: `${(budgetLevel.slider / 3) * 100}%` }}
                       />
                     </div>
@@ -243,13 +243,13 @@ export default function Navbar({
 
                     {/* Custom Thumb */}
                     <div 
-                      className="absolute w-6 h-6 bg-white border-[3px] border-cyan-500 rounded-full shadow-md transition-all duration-300 ease-out z-10 flex items-center justify-center pointer-events-none"
+                      className="absolute w-6 h-6 bg-white border-[3px] border-primary-500 rounded-full shadow-md transition-all duration-300 ease-out z-10 flex items-center justify-center pointer-events-none"
                       style={{ 
                         left: `calc(${(budgetLevel.slider / 3) * 100}% + ${12 - (budgetLevel.slider / 3) * 24}px)`,
                         transform: 'translateX(-50%)'
                       }}
                     >
-                      <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full" />
+                      <div className="w-1.5 h-1.5 bg-primary-500 rounded-full" />
                     </div>
                   </div>
 
@@ -261,7 +261,7 @@ export default function Navbar({
                         className="flex flex-col items-center cursor-pointer px-2"
                         onClick={() => setBudget(level.value)}
                       >
-                        <span className={`mt-1 transition-all duration-200 ${budgetLevel.slider === i ? 'text-cyan-700 font-bold scale-110' : 'text-slate-400 hover:text-slate-600'}`}>
+                          <span className={`mt-1 transition-all duration-200 ${budgetLevel.slider === i ? 'text-primary-700 font-bold scale-110' : 'text-ink-500/60 hover:text-ink-700'}`}>
                           {level.label}
                         </span>
                       </div>
@@ -279,7 +279,7 @@ export default function Navbar({
                   setShowFilters(false);
                   if (onSearch) onSearch(localSearchQuery);
                 }}
-                className="px-4 py-2 bg-cyan-600 text-white text-sm font-semibold rounded-lg hover:bg-cyan-700 transition-colors"
+                className="btn-primary px-4 py-2 rounded-xl"
               >
                 Áp dụng bộ lọc
               </button>
@@ -296,17 +296,17 @@ export default function Navbar({
       <div className="relative">
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-base-200 bg-white hover:bg-primary-50 transition-colors shadow-soft"
         >
-          <div className="w-9 h-9 bg-white/20 border border-white/25 rounded-full flex items-center justify-center text-white text-sm font-bold">
+          <div className="w-9 h-9 bg-primary-50 text-primary-900 border border-white/70 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
             {userName.charAt(0).toUpperCase()}
           </div>
-          <span className="text-sm font-medium hidden sm:inline text-white">{userName}</span>
+          <span className="text-sm font-semibold hidden sm:inline text-slate-900">{userName}</span>
         </button>
 
         {/* Dropdown Menu */}
         {showUserMenu && (
-          <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl py-2 z-50">
+          <div className="absolute right-0 mt-2 w-56 map-surface py-2 z-50">
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500 truncate">{userEmail}</p>

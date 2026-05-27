@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Navigation2, AlertCircle, Layers3, X, Route, Star, MessageSquare, ArrowLeft, Loader2 } from 'lucide-react';
+import { Navigation2, AlertCircle, X, Route, Star, MessageSquare, ArrowLeft, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import PlaceCard from '../components/PlaceCard';
 import PlaceChatPanel from '../components/PlaceChatPanel';
 import SidebarOverlay from '../components/SidebarOverlay';
-import { searchPlaces, getNearbyPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
+import { searchPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
 // import { getRecommendations } from '../services/recommendationService';
 import { getRoute } from '../services/routingService';
 import { fetchPlaceImage } from '../services/serpService';
@@ -550,7 +550,7 @@ export default function HomePage() {
   }, [places]);
 
   return (
-    <div className="relative h-screen w-full bg-slate-950 overflow-hidden">
+    <div className="relative h-screen w-full bg-base-50 overflow-hidden">
       <Navbar
         className="absolute top-0 left-0 right-0"
         searchQuery={searchQuery}
@@ -571,8 +571,8 @@ export default function HomePage() {
         }}
       />
 
-      <div className="absolute inset-0 bg-slate-100 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(56,189,248,0.2),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(14,116,144,0.15),transparent_35%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-base-50 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(47,183,156,0.14)_0%,rgba(249,115,22,0.08)_42%,rgba(255,255,255,0)_100%)] pointer-events-none" />
         {/* Map layer */}
         <div className="absolute inset-0">
           <MapComponent
@@ -599,7 +599,7 @@ export default function HomePage() {
           />
         </div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,6,23,0.14)_0%,transparent_28%,transparent_72%,rgba(2,6,23,0.14)_100%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,28,23,0.16)_0%,rgba(34,28,23,0.04)_24%,transparent_48%,rgba(47,183,156,0.05)_78%,rgba(34,28,23,0.10)_100%)] pointer-events-none" />
 
         {/* Sidebar overlay */}
         <SidebarOverlay
@@ -624,13 +624,13 @@ export default function HomePage() {
                   <ArrowLeft className="w-4 h-4" />
                   Quay lại danh sách
                 </button>
-                <span className="text-xs px-2 py-1 rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200">
+                <span className="text-xs px-2 py-1 rounded-lg bg-primary-50 text-primary-800 border border-primary-200">
                   Chi tiết
                 </span>
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div className="map-surface px-3 py-3">
                   <p className="text-base font-semibold text-slate-900 line-clamp-1">{selectedPlace.name}</p>
                   {selectedPlace.address ? (
                     <p className="mt-1 text-sm text-slate-600 line-clamp-2">{selectedPlace.address}</p>
@@ -651,19 +651,19 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => handleDirections(selectedPlace)}
-                    className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                    className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm rounded-2xl border border-primary-200 bg-primary-50 text-primary-800 hover:bg-primary-100"
                   >
                     <Navigation2 className="w-4 h-4" />
                     Chỉ đường
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div className="map-surface px-3 py-3">
                   <p className="text-sm font-semibold text-slate-800 mb-2">Đánh giá gần đây</p>
                   {selectedPlaceReviews.length ? (
                     <div className="space-y-2">
                       {selectedPlaceReviews.slice(0, 3).map((review, idx) => (
-                        <div key={`${selectedPlace.id}-review-${idx}`} className="rounded-lg bg-slate-50 px-2.5 py-2 text-xs text-slate-700">
+                        <div key={`${selectedPlace.id}-review-${idx}`} className="rounded-xl bg-base-50 px-2.5 py-2 text-xs text-slate-700 border border-base-200">
                           {review.comment || review.text || 'Đánh giá không có nội dung.'}
                         </div>
                       ))}
@@ -673,13 +673,13 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                <div className="map-surface px-3 py-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="w-4 h-4 text-cyan-600" />
+                    <MessageSquare className="w-4 h-4 text-primary-600" />
                     <p className="text-sm font-semibold text-slate-800">Chatbot địa điểm</p>
                   </div>
                   <p className="text-xs text-slate-500 mb-3">UI đã sẵn sàng. Tính năng trả lời chatbot sẽ được bật ở bước tiếp theo.</p>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-400">
+                  <div className="rounded-xl border border-base-200 bg-base-50 px-3 py-2 text-xs text-slate-500">
                     Xin chào, mình có thể tư vấn lịch trình, chi phí, và mẹo tham quan cho địa điểm này.
                   </div>
                   <div className="mt-2 flex gap-2">
@@ -687,12 +687,12 @@ export default function HomePage() {
                       type="text"
                       disabled
                       placeholder="Sắp hỗ trợ hỏi đáp về địa điểm..."
-                      className="flex-1 h-9 rounded-lg border border-slate-200 bg-slate-100 px-3 text-xs text-slate-400"
+                      className="flex-1 h-9 rounded-xl border border-base-200 bg-base-50 px-3 text-xs text-slate-400"
                     />
                     <button
                       type="button"
                       disabled
-                      className="h-9 px-3 rounded-lg border border-slate-200 bg-slate-100 text-xs text-slate-400"
+                      className="h-9 px-3 rounded-xl border border-base-200 bg-base-50 text-xs text-slate-400"
                     >
                       Gửi
                     </button>
@@ -703,14 +703,14 @@ export default function HomePage() {
           ) : (
             <>
 
-              <div className="mb-3 rounded-xl border border-cyan-100 bg-cyan-50/80 px-3 py-2 text-xs text-cyan-800 flex items-center justify-between">
+              <div className="mb-3 rounded-2xl border border-ink-900 bg-ink-900 px-3 py-2 text-xs font-bold text-white flex items-center justify-between shadow-soft">
                 <p>Kết quả tìm kiếm & gợi ý</p>
               </div>
 
               {isSearching ? (
-                <div className="mb-3 flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white/90 py-8 text-slate-500">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-cyan-200 bg-cyan-50">
-                    <Loader2 className="h-6 w-6 animate-spin text-cyan-600" />
+                <div className="mb-3 flex flex-col items-center justify-center map-surface py-8 text-ink-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary-200 bg-primary-50">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary-700" />
                   </div>
                   <p className="mt-3 text-sm font-medium text-slate-700">Đang tìm kết quả...</p>
                 </div>
@@ -719,7 +719,7 @@ export default function HomePage() {
               {visiblePlaces.length ? (
                 <div className="mb-3 px-1">
                   <p className="text-xs uppercase tracking-wide font-semibold text-slate-500">Kết quả tìm kiếm</p>
-                  <p className="text-sm text-slate-700">{visiblePlaces.length} địa điểm</p>
+                  <p className="text-sm font-medium text-slate-700">{visiblePlaces.length} địa điểm</p>
                 </div>
               ) : null}
               {!visiblePlaces.length && !isSearching && appState === APP_STATES.ON_SEARCH ? (
@@ -763,7 +763,7 @@ export default function HomePage() {
             onClick={getCurrentLocation}
             disabled={locationStatus === 'loading'}
             title={locationStatus === 'loading' ? 'Đang tìm vị trí...' : 'Lấy vị trí của tôi'}
-            className="p-3 bg-white/95 backdrop-blur rounded-xl shadow-lg border border-slate-200 hover:bg-white transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-ink-900 text-white rounded-2xl shadow-soft border border-ink-900 hover:bg-ink-700 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Navigation2 className={`w-5 h-5 ${locationStatus === 'loading' ? 'animate-spin' : ''}`} />
           </button>
@@ -772,7 +772,7 @@ export default function HomePage() {
             <button
               onClick={handleStopRouting}
               title="Ngừng chỉ đường"
-              className="inline-flex items-center gap-2 px-3 py-3 bg-rose-50/95 backdrop-blur rounded-xl shadow-lg border border-rose-300 text-rose-700 hover:bg-rose-100 transition-all duration-200 ease-in-out"
+              className="inline-flex items-center gap-2 px-3 py-3 bg-rose-50 rounded-2xl shadow-soft border border-rose-200 text-rose-700 hover:bg-rose-100 transition-all duration-200 ease-in-out"
             >
               <Route className="w-4 h-4" />
               <span className="text-sm font-medium">Ngừng chỉ đường</span>
@@ -786,7 +786,7 @@ export default function HomePage() {
           style={{ top: NAVBAR_HEIGHT + 10 }}
         >
           {error && (
-            <div className="w-full bg-red-50/95 backdrop-blur border border-red-200 text-red-700 px-3 py-2 rounded-lg flex items-start gap-2 shadow-lg animate-soft-in">
+            <div className="w-full bg-white border border-rose-200 text-rose-700 px-3 py-2 rounded-2xl flex items-start gap-2 shadow-soft animate-soft-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-xs font-medium">{error}</p>

@@ -4,6 +4,7 @@ import { TravelDataProvider } from './contexts/TravelDataContext';
 import { ConversationProvider } from './contexts/ConversationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import LandingPage from './pages/LandingPage';
 import HomePage from './pages/HomePage';
 import PlaceDetailPage from './pages/PlaceDetailPage';
 import LoginPage from './pages/LoginPage';
@@ -16,6 +17,7 @@ function App() {
         <TravelDataProvider>
           <ConversationProvider>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route
                 path="/places/:id"
@@ -34,7 +36,7 @@ function App() {
                 }
               />
               <Route
-                path="/"
+                path="/app"
                 element={
                   <ProtectedRoute>
                     <MainLayout />

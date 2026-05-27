@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Eye, EyeOff, Lock, Mail, MapPin, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginPage() {
@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
       console.error('Email login error:', err);
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle();
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.');
       console.error('Google login error:', err);
@@ -44,125 +44,145 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-screen w-full">
-      {/* Left Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+    <div className="grid min-h-screen bg-base-50 text-ink-900 lg:grid-cols-[0.95fr_1.05fr]">
+      <section className="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
         <div className="w-full max-w-md">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-full mb-4">
-              <MapPin className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold mb-2">Chào mừng trở lại</h1>
-            <p className="text-gray-600">Đăng nhập để khám phá nhà hàng gần bạn</p>
-          </div>
+          <Link to="/" className="mb-8 inline-flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-base-200 bg-white shadow-soft">
+              <img src="/favicon.svg" alt="" className="h-7 w-7" />
+            </span>
+            <span>
+              <span className="block text-lg font-black leading-5 text-ink-900">Smacco</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-primary-700">Tìm lưu trú bằng AI</span>
+            </span>
+          </Link>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Email Login Form */}
-          <form onSubmit={handleEmailLogin} className="space-y-4 mb-6">
-            {/* Email Input */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  placeholder="example@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                />
+          <div className="surface-card p-5 sm:p-7">
+            <div className="mb-7">
+              <div className="badge-soft mb-4">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Firebase Authentication
               </div>
+              <h1 className="text-3xl font-black text-ink-900">Chào mừng trở lại</h1>
+              <p className="mt-2 text-sm leading-6 text-ink-500">Đăng nhập để mở bản đồ, chatbot và hồ sơ lưu trú của bạn.</p>
             </div>
 
-            {/* Password Input */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Mật khẩu</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed"
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+            {error && (
+              <div className="mb-4 rounded-xl border border-rose-300/30 bg-rose-500/10 p-3 text-sm font-semibold text-rose-100">
+                {error}
               </div>
+            )}
+
+            <form onSubmit={handleEmailLogin} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="mb-2 block text-sm font-black text-ink-700">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="login-email"
+                    type="email"
+                    placeholder="example@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="input-field pl-10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="login-password" className="mb-2 block text-sm font-black text-ink-700">
+                  Mật khẩu
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="login-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="input-field pl-10 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed"
+                    disabled={isLoading}
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-primary h-12 w-full"
+              >
+                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
+
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-base-200" />
+              <span className="text-xs font-black uppercase text-ink-500">Hoặc</span>
+              <div className="h-px flex-1 bg-base-200" />
             </div>
 
-            {/* Submit Button */}
             <button
-              type="submit"
+              onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="btn-secondary h-12 w-full"
             >
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink-900 text-sm font-black text-white">G</span>
+              {isLoading ? 'Đang xử lý...' : 'Đăng nhập với Google'}
             </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center mb-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-3 text-gray-500 text-sm">Hoặc</span>
-            <div className="flex-1 border-t border-gray-300"></div>
           </div>
-
-          {/* Google Login */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 disabled:bg-gray-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
-            </svg>
-            {isLoading ? 'Đang xử lý...' : 'Đăng nhập với Google'}
-          </button>
         </div>
-      </div>
+      </section>
 
-      {/* Right Side - Background (optional) */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-500 to-blue-600 items-center justify-center">
-        <div className="text-center text-white">
-          <MapPin className="w-16 h-16 mx-auto mb-4" />
-          <h2 className="text-4xl font-bold mb-4">Khám phá quanh bạn</h2>
-          <p className="text-blue-100 text-lg">Tìm kiếm nhà hàng, quán cà phê, và nhiều địa điểm thú vị khác</p>
+      <section className="relative hidden overflow-hidden border-l border-base-200 bg-[linear-gradient(135deg,#d6f4ec_0%,#fbf8f3_48%,#ffedd5_100%)] lg:block">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,28,23,0.06)_1px,transparent_1px),linear-gradient(rgba(34,28,23,0.06)_1px,transparent_1px)] bg-[size:56px_56px]" />
+        <div className="relative flex h-full items-center justify-center p-12">
+          <div className="w-full max-w-xl">
+            <div className="badge-soft mb-6">
+              <Sparkles className="h-3.5 w-3.5 text-accent-500" />
+              Khám phá quanh bạn
+            </div>
+            <h2 className="text-5xl font-black leading-tight text-ink-900">Bản đồ, AI và nơi lưu trú trong một trải nghiệm.</h2>
+            <p className="mt-5 text-lg leading-8 text-ink-500">
+              Tìm nơi ở phù hợp, xem kết quả trên bản đồ, hỏi trợ lý AI và lưu lại các lựa chọn quan trọng cho chuyến đi.
+            </p>
+            <div className="mt-10 overflow-hidden surface-card">
+              <div className="flex items-center justify-between border-b border-base-200 px-4 py-3">
+                <span className="text-sm font-black text-ink-900">Gợi ý gần bạn</span>
+                <span className="badge-soft normal-case tracking-normal">Live map</span>
+              </div>
+              <div className="grid gap-3 p-4">
+                {['Khách sạn ven hồ', 'Cafe làm việc yên tĩnh', 'Nhà hàng được đánh giá cao'].map((item, index) => (
+                  <div key={item} className="flex items-center gap-3 rounded-xl bg-white/95 p-3 text-slate-900">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-700">
+                      <MapPin className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-black">{item}</p>
+                      <p className="text-xs font-semibold text-slate-500">Phù hợp {92 - index * 4}% với bộ lọc hiện tại</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
-

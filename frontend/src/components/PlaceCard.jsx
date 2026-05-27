@@ -82,8 +82,8 @@ export default function PlaceCard({
 
   return (
     <div
-      className={`w-full text-left p-3 rounded-2xl border transition flex flex-col gap-3 bg-white/95 animate-card-enter ${
-        isSelected ? 'border-cyan-400 shadow-lg ring-2 ring-cyan-100' : 'border-slate-200 hover:border-cyan-300 hover:shadow-md'
+      className={`w-full text-left p-3 rounded-3xl border transition flex flex-col gap-3 bg-white animate-card-enter shadow-soft ${
+        isSelected ? 'border-primary-400 shadow-card ring-4 ring-primary-100 bg-white' : 'border-base-200 hover:border-primary-200 hover:bg-base-50 hover:shadow-card'
       }`}
       style={{ animationDelay: `${Math.min(itemIndex, 8) * 45}ms` }}
       onClick={onSelect}
@@ -115,12 +115,12 @@ export default function PlaceCard({
       }}
     >
       <div className="flex gap-3">
-        <div className={`w-24 h-24 rounded-xl flex-shrink-0 flex items-center justify-center ${iconConfig.bg} ${iconConfig.text}`}>
+        <div className={`w-24 h-24 rounded-2xl flex-shrink-0 flex items-center justify-center ${iconConfig.bg} ${iconConfig.text} border border-white/70 shadow-inner`}>
           {iconConfig.icon}
         </div>
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex justify-between items-start">
-            <div className="font-semibold text-gray-900 line-clamp-1 flex-1">{place.name}</div>
+            <div className="font-black text-ink-900 line-clamp-1 flex-1">{place.name}</div>
             {isSaved && (
               <div className="relative shrink-0">
                 <button
@@ -129,13 +129,13 @@ export default function PlaceCard({
                     e.stopPropagation();
                     setShowDropdown(!showDropdown);
                   }}
-                  className="p-1 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition"
+                  className="p-1 rounded-full hover:bg-base-100 text-ink-500 hover:text-ink-700 transition"
                   title="Tùy chọn"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {showDropdown && (
-                  <div className="absolute right-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 font-normal text-xs text-slate-700">
+                  <div className="absolute right-0 mt-1 w-36 map-surface z-50 py-1 font-normal text-xs text-ink-700">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -149,7 +149,7 @@ export default function PlaceCard({
                         window.localStorage.setItem('copied_place', JSON.stringify({ id: targetId, name: place.name || place.placeName, source: place.source, sourcePlaceId: place.sourcePlaceId }));
                         window.dispatchEvent(new CustomEvent('app:place-copied', { detail: { id: targetId, name: place.name || place.placeName, source: place.source, sourcePlaceId: place.sourcePlaceId } }));
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-1.5 transition-colors"
+                      className="w-full text-left px-3 py-2 hover:bg-base-50 flex items-center gap-1.5 transition-colors"
                     >
                       <Copy className="w-3.5 h-3.5 text-slate-500" />
                       Sao chép
@@ -174,17 +174,17 @@ export default function PlaceCard({
             )}
           </div>
           {place.address && (
-            <div className="text-xs text-gray-600 line-clamp-2 flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-gray-500" />
+            <div className="text-xs text-ink-500 line-clamp-2 flex items-center gap-1">
+              <MapPin className="w-4 h-4 text-primary-600" />
               <span>{place.address}</span>
             </div>
           )}
           {placeDescription ? (
-            <div className="text-xs text-slate-600 line-clamp-2">
+            <div className="text-xs text-ink-500 line-clamp-2">
               {placeDescription}
             </div>
           ) : null}
-          <div className="text-xs text-gray-500 flex items-center flex-wrap gap-2">
+          <div className="text-xs text-ink-500 flex items-center flex-wrap gap-2">
             {place.rating && (
               <span className="flex items-center gap-1 shrink-0">
                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
@@ -197,7 +197,7 @@ export default function PlaceCard({
               </span>
             )}
             {place.priceLevel !== undefined && <span className="shrink-0">💲{place.priceLevel}</span>}
-            {place.type && <span className="capitalize shrink-0 bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 text-[10px] font-medium">{place.type}</span>}
+            {place.type && <span className="capitalize shrink-0 bg-base-100 px-1.5 py-0.5 rounded-full text-ink-500 text-[10px] font-bold">{place.type}</span>}
           </div>
           {travelTimeMinutes ? (
             <div className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
@@ -205,13 +205,13 @@ export default function PlaceCard({
               {travelTimeMinutes} phút từ vị trí của bạn
             </div>
           ) : null}
-          <div className="text-xs text-gray-700 line-clamp-2">{reviewText}</div>
+          <div className="text-xs text-ink-700 line-clamp-2">{reviewText}</div>
           {place.amenities && place.amenities.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-slate-100">
               {place.amenities.slice(0, 3).map((amenity, idx) => (
                 <span
                   key={idx}
-                  className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors border border-slate-200/60"
+                  className="bg-base-50 hover:bg-base-100 text-ink-500 px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors border border-base-200/60"
                   title={amenity}
                 >
                   {amenity}
@@ -235,7 +235,7 @@ export default function PlaceCard({
                 e.stopPropagation();
                 onShowDetails?.();
               }}
-              className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border border-primary-200 bg-white text-primary-700 hover:bg-primary-50"
             >
               Chi tiết
             </button>
@@ -246,7 +246,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onDirections?.();
             }}
-            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border border-base-200 bg-white text-ink-700 hover:bg-base-50"
           >
             <Navigation className="w-4 h-4" /> Chỉ đường
           </button>
@@ -260,10 +260,10 @@ export default function PlaceCard({
               e.stopPropagation();
               onSave?.();
             }}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border ${
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border ${
               isSaved
                 ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                : 'border-base-200 text-ink-700 hover:bg-base-50'
             }`}
           >
             {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
@@ -277,10 +277,10 @@ export default function PlaceCard({
               e.stopPropagation();
               onCheckIn?.();
             }}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border ${
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border ${
               isCheckedIn
-                ? 'border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100'
-                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100'
+                : 'border-base-200 text-ink-700 hover:bg-base-50'
             }`}
           >
             <MapPin className={`w-4 h-4 ${isCheckedIn ? 'fill-blue-500' : ''}`} />
@@ -294,7 +294,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onChat?.();
             }}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border border-primary-200 text-primary-700 hover:bg-primary-50"
           >
             <MessageSquare className="w-4 h-4" /> Chat
           </button>
@@ -306,7 +306,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onDirections?.();
             }}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-2xl border border-base-200 text-ink-700 hover:bg-base-50"
           >
             <Navigation className="w-4 h-4" /> Chỉ đường
           </button>
@@ -318,7 +318,7 @@ export default function PlaceCard({
               e.stopPropagation();
               onNavigate?.();
             }}
-            className="px-3 py-2 text-sm rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="px-3 py-2 text-sm rounded-2xl border border-base-200 text-ink-700 hover:bg-base-50"
           >
             Chi tiết
           </button>

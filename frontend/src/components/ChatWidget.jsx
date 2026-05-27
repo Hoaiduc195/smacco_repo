@@ -12,7 +12,7 @@ export default function ChatWidget() {
   const defaultMessages = [
     { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
   ];
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const {
@@ -194,7 +194,7 @@ export default function ChatWidget() {
             {taggedPlaces.map((place) => (
               <div
                 key={place.id}
-                className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-indigo-650 text-white text-xs px-3 py-2 rounded-full shadow-lg border border-indigo-400 hover:from-indigo-650 hover:to-indigo-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
+                className="flex items-center gap-1.5 bg-ink-900 text-white text-xs px-3 py-2 rounded-full shadow-soft border border-ink-900 hover:bg-ink-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData('placeId', place.id);
@@ -207,7 +207,7 @@ export default function ChatWidget() {
                 <button
                   type="button"
                   onClick={() => untagPlace(place.id)}
-                  className="p-0.5 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition"
+                  className="p-0.5 rounded-full hover:bg-primary-700 text-white hover:text-white transition"
                   title="Bỏ tag"
                 >
                   <X className="w-3 h-3" />
@@ -219,13 +219,13 @@ export default function ChatWidget() {
 
         {/* Main Chat Window */}
         <div
-          className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-blue-400/60' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
+          className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-base-200 rounded-3xl shadow-card flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
           {showHistory && (
-            <div className="w-56 border-r border-gray-200 bg-gray-50 flex flex-col relative shrink-0">
+            <div className="w-56 border-r border-base-200 bg-white flex flex-col relative shrink-0">
               <div className="p-3 font-semibold text-gray-700 border-b flex justify-between items-center">
                 <span>Lịch sử chat</span>
                 <div className="flex items-center gap-2">
@@ -290,7 +290,7 @@ export default function ChatWidget() {
           )}
 
           <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-base-200 bg-white">
               <div className="flex items-center gap-2">
                 {!showHistory && (
                   <button
@@ -302,7 +302,7 @@ export default function ChatWidget() {
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
                   </button>
                 )}
-                <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                   <MessageCircle className="w-4 h-4" />
                 </div>
                 <div>
@@ -345,7 +345,7 @@ export default function ChatWidget() {
 
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50"
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-base-50"
             >
               {messages.map((msg, idx) => (
                 <div
@@ -355,8 +355,8 @@ export default function ChatWidget() {
                   <div
                     className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${
                       msg.role === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-sm whitespace-pre-wrap'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm prose prose-sm prose-blue max-w-none'
+                        ? 'bg-cyan-600 text-white rounded-br-sm whitespace-pre-wrap'
+                        : 'bg-white text-gray-900 border border-base-200 rounded-bl-sm prose prose-sm prose-blue max-w-none'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -454,7 +454,7 @@ export default function ChatWidget() {
               </div>
             )}
 
-            <form onSubmit={handleSend} className="p-3 border-t border-gray-200 bg-white shrink-0">
+            <form onSubmit={handleSend} className="p-3 border-t border-base-200 bg-white shrink-0">
               <div className="flex items-end gap-2">
                 <textarea
                   rows={2}
@@ -467,12 +467,12 @@ export default function ChatWidget() {
                     }
                   }}
                   placeholder="Hỏi AI về địa điểm, lịch trình, món ăn..."
-                  className="flex-1 resize-none px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="flex-1 resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                 />
                 <button
                   type="submit"
                   disabled={!canSend}
-                  className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 font-medium shrink-0"
+                  className="h-10 w-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-700 font-medium shrink-0"
                   title={isStreaming ? 'Đang gửi' : 'Gửi'}
                 >
                   {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -517,7 +517,7 @@ export default function ChatWidget() {
               setCopiedPlace(null);
               window.localStorage.removeItem('copied_place');
             }}
-            className="ml-1 p-0.5 rounded-full hover:bg-white/20 text-white/90 transition"
+            className="ml-1 p-0.5 rounded-full hover:bg-primary-700 text-white transition"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -527,7 +527,7 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className={`w-14 h-14 rounded-full shadow-xl text-white flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 ${isOpen ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+        className={`w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 border ${isOpen ? 'bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-white hover:bg-primary-50 border-base-200 text-primary-900'}`}
         title={isOpen ? 'Đóng chat' : 'Mở chat'}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}

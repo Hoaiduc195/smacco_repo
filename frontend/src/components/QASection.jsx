@@ -24,8 +24,8 @@ function ParticipantAvatar({ participant }) {
         isAi
           ? 'border-violet-200 bg-violet-50 text-violet-700'
           : isOnsite
-            ? 'border-cyan-300 bg-cyan-50 text-cyan-700 ring-2 ring-cyan-100'
-            : 'border-slate-200 bg-slate-100 text-slate-700'
+            ? 'border-primary-300 bg-primary-50 text-primary-700 ring-2 ring-primary-100'
+            : 'border-base-200 bg-base-100 text-ink-700'
       }`}
       title={isOnsite ? 'Onsite user' : isAi ? 'AI' : 'Offsite user'}
     >
@@ -38,14 +38,14 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
   const isOwnQuestion = currentUser && thread.author?.firebaseUid && thread.author.firebaseUid === currentUser.uid;
 
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-cyan-200">
+    <article className="surface-card-solid p-5 transition hover:border-primary-200">
       <div className="flex items-start gap-3">
         <ParticipantAvatar participant={thread.author} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold text-slate-900">{thread.author?.displayName || 'Người dùng'}</p>
             {thread.author?.isOnsite ? (
-              <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-xs font-bold text-cyan-700">Onsite</span>
+              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary-700">Onsite</span>
             ) : null}
             <span className="text-xs text-slate-400">{formatTime(thread.createdAt)}</span>
             {isOwnQuestion && (
@@ -92,14 +92,14 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
       <div className="mt-4 space-y-3">
         {thread.answers?.length ? (
           thread.answers.map((answer) => (
-            <div key={answer.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+            <div key={answer.id} className="rounded-2xl border border-base-200 bg-base-50 p-4">
               <div className="flex items-start gap-3">
                 <ParticipantAvatar participant={answer.author} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-slate-900">{answer.author?.displayName || 'Người dùng'}</p>
                     {answer.author?.isOnsite ? (
-                      <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-xs font-bold text-cyan-700">Onsite</span>
+                      <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary-700">Onsite</span>
                     ) : null}
                     <span className="text-xs text-slate-400">{formatTime(answer.createdAt)}</span>
                   </div>
@@ -109,22 +109,22 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-base-200 bg-base-50 p-4 text-sm text-slate-500">
             Chưa có câu trả lời từ user onsite hay offsite.
           </div>
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="mt-4 rounded-2xl border border-base-200 bg-white p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Reply className="h-4 w-4 text-cyan-600" />
+          <Reply className="h-4 w-4 text-primary-600" />
           Thêm câu trả lời
         </div>
         <textarea
           value={draft}
           onChange={(event) => onDraftChange(thread.id, event.target.value)}
           rows={3}
-          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-cyan-400"
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
           placeholder="Chia sẻ kinh nghiệm, mẹo, hoặc đính chính nếu bạn đang ở đó..."
         />
         <div className="mt-3 flex justify-end">
@@ -132,7 +132,7 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
             type="button"
             onClick={() => onAnswerSubmit(thread.id)}
             disabled={submittingAnswerId === thread.id || !draft.trim()}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submittingAnswerId === thread.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Gửi trả lời
@@ -232,7 +232,7 @@ export default function QASection({ placeId, place }) {
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <MessageSquare className="h-5 w-5 text-cyan-600" />
+            <MessageSquare className="h-5 w-5 text-primary-600" />
             Hỏi đáp cộng đồng
           </h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -252,14 +252,14 @@ export default function QASection({ placeId, place }) {
         <input
           value={questionTitle}
           onChange={(event) => setQuestionTitle(event.target.value)}
-          className="mb-3 w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-cyan-400"
+          className="mb-3 w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
           placeholder="Tiêu đề ngắn, ví dụ: Ở đây có cần đặt chỗ trước không?"
         />
         <textarea
           value={questionText}
           onChange={(event) => setQuestionText(event.target.value)}
           rows={4}
-          className="w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-cyan-400"
+          className="w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
           placeholder={place ? `Hỏi về ${place.name}...` : 'Đặt câu hỏi của bạn...'}
         />
         <div className="mt-4 flex justify-end">
@@ -280,7 +280,7 @@ export default function QASection({ placeId, place }) {
       ) : null}
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-slate-200 bg-slate-50 py-16 text-slate-500">
+        <div className="flex items-center justify-center gap-2 rounded-3xl border border-dashed border-base-200 bg-base-50 py-16 text-slate-500">
           <Loader2 className="h-5 w-5 animate-spin" />
           Đang tải hỏi đáp...
         </div>
@@ -303,7 +303,7 @@ export default function QASection({ placeId, place }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center">
+        <div className="rounded-3xl border border-dashed border-base-200 bg-base-50 px-6 py-14 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm">
             <MessageSquare className="h-7 w-7 text-slate-300" />
           </div>

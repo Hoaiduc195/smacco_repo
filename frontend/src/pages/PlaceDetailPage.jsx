@@ -293,11 +293,11 @@ export default function PlaceDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-slate-50">
+      <div className="flex flex-col min-h-screen bg-base-50">
         <Navbar />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <Loader className="w-10 h-10 animate-spin mx-auto mb-4 text-blue-600" />
+            <Loader className="w-10 h-10 animate-spin mx-auto mb-4 text-primary-700" />
             <p className="text-slate-600 font-medium italic">Đang tải thông tin địa điểm...</p>
           </div>
         </div>
@@ -308,13 +308,13 @@ export default function PlaceDetailPage() {
   // If there's no place at all (even fallback failed), show a simple error
   if (!place) {
     return (
-      <div className="flex flex-col min-h-screen bg-slate-50">
+      <div className="flex flex-col min-h-screen bg-base-50">
         <Navbar />
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <p className="text-slate-600 mb-6">Không thể tải dữ liệu.</p>
-            <button onClick={() => navigate('/')} className="px-6 py-2 bg-blue-600 text-white rounded-lg">Quay lại</button>
+            <button onClick={() => navigate('/')} className="px-6 py-2 bg-primary-600 text-white rounded-lg">Quay lại</button>
           </div>
         </div>
       </div>
@@ -326,7 +326,7 @@ export default function PlaceDetailPage() {
   const placeholderImg = `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=400`;
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-base-50 overflow-x-hidden">
       <Navbar className="sticky top-0 z-50 shadow-md" />
 
       {error && (
@@ -433,7 +433,7 @@ export default function PlaceDetailPage() {
           <div className="lg:col-span-2 space-y-12">
             
             {/* About Section */}
-            <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <section className="surface-card-solid p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                 Thông tin chi tiết
               </h2>
@@ -442,29 +442,29 @@ export default function PlaceDetailPage() {
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <Clock className="w-6 h-6 text-blue-500 mt-1" />
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-base-50 border border-slate-100">
+                  <Clock className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Giờ mở cửa</p>
                     <p className="text-slate-600 text-sm">Thứ 2 - Chủ Nhật: 08:00 - 22:00</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <Phone className="w-6 h-6 text-blue-500 mt-1" />
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-base-50 border border-slate-100">
+                  <Phone className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Điện thoại</p>
                     <p className="text-slate-600 text-sm">{place.phoneNumber || 'Đang cập nhật'}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <Globe className="w-6 h-6 text-blue-500 mt-1" />
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-base-50 border border-slate-100">
+                  <Globe className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Website</p>
                     <p className="text-slate-600 text-sm truncate max-w-[200px]">{place.website || 'Đang cập nhật'}</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <ImageIcon className="w-6 h-6 text-blue-500 mt-1" />
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-base-50 border border-slate-100">
+                  <ImageIcon className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Hình ảnh</p>
                     <p className="text-slate-600 text-sm">Xem thêm 24 ảnh từ cộng đồng</p>
@@ -482,9 +482,9 @@ export default function PlaceDetailPage() {
                     {place.amenities.map((amenity, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-100/70 hover:border-slate-200 transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-base-50 border border-slate-100 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-100/70 hover:border-slate-200 transition-colors"
                       >
-                        <span className="text-cyan-500 select-none">✦</span>
+                        <span className="text-primary-600 select-none">✦</span>
                         <span className="line-clamp-1">{amenity}</span>
                       </div>
                     ))}
@@ -497,7 +497,7 @@ export default function PlaceDetailPage() {
             <QASection placeId={id} place={place} />
 
             {/* Reviews Section */}
-            <section className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
+            <section className="surface-card-solid p-8">
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">Đánh giá từ cộng đồng</h2>
@@ -644,7 +644,7 @@ export default function PlaceDetailPage() {
                     const isOwnReview = currentUser && review.user?.firebaseUid && review.user.firebaseUid === currentUser.uid;
 
                     return (
-                      <div key={review.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 transition-all hover:border-amber-200 hover:shadow-sm group">
+                      <div key={review.id} className="p-6 bg-base-50 rounded-2xl border border-slate-100 transition-all hover:border-amber-200 hover:shadow-sm group">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center font-bold text-amber-700 text-sm border border-amber-200/50">
@@ -707,7 +707,7 @@ export default function PlaceDetailPage() {
 
           {/* Right Column - Map & Quick Actions */}
           <div className="space-y-8 sticky top-32">
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+            <div className="surface-card-solid p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-slate-900">Trạng thái onsite</h3>
@@ -739,7 +739,7 @@ export default function PlaceDetailPage() {
                 className={`mt-4 inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-95 disabled:opacity-50 ${
                   isCurrentlyOnsite
                     ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
                 }`}
               >
                 {onsiteLoading
@@ -752,7 +752,7 @@ export default function PlaceDetailPage() {
             </div>
 
             {/* Map Preview */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="surface-card-solid overflow-hidden">
               <div className="h-64 relative bg-slate-200">
                 {place.lat && place.lng && (
                   <MapComponent
@@ -762,7 +762,7 @@ export default function PlaceDetailPage() {
                   />
                 )}
                 <div className="absolute bottom-4 right-4 z-[400]">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl shadow-lg font-bold hover:bg-blue-700 transition-all active:scale-95">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl shadow-lg font-bold hover:bg-primary-700 transition-all active:scale-95">
                     <Navigation className="w-4 h-4" />
                     <span>Chỉ đường</span>
                   </button>
@@ -779,22 +779,22 @@ export default function PlaceDetailPage() {
             </div>
 
             {/* Quick Actions / Tips */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200">
+            <div className="bg-gradient-to-br from-primary-700 to-ink-900 rounded-3xl p-8 text-white shadow-xl shadow-soft">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
                 Mẹo du lịch
               </h3>
-              <ul className="space-y-4 text-blue-50">
+              <ul className="space-y-4 text-primary-50">
                 <li className="flex gap-3 text-sm">
-                  <div className="w-1.5 h-1.5 bg-blue-300 rounded-full mt-1.5 shrink-0" />
+                  <div className="w-1.5 h-1.5 bg-primary-200 rounded-full mt-1.5 shrink-0" />
                   Thời điểm tốt nhất để ghé thăm là từ 4h - 6h chiều để đón hoàng hôn.
                 </li>
                 <li className="flex gap-3 text-sm">
-                  <div className="w-1.5 h-1.5 bg-blue-300 rounded-full mt-1.5 shrink-0" />
+                  <div className="w-1.5 h-1.5 bg-primary-200 rounded-full mt-1.5 shrink-0" />
                   Hãy chuẩn bị sẵn máy ảnh vì view ở đây cực kỳ lung linh.
                 </li>
                 <li className="flex gap-3 text-sm">
-                  <div className="w-1.5 h-1.5 bg-blue-300 rounded-full mt-1.5 shrink-0" />
+                  <div className="w-1.5 h-1.5 bg-primary-200 rounded-full mt-1.5 shrink-0" />
                   Đặt chỗ trước nếu bạn đi vào cuối tuần.
                 </li>
               </ul>

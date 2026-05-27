@@ -122,14 +122,14 @@ export default function ProfilePage() {
   const userName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Người dùng';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="page-shell flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:py-12">
         {/* Profile Header */}
-        <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-8">
+        <section className="surface-card-solid p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-lg shadow-blue-100 ring-4 ring-white">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary-600 to-accent-500 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-glow ring-4 ring-white">
               {userInitial.toUpperCase()}
             </div>
             <div className="flex-1 text-center sm:text-left space-y-2">
@@ -147,7 +147,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="pt-4 flex justify-center sm:justify-start gap-3">
-                <div className="px-4 py-2 bg-blue-50 rounded-2xl text-blue-700 text-sm font-bold">
+                <div className="px-4 py-2 bg-primary-50 rounded-2xl text-primary-700 text-sm font-bold">
                   {checkIns.length} Check-ins
                 </div>
                 <div className="px-4 py-2 bg-rose-50 rounded-2xl text-rose-700 text-sm font-bold">
@@ -161,10 +161,10 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        <section className="bg-gradient-to-br from-cyan-50 to-white rounded-3xl border border-cyan-100 p-6 sm:p-7 mb-8 shadow-sm">
+        <section className="surface-card p-6 sm:p-7 mb-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-cyan-700">Onsite status</p>
+              <p className="text-sm font-bold uppercase tracking-wide text-primary-700">Onsite status</p>
               {onsiteStatus?.isActive ? (
                 <h2 className="mt-2 text-2xl font-bold text-slate-900">
                   Đang ở tại {onsiteStatus.placeName || 'một địa điểm'}
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={handleLeaveOnsiteStatus}
                 disabled={onsiteLoading}
-                className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary-700 disabled:opacity-50"
               >
                 {onsiteLoading ? 'Đang tắt...' : 'Tắt trạng thái onsite'}
               </button>
@@ -195,7 +195,7 @@ export default function ProfilePage() {
             onClick={() => setActiveTab('checkins')}
             className={`px-6 py-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
               activeTab === 'checkins'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -205,7 +205,7 @@ export default function ProfilePage() {
             onClick={() => setActiveTab('saved')}
             className={`px-6 py-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
               activeTab === 'saved'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -215,7 +215,7 @@ export default function ProfilePage() {
             onClick={() => setActiveTab('reviews')}
             className={`px-6 py-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
               activeTab === 'reviews'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-primary-600 text-primary-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -248,12 +248,12 @@ export default function ProfilePage() {
                   />
                 ))
               ) : (
-                <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                <div className="col-span-full py-16 text-center surface-card-solid border-dashed">
                   <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                   <p className="text-slate-500 font-medium">Bạn chưa check-in địa điểm nào.</p>
                   <button 
                     onClick={() => navigate('/')}
-                    className="mt-4 text-blue-600 font-bold hover:underline"
+                    className="mt-4 text-primary-700 font-bold hover:underline"
                   >
                     Khám phá ngay
                   </button>
@@ -266,7 +266,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {isLoadingSaved ? (
                 <div className="col-span-full py-12 flex justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <Loader2 className="w-8 h-8 animate-spin text-primary-700" />
                 </div>
               ) : savedPlaces.length > 0 ? (
                 savedPlaces.map((sp) => (
@@ -289,12 +289,12 @@ export default function ProfilePage() {
                   />
                 ))
               ) : (
-                <div className="col-span-full py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                <div className="col-span-full py-16 text-center surface-card-solid border-dashed">
                   <Bookmark className="w-12 h-12 text-slate-300 mx-auto mb-4 animate-pulse" />
                   <p className="text-slate-500 font-medium">Bạn chưa lưu địa điểm nào.</p>
                   <button 
                     onClick={() => navigate('/')}
-                    className="mt-4 text-blue-600 font-bold hover:underline"
+                    className="mt-4 text-primary-700 font-bold hover:underline"
                   >
                     Khám phá và lưu ngay
                   </button>
@@ -307,7 +307,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               {isLoadingReviews ? (
                 <div className="py-12 flex justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <Loader2 className="w-8 h-8 animate-spin text-primary-700" />
                 </div>
               ) : error ? (
                 <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-700 flex items-center gap-2">
@@ -318,14 +318,14 @@ export default function ProfilePage() {
                 reviews.map((review) => (
                   <div 
                     key={review.id}
-                    className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-blue-200 transition-all group"
+                    className="surface-card-solid p-6 hover:border-primary-200 transition-all group"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div 
                         className="cursor-pointer"
                         onClick={() => navigate(`/places/${review.placeId}`)}
                       >
-                        <h3 className="font-bold text-slate-900 group-hover:text-blue-600 flex items-center gap-1 transition-colors">
+                        <h3 className="font-bold text-ink-900 group-hover:text-primary-700 flex items-center gap-1 transition-colors">
                           {review.place?.placeName || 'Địa điểm'}
                           <ChevronRight className="w-4 h-4" />
                         </h3>
@@ -342,7 +342,7 @@ export default function ProfilePage() {
                   </div>
                 ))
               ) : (
-                <div className="py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                <div className="py-16 text-center surface-card-solid border-dashed">
                   <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                   <p className="text-slate-500 font-medium">Bạn chưa viết đánh giá nào.</p>
                 </div>

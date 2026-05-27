@@ -6,17 +6,17 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Đang tải...</p>
+      <div className="page-shell flex h-screen items-center justify-center">
+        <div className="surface-card-solid px-8 py-7 text-center">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-base-200 border-b-primary-600"></div>
+          <p className="text-sm font-bold text-ink-500">Đang tải...</p>
         </div>
       </div>
     );
   }
 
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

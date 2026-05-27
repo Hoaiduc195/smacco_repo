@@ -62,9 +62,9 @@ export default function SidebarOverlay({
   return (
     <>
       <div
-        className={`absolute z-30 flex transition-all duration-300 ease-in-out ${
+        className={`absolute z-30 flex transition-transform duration-300 ease-in-out ${
           isMobile ? 'left-2 bottom-3' : 'left-3 sm:left-4 bottom-3 sm:bottom-4'
-        } ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        } ${isOpen ? '' : 'pointer-events-none'}`}
         style={{
           width: panelWidth,
           top: isMobile ? topOffset + 8 : topOffset,
@@ -72,22 +72,23 @@ export default function SidebarOverlay({
         }}
       >
         <div
-          className={`relative h-full bg-white/95 border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-[width] duration-300 ease-in-out backdrop-blur-md ${
+          className={`relative h-full bg-white border border-base-200 rounded-3xl shadow-card overflow-hidden flex flex-col transition-[width] duration-300 ease-in-out ${
             dragging ? 'transition-none' : ''
           }`}
           style={{ width: panelWidth }}
         >
-          <div className="px-3 py-3 border-b border-slate-100 flex items-center justify-end bg-gradient-to-r from-white to-sky-50">
+          <div className="px-3 py-3 border-b border-base-200 flex items-center justify-between bg-ink-900">
+            <span className="pl-2 text-xs font-bold uppercase tracking-wide text-white">Khám phá</span>
             <button
               onClick={() => onToggle?.(false)}
-              className="p-2.5 text-slate-700 hover:text-slate-900"
+              className="p-2.5 text-white hover:text-white hover:bg-primary-700 rounded-xl transition-colors"
               aria-label="Thu gọn danh sách"
             >
               <ChevronsLeft className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-4 py-3 bg-white/70 backdrop-blur-sm">
+          <div className="flex-1 overflow-y-auto px-4 py-3 bg-white">
             {children}
           </div>
 
@@ -96,7 +97,7 @@ export default function SidebarOverlay({
               onMouseDown={handleMouseDown}
               className="absolute top-0 right-[-8px] h-full w-4 cursor-col-resize flex items-center justify-center"
             >
-              <div className="h-14 w-2 rounded-full bg-sky-200 shadow" />
+              <div className="h-14 w-2 rounded-full bg-white shadow border border-primary-100" />
             </div>
           ) : null}
         </div>
@@ -105,7 +106,7 @@ export default function SidebarOverlay({
       {!isOpen ? (
         <button
           onClick={() => onToggle?.(true)}
-          className={`absolute z-30 p-2.5 rounded-r-xl bg-white/95 border border-slate-200 shadow-lg text-slate-700 hover:text-slate-900 transition-all duration-200 ease-in-out ${
+          className={`absolute z-30 p-2.5 rounded-r-xl bg-white border border-base-200 shadow-soft text-ink-700 hover:text-ink-900 hover:bg-primary-50 transition-all duration-200 ease-in-out ${
             isMobile ? 'left-0 top-28' : 'left-0 top-24'
           }`}
           aria-label="Mở danh sách"

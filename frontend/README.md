@@ -6,7 +6,7 @@ React SPA for authentication, map-based place discovery, AI chat, recommendation
 ## TL;DR
 - UI layer; talks to backend APIs via Axios and fetch SSE.
 - Uses Firebase Auth + Firestore for user/session and trip data.
-- Uses Leaflet map, OSRM routing, and fallback geocoding/search paths.
+- Uses Mapbox GL for map rendering, OSRM routing, and fallback geocoding/search paths.
 - Streams AI responses from /ai/chat/stream and maintains in-memory conversation state.
 
 ## Key Files
@@ -18,7 +18,7 @@ React SPA for authentication, map-based place discovery, AI chat, recommendation
 - services/frontend/src/services/recommendationService.js -> recommendation request client
 - services/frontend/src/contexts/AuthContext.jsx -> Firebase auth context
 - services/frontend/src/contexts/TravelDataContext.jsx -> trip/place/accommodation state via Firestore subscriptions
-- services/frontend/src/components/MapComponent.jsx -> Leaflet rendering, markers, clusters, route visuals
+- services/frontend/src/components/MapComponent.jsx -> Mapbox GL rendering, markers, clusters, route visuals
 - services/frontend/src/pages/HomePage.jsx -> core interaction flow (search/map/chat/trip actions)
 
 ## API Endpoints (if any)
@@ -41,7 +41,7 @@ Chat flow: services/frontend/src/hooks/useStreamingChat.js consumes SSE chunks a
 - React, React Router, Vite
 - Axios
 - Firebase Auth + Firestore
-- Leaflet, react-leaflet, marker clustering
+- Mapbox GL, with OSM/CARTO raster fallback when VITE_MAPBOX_ACCESS_TOKEN is not set
 - TailwindCSS
 - External services: core API gateway, OSRM, Nominatim
 
@@ -54,4 +54,5 @@ Chat flow: services/frontend/src/hooks/useStreamingChat.js consumes SSE chunks a
 ## Notes
 - Chat conversation_id is maintained in client state and is not durable across full reload.
 - Base API URL defaults to http://localhost/api/v1 when env var is missing.
+- VITE_MAPBOX_ACCESS_TOKEN enables official Mapbox styles; without it, the map still renders through Mapbox GL using OSM/CARTO raster tiles.
 - 401 handling forces navigation to login to prevent stale-auth behavior.
