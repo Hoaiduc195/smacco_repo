@@ -21,7 +21,7 @@ const APP_STATES = {
   FOCUS_CURRENT: 'focusOnCurrentPosition',
   ROUTING: 'routing',
 };
-const NAVBAR_HEIGHT = 80;
+const NAVBAR_HEIGHT = 64;
 
 export default function HomePage() {
   const {
@@ -96,7 +96,7 @@ export default function HomePage() {
     }
   }, [isMobile]);
 
-  const focusMapAt = useCallback((point, zoom = 15) => {
+  const focusMapAt = useCallback((point, zoom = 15, options = {}) => {
     if (!point?.lat || !point?.lng) return;
     setDisableAutoFit(true);
     setMapFocusTarget({
@@ -104,6 +104,7 @@ export default function HomePage() {
       lat: Number(point.lat),
       lng: Number(point.lng),
       zoom,
+      ...options,
     });
   }, []);
 
@@ -152,7 +153,7 @@ export default function HomePage() {
           lng: position.coords.longitude,
         };
         setUserLocation(nextLocation);
-        focusMapAt(nextLocation, CURRENT_LOCATION_ZOOM);
+        focusMapAt(nextLocation, CURRENT_LOCATION_ZOOM, { source: 'current-location' });
       },
       (geoError) => {
         console.error('Theo dõi vị trí thất bại:', geoError);
@@ -191,7 +192,7 @@ export default function HomePage() {
         setFollowUserLocation(true);
         startTrackingUserLocation();
         setUserLocation(newLocation);
-        focusMapAt(newLocation, CURRENT_LOCATION_ZOOM);
+        focusMapAt(newLocation, CURRENT_LOCATION_ZOOM, { source: 'current-location' });
         setLocationStatus('success');
       },
       (error) => {

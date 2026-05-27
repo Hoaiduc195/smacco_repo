@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, ChevronRight } from 'lucide-react';
 
 export default function SidebarOverlay({
   isOpen,
@@ -106,13 +106,13 @@ export default function SidebarOverlay({
       {!isOpen ? (
         <button
           onClick={() => onToggle?.(true)}
-          className={`absolute z-30 p-2.5 rounded-r-xl bg-white border border-base-200 shadow-soft text-ink-700 hover:text-ink-900 hover:bg-primary-50 transition-all duration-200 ease-in-out ${
-            isMobile ? 'left-0 top-28' : 'left-0 top-24'
+          className={`absolute z-30 w-6 h-14 flex items-center justify-center bg-ink-900 hover:bg-primary-600 text-white rounded-r-full transition-colors duration-200 shadow-soft ${
+            isMobile ? 'left-0 top-72' : 'left-0 top-64'
           }`}
           aria-label="Mở danh sách"
           title="Mở danh sách"
         >
-          <ChevronsRight className="w-6 h-6" />
+          <ChevronRight className="w-4 h-4 text-white shrink-0" />
         </button>
       ) : null}
     </>

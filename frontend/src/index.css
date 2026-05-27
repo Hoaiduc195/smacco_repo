@@ -205,10 +205,122 @@
   animation: messageRise 0.2s ease;
 }
 
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-radius: 8px;
+  margin: 0 8px 8px 0 !important;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chatPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageRise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floaty {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes softIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-enter {
+  opacity: 0;
+  animation: cardEnter 0.36s ease forwards;
+}
+
+.animate-chat-pop {
+  animation: chatPop 0.24s ease;
+}
+
+.animate-chat-message {
+  animation: messageRise 0.2s ease;
+}
+
 .animate-floaty {
   animation: floaty 2.6s ease-in-out infinite;
 }
 
-.animate-soft-in {
-  animation: softIn 0.22s ease-in-out;
+  .animate-soft-in {
+    animation: softIn 0.22s ease-in-out;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+    will-change: transform, box-shadow, border-color;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-card);
+  }
+
+  .hover-lift-sm {
+    @apply transition-all duration-200 ease-out;
+    will-change: transform, box-shadow, border-color;
+  }
+
+  .hover-lift-sm:hover {
+    transform: translateY(-2px);
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 ease-out;
+    will-change: transform, box-shadow, background-color, border-color;
+  }
+
+  .hover-glow:hover {
+    border-color: rgba(47, 183, 156, 0.28);
+    box-shadow: 0 24px 70px -42px rgba(47, 183, 156, 0.42);
+  }
+
+/* Mapbox controls override to keep the map clean */
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}
+.mapboxgl-ctrl-attrib {
+  display: none !important;
 }

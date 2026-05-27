@@ -84,25 +84,23 @@ export default function Navbar({
   const userName = currentUser?.displayName || userEmail.split('@')[0] || 'Người dùng';
 
   return (
-    <nav className={`h-20 border-b border-base-200 bg-base-50 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
+    <nav className={`h-16 border-b border-ink-900 bg-ink-900 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
       {/* Logo */}
       <button
         onClick={() => navigate('/')}
         className="flex items-center gap-3 flex-shrink-0">
-        <div className="w-11 h-11 bg-white hover:bg-primary-50 border border-base-200 hover:border-primary-200 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-soft">
-          <img src="/favicon.svg" alt="Smacco Logo" className="w-7 h-7 object-contain" />
-        </div>
+        <img src="/favicon.svg" alt="Smacco Logo" className="w-8 h-8 object-contain transition-transform hover:scale-105" />
         <div className="hidden sm:block text-left">
-          <p className="text-ink-900 font-extrabold text-lg tracking-normal leading-5 font-sans">Smacco</p>
-          <p className="text-primary-700 text-[10px] uppercase font-bold tracking-wide">Tìm lưu trú bằng AI</p>
+          <p className="text-white font-extrabold text-lg tracking-normal leading-5 font-sans">Smacco</p>
+          <p className="text-white/70 text-[10px] uppercase font-bold tracking-wide">Tìm lưu trú bằng AI</p>
         </div>
       </button>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-2xl hidden md:flex relative md:ml-auto lg:ml-auto" ref={searchContainerRef}>
+      <div className="flex-1 max-w-md xl:max-w-lg hidden md:flex relative mx-auto" ref={searchContainerRef}>
         <form onSubmit={handleSearch} className="w-full">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-500" />
             <input
               type="text"
               placeholder="Tìm homestay yên tĩnh, khách sạn trung tâm..."
@@ -113,22 +111,23 @@ export default function Navbar({
                 setLocalSearchQuery(nextValue);
                 onSearchInputChange?.(nextValue);
               }}
-              className="input-field pl-10 pr-10 shadow-soft"
+              className="w-full h-12 rounded-2xl border border-ink-700 bg-ink-950/80 px-4 pl-10 pr-10 text-sm text-white outline-none transition placeholder:text-ink-500/80 focus:border-primary-500 focus:ring-4 focus:ring-primary-900/40 shadow-soft"
             />
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl transition-colors ${showFilters || placeType || budget || locationInput ? 'text-primary-700 bg-primary-50' : 'text-ink-500 hover:text-ink-700 hover:bg-base-100'}`}
-              title="Bộ lọc nâng cao"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
-          </div>
-        </form>
+            onClick={() => setShowFilters((prev) => !prev)}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-xl border transition-colors ${showFilters || placeType || budget || locationInput ? 'text-primary-400 bg-primary-950/70 border-primary-900' : 'text-ink-500 border-transparent hover:text-white hover:bg-ink-700'}`}
+            title="Bộ lọc nâng cao"
+            aria-expanded={showFilters}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
 
-        {/* Dropdown Bộ lọc nâng cao */}
+        {/* Dropdown Bộ lọc nâng cao (Light theme popover below the dark navbar) */}
         {setLocationInput && (
-          <div className={`absolute top-full mt-2 w-full map-surface z-50 p-4 origin-top transition-transform duration-200 ease-out ${showFilters ? 'scale-100 translate-y-0 pointer-events-auto visible' : 'scale-[0.98] -translate-y-2 pointer-events-none invisible'}`}>
+          <div className={`absolute top-full mt-2 w-full map-surface z-50 p-4 origin-top transition-[transform,opacity] duration-200 ease-out will-change-transform ${showFilters ? 'scale-100 translate-y-0 opacity-100 pointer-events-auto' : 'scale-[0.98] -translate-y-2 opacity-0 pointer-events-none'}`}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-50 text-primary-700 border border-primary-100">
@@ -146,7 +145,7 @@ export default function Navbar({
                     setLocalSearchQuery('');
                     if (onClearFilters) onClearFilters();
                   }}
-                    className="text-xs font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"
+                  className="text-xs font-bold text-rose-700 hover:text-rose-800 flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200"
                 >
                   <X className="w-3 h-3" /> Xóa bộ lọc
                 </button>
@@ -261,7 +260,7 @@ export default function Navbar({
                         className="flex flex-col items-center cursor-pointer px-2"
                         onClick={() => setBudget(level.value)}
                       >
-                          <span className={`mt-1 transition-all duration-200 ${budgetLevel.slider === i ? 'text-primary-700 font-bold scale-110' : 'text-ink-500/60 hover:text-ink-700'}`}>
+                        <span className={`mt-1 transition-all duration-200 ${budgetLevel.slider === i ? 'text-primary-700 font-bold scale-110' : 'text-ink-500/60 hover:text-ink-700'}`}>
                           {level.label}
                         </span>
                       </div>
@@ -277,7 +276,7 @@ export default function Navbar({
                 type="button"
                 onClick={() => {
                   setShowFilters(false);
-                  if (onSearch) onSearch(localSearchQuery);
+                  requestAnimationFrame(() => onSearch?.(localSearchQuery));
                 }}
                 className="btn-primary px-4 py-2 rounded-xl"
               >
@@ -296,17 +295,31 @@ export default function Navbar({
       <div className="relative">
         <button
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-base-200 bg-white hover:bg-primary-50 transition-colors shadow-soft"
+          className="flex items-center gap-2 px-2.5 h-10 w-10 sm:w-52 rounded-2xl border border-base-200 bg-white hover:bg-primary-50 text-slate-900 transition-colors shadow-soft select-none flex-shrink-0"
         >
-          <div className="w-9 h-9 bg-primary-50 text-primary-900 border border-white/70 rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
-            {userName.charAt(0).toUpperCase()}
-          </div>
-          <span className="text-sm font-semibold hidden sm:inline text-slate-900">{userName}</span>
+          {currentUser?.photoURL ? (
+            <img
+              src={currentUser.photoURL}
+              alt="Google Profile"
+              className="w-7 h-7 rounded-full object-cover border border-base-200 shadow-sm shrink-0"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-7 h-7 bg-slate-50 border border-base-200 rounded-full flex items-center justify-center shadow-sm shrink-0">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+            </div>
+          )}
+          <span className="text-xs font-bold hidden sm:inline text-slate-900 truncate flex-1 text-left">{userName}</span>
         </button>
 
-        {/* Dropdown Menu */}
+        {/* Dropdown Menu (Light theme popover below the dark navbar) */}
         {showUserMenu && (
-          <div className="absolute right-0 mt-2 w-56 map-surface py-2 z-50">
+          <div className="absolute right-0 mt-2 w-52 sm:w-full map-surface py-2 z-50">
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500 truncate">{userEmail}</p>

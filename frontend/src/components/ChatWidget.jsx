@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Send, X, Loader2, RotateCcw, Tag, Plus, Trash2, MapPin } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, RotateCcw, Tag, Plus, Trash2, MapPin, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import TaggedPlacesBar from './TaggedPlacesBar';
@@ -15,6 +15,10 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(true);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  
+  const [isPlaceChatOpen, setIsPlaceChatOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const {
     messages,
     setMessages,
@@ -35,6 +39,7 @@ export default function ChatWidget() {
       window.dispatchEvent(new CustomEvent('app:ai-search', { detail: action }));
     }
   });
+
   const {
     tagPlace,
     taggedPlaces,
@@ -51,6 +56,24 @@ export default function ChatWidget() {
   const scrollRef = useRef(null);
 
   const [copiedPlace, setCopiedPlace] = useState(null);
+
+  useEffect(() => {
+    const handlePlaceChatActive = (e) => {
+      setIsPlaceChatOpen(e.detail.open);
+    };
+    window.addEventListener('app:place-chat-active', handlePlaceChatActive);
+
+    const syncMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    syncMobile();
+    window.addEventListener('resize', syncMobile);
+
+    return () => {
+      window.removeEventListener('app:place-chat-active', handlePlaceChatActive);
+      window.removeEventListener('resize', syncMobile);
+    };
+  }, []);
 
   // Sync copied place from clipboard / localStorage / events
   useEffect(() => {
@@ -161,7 +184,6 @@ export default function ChatWidget() {
     }
   };
 
-  // Drag-and-drop: handle drop placeId
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDrop = (e) => {
@@ -176,17 +198,28 @@ export default function ChatWidget() {
         console.error('Lỗi khi parse placeData', err);
       }
     }
-    // Auto-open chat if not open
     if (!isOpen) setIsOpen(true);
   };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     if (!isDragOver) setIsDragOver(true);
   };
+
   const handleDragLeave = () => setIsDragOver(false);
 
+  // Hide the floating main ChatWidget on mobile if the place-specific chat panel is open
+  if (isPlaceChatOpen && isMobile) {
+    return null;
+  }
+
   return (
-    <div className="fixed bottom-3 sm:bottom-4 right-3 sm:right-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none">
+    <div 
+      className="fixed bottom-3 sm:bottom-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
+      style={{
+        right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '16px')
+      }}
+    >
       <div className="flex flex-row items-end gap-3 pointer-events-none w-full justify-end">
         {/* Active Tagged Places Stack (Left of chat widget) */}
         {isOpen && taggedPlaces && taggedPlaces.length > 0 && (
@@ -202,7 +235,7 @@ export default function ChatWidget() {
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
               >
-                <MapPin className="w-3.5 h-3.5 shrink-0 text-indigo-200" />
+                <MapPin className="w-3.5 h-3.5 shrink-0 text-primary-200" />
                 <span className="font-semibold max-w-[8rem] truncate">{place.name}</span>
                 <button
                   type="button"
@@ -226,13 +259,13 @@ export default function ChatWidget() {
         >
           {showHistory && (
             <div className="w-56 border-r border-base-200 bg-white flex flex-col relative shrink-0">
-              <div className="p-3 font-semibold text-gray-700 border-b flex justify-between items-center">
-                <span>Lịch sử chat</span>
-                <div className="flex items-center gap-2">
+              <div className="p-3 font-semibold text-ink-900 border-b border-base-200 flex justify-between items-center bg-base-50">
+                <span className="text-xs font-bold uppercase tracking-wide">Lịch sử chat</span>
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={handleNewConversation}
-                    className="p-1 rounded-md hover:bg-blue-100 text-blue-600"
+                    className="p-1 rounded-xl hover:bg-primary-50 text-primary-600"
                     title="Tạo hội thoại mới"
                   >
                     <Plus className="w-4 h-4" />
@@ -240,14 +273,14 @@ export default function ChatWidget() {
                   <button
                     type="button"
                     onClick={() => setShowHistory(false)}
-                    className="p-1 rounded-md hover:bg-gray-200 text-gray-600"
+                    className="p-1 rounded-xl hover:bg-base-200 text-ink-500"
                     title="Đóng lịch sử"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto bg-white">
                 {conversations && conversations.length > 0 ? (
                   conversations.map((conv) => (
                     <button
@@ -257,15 +290,15 @@ export default function ChatWidget() {
                         setConversationId(conv.id);
                         setMessages(history?.length ? history : defaultMessages);
                       }}
-                      className={`w-full text-left px-4 py-3 border-b text-sm hover:bg-blue-50 transition-colors ${selectedConversationId === conv.id ? 'bg-blue-100 font-bold text-blue-900' : 'text-gray-700'}`}
+                      className={`w-full text-left px-4 py-3 border-b border-base-100 text-sm hover:bg-primary-50/50 transition-colors ${selectedConversationId === conv.id ? 'bg-primary-50 font-black text-primary-900' : 'text-ink-700'}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-sm font-semibold line-clamp-1">
+                          <div className="text-sm font-bold line-clamp-1">
                             {conv.title || `Hội thoại ${conv.id.slice(0, 8)}`}
                           </div>
                           {conv.lastMessage ? (
-                            <div className="text-xs text-gray-500 line-clamp-1">{conv.lastMessage}</div>
+                            <div className="text-xs text-ink-500 line-clamp-1">{conv.lastMessage}</div>
                           ) : null}
                         </div>
                         <button
@@ -274,7 +307,7 @@ export default function ChatWidget() {
                             e.stopPropagation();
                             deleteConversation(conv.id);
                           }}
-                          className="p-1 rounded-md hover:bg-red-50 text-red-500"
+                          className="p-1 rounded-lg hover:bg-rose-50 text-rose-600"
                           title="Xóa hội thoại"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -283,49 +316,49 @@ export default function ChatWidget() {
                     </button>
                   ))
                 ) : (
-                  <div className="p-4 text-gray-400 text-sm text-center">Chưa có hội thoại nào</div>
+                  <div className="p-4 text-ink-500/50 text-xs text-center">Chưa có hội thoại nào</div>
                 )}
               </div>
             </div>
           )}
 
           <div className="flex-1 flex flex-col min-w-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-base-200 bg-white">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-ink-800 bg-ink-900 text-white">
               <div className="flex items-center gap-2">
                 {!showHistory && (
                   <button
                     type="button"
                     onClick={() => setShowHistory(true)}
-                    className="p-1.5 mr-1 rounded-lg hover:bg-blue-100 text-blue-600 transition-colors"
+                    className="p-1.5 mr-1 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                     title="Mở lịch sử chat"
                   >
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
                   </button>
                 )}
-                <div className="w-8 h-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                   <MessageCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 line-clamp-1">AI Chat</p>
-                  <p className="text-xs text-gray-500 line-clamp-1">Hỏi gì cũng được về chuyến đi</p>
+                  <p className="text-sm font-black text-white leading-tight">Trợ lý AI</p>
+                  <p className="text-[10px] font-semibold text-primary-300">Tư vấn lịch trình & chỗ ở</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setShowTagModal(true)}
-                  className="p-1 rounded-lg hover:bg-blue-100"
+                  className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                   title="Tag địa điểm vào hội thoại"
                 >
-                  <Tag className="w-4 h-4 text-blue-500" />
+                  <Tag className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={handleNewConversation}
-                  className="p-1 rounded-lg hover:bg-gray-100"
+                  className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                   title="Tạo hội thoại mới"
                 >
-                  <RotateCcw className="w-4 h-4 text-gray-500" />
+                  <RotateCcw className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
@@ -333,9 +366,10 @@ export default function ChatWidget() {
                     if (isStreaming) handleAbort();
                     setIsOpen(false);
                   }}
-                  className="p-1 rounded-lg hover:bg-gray-100"
+                  className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                  title="Đóng"
                 >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -345,7 +379,7 @@ export default function ChatWidget() {
 
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-base-50"
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white"
             >
               {messages.map((msg, idx) => (
                 <div
@@ -355,8 +389,8 @@ export default function ChatWidget() {
                   <div
                     className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${
                       msg.role === 'user'
-                        ? 'bg-cyan-600 text-white rounded-br-sm whitespace-pre-wrap'
-                        : 'bg-white text-gray-900 border border-base-200 rounded-bl-sm prose prose-sm prose-blue max-w-none'
+                        ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap'
+                        : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'
                     }`}
                   >
                     {msg.role === 'user' ? (
@@ -378,7 +412,7 @@ export default function ChatWidget() {
                               const placeName = String(children || '');
                               return (
                                 <span
-                                  className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-indigo-200 cursor-pointer hover:bg-indigo-100 hover:border-indigo-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
+                                  className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
                                   draggable
                                   onDragStart={(e) => {
                                     e.dataTransfer.setData('placeId', placeId);
@@ -393,60 +427,57 @@ export default function ChatWidget() {
                                   }}
                                   title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
                                 >
-                                  <MapPin className="w-3 h-3 text-indigo-500 shrink-0" />
+                                  <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
                                   {placeName}
                                 </span>
                               );
                             }
                             return (
-                              <a href={href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" {...props}>
+                              <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
                                 {children}
                               </a>
                             );
                           }
                         }}
                       >
-                        {msg.content || (isStreaming && msg.role === 'assistant' ? 'Đang soạn...' : '')}
+                        {msg.content}
                       </ReactMarkdown>
                     )}
                   </div>
                 </div>
               ))}
-              <div ref={bottomRef} />
             </div>
 
-            {error && (
-              <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
-                {error}
-              </div>
-            )}
-
-            {/* Clipboard detection inline bar (only inside chat widget if open) */}
-            {isOpen && copiedPlace && (
-              <div className="mx-4 my-2 px-3 py-2 bg-cyan-50 border border-cyan-200 rounded-xl flex items-center justify-between text-xs text-cyan-800 animate-pulse shrink-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Tag className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
-                  <span className="truncate">Phát hiện địa điểm: <strong className="text-cyan-900 font-bold">{copiedPlace.name}</strong></span>
+            {/* Floating tag suggestion banner above closed trigger button */}
+            {!isOpen && copiedPlace && (
+              <div
+                onClick={() => {
+                  tagPlace(copiedPlace);
+                  setIsOpen(true);
+                  setCopiedPlace(null);
+                  window.localStorage.removeItem('copied_place');
+                }}
+                className="mx-4 my-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded-xl flex items-center justify-between text-xs text-primary-800 animate-pulse shrink-0 cursor-pointer hover:bg-primary-100 transition"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Tag className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                  <span className="truncate">Phát hiện địa điểm: <strong className="text-primary-900 font-bold">{copiedPlace.name}</strong></span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      tagPlace(copiedPlace);
-                      setCopiedPlace(null);
-                      window.localStorage.removeItem('copied_place');
-                    }}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-2 py-0.5 rounded-lg font-medium transition"
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-2 py-0.5 rounded-lg font-medium transition"
                   >
-                    Tag ngay
+                    Tag
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setCopiedPlace(null);
                       window.localStorage.removeItem('copied_place');
                     }}
-                    className="p-0.5 text-cyan-600 hover:bg-cyan-100 rounded-full transition"
+                    className="p-0.5 text-primary-600 hover:bg-primary-100 rounded-full transition"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -467,25 +498,25 @@ export default function ChatWidget() {
                     }
                   }}
                   placeholder="Hỏi AI về địa điểm, lịch trình, món ăn..."
-                  className="flex-1 resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                  className="flex-grow resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                 />
                 <button
                   type="submit"
                   disabled={!canSend}
-                  className="h-10 w-10 rounded-xl bg-cyan-600 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-700 font-medium shrink-0"
+                  className="h-10 w-10 rounded-xl bg-primary-600 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-700 font-medium shrink-0"
                   title={isStreaming ? 'Đang gửi' : 'Gửi'}
                 >
                   {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
               {isStreaming && (
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="flex items-center gap-2 text-xs text-ink-500 mt-1">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary-600" />
                   <span>AI đang phản hồi... (Streaming)</span>
                   <button
                     type="button"
                     onClick={handleAbort}
-                    className="text-blue-600 hover:underline font-medium"
+                    className="text-primary-600 hover:underline font-bold"
                   >
                     Dừng
                   </button>
@@ -506,7 +537,7 @@ export default function ChatWidget() {
             setCopiedPlace(null);
             window.localStorage.removeItem('copied_place');
           }}
-          className="pointer-events-auto flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs px-3 py-2 rounded-2xl shadow-xl animate-bounce whitespace-nowrap cursor-pointer hover:from-cyan-600 hover:to-blue-700 transition font-semibold"
+          className="pointer-events-auto flex items-center gap-2 bg-gradient-to-br from-primary-500 to-primary-700 text-white text-xs px-3 py-2 rounded-2xl shadow-xl animate-bounce whitespace-nowrap cursor-pointer hover:from-primary-600 hover:to-primary-800 transition font-semibold"
         >
           <Tag className="w-3.5 h-3.5" />
           <span>Tag "{copiedPlace.name}" vào Chat?</span>
@@ -517,7 +548,7 @@ export default function ChatWidget() {
               setCopiedPlace(null);
               window.localStorage.removeItem('copied_place');
             }}
-            className="ml-1 p-0.5 rounded-full hover:bg-primary-700 text-white transition"
+            className="ml-1 p-0.5 rounded-full hover:bg-white/20 text-white transition"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -527,7 +558,7 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className={`w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 border ${isOpen ? 'bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-white hover:bg-primary-50 border-base-200 text-primary-900'}`}
+        className={`w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 border ${isOpen ? 'bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
         title={isOpen ? 'Đóng chat' : 'Mở chat'}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}

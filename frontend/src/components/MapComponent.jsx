@@ -368,8 +368,6 @@ export default function MapComponent({
     });
 
     mapRef.current = map;
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-left');
 
     const handleLoad = () => {
       addSourcesAndLayers(map);
@@ -471,7 +469,7 @@ export default function MapComponent({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    map.resize();
+    map.triggerRepaint?.();
   }, [invalidateKey]);
 
   useEffect(() => {
@@ -494,6 +492,9 @@ export default function MapComponent({
     if (!map || !isValidPoint(focusTarget)) return;
     if (focusTarget.id && focusTarget.id === lastFocusIdRef.current) return;
     lastFocusIdRef.current = focusTarget.id || `${focusTarget.lat}:${focusTarget.lng}`;
+    if (focusTarget.source === 'current-location') {
+      hasFollowFocusedRef.current = false;
+    }
     map.flyTo({
       center: [Number(focusTarget.lng), Number(focusTarget.lat)],
       zoom: focusTarget.zoom || 15,

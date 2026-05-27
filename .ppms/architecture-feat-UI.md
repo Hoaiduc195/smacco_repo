@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-27 15:07
+> Last updated: 2026-05-27 20:13
 > Branch: feat/UI
 
 ## Overview
@@ -27,7 +27,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 - **Routing**: `react-router-dom` v6 with public intro/auth routes and protected application routes.
 - **State Management**: React Context API (`AuthContext`, `TravelDataContext`, `ConversationContext`).
 - **Pages**:
-  - `LandingPage` — Public SaaS-style overview page at `/` focused on AI-assisted accommodation discovery, social proof, feature benefits, alternating product sections, Before/During/After/In-between workflow, interactive prompt demo, trust/security, testimonials, FAQ, final CTA, and embedded Firebase login.
+  - `LandingPage` — Public SaaS-style overview page at `/` in natural Vietnamese focused on AI-assisted accommodation discovery, social proof, feature benefits, alternating product sections, Before/During/After/In-between workflow, interactive prompt demo, trust/security, testimonials, FAQ, final CTA, and embedded Firebase login.
   - `HomePage` — Protected map-based discovery app at `/app`.
   - `PlaceDetailPage` — Protected place info, reviews, Q&A, and place-specific chat.
   - `LoginPage` — Legacy Firebase login route at `/login`, redirects to `/app` after success.
@@ -71,6 +71,9 @@ A modular monolith web application for discovering accommodations, dining spots,
 PostgreSQL stores users, places, reviews, questions, answers, answer votes, files, chunks, conversations, messages, conversation-place references, presences, saved places, and related travel data. Vector search uses pgvector embeddings for RAG chunks.
 
 ## Completed Features
+- [x] Landing page now has cohesive hover interactions on hero actions, navigation chips, feature cards, workflow cards, FAQ, prompt demo, and auth panel blocks.
+- [x] Clicking the current-location button now always snaps Mapbox to a fixed zoom level and resets follow-state so the map does not preserve an old zoom from previous interactions.
+- [x] Advanced filter popover on the map navbar closes with smoother opacity/transform animation, and Mapbox repaint invalidation no longer forces a resize when the sidebar closes.
 - [x] Public landing page before the protected map experience.
 - [x] Reusable Tailwind theme system with warm base colors, primary/accent tokens, radius scale, shared shadows, card styles, button variants, input styles, badge styles, and section utilities.
 - [x] Premium SaaS-style accommodation landing page with hero mockup, social proof, feature cards, workflow, prompt demo, trust/security, testimonials, FAQ, and CTA footer.
