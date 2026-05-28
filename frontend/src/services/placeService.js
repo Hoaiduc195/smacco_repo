@@ -37,6 +37,10 @@ export const searchPlaces = async (query, filters = {}) => {
       type: place.types?.[0] || 'default',
       rating: place.rating,
       priceLevel: place.priceLevel,
+      price: place.price,
+      amenities: place.amenities,
+      userRatingsTotal: place.userRatingsTotal,
+      imageUrl: place.imageUrl,
       source: place.source,
       sourcePlaceId: place.sourcePlaceId
     }));
@@ -83,6 +87,17 @@ export const getPlaceReviews = async (placeId) => {
   } catch (error) {
     console.error('Error fetching place reviews:', error);
     return []; // Return empty array on error instead of failing
+  }
+};
+
+// Get place media (photos + reviews)
+export const getPlaceMedia = async (placeId) => {
+  try {
+    const response = await apiClient.get(`/places/${placeId}/media`);
+    return response.data || { reviews: [], photos: [] };
+  } catch (error) {
+    console.error('Error fetching place media:', error);
+    return { reviews: [], photos: [] };
   }
 };
 
@@ -230,6 +245,7 @@ export default {
   getPlaceDetails,
   getPlaceReviews,
   getPlacePhotos,
+  getPlaceMedia,
   getUserReviews,
   reverseGeocode,
   fetchNearbyPois,

@@ -47,6 +47,12 @@ export class PlacesController {
     return this.placesService.findReviews(id);
   }
 
+  @Get(':id/media')
+  @ApiOperation({ summary: 'Get photos and reviews for a place' })
+  findMedia(@Param('id') id: string) {
+    return this.placesService.findMedia(id);
+  }
+
   @Get(':id/photos')
   @ApiOperation({ summary: 'Get photos for a place' })
   findPhotos(@Param('id') id: string) {

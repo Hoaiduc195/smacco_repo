@@ -225,6 +225,13 @@ export class PlacesService {
     });
   }
 
+  async findMedia(id: string) {
+    const reviews = await this.findReviews(id);
+    const photos = await this.findPhotos(id);
+
+    return { reviews, photos };
+  }
+
   async findPhotos(id: string): Promise<string[]> {
     const place = await this.findOne(id);
     const config = this.getFeaturesConfig();

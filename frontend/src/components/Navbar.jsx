@@ -87,7 +87,7 @@ export default function Navbar({
     <nav className={`h-16 border-b border-ink-900 bg-ink-900 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
       {/* Logo */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/app')}
         className="flex items-center gap-3 flex-shrink-0">
         <img src="/favicon.svg" alt="Smacco Logo" className="w-8 h-8 object-contain transition-transform hover:scale-105" />
         <div className="hidden sm:block text-left">
@@ -111,7 +111,7 @@ export default function Navbar({
                 setLocalSearchQuery(nextValue);
                 onSearchInputChange?.(nextValue);
               }}
-              className="w-full h-12 rounded-2xl border border-ink-700 bg-ink-950/80 px-4 pl-10 pr-10 text-sm text-white outline-none transition placeholder:text-ink-500/80 focus:border-primary-500 focus:ring-4 focus:ring-primary-900/40 shadow-soft"
+              className="w-full h-12 rounded-2xl border border-ink-700 bg-white px-4 pl-10 pr-10 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-900/20 shadow-soft"
             />
             <button
               type="button"
@@ -325,19 +325,30 @@ export default function Navbar({
               <p className="text-xs text-gray-500 truncate">{userEmail}</p>
             </div>
 
-            <button
-              onClick={() => {
-                navigate('/profile');
-                setShowUserMenu(false);
-              }}
-              className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
-            >
-              <User className="w-4 h-4" />
-              Trang cá nhân
-            </button>
+              <button
+                onClick={() => {
+                  navigate('/profile');
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+              >
+                <User className="w-4 h-4" />
+                Trang cá nhân
+              </button>
 
-            <button
-              onClick={handleLogout}
+              <button
+                onClick={() => {
+                  navigate('/app');
+                  setShowUserMenu(false);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+              >
+                <MapPin className="w-4 h-4" />
+                Quay lại bản đồ
+              </button>
+
+              <button
+                onClick={handleLogout}
               disabled={isLoggingOut}
               className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >

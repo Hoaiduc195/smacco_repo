@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Navigation2, AlertCircle, X, Route, Star, MessageSquare, ArrowLeft, Loader2 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
@@ -62,6 +62,7 @@ export default function HomePage() {
   const rehydratedRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [locationInput, setLocationInput] = useState('');
   const [placeType, setPlaceType] = useState('');
@@ -237,7 +238,7 @@ export default function HomePage() {
 
   const visiblePlaces = useMemo(() => places.map((p) => ({
     ...p,
-    type: p.type || 'hotel',
+    type: p.type || p.categories?.[0] || 'default',
   })), [places]);
 
   const selectedPlace = useMemo(
@@ -260,18 +261,44 @@ export default function HomePage() {
   }, [sidebarWidth, isSidebarOpen, isResizing]);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    try {
-      const saved = JSON.parse(raw);
-      if (saved.searchQuery) setSearchQuery(saved.searchQuery);
+    const applySavedState = (saved) => {
+      if (!saved || typeof saved !== 'object') return;
+      if (typeof saved.searchQuery === 'string') setSearchQuery(saved.searchQuery);
       if (Array.isArray(saved.places)) setPlaces(saved.places);
       if (saved.userLocation) setUserLocation(saved.userLocation);
+      if (typeof saved.locationInput === 'string') setLocationInput(saved.locationInput);
+      if (typeof saved.placeType === 'string') setPlaceType(saved.placeType);
+      if (typeof saved.budget === 'string') setBudget(saved.budget);
+      if (saved.selectedPlaceId !== undefined) setSelectedPlaceId(saved.selectedPlaceId);
+      if (typeof saved.isSidebarOpen === 'boolean') setIsSidebarOpen(saved.isSidebarOpen);
+      if (typeof saved.showPlaceDetailPanel === 'boolean') setShowPlaceDetailPanel(saved.showPlaceDetailPanel);
+      if (typeof saved.appState === 'string') setAppState(saved.appState);
+      if (Array.isArray(saved.route)) setRoute(saved.route);
+      if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
       rehydratedRef.current = true;
+    };
+
+    const routeState = location.state?.homeState;
+    if (routeState) {
+      applySavedState(routeState);
+      return;
+    }
+
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      rehydratedRef.current = true;
+      return;
+    }
+    try {
+      const saved = JSON.parse(raw);
+      applySavedState(saved);
     } catch (err) {
       console.warn('Unable to restore search state', err);
+      sessionStorage.removeItem(STORAGE_KEY);
+      rehydratedRef.current = true;
     }
-  }, []);
+  }, [location.state]);
 
   const loadPois = useCallback(
     async (centerPoint) => {
@@ -380,6 +407,10 @@ export default function HomePage() {
           type: place.types?.[0] || place.type || 'default',
           rating: place.rating,
           priceLevel: place.priceLevel,
+          price: place.price,
+          amenities: place.amenities,
+          userRatingsTotal: place.userRatingsTotal,
+          imageUrl: place.imageUrl,
           source: place.source,
           sourcePlaceId: place.sourcePlaceId,
           score: place.score,
@@ -408,9 +439,36 @@ export default function HomePage() {
   }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget, transitionTo]);
 
   useEffect(() => {
-    const payload = { searchQuery, places, userLocation };
+    if (!rehydratedRef.current) return;
+    const payload = {
+      searchQuery,
+      places,
+      userLocation,
+      locationInput,
+      placeType,
+      budget,
+      selectedPlaceId,
+      isSidebarOpen,
+      showPlaceDetailPanel,
+      appState,
+      route,
+      mapFocusTarget,
+    };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [searchQuery, places, userLocation]);
+  }, [
+    searchQuery,
+    places,
+    userLocation,
+    locationInput,
+    placeType,
+    budget,
+    selectedPlaceId,
+    isSidebarOpen,
+    showPlaceDetailPanel,
+    appState,
+    route,
+    mapFocusTarget,
+  ]);
 
   useEffect(() => {
     const anchor =
@@ -430,7 +488,25 @@ export default function HomePage() {
   // Handle marker click - open place detail in new tab
   const handleMarkerClick = (place) => {
     setSelectedPlaceId(place.id);
-    navigate(`/places/${place.id}`, { state: { place } });
+    navigate(`/places/${place.id}`, {
+      state: {
+        place,
+        returnToMapState: {
+          searchQuery,
+          places,
+          userLocation,
+          locationInput,
+          placeType,
+          budget,
+          selectedPlaceId: place.id,
+          isSidebarOpen,
+          showPlaceDetailPanel,
+          appState,
+          route,
+          mapFocusTarget,
+        },
+      },
+    });
   };
 
   const handleSelectPlace = (place) => {
@@ -441,7 +517,25 @@ export default function HomePage() {
 
   const handleShowPlaceDetails = (place) => {
     setSelectedPlaceId(place.id);
-    navigate(`/places/${place.id}`, { state: { place } });
+    navigate(`/places/${place.id}`, {
+      state: {
+        place,
+        returnToMapState: {
+          searchQuery,
+          places,
+          userLocation,
+          locationInput,
+          placeType,
+          budget,
+          selectedPlaceId: place.id,
+          isSidebarOpen,
+          showPlaceDetailPanel,
+          appState,
+          route,
+          mapFocusTarget,
+        },
+      },
+    });
   };
 
   const handleChat = (place) => {
@@ -530,15 +624,11 @@ export default function HomePage() {
     [appState, searchQuery, transitionTo, visiblePlaces.length]
   );
 
-  const hydrateReviewsAndImages = async (list) => {
+  const hydrateImages = async (list) => {
     const limited = list.slice(0, 10);
     const promises = limited.map(async (p) => {
-      if (!reviewsByPlace[p.id]) {
-        const reviews = await getPlaceReviews(p.id).catch(() => []);
-        setReviewsByPlace((prev) => ({ ...prev, [p.id]: reviews }));
-      }
       if (!imagesByPlace[p.id]) {
-        const img = await fetchPlaceImage(p.name, p.address).catch(() => null);
+        const img = await fetchPlaceImage(p.id).catch(() => null);
         if (img) setImagesByPlace((prev) => ({ ...prev, [p.id]: img }));
       }
     });
@@ -546,9 +636,29 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (places.length) hydrateReviewsAndImages(places);
+    if (places.length) hydrateImages(places);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [places]);
+
+  useEffect(() => {
+    if (!selectedPlace?.id) return;
+    if (reviewsByPlace[selectedPlace.id]) return;
+
+    let cancelled = false;
+
+    const loadSelectedPlaceReviews = async () => {
+      const reviews = await getPlaceReviews(selectedPlace.id).catch(() => []);
+      if (!cancelled) {
+        setReviewsByPlace((prev) => ({ ...prev, [selectedPlace.id]: reviews }));
+      }
+    };
+
+    loadSelectedPlaceReviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reviewsByPlace, selectedPlace?.id]);
 
   return (
     <div className="relative h-screen w-full bg-base-50 overflow-hidden">
@@ -734,6 +844,7 @@ export default function HomePage() {
                     itemIndex={index}
                     imageUrl={imagesByPlace[place.id]}
                     reviews={reviewsByPlace[place.id]}
+                    userLocation={userLocation}
                     isSelected={selectedPlaceId === place.id}
                     onSelect={() => handleSelectPlace(place)}
                     onNavigate={() => handleMarkerClick(place)}

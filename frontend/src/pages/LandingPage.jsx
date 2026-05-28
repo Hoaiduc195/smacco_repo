@@ -85,7 +85,8 @@ const mockPlaces = [
 ];
 
 export default function LandingPage() {
-  const [email, setEmail] = useState('');
+    sessionStorage.removeItem('home_search_state');
+    const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [prompt, setPrompt] = useState('Tìm homestay yên tĩnh ở Đà Lạt, có bàn làm việc, bếp nhỏ và đường rộng dễ đón xe, ngân sách dưới 1.200.000đ/đêm');

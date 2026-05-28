@@ -2,9 +2,94 @@
 
 ---
 
+## [2026-05-27 21:26] — Enrich Search Result Cards
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked for more useful information to be shown on search result place cards.
+- **Changes**:
+  - Forwarded additional backend fields into the frontend search result mapping, including `price`, `amenities`, `userRatingsTotal`, `imageUrl`, and `source`.
+  - Updated `PlaceCard.jsx` to show review count, source badge, and estimated distance from the current user location when available.
+  - Removed the hard fallback that forced missing place types to render as `hotel`, replacing it with a safer `default` fallback.
+  - Preserved the existing thumbnail, rating, price, amenities, and review snippet behavior.
+- **Modified files**:
+  - `frontend/src/services/placeService.js`
+  - `frontend/src/pages/HomePage.jsx`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — result-card presentation and result mapping only.
+
+---
+
+## [2026-05-27 21:03] — Render Search Result Images In Cards
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported that fetched images were still not visible on search results.
+- **Changes**:
+  - Updated `PlaceCard.jsx` to render the `imageUrl` prop as the card thumbnail when available.
+  - Kept the existing icon fallback for places that do not yet have an image.
+  - Added lazy loading and a subtle hover zoom to the thumbnail so the card stays lightweight and responsive.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only correction.
+
+---
+
+## [2026-05-27 20:48] — Split List Images From Detail Media
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User clarified that the result list should avoid wasting API requests, but the detail view can use a combined endpoint.
+- **Changes**:
+  - Added a backend `GET /places/:id/media` endpoint that returns both photos and reviews in one response for detail views.
+  - Updated `PlaceDetailPage.jsx` to fetch combined media once and populate both `photos` and `reviews` from that backend response.
+  - Kept `GET /places/:id/photos` and `GET /places/:id/reviews` intact for single-purpose callers.
+  - Changed the home map result list to hydrate images only, then lazily fetch reviews only when a specific place is selected for the sidebar detail panel.
+  - Updated `PlaceCard.jsx` so the secondary text can fall back to the place description when no reviews are preloaded.
+- **Modified files**:
+  - `backend/src/modules/places/places.controller.ts`
+  - `backend/src/modules/places/places.service.ts`
+  - `frontend/src/pages/HomePage.jsx`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `frontend/src/services/placeService.js`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/architecture-feat-UI.md`
+  - `.ppms/log-feat-UI.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — the frontend now distinguishes between image-only list hydration and combined media loading for detail views.
+
+---
+
+## [2026-05-27 20:40] — Move SerpAPI Usage To Backend Only
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested to synchronize SerpAPI so it only runs on the backend.
+- **Changes**:
+  - Replaced the frontend SerpAPI image fetch with a backend API call to `GET /places/:id/photos` via the shared `apiClient`.
+  - Updated `HomePage.jsx` to pass `place.id` into the image hydration helper so the backend can resolve photos centrally.
+  - Removed `VITE_SERP_API_KEY` from `frontend/.env.example` and `frontend/.env` so the client no longer depends on a direct SerpAPI key.
+  - Kept all SerpAPI credential usage in the backend via `SERPAPI_API_KEY` and the existing `PlacesService` photo/review flow.
+- **Modified files**:
+  - `frontend/src/services/serpService.js`
+  - `frontend/src/pages/HomePage.jsx`
+  - `frontend/.env.example`
+  - `frontend/.env`
+  - `.ppms/architecture-feat-UI.md`
+  - `.ppms/log-feat-UI.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — the frontend no longer talks to SerpAPI directly; SerpAPI is now backend-only.
+
+---
+
 ## [2026-05-27 20:13] — Add Hover Interactions To Landing Page
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested hover effects on the landing page.
 - **Changes**:
   - Added reusable hover utility classes in `index.css` for lift and glow interactions.
@@ -23,7 +108,7 @@
 
 ## [2026-05-27 20:01] — Snap Current Location To Fixed Zoom
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested that pressing the current-location button should always zoom the map to a chosen level.
 - **Changes**:
   - Extended the map focus helper in `HomePage.jsx` with metadata so current-location centering can be identified separately from normal place focus.
@@ -42,7 +127,7 @@
 
 ## [2026-05-27 20:01] — Smooth Map Filter Close Animation
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User reported a slight glitch when turning off the filter on the Mapbox frontend page.
 - **Changes**:
   - Updated the advanced filter popover in `Navbar.jsx` to animate its closed state with `opacity` plus `transform`, instead of snapping on `visibility`.
@@ -62,7 +147,7 @@
 
 ## [2026-05-27 16:28] — Reposition Sidebar Open Button Further Down
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make the sidebar trigger button go even lower down the screen.
 - **Changes**:
   - Shifted the vertical position of the rounded capsule sidebar open button in `SidebarOverlay.jsx` significantly lower down the left screen edge.
@@ -81,7 +166,7 @@
 
 ## [2026-05-27 16:21] — Rounded Capsule Sidebar Open Button with Lower Positioning
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User clarified they wanted the sidebar open trigger button to be rounded (bo tròn) and positioned lower down (nằm xuống 1 tí).
 - **Changes**:
   - Re-designed the sidebar open trigger button in `SidebarOverlay.jsx` to be a sleek half-capsule/rounded tab pointing right using the native `rounded-r-full` Tailwind class, removing the polygon clip-path completely.
@@ -100,7 +185,7 @@
 
 ## [2026-05-27 16:18] — Slim Down Triangular Sidebar Trigger Button
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make the sidebar trigger button slimmer.
 - **Changes**:
   - Reduced the width of the triangular open trigger button in `SidebarOverlay.jsx` from `w-8` (32px) to an ultra-sleek `w-5` (20px).
@@ -118,7 +203,7 @@
 
 ## [2026-05-27 16:17] — Re-theme Chatbox to Premium Black-and-White Palette
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to change the chatbox primary color to black, make the main chat container/background white, color user messages green, and make AI responses black.
 - **Changes**:
   - Re-themed both `ChatWidget.jsx` and `PlaceChatPanel.jsx` to share a unified premium black-and-white visual identity.
@@ -142,7 +227,7 @@
 
 ## [2026-05-27 16:11] — Scale Down User Menu Button for Balanced Navbar Sizing
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to adjust the personal page button size to be appropriate for the current navbar.
 - **Changes**:
   - Reduced the personal page button height in `Navbar.jsx` to a sleek `h-10` (40px) and width to `w-10 sm:w-52` (matching `40px` on mobile and `208px` on desktop).
@@ -162,7 +247,7 @@
 
 ## [2026-05-27 15:56] — Custom Triangular Black Sidebar Trigger Button
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to change the sidebar opening button to a triangle shape and colored black.
 - **Changes**:
   - Imported `ChevronRight` in `SidebarOverlay.jsx` to replace the double chevrons for cleaner spacing.
@@ -181,7 +266,7 @@
 
 ## [2026-05-27 15:54] — Style Landing Page Navbar to Premium Dark Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to change the landing page navbar to black too.
 - **Changes**:
   - Re-styled the `<header>` element in `LandingPage.jsx` to a premium semi-transparent dark black theme (`bg-ink-900/90`, `border-ink-900`, `shadow-soft`, `backdrop-blur-2xl`).
@@ -200,7 +285,7 @@
 
 ## [2026-05-27 15:53] — Match Dropdown Width with Personal Page Button Sizing
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to adjust the personal page button so that its dropdown popup is the same size/width as the button itself.
 - **Changes**:
   - Configured the personal page button in `Navbar.jsx` with a fixed width of `w-52` (208px) on desktop screens (`sm:w-52`) and standard responsive sizing on mobile.
@@ -219,7 +304,7 @@
 
 ## [2026-05-27 15:52] — Integrate Google Icon / User Avatar in Personal Page Button
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make the icon inside the personal page button a Google icon.
 - **Changes**:
   - Modified `Navbar.jsx` to render the user's Google profile avatar (`photoURL`) inside the white user menu trigger button, if available.
@@ -237,7 +322,7 @@
 
 ## [2026-05-27 15:50] — Refine Logo, Branding Subtitle, and User Menu Trigger Styling
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to turn the branding subtitle text under "Smacco" to white, remove the square container around the logo icon, and change the user profile/personal page button to white.
 - **Changes**:
   - Modified `Navbar.jsx` to render the Mapbox/Smacco favicon directly as a clean `w-8 h-8` image with a sleek `hover:scale-105` interaction, removing the square enclosing box.
@@ -256,7 +341,7 @@
 
 ## [2026-05-27 15:48] — Center and Compact Search Bar to Eliminate Overlaps
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to align the search bar position so that when search, sidebar, and chatbox are simultaneously open, none of them overlap each other.
 - **Changes**:
   - Re-positioned the search bar container in `Navbar.jsx` to be centered horizontally using the Tailwind class `mx-auto` (replacing `md:ml-auto lg:ml-auto` which pushed it to the right).
@@ -275,7 +360,7 @@
 
 ## [2026-05-27 15:46] — Remove Map Controls and Mapbox Logos/Attribution
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to completely remove the map navigation controls (+ and - zoom buttons) and any bottom elements like the Mapbox logo/attribution.
 - **Changes**:
   - Removed standard `mapboxgl.NavigationControl` and `mapboxgl.AttributionControl` creation inside `MapComponent.jsx` so that no zoom buttons or default attribution widget is added to the map element.
@@ -294,7 +379,7 @@
 
 ## [2026-05-27 15:43] — Restore Standard Font Sizing and Element Scale
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make ONLY the Smacco logo icon box and navbar height smaller, reverting the accidental shrinkages of other texts, categories, and elements.
 - **Changes**:
   - Restored the brand "Smacco" logo text size in `Navbar.jsx` from `text-base` back to its original `text-lg` size.
@@ -314,7 +399,7 @@
 
 ## [2026-05-27 15:32] — Scale Down Navbar Elements for Sleek Alignment
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make the icons/elements smaller to prevent the navbar from bulging.
 - **Changes**:
   - Scaled down the logo box size from `w-11 h-11` (44px) to `w-9 h-9` (36px), and its inner logo icon from `w-7` to `w-5.5` (22px).
@@ -334,7 +419,7 @@
 
 ## [2026-05-27 15:30] — Revert Popover Dropdown Menus to Light Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User clarified that only the navbar itself should be black, and all dropdown popovers (filters and profile) should remain white/light.
 - **Changes**:
   - Reverted the Advanced Filters dropdown and the Account User dropdown in `Navbar.jsx` to their original elegant light-themed (`map-surface`, `bg-white`, `border-base-200`) layouts.
@@ -352,7 +437,7 @@
 
 ## [2026-05-27 15:28] — Redesign Navbar to Dark Black Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to change the Navbar to black completely.
 - **Changes**:
   - Rebuilt the entire `Navbar.jsx` to use a premium, pitch-black color palette (`bg-ink-900` with `border-ink-900`).
@@ -373,7 +458,7 @@
 
 ## [2026-05-27 15:23] — Optimize Map Page Layout and Apply Unified Brand Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to unify the green theme colors on the map page and resolve the overlapping issues when search filters, chatbox, and sidebar are simultaneously open.
 - **Changes**:
   - Relocated the place-specific `PlaceChatPanel` below the 80px Navbar (`top-24 sm:top-[90px] bottom-3 sm:bottom-4`) and styled it with premium rounded corners, base panel surfaces, and shadow cards.
@@ -393,7 +478,7 @@
 
 ## [2026-05-27 15:18] — Elevate Landing Page Logged-In User Interface
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to make the "already signed in" section at the bottom of the landing page look more premium and less simple.
 - **Changes**:
   - Replaced the simple textual logged-in block with a modern user card dashboard layout.
@@ -414,7 +499,7 @@
 
 ## [2026-05-27 15:15] — Translate Landing Page to Vietnamese
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested to translate the landing page to professional, natural Vietnamese, avoiding generic AI-sounding words.
 - **Changes**:
   - Translated all labels, proof items, benefits, workflows, testimonials, faqs, mock places, login fields, error messages, and descriptions in `LandingPage.jsx` into professional, high-end Vietnamese.
@@ -432,7 +517,7 @@
 
 ## [2026-05-27 15:07] — Remove Landing Pricing and Map Glass Effects
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User asked to remove pricing from the landing page and remove all glassmorphism effects from the map page while keeping the defined theme.
 - **Changes**:
   - Removed the pricing nav item, pricing data, and pricing section from the landing page.
@@ -459,7 +544,7 @@
 
 ## [2026-05-27 14:45] — Redesign Landing and Shared Accommodation Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested a premium SaaS-style landing page inspired by withbobbin.com, adapted to an AI-powered accommodation booking/search product, with shared Tailwind theme tokens and consistent styling across landing, auth, dashboard/search, detail, profile, forms, modals, map popups, and states.
 - **Changes**:
   - Added reusable Tailwind tokens for warm base colors, primary/accent colors, typography, larger radii, spacing, and shadow scales.
@@ -495,7 +580,7 @@
 
 ## [2026-05-27 07:15] — Fix Frosted Background Classes for Filter and Account
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User reported search filter and account surfaces looked fully transparent and text was hard to read.
 - **Changes**:
   - Replaced non-standard `bg-white/86` opacity classes with Tailwind arbitrary opacity `bg-white/[0.86]` for reliable CSS generation.
@@ -514,7 +599,7 @@
 
 ## [2026-05-27 07:08] — Match Non-Chat Surfaces to Chatbox Frosted Style
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User said the near-solid opacity removed the frosted glass effect and requested matching the chatbox style without changing the chatbox.
 - **Changes**:
   - Reverted sidebar panel/body to chatbox-like `bg-white/86`, `border-white/70`, and blur styling.
@@ -534,7 +619,7 @@
 
 ## [2026-05-27 07:05] — Equalize Filter, Sidebar, and Account Surface Opacity
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User said search filters, sidebar, and personal/account controls still have different opacity and the account button is too transparent.
 - **Changes**:
   - Set sidebar panel and body to `bg-white/[0.98]`.
@@ -554,7 +639,7 @@
 
 ## [2026-05-27 07:01] — Match Sidebar, Search Filter, and Account Opacity
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User reported sidebar briefly appears transparent before becoming opaque, and search filter/account controls remain too transparent.
 - **Changes**:
   - Removed opacity animation from sidebar open/close so it does not fade from transparent to opaque.
@@ -574,7 +659,7 @@
 
 ## [2026-05-27 06:49] — Standardize Frosted Glass Opacity
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User reported inconsistent glass UI opacity and requested all glass surfaces look more opaque.
 - **Changes**:
   - Increased opacity of sidebar body, place cards actions, detail subpanels, chat widget panels, message bubbles, form area, chatbot trigger, user menu trigger, and floating map controls.
@@ -595,7 +680,7 @@
 
 ## [2026-05-27 06:45] — Pin Search Bar to the Right
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested the search bar be placed on the right from the start and not resize or move when the sidebar changes.
 - **Changes**:
   - Removed the dynamic `searchOffset` prop and sidebar-driven search movement.
@@ -613,7 +698,7 @@
 
 ## [2026-05-27 06:42] — Correct Search Offset Direction
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User clarified that the search bar should move right, not appear shifted left.
 - **Changes**:
   - Restored the navbar search area's original desktop margins.
@@ -631,7 +716,7 @@
 
 ## [2026-05-27 06:39] — Offset Search Bar When Sidebar Opens
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User reported the sidebar overlaps the search filter dropdown and requested moving search slightly to the right.
 - **Changes**:
   - Added a `searchOffset` prop to the authenticated `Navbar`.
@@ -650,7 +735,7 @@
 
 ## [2026-05-27 06:35] — Improve Main App Navbar Color
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested improving the main page navbar because it lacked color and looked weak.
 - **Changes**:
   - Updated authenticated app navbar to use a stronger slate/blue/cyan gradient while preserving the glass effect.
@@ -667,7 +752,7 @@
 
 ## [2026-05-27 06:21] — Align Landing Page Copy with Accommodation Discovery Product
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User clarified that the project focuses on helping users find suitable accommodations through a chatbot and interactive place environment, and asked to read docs before rewriting the intro page.
 - **Changes**:
   - Read product docs covering accommodation discovery, RAG chatbot per accommodation, Q&A, presence, user contributions, and hybrid recommendations.
@@ -687,7 +772,7 @@
 
 ## [2026-05-27 05:20] — Switch Map Renderer to Mapbox GL
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested switching the map implementation to Mapbox.
 - **Changes**:
   - Added `mapbox-gl` frontend dependency.
@@ -712,7 +797,7 @@
 
 ## [2026-05-27 04:01] — Refine Map Colors and Chat Entry Behavior
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested the map page logo return to `/`, removal of neon styling, stronger map page colors, a transparent chatbot button, and automatic chatbot opening on app load.
 - **Changes**:
   - Updated authenticated navbar logo click behavior from `/app` to `/`.
@@ -736,7 +821,7 @@
 
 ## [2026-05-27 03:54] — Redesign App Icon and Glass Map UI
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested a redesigned app icon without neon colors, plus a refreshed map page UI using a glass effect.
 - **Changes**:
   - Replaced the neon gradient favicon with a flatter Smacco map-pin icon using slate, cyan, and amber accents.
@@ -761,7 +846,7 @@
 
 ## [2026-05-27 03:44] — Unify Public UI Theme
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User liked the new intro page but requested consistent colors across pages and a more polished UI.
 - **Changes**:
   - Reworked `LandingPage` from the previous green/cream palette to the app's slate/blue/cyan visual system.
@@ -780,7 +865,7 @@
 
 ## [2026-05-27 03:29] — Add Public Overview Landing Page
 
-- **Branch**: `feat/UI`
+- **Branch**: `feat/improve_searchwf_res`
 - **Prompt**: User requested a general introduction page before entering the main map application, with login, feature overview, important footer links, and explanation of what the website offers.
 - **Changes**:
   - Added a public `LandingPage` at `/` with Smacco hero content, feature summaries, visual map preview, embedded email/Google login, security notes, and footer navigation.
@@ -799,5 +884,100 @@
   - `.ppms/log-feat-UI.md`
 - **Deleted files**: —
 - **Architecture impact**: Yes — frontend routing now has a public landing route at `/` and the protected main application entry at `/app`.
+
+---
+
+## [2026-05-27 21:35] — Preserve Map Search State Across Detail Navigation
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested that `page_detail` should return to the main map without losing search results and searchbox state, and that state should only be replaced on a new user/autoworkflow search or when returning to landing.
+- **Changes**:
+  - Updated `HomePage` to hydrate from a preserved route snapshot or `sessionStorage` before persisting, so the initial blank render no longer overwrites previous search state.
+  - Expanded the persisted home snapshot to include search filters, selected result, sidebar state, route state, and map focus target.
+  - Passed a `returnToMapState` snapshot into detail navigation so the back path can restore the exact map workflow state.
+  - Added an explicit `Quay lại bản đồ` action on `PlaceDetailPage` that returns to `/app` with the preserved state payload.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — map/detail navigation now preserves the active search workflow instead of resetting it on route changes.
+
+---
+
+## [2026-05-27 21:40] — Reset Search State On Landing Entry
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested that returning to the landing page should replace the preserved map search state with a fresh one.
+- **Changes**:
+  - Added a landing-page side effect that clears `home_search_state` from `sessionStorage` as soon as the public landing page mounts.
+  - Kept the map workflow restore behavior intact for `/app` and detail back navigation, while ensuring `/` always starts a new session.
+- **Modified files**:
+  - `frontend/src/pages/LandingPage.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — landing page entry now acts as the reset boundary for the map search workflow.
+
+---
+
+## [2026-05-27 21:46] — Add Back To Map Actions On Detail And Profile
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested a dedicated back-to-map button on both the place detail page and the profile page.
+- **Changes**:
+  - Kept the existing `PlaceDetailPage` back action that returns to `/app` with preserved state.
+  - Added a visible `Quay lại bản đồ` button at the top of `ProfilePage` so users can jump back into the main map from their account view.
+- **Modified files**:
+  - `frontend/src/pages/ProfilePage.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — profile navigation now includes a direct return path to the main map workflow.
+
+---
+
+## [2026-05-27 21:52] — Add Persistent Map Entry In Navbar
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested the workflow be optimized further by adding direct map access in the header/avatar menu across the app.
+- **Changes**:
+  - Updated the app navbar logo to route to `/app`, keeping the primary app workflow inside the map instead of jumping to landing.
+  - Added a persistent `Bản đồ` button in the desktop header for quick access to the main map.
+  - Added a `Quay lại bản đồ` item inside the avatar dropdown menu so users can recover the map from any page in one click.
+- **Modified files**:
+  - `frontend/src/components/Navbar.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — the navbar now serves as a stable, always-available navigation hub for the main map workflow.
+
+---
+
+## [2026-05-27 21:58] — Simplify Navbar And Place Card Badges
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested removing the standalone map button from the navbar and removing the SerpAPI tag from search result cards.
+- **Changes**:
+  - Removed the dedicated `Bản đồ` button from the desktop navbar while keeping the existing back-to-map entry points in profile and avatar menu.
+  - Removed the source badge rendering from `PlaceCard`, so result cards now show only the useful proximity info instead of the SerpAPI/internal label.
+- **Modified files**:
+  - `frontend/src/components/Navbar.jsx`
+  - `frontend/src/components/PlaceCard.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — this is a UI simplification and does not change the underlying routing model.
+
+---
+
+## [2026-05-27 22:01] — Remove Place Type Tag From Result Cards
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested hiding the `hotel` type tag entirely from place cards.
+- **Changes**:
+  - Removed the `place.type` chip from `PlaceCard` so search results no longer show a hotel/type badge.
+  - Kept the internal type value for styling and logic, but stopped rendering it in the visible card header.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — display-only simplification.
 
 ---

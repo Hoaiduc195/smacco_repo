@@ -1,7 +1,7 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-27 20:13
-> Branch: feat/UI
+> Last updated: 2026-05-27 20:48
+> Branch: feat/improve_searchwf_res
 
 ## Overview
 A modular monolith web application for discovering accommodations, dining spots, and smart itinerary planning under the brand name **Smacco**. Features AI-powered chat, multi-provider search, interactive maps, Firebase authentication, saved places, check-ins, Q&A, and user-contributed content management. Built with a React (Vite) frontend and a NestJS backend backed by PostgreSQL with pgvector.
@@ -71,6 +71,10 @@ A modular monolith web application for discovering accommodations, dining spots,
 PostgreSQL stores users, places, reviews, questions, answers, answer votes, files, chunks, conversations, messages, conversation-place references, presences, saved places, and related travel data. Vector search uses pgvector embeddings for RAG chunks.
 
 ## Completed Features
+- [x] Search result cards now display richer metadata such as review counts, source badges, prices, amenities, and approximate distance, and they no longer force missing types to appear as hotel.
+- [x] Search result cards now render backend-fetched thumbnails when available instead of only showing the category icon fallback.
+- [x] Home map result list now hydrates images only, while place reviews are fetched lazily when a place is selected and the detail page uses the combined backend media endpoint.
+- [x] SerpAPI is now backend-only: the frontend no longer reads `VITE_SERP_API_KEY` and fetches place images through the backend `/places/:id/photos` endpoint instead of calling SerpAPI directly.
 - [x] Landing page now has cohesive hover interactions on hero actions, navigation chips, feature cards, workflow cards, FAQ, prompt demo, and auth panel blocks.
 - [x] Clicking the current-location button now always snaps Mapbox to a fixed zoom level and resets follow-state so the map does not preserve an old zoom from previous interactions.
 - [x] Advanced filter popover on the map navbar closes with smoother opacity/transform animation, and Mapbox repaint invalidation no longer forces a resize when the sidebar closes.
@@ -126,3 +130,34 @@ mono/
 ├── docker-compose.yml
 └── .ppms/
 ```
+## 2026-05-27 21:35 - Preserve map workflow across detail navigation
+
+- HomePage now restores persisted state before writing back to `sessionStorage`, which prevents the default empty initial render from erasing the active search workflow.
+- The persisted snapshot includes the query, filters, visible places, selection, sidebar state, route state, and map focus target, so returning from detail recreates the same search context.
+- PlaceDetailPage now returns to `/app` with a captured `returnToMapState` snapshot, giving the user an explicit way back to the main map without losing the active workflow.
+
+## 2026-05-27 21:40 - Reset workflow on landing page entry
+
+- The public landing page now clears `home_search_state` on mount, so `/` becomes the reset boundary for the map workflow.
+- Returning from detail to `/app` still restores the preserved search context, but navigating to landing discards it and starts a clean session for the next visit.
+
+## 2026-05-27 21:46 - Add direct back-to-map affordance in profile
+
+- The profile page now exposes a dedicated `Quay lại bản đồ` button at the top of the page, reducing friction when users move from personal views back to the active map workflow.
+- The place detail page already returns to `/app` with preserved state, so both detail and profile now offer clear return paths into the main map experience.
+
+## 2026-05-27 21:52 - Make navbar the primary map hub
+
+- The navbar logo now routes to `/app` so the main application entry stays inside the map workflow instead of resetting to landing.
+- A dedicated `Bản đồ` action is visible in the desktop header, and the avatar dropdown now includes `Quay lại bản đồ` for quick recovery from any authenticated page.
+- Together with the detail and profile back buttons, the app now has multiple redundant paths back to the map to reduce user friction.
+
+## 2026-05-27 21:58 - Reduce unnecessary visual noise in navigation and cards
+
+- The standalone navbar map button was removed to reduce header clutter, while the more contextual return paths in profile, detail, and avatar menu remain available.
+- Search result cards no longer display the SerpAPI/internal source badge, leaving only higher-signal fields such as rating, price, amenities, and distance.
+
+## 2026-05-27 22:01 - Hide place type chip in search results
+
+- Search result cards no longer render the place type chip, so generic fallback values like `hotel` do not pollute the visual layout.
+- The `type` field still exists in data for theme and logic, but the UI now prioritizes more useful information such as image, price, rating, and distance.

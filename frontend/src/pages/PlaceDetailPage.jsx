@@ -9,7 +9,7 @@ import {
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import QASection from '../components/QASection';
-import { getPlaceDetails, getPlaceReviews, getPlacePhotos, createPlace, createReview, deleteReview } from '../services/placeService';
+import { getPlaceDetails, getPlaceMedia, createPlace, createReview, deleteReview } from '../services/placeService';
 import { checkInAtPlace, leaveOnsiteStatus, getMyOnsiteStatus } from '../services/presenceService';
 import { savePlace, unsavePlace, checkSavedStatus } from '../services/savedPlacesService';
 import { useAuth } from '../contexts/AuthContext';
@@ -127,8 +127,7 @@ export default function PlaceDetailPage() {
     if (!place && id) {
       loadPlaceDetails();
     } else if (place) {
-      loadReviews();
-      loadPhotos();
+      loadMedia();
     }
   }, [id, place]);
 
@@ -139,8 +138,7 @@ export default function PlaceDetailPage() {
       const details = await getPlaceDetails(id);
       setPlace(details);
 
-      loadReviews();
-      loadPhotos();
+      await loadMedia();
     } catch (err) {
       console.error('Error loading place details, using fallback:', err);
       // Use fallback mock data so the page still displays
@@ -162,26 +160,17 @@ export default function PlaceDetailPage() {
     }
   };
 
-  const loadReviews = async () => {
+  const loadMedia = async () => {
     try {
-      const reviewsData = await getPlaceReviews(id);
-      setReviews(reviewsData);
+      const media = await getPlaceMedia(id);
+      setReviews(Array.isArray(media?.reviews) ? media.reviews : []);
+      setPhotos(Array.isArray(media?.photos) ? media.photos : []);
     } catch (err) {
-      console.error('Error loading reviews:', err);
-      // Fallback reviews
+      console.error('Error loading place media:', err);
       setReviews([
         { id: 'r1', author: 'Người dùng mẫu', text: 'Địa điểm này rất tuyệt vời, tôi sẽ quay lại!', rating: 5, date: '19/04/2026' },
         { id: 'r2', author: 'Khách hàng 2', text: 'Dịch vụ tốt, không gian thoáng đãng.', rating: 4, date: '18/04/2026' }
       ]);
-    }
-  };
-
-  const loadPhotos = async () => {
-    try {
-      const photosData = await getPlacePhotos(id);
-      setPhotos(photosData || []);
-    } catch (err) {
-      console.warn('Error loading photos:', err);
       setPhotos([]);
     }
   };
@@ -291,6 +280,11 @@ export default function PlaceDetailPage() {
     }
   };
 
+  const handleBackToMap = () => {
+    const returnToMapState = location.state?.returnToMapState || null;
+    navigate('/app', returnToMapState ? { state: { homeState: returnToMapState } } : undefined);
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-base-50">
@@ -328,6 +322,17 @@ export default function PlaceDetailPage() {
   return (
     <div className="flex flex-col min-h-screen bg-base-50 overflow-x-hidden">
       <Navbar className="sticky top-0 z-50 shadow-md" />
+
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4">
+        <button
+          type="button"
+          onClick={handleBackToMap}
+          className="inline-flex items-center gap-2 rounded-2xl border border-base-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 hover:shadow-md"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Quay lại bản đồ
+        </button>
+      </div>
 
       {error && (
         <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 flex items-center gap-2 text-amber-800 text-sm font-medium animate-soft-in">

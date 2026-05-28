@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  ArrowLeft,
   User, 
   Mail, 
   Calendar, 
@@ -118,16 +119,34 @@ export default function ProfilePage() {
     });
   };
 
+  const handleBackToMap = () => {
+    navigate('/app');
+  };
+
   const userInitial = currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || 'U';
   const userName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Người dùng';
 
-  return (
-    <div className="page-shell flex flex-col">
-      <Navbar />
+    return (
+      <div className="page-shell flex flex-col">
+        <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:py-12">
-        {/* Profile Header */}
-        <section className="surface-card-solid p-6 sm:p-8 mb-8">
+        <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:py-12">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={handleBackToMap}
+              className="inline-flex items-center gap-2 rounded-2xl border border-base-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 hover:shadow-md"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Quay lại bản đồ
+            </button>
+            <div className="hidden sm:block text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              Hồ sơ cá nhân
+            </div>
+          </div>
+
+          {/* Profile Header */}
+          <section className="surface-card-solid p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
             <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-primary-600 to-accent-500 rounded-full flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-glow ring-4 ring-white">
               {userInitial.toUpperCase()}

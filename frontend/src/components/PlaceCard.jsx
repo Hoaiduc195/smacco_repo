@@ -8,6 +8,7 @@ export default function PlaceCard({
   itemIndex = 0,
   imageUrl,
   reviews = [],
+  userLocation = null,
   isSelected,
   onSelect,
   onChat,
@@ -30,13 +31,24 @@ export default function PlaceCard({
     return () => window.removeEventListener('click', close);
   }, [showDropdown]);
 
-  const reviewText = useMemo(() => {
-    if (!reviews || !reviews.length) return 'Chưa có đánh giá';
-    return reviews.slice(0, 2).map((r) => r.comment || r.text || '').filter(Boolean).join(' · ');
-  }, [reviews]);
-
   const placeType = place.type?.toLowerCase();
   const placeDescription = place.description?.trim();
+  const distanceKm = useMemo(() => {
+    if (!userLocation?.lat || !userLocation?.lng || !place?.lat || !place?.lng) return null;
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(Number(place.lat) - Number(userLocation.lat));
+    const dLng = toRad(Number(place.lng) - Number(userLocation.lng));
+    const lat1 = toRad(Number(userLocation.lat));
+    const lat2 = toRad(Number(place.lat));
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }, [place?.lat, place?.lng, userLocation?.lat, userLocation?.lng]);
+  const reviewText = useMemo(() => {
+    if (!reviews || !reviews.length) return placeDescription || 'Chưa có đánh giá';
+    return reviews.slice(0, 2).map((r) => r.comment || r.text || '').filter(Boolean).join(' · ');
+  }, [placeDescription, reviews]);
   const getIconAndColor = (type) => {
     switch (type) {
       case 'hotel':
@@ -115,8 +127,21 @@ export default function PlaceCard({
       }}
     >
       <div className="flex gap-3">
-        <div className={`w-24 h-24 rounded-2xl flex-shrink-0 flex items-center justify-center ${iconConfig.bg} ${iconConfig.text} border border-white/70 shadow-inner`}>
-          {iconConfig.icon}
+        <div className="relative w-24 h-24 rounded-2xl flex-shrink-0 overflow-hidden border border-white/70 shadow-inner bg-base-100">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={place.name}
+              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className={`h-full w-full flex items-center justify-center ${iconConfig.bg} ${iconConfig.text}`}>
+              {iconConfig.icon}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-transparent pointer-events-none" />
         </div>
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex justify-between items-start">
@@ -191,14 +216,27 @@ export default function PlaceCard({
                 {place.rating}
               </span>
             )}
+            {typeof place.userRatingsTotal === 'number' ? (
+              <span className="font-semibold text-ink-600 bg-base-50 px-1.5 py-0.5 rounded border border-base-200 shrink-0 text-[11px]">
+                {place.userRatingsTotal.toLocaleString('vi-VN')} đánh giá
+              </span>
+            ) : null}
             {place.price && (
               <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 shrink-0 text-[11px]">
                 Từ {place.price}
               </span>
             )}
             {place.priceLevel !== undefined && <span className="shrink-0">💲{place.priceLevel}</span>}
-            {place.type && <span className="capitalize shrink-0 bg-base-100 px-1.5 py-0.5 rounded-full text-ink-500 text-[10px] font-bold">{place.type}</span>}
           </div>
+          {distanceKm !== null ? (
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-ink-500">
+              {distanceKm !== null ? (
+                <span className="rounded-full border border-base-200 bg-base-50 px-2 py-0.5">
+                  {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`} từ bạn
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {travelTimeMinutes ? (
             <div className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
               <Clock3 className="w-3.5 h-3.5" />

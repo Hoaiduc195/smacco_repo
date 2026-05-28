@@ -1,14 +1,16 @@
-const SERP_API_KEY = import.meta.env.VITE_SERP_API_KEY;
+import apiClient from './api';
 
-export const fetchPlaceImage = async (name, address) => {
-  if (!SERP_API_KEY) return null;
-  const query = encodeURIComponent(`${name} ${address || ''}`.trim());
-  const url = `https://serpapi.com/search?engine=google&q=${query}&tbm=isch&ijn=0&api_key=${SERP_API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = await res.json();
-  const img = data.images_results?.[0]?.thumbnail || data.images_results?.[0]?.original;
-  return img || null;
+export const fetchPlaceImage = async (placeId) => {
+  if (!placeId) return null;
+
+  try {
+    const response = await apiClient.get(`/places/${placeId}/photos`);
+    const photos = Array.isArray(response.data) ? response.data : [];
+    return photos[0] || null;
+  } catch (error) {
+    console.error('Error fetching place image from backend:', error);
+    return null;
+  }
 };
 
 export default { fetchPlaceImage };
