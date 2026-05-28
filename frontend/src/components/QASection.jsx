@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, MessageSquare, Reply, Send, Sparkles, Trash2 } from 'lucide-react';
+import { Loader2, MessageSquare, PlusCircle, Reply, Send, Sparkles, Trash2, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { createPlaceQuestion, createQuestionAnswer, getPlaceQuestions, deleteQuestion } from '../services/questionService';
 
@@ -13,20 +13,20 @@ function formatTime(value) {
   });
 }
 
-function ParticipantAvatar({ participant }) {
+function ParticipantAvatar({ participant, compact = false }) {
   const isAi = participant?.isAi;
   const isOnsite = participant?.isOnsite;
   const initials = participant?.initials || (isAi ? 'AI' : 'U');
 
   return (
     <div
-      className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-bold ${
+      className={`flex items-center justify-center rounded-full border font-bold ${
         isAi
           ? 'border-violet-200 bg-violet-50 text-violet-700'
           : isOnsite
             ? 'border-primary-300 bg-primary-50 text-primary-700 ring-2 ring-primary-100'
             : 'border-base-200 bg-base-100 text-ink-700'
-      }`}
+      } ${compact ? 'h-6 w-6 text-[10px]' : 'h-10 w-10 text-sm'}`}
       title={isOnsite ? 'Onsite user' : isAi ? 'AI' : 'Offsite user'}
     >
       {initials}
@@ -38,16 +38,29 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
   const isOwnQuestion = currentUser && thread.author?.firebaseUid && thread.author.firebaseUid === currentUser.uid;
 
   return (
-    <article className="surface-card-solid p-5 transition hover:border-primary-200">
-      <div className="flex items-start gap-3">
-        <ParticipantAvatar participant={thread.author} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold text-slate-900">{thread.author?.displayName || 'Người dùng'}</p>
+    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+      <div className="grid grid-cols-[3.25rem_1fr]">
+        <aside className="flex flex-col items-center gap-2 bg-slate-50 px-2 py-4 text-slate-500">
+          <button type="button" className="rounded-lg p-1.5 transition hover:-translate-y-0.5 hover:bg-orange-100 hover:text-orange-600" title="Upvote">
+            <ThumbsUp className="h-4 w-4" />
+          </button>
+          <span className="text-xs font-black text-slate-800">{Math.max(1, (thread.answers?.length || 0) + 1)}</span>
+          <button type="button" className="rounded-lg p-1.5 transition hover:translate-y-0.5 hover:bg-slate-200 hover:text-slate-900" title="Downvote">
+            <ThumbsDown className="h-4 w-4" />
+          </button>
+        </aside>
+
+        <div className="min-w-0 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span className="font-black text-slate-900">r/smacco_qa</span>
+            <span>•</span>
+            <ParticipantAvatar participant={thread.author} compact />
+            <span>Posted by</span>
+            <span className="font-semibold text-slate-700">{thread.author?.displayName || 'Người dùng'}</span>
             {thread.author?.isOnsite ? (
-              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-bold text-primary-700">Onsite</span>
+              <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-bold text-primary-700">Onsite</span>
             ) : null}
-            <span className="text-xs text-slate-400">{formatTime(thread.createdAt)}</span>
+            <span>{formatTime(thread.createdAt)}</span>
             {isOwnQuestion && (
               <button
                 type="button"
@@ -65,13 +78,14 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
               </button>
             )}
           </div>
-          {thread.title ? <h3 className="mt-1 text-lg font-bold text-slate-900">{thread.title}</h3> : null}
+
+          {thread.title ? <h3 className="mt-3 text-lg font-black text-slate-950">{thread.title}</h3> : null}
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{thread.questionText}</p>
         </div>
       </div>
 
       {thread.aiAnswer ? (
-        <section className="mt-4 rounded-2xl border border-violet-100 bg-violet-50/70 p-4">
+        <section className="mx-4 mb-4 rounded-2xl border border-violet-100 bg-violet-50/70 p-4 sm:mx-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-bold text-violet-700">
             <Sparkles className="h-4 w-4" />
             AI trả lời
@@ -89,10 +103,10 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
         </section>
       ) : null}
 
-      <div className="mt-4 space-y-3">
+      <div className="mx-4 mb-4 space-y-3 border-l-2 border-slate-100 pl-4 sm:mx-5">
         {thread.answers?.length ? (
           thread.answers.map((answer) => (
-            <div key={answer.id} className="rounded-2xl border border-base-200 bg-base-50 p-4">
+            <div key={answer.id} className="rounded-2xl border border-base-200 bg-slate-50/80 p-4">
               <div className="flex items-start gap-3">
                 <ParticipantAvatar participant={answer.author} />
                 <div className="min-w-0 flex-1">
@@ -109,13 +123,13 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-base-200 bg-base-50 p-4 text-sm text-slate-500">
+          <div className="rounded-2xl border border-dashed border-base-200 bg-slate-50 p-4 text-sm text-slate-500">
             Chưa có câu trả lời từ user onsite hay offsite.
           </div>
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-base-200 bg-white p-4">
+      <div className="mx-4 mb-4 rounded-2xl border border-base-200 bg-white p-4 sm:mx-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Reply className="h-4 w-4 text-primary-600" />
           Thêm câu trả lời
@@ -154,6 +168,7 @@ export default function QASection({ placeId, place }) {
   const [submittingAnswerId, setSubmittingAnswerId] = useState(null);
   const [error, setError] = useState('');
   const [deletingQuestionId, setDeletingQuestionId] = useState(null);
+  const [showAskModal, setShowAskModal] = useState(false);
 
   const questionCount = useMemo(() => threads.length, [threads]);
 
@@ -186,6 +201,7 @@ export default function QASection({ placeId, place }) {
       });
       setQuestionTitle('');
       setQuestionText('');
+      setShowAskModal(false);
       await loadThreads();
     } catch (err) {
       setError(err?.message || 'Không thể đăng câu hỏi.');
@@ -228,52 +244,93 @@ export default function QASection({ placeId, place }) {
   if (!currentUser) return null;
 
   return (
-    <section className="space-y-6 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-      <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="space-y-4 rounded-3xl border border-slate-200 bg-slate-100/70 p-3 sm:p-4">
+      <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <MessageSquare className="h-5 w-5 text-primary-600" />
+          <h2 className="flex items-center gap-2 text-xl font-black text-slate-950">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-600 text-white">
+              <MessageSquare className="h-5 w-5" />
+            </span>
             Hỏi đáp cộng đồng
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            AI luôn được ghim ở đầu mỗi thread, còn user onsite và offsite đều có thể đặt câu hỏi, bình luận tự do.
+            Đặt câu hỏi như một bài post; AI được ghim đầu thread, cộng đồng onsite/offsite có thể trả lời bên dưới.
           </p>
         </div>
-        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-          {questionCount} câu hỏi
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 p-5">
-        <div className="mb-3 flex items-center gap-2 text-sm font-bold text-cyan-800">
-          <MessageSquare className="h-4 w-4" />
-          Đặt câu hỏi mới
-        </div>
-        <input
-          value={questionTitle}
-          onChange={(event) => setQuestionTitle(event.target.value)}
-          className="mb-3 w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
-          placeholder="Tiêu đề ngắn, ví dụ: Ở đây có cần đặt chỗ trước không?"
-        />
-        <textarea
-          value={questionText}
-          onChange={(event) => setQuestionText(event.target.value)}
-          rows={4}
-          className="w-full rounded-2xl border border-cyan-100 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
-          placeholder={place ? `Hỏi về ${place.name}...` : 'Đặt câu hỏi của bạn...'}
-        />
-        <div className="mt-4 flex justify-end">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">
+            {questionCount} câu hỏi
+          </div>
           <button
             type="button"
-            onClick={handleAskQuestion}
-            disabled={submittingQuestion || !questionText.trim()}
-            className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => setShowAskModal(true)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-3 text-sm font-black text-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-orange-700 hover:shadow-lg active:scale-95"
           >
-            {submittingQuestion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Đăng câu hỏi
+            <PlusCircle className="h-4 w-4" />
+            Đặt câu hỏi
           </button>
         </div>
       </div>
+
+      {showAskModal ? (
+        <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm animate-soft-in">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/60 bg-white shadow-2xl animate-chat-pop">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                  <MessageSquare className="h-4 w-4 text-orange-600" />
+                  Create Post
+                </div>
+                <p className="mt-1 text-xs font-medium text-slate-500">Câu hỏi sẽ được đăng vào thread hỏi đáp của địa điểm này.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAskModal(false)}
+                className="rounded-2xl p-2 text-slate-500 transition hover:bg-white hover:text-slate-950 hover:shadow-sm"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <input
+                value={questionTitle}
+                onChange={(event) => setQuestionTitle(event.target.value)}
+                className="mb-3 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none transition placeholder:font-medium focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                placeholder="Tiêu đề ngắn, ví dụ: Ở đây có cần đặt chỗ trước không?"
+              />
+              <textarea
+                value={questionText}
+                onChange={(event) => setQuestionText(event.target.value)}
+                rows={7}
+                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                placeholder={place ? `Hỏi về ${place.name}...` : 'Đặt câu hỏi của bạn...'}
+                autoFocus
+              />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-xs font-medium text-slate-500">{questionText.length}/1000 ký tự</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAskModal(false)}
+                    className="rounded-full px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAskQuestion}
+                    disabled={submittingQuestion || !questionText.trim()}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full bg-orange-600 px-5 py-2.5 text-sm font-black text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submittingQuestion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Post
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -285,7 +342,7 @@ export default function QASection({ placeId, place }) {
           Đang tải hỏi đáp...
         </div>
       ) : threads.length ? (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {threads.map((thread) => (
             <QuestionThreadCard
               key={thread.id}

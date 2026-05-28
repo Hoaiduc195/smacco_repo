@@ -1,6 +1,6 @@
-# Project Architecture: Smacco — Smart Travel & Accommodation Platform
+# Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-28 21:23
+> Last updated: 2026-05-28 22:25
 > Branch: feat/improve_searchwf_res
 
 ## Overview

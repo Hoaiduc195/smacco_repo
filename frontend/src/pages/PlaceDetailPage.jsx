@@ -13,6 +13,7 @@ import { getPlaceDetails, getPlaceMedia, createPlace, createReview, deleteReview
 import { checkInAtPlace, leaveOnsiteStatus, getMyOnsiteStatus } from '../services/presenceService';
 import { savePlace, unsavePlace, checkSavedStatus } from '../services/savedPlacesService';
 import { useAuth } from '../contexts/AuthContext';
+import { getRouteDetails } from '../services/routingService';
 
 export default function PlaceDetailPage() {
   const { id } = useParams();
@@ -29,6 +30,12 @@ export default function PlaceDetailPage() {
   const [onsiteError, setOnsiteError] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isSavingLoading, setIsSavingLoading] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [route, setRoute] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [isRouting, setIsRouting] = useState(false);
+  const [routeError, setRouteError] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
   const syncInProgress = useRef({});
   const { currentUser } = useAuth();
 
@@ -60,8 +67,8 @@ export default function PlaceDetailPage() {
           const savedPlace = await createPlace({
             source: source,
             locationId: locationId,
-            nameCache: place.name,
-            addressCache: place.address,
+            nameCache: place.name || place.placeName,
+            addressCache: place.address || place.placeAddress,
             type: place.type,
             coordinates: place.lat && place.lng ? { lat: place.lat, lng: place.lng } : undefined,
             imageUrl: place.imageUrl || place.coverImageUrl || undefined,
@@ -140,21 +147,9 @@ export default function PlaceDetailPage() {
 
       await loadMedia();
     } catch (err) {
-      console.error('Error loading place details, using fallback:', err);
-      // Use fallback mock data so the page still displays
-      setPlace({
-        id,
-        name: `Địa điểm #${id.slice(0, 5)}`,
-        address: 'Địa chỉ đang được cập nhật (Demo Mode)',
-        type: 'restaurant',
-        rating: 4.5,
-        review_count: 128,
-        lat: 21.0285,
-        lng: 105.8542,
-        categories: ['Ẩm thực', 'Gợi ý'],
-        description: 'Thông tin này hiện đang được hiển thị ở chế độ Demo vì không thể kết nối với máy chủ. Bạn vẫn có thể khám phá giao diện của nền tảng Q&A bên dưới.'
-      });
-      setError('Không thể kết nối với máy chủ. Đang hiển thị dữ liệu mẫu.');
+      console.error('Error loading place details:', err);
+      setPlace(null);
+      setError('Không thể tải thông tin địa điểm. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
     }
@@ -167,10 +162,7 @@ export default function PlaceDetailPage() {
       setPhotos(Array.isArray(media?.photos) ? media.photos : []);
     } catch (err) {
       console.error('Error loading place media:', err);
-      setReviews([
-        { id: 'r1', author: 'Người dùng mẫu', text: 'Địa điểm này rất tuyệt vời, tôi sẽ quay lại!', rating: 5, date: '19/04/2026' },
-        { id: 'r2', author: 'Khách hàng 2', text: 'Dịch vụ tốt, không gian thoáng đãng.', rating: 4, date: '18/04/2026' }
-      ]);
+      setReviews([]);
       setPhotos([]);
     }
   };
@@ -285,6 +277,72 @@ export default function PlaceDetailPage() {
     navigate('/app', returnToMapState ? { state: { homeState: returnToMapState } } : undefined);
   };
 
+  const formatDistance = (meters) => {
+    if (!Number.isFinite(Number(meters))) return null;
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(1)} km`;
+  };
+
+  const formatDuration = (seconds) => {
+    if (!Number.isFinite(Number(seconds))) return null;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes} phút`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes ? `${hours} giờ ${remainingMinutes} phút` : `${hours} giờ`;
+  };
+
+  const handleDirections = async () => {
+    if (!place?.lat || !place?.lng) {
+      setRouteError('Địa điểm này chưa có tọa độ để chỉ đường.');
+      return;
+    }
+
+    try {
+      setIsRouting(true);
+      setRouteError('');
+      setRoute([]);
+      setRouteInfo(null);
+
+      const origin = await requestCurrentLocation();
+      const destination = { lat: Number(place.lat), lng: Number(place.lng) };
+      const details = await getRouteDetails(origin, destination);
+
+      setUserLocation(origin);
+      setRoute(details.coordinates);
+      setRouteInfo({
+        distance: formatDistance(details.distanceMeters),
+        duration: formatDuration(details.durationSeconds),
+      });
+
+      const baseMapState = location.state?.returnToMapState || {};
+      navigate('/app', {
+        state: {
+          homeState: {
+            ...baseMapState,
+            userLocation: origin,
+            route: details.coordinates,
+            selectedPlaceId: place.id,
+            isSidebarOpen: true,
+            showPlaceDetailPanel: true,
+            appState: 'routing',
+            mapFocusTarget: {
+              id: `route-${place.id}`,
+              lat: Number(place.lat),
+              lng: Number(place.lng),
+              zoom: 15,
+            },
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Error getting directions:', err);
+      setRouteError(err?.message || 'Không thể lấy chỉ đường. Vui lòng cho phép truy cập vị trí và thử lại.');
+    } finally {
+      setIsRouting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-base-50">
@@ -319,6 +377,13 @@ export default function PlaceDetailPage() {
   const ratingStars = Array.from({ length: 5 }, (_, i) => i < Math.floor(rating) ? '★' : '☆').join('');
   const placeholderImg = `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=400`;
   const visibleReviews = reviews.filter((review) => review.source !== 'google');
+  const displayName = place.name || place.placeName || place.title || `Địa điểm #${String(id || '').slice(0, 8)}`;
+  const displayAddress = place.address || place.placeAddress || place.formattedAddress || '';
+  const tabs = [
+    { id: 'overview', label: 'Thông tin chung' },
+    { id: 'qa', label: 'Hỏi đáp cộng đồng' },
+    { id: 'reviews', label: 'Đánh giá' },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-base-50 overflow-x-hidden">
@@ -348,7 +413,7 @@ export default function PlaceDetailPage() {
         {(photos.length > 0 || place.coverImageUrl || place.imageUrl) ? (
           <img 
             src={photos[0] || place.coverImageUrl || place.imageUrl} 
-            alt={place.name} 
+            alt={displayName} 
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
           />
         ) : (
@@ -373,7 +438,7 @@ export default function PlaceDetailPage() {
                 )}
               </div>
               <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight drop-shadow-lg tracking-tight inline-flex flex-wrap items-center gap-4">
-                <span>{place.name}</span>
+                <span>{displayName}</span>
                 {place.price && (
                   <span className="text-lg sm:text-xl font-bold bg-emerald-500 text-white px-3.5 py-1.5 rounded-2xl shadow-xl shadow-emerald-500/20 border border-emerald-400 select-none shrink-0 self-center">
                     Từ {place.price}
@@ -388,7 +453,7 @@ export default function PlaceDetailPage() {
                 </div>
                 <div className="flex items-center gap-1.5 border-l border-white/20 pl-4">
                   <MapPin className="w-5 h-5 text-cyan-400" />
-                  <span className="text-sm font-medium line-clamp-1">{place.address}</span>
+                  <span className="text-sm font-medium line-clamp-1">{displayAddress || 'Địa chỉ đang cập nhật'}</span>
                 </div>
               </div>
             </div>
@@ -432,20 +497,350 @@ export default function PlaceDetailPage() {
         </div>
       </div>
 
-      {/* Content Grid */}
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-12">
+      <section className="relative z-10 -mt-8 mx-auto w-[min(92vw,80rem)] rounded-3xl border border-white/70 bg-white/95 px-5 py-4 shadow-xl backdrop-blur-md sm:px-7">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary-700">Place detail</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">{displayName}</h2>
+            <p className="mt-1 line-clamp-2 text-sm font-medium text-slate-600">{displayAddress || 'Địa chỉ đang cập nhật'}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-2xl bg-amber-50 px-3 py-2 text-sm font-black text-amber-700">
+              {rating ? `${rating.toFixed(1)} ★` : 'Chưa có rating'}
+            </span>
+            {place.price ? (
+              <span className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700">{place.price}</span>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
+      <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-6 overflow-x-auto rounded-3xl border border-slate-200 bg-white p-2 shadow-sm">
+          <div className="flex min-w-max gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`rounded-2xl px-4 py-3 text-sm font-black transition duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-600 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-slate-950'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.45fr_0.9fr]">
+            <div className="space-y-6">
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Overview</p>
+                    <h2 className="mt-2 text-2xl font-black text-slate-950">Thông tin về {displayName}</h2>
+                    <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
+                      {place.description || 'Địa điểm này chưa có mô tả chính thức. Các thông tin bên dưới được tổng hợp từ dữ liệu hiện có của hệ thống.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDirections}
+                    disabled={isRouting}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
+                  >
+                    {isRouting ? <Loader className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                    Chỉ đường
+                  </button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <MapPin className="h-4 w-4 text-primary-600" />
+                      Địa chỉ
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{displayAddress || 'Đang cập nhật'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                      Rating
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-900">
+                      {rating ? `${rating.toFixed(1)}/5` : 'Chưa có rating'}
+                      <span className="ml-2 font-medium text-slate-500">({visibleReviews.length} đánh giá cộng đồng)</span>
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <Clock className="h-4 w-4 text-primary-600" />
+                      Giờ hoạt động
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{place.openingHours || place.opening_hours || 'Đang cập nhật'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <Phone className="h-4 w-4 text-primary-600" />
+                      Liên hệ
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{place.phone || place.phoneNumber || 'Đang cập nhật'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <Globe className="h-4 w-4 text-primary-600" />
+                      Website
+                    </div>
+                    <p className="mt-2 truncate text-sm font-bold text-slate-900">{place.website || 'Đang cập nhật'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                      <ImageIcon className="h-4 w-4 text-primary-600" />
+                      Hình ảnh
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{photos.length ? `${photos.length} ảnh` : 'Chưa có ảnh cộng đồng'}</p>
+                  </div>
+                </div>
+
+                {place.amenities?.length ? (
+                  <div className="mt-6 border-t border-slate-100 pt-6">
+                    <h3 className="text-sm font-black uppercase tracking-wide text-slate-600">Tiện ích được ghi nhận</h3>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {place.amenities.map((amenity, idx) => (
+                        <span key={idx} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700">
+                          {amenity}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-950">Xác nhận onsite</h3>
+                    <p className="mt-1 text-sm text-slate-600">Dùng khi bạn đang ở địa điểm này để cộng đồng biết câu trả lời của bạn có ngữ cảnh thực tế.</p>
+                  </div>
+                  <div className={`rounded-full px-3 py-1 text-xs font-black ${isCurrentlyOnsite ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {isCurrentlyOnsite ? 'Đang onsite' : 'Offsite'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleConfirmOnsiteStatus}
+                  disabled={onsiteLoading}
+                  className={`mt-5 inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-black transition active:scale-95 disabled:opacity-50 ${
+                    isCurrentlyOnsite ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {onsiteLoading ? 'Đang cập nhật...' : isCurrentlyOnsite ? 'Rời khỏi địa điểm' : 'Xác nhận đang ở đây'}
+                </button>
+                {onsiteError ? <p className="mt-3 text-sm font-semibold text-rose-600">{onsiteError}</p> : null}
+              </section>
+            </div>
+
+            <aside className="space-y-6 lg:sticky lg:top-32">
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div className="h-72 bg-slate-200">
+                  {place.lat && place.lng ? (
+                    <MapComponent
+                      userLocation={userLocation || { lat: place.lat, lng: place.lng }}
+                      places={[place]}
+                      route={route}
+                      onMarkerClick={() => {}}
+                      onDirectionsRequested={handleDirections}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">Chưa có tọa độ</div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="font-black text-slate-950">Vị trí & tuyến đường</h3>
+                  <p className="mt-1 text-sm text-slate-600">{displayAddress || 'Đang cập nhật'}</p>
+                  {routeInfo ? (
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl bg-primary-50 px-3 py-2 text-sm font-black text-primary-800">
+                        {routeInfo.distance || 'N/A'}
+                        <span className="block text-xs font-medium text-primary-700">Quãng đường</span>
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-black text-slate-800">
+                        {routeInfo.duration || 'N/A'}
+                        <span className="block text-xs font-medium text-slate-500">Thời gian lái xe</span>
+                      </div>
+                    </div>
+                  ) : null}
+                  {routeError ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{routeError}</div> : null}
+                  <button
+                    type="button"
+                    onClick={handleDirections}
+                    disabled={isRouting}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-black text-white transition hover:bg-primary-700 disabled:opacity-60"
+                  >
+                    {isRouting ? <Loader className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                    {isRouting ? 'Đang lấy tuyến...' : 'Chỉ đường từ vị trí của tôi'}
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {activeTab === 'qa' && <QASection placeId={id} place={place} />}
+
+        {activeTab === 'reviews' && (
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-950">Đánh giá từ cộng đồng</h2>
+                <p className="mt-1 text-sm text-slate-500">{visibleReviews.length} đánh giá hiển thị</p>
+              </div>
+              <button
+                onClick={() => {
+                  if (!currentUser) {
+                    setReviewError('Vui lòng đăng nhập để viết đánh giá.');
+                    return;
+                  }
+                  setShowReviewForm((prev) => !prev);
+                  setReviewError('');
+                }}
+                className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-black transition active:scale-95 ${
+                  showReviewForm ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-orange-600 text-white hover:bg-orange-700'
+                }`}
+              >
+                {showReviewForm ? <><X className="h-4 w-4" /> Hủy</> : <><Edit3 className="h-4 w-4" /> Viết đánh giá</>}
+              </button>
+            </div>
+
+            {showReviewForm && (
+              <div className="mb-8 rounded-3xl border border-orange-100 bg-orange-50/70 p-5">
+                <p className="mb-3 text-sm font-black text-slate-800">Đánh giá của bạn</p>
+                <div className="mb-4 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setReviewHoverRating(star)}
+                      onMouseLeave={() => setReviewHoverRating(0)}
+                      className="p-1 transition-transform hover:scale-125 active:scale-95"
+                    >
+                      <Star className={`h-8 w-8 ${star <= (reviewHoverRating || reviewRating) ? 'text-amber-400 fill-amber-400' : 'text-slate-300'}`} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={reviewContent}
+                  onChange={(e) => setReviewContent(e.target.value)}
+                  placeholder="Chia sẻ trải nghiệm thực tế của bạn..."
+                  rows={4}
+                  className="w-full resize-none rounded-2xl border border-orange-100 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+                {reviewError ? <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{reviewError}</div> : null}
+                <div className="mt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowReviewForm(false);
+                      setReviewRating(0);
+                      setReviewContent('');
+                      setReviewError('');
+                    }}
+                    className="rounded-2xl px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-white"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSubmitReview}
+                    disabled={isSubmittingReview || reviewRating === 0 || !reviewContent.trim()}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {isSubmittingReview ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Gửi đánh giá
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!showReviewForm && reviewError ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">{reviewError}</div> : null}
+
+            {visibleReviews.length ? (
+              <div className="space-y-4">
+                {visibleReviews.map((review) => {
+                  const authorName = review.user?.displayName || review.author || 'Ẩn danh';
+                  const authorInitial = authorName.charAt(0).toUpperCase();
+                  const reviewDate = review.createdAt
+                    ? new Date(review.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : review.date || '';
+                  const reviewText = review.reviewText || review.text || '';
+                  const isOwnReview = currentUser && review.user?.firebaseUid && review.user.firebaseUid === currentUser.uid;
+
+                  return (
+                    <article key={review.id} className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-orange-200 bg-orange-100 text-sm font-black text-orange-700">
+                            {authorInitial}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-950">{authorName}</p>
+                            <p className="text-xs font-medium text-slate-500">{reviewDate}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {review.rating ? (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: 5 }, (_, i) => (
+                                <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
+                              ))}
+                            </div>
+                          ) : null}
+                          {isOwnReview ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteReview(review.id)}
+                              disabled={deletingReviewId === review.id}
+                              className="rounded-xl px-2 py-1 text-xs font-bold text-red-500 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {deletingReviewId === review.id ? 'Đang xóa...' : 'Xóa'}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                      {reviewText ? <p className="mt-4 whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm leading-7 text-slate-700">{reviewText}</p> : null}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-16 text-center">
+                <MessageCircle className="mx-auto mb-4 h-14 w-14 text-slate-300" />
+                <p className="font-bold text-slate-600">Chưa có đánh giá nào</p>
+                <p className="mt-1 text-sm text-slate-400">Hãy là người đầu tiên chia sẻ trải nghiệm.</p>
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+
+      {/* Legacy layout kept hidden while tabs replace the detail surface. */}
+      <main className="hidden">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
           
           {/* Left Column - Details, QA, Reviews */}
           <div className="lg:col-span-2 space-y-12">
-            
             {/* About Section */}
-            <section className="surface-card-solid p-8">
+            <section className="hidden">
               <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
                 Thông tin chi tiết
               </h2>
               <p className="text-slate-600 leading-relaxed mb-8 text-lg">
-                {place.description || `Chào mừng bạn đến với ${place.name}! Một địa điểm tuyệt vời để trải nghiệm ${place.type || 'dịch vụ'} tại ${place.address}. Hãy cùng khám phá và chia sẻ những khoảnh khắc tuyệt vời của bạn tại đây.`}
+                {place.description || 'Chưa có mô tả chính thức cho địa điểm này.'}
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -453,7 +848,7 @@ export default function PlaceDetailPage() {
                   <Clock className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Giờ mở cửa</p>
-                    <p className="text-slate-600 text-sm">Thứ 2 - Chủ Nhật: 08:00 - 22:00</p>
+                    <p className="text-slate-600 text-sm">Đang cập nhật</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4 rounded-2xl bg-base-50 border border-slate-100">
@@ -474,7 +869,7 @@ export default function PlaceDetailPage() {
                   <ImageIcon className="w-6 h-6 text-primary-600 mt-1" />
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Hình ảnh</p>
-                    <p className="text-slate-600 text-sm">Xem thêm 24 ảnh từ cộng đồng</p>
+                    <p className="text-slate-600 text-sm">{photos.length ? `${photos.length} ảnh` : 'Chưa có ảnh cộng đồng'}</p>
                   </div>
                 </div>
               </div>
@@ -761,21 +1156,45 @@ export default function PlaceDetailPage() {
               <div className="h-64 relative bg-slate-200">
                 {place.lat && place.lng && (
                   <MapComponent
-                    userLocation={{ lat: place.lat, lng: place.lng }}
+                    userLocation={userLocation || { lat: place.lat, lng: place.lng }}
                     places={[place]}
+                    route={route}
                     onMarkerClick={() => {}}
+                    onDirectionsRequested={handleDirections}
                   />
                 )}
                 <div className="absolute bottom-4 right-4 z-[400]">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl shadow-lg font-bold hover:bg-primary-700 transition-all active:scale-95">
-                    <Navigation className="w-4 h-4" />
-                    <span>Chỉ đường</span>
+                  <button
+                    type="button"
+                    onClick={handleDirections}
+                    disabled={isRouting}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl shadow-lg font-bold hover:bg-primary-700 transition-all active:scale-95 disabled:opacity-60"
+                  >
+                    {isRouting ? <Loader className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
+                    <span>{isRouting ? 'Đang lấy tuyến...' : 'Chỉ đường'}</span>
                   </button>
                 </div>
               </div>
               <div className="p-6">
-                <h3 className="font-bold text-slate-900 mb-2">Vị trí</h3>
+                <h3 className="font-bold text-slate-900 mb-2">Vị trí & tuyến đường</h3>
                 <p className="text-slate-600 text-sm mb-4">{place.address}</p>
+                {routeInfo ? (
+                  <div className="mb-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl bg-primary-50 px-3 py-2 text-sm font-bold text-primary-800">
+                      {routeInfo.distance || 'N/A'}
+                      <span className="block text-xs font-medium text-primary-700">Quãng đường</span>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800">
+                      {routeInfo.duration || 'N/A'}
+                      <span className="block text-xs font-medium text-slate-500">Thời gian lái xe</span>
+                    </div>
+                  </div>
+                ) : null}
+                {routeError ? (
+                  <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                    {routeError}
+                  </div>
+                ) : null}
                 <div className="flex items-center justify-between text-xs text-slate-400 font-medium pt-4 border-t border-slate-50">
                   <span>LAT: {place.lat?.toFixed(4)}</span>
                   <span>LNG: {place.lng?.toFixed(4)}</span>
@@ -784,7 +1203,7 @@ export default function PlaceDetailPage() {
             </div>
 
             {/* Quick Actions / Tips */}
-            <div className="bg-gradient-to-br from-primary-700 to-ink-900 rounded-3xl p-8 text-white shadow-xl shadow-soft">
+            <div className="hidden">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
                 Mẹo du lịch

@@ -2,6 +2,225 @@
 
 ---
 
+## [2026-05-28 22:25] — Generalize Features Config and Enable NearbyAmenitiesTool Bypass
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User requested renaming the SerpAPI feature config file to a general features config and adding a toggle to turn off/on NearbyAmenitiesTool due to frequent Overpass API timeouts.
+- **Changes**:
+  - Renamed `serpapi-features.json` to a generalized `features.json` configuration file in the backend root.
+  - Added a new `"nearbyAmenities": true` flag to `features.json` to control Overpass API execution.
+  - Updated `PlacesService` and `SerpApiHotelsService` to load configuration from the renamed `features.json` instead of `serpapi-features.json`.
+  - Configured `NearbyAmenitiesTool` to check the `nearbyAmenities` flag before executing. If disabled, it immediately returns a mock response with a placeholder score of `0.5` per place, bypassing slow public Overpass API calls.
+  - Replaced the CLI script `config-serpapi.js` with `config-features.js` to allow interactive setup of both SerpAPI features and NearbyAmenitiesTool.
+  - Updated the backend script shortcut `config:serpapi` to `config:features` in `package.json`.
+  - Verified clean backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/package.json`
+  - `backend/src/modules/places/places.service.ts`
+  - `backend/src/modules/search/serpapi-hotels.service.ts`
+  - `backend/src/common/tools/nearby-amenities.tool.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**:
+  - `backend/features.json`
+  - `backend/scripts/config-features.js`
+- **Deleted files**:
+  - `backend/serpapi-features.json`
+  - `backend/scripts/config-serpapi.js`
+- **Architecture impact**: Yes — renamed feature configuration schema and added Overpass API bypass mode for `NearbyAmenitiesTool`.
+
+---
+
+## [2026-05-28 22:18] — Fix Map Interaction Lock on App Load
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked why they couldn't zoom or pan the map at all when first opening the app.
+- **Changes**:
+  - Fixed an infinite re-centering/snapping loop caused by the React mount `useEffect` depending on `requestCurrentLocation`. Since `requestCurrentLocation` updates `appState` (transitioning to `FOCUS_CURRENT`), this re-created the callback and triggered the `useEffect` repeatedly, instantly overriding any manual user interactions by re-centering.
+  - Restricted the mount `useEffect` in `HomePage.jsx` to run only once by passing an empty dependency array `[]`.
+  - Added `setDisableAutoFit(true)` to `handleUserMapInteraction` so manual zoom/pan gestures explicitly stop auto-fitting behaviors.
+  - Restored syntax correctness of `ownedPlaceBySource`, `ownedPlacesForMap`, and error handling blocks in `HomePage.jsx` following an automated merge misalignment.
+  - Verified clean frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — map interaction lifecycle and state boundaries only.
+
+---
+
+## [2026-05-28 22:12] — Allow Zoom During Routing
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported they could not zoom the map while directions were active.
+- **Changes**:
+  - Disabled `followUserLocation` and geolocation watch tracking when the app enters routing mode, so the map no longer keeps re-centering itself during navigation.
+  - Kept the route polyline and destination selection active, but let the user freely zoom/pan the map while routing is displayed.
+  - Updated the current-location button behavior so it no longer re-enables follow tracking while routing is active.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — map interaction behavior only.
+
+---
+
+## [2026-05-28 22:08] — Route Place Detail Directions Back Into Map View
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User wanted directions from place detail to automatically leave the detail page and open the map route view, and also asked that community Q&A always show AI first and pinned before user replies.
+- **Changes**:
+  - Updated place-detail directions to compute the route and then navigate to `/app` with a `homeState` payload containing the route geometry, current user location, selected place, and routing mode.
+  - Preserved existing map state when returning from detail, so route activation lands directly in the main map workspace instead of staying on the detail page.
+  - Confirmed the Q&A backend already creates an AI answer immediately on question creation and returns threads with the AI answer separated from user replies, which keeps the AI response first in the thread.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — navigation state and existing Q&A sequencing only.
+
+---
+
+## [2026-05-28 22:02] — Hydrate External Place Placeholder Names
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported the place detail page showed an ID placeholder instead of the real place name.
+- **Changes**:
+  - Fixed a race where `/places/:id/media` could create a placeholder external place before the frontend sync submitted the real search-result name.
+  - Updated `PlacesService.create` so an existing placeholder source record such as `Địa điểm #...` is hydrated with incoming `nameCache`, `addressCache`, coordinates, category, and cover image.
+  - Updated `PlaceDetailPage` sync payload to send `placeName/placeAddress` fallbacks as well as `name/address`.
+  - Verified backend and frontend compilation with `npm run build` in both `backend/` and `frontend/`.
+- **Modified files**:
+  - `backend/src/modules/places/places.service.ts`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — external-place placeholder hydration behavior only.
+
+---
+
+## [2026-05-28 22:00] — Restore Place Name For Backend Detail Shape
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported the place name was still missing on the place detail page.
+- **Changes**:
+  - Added `displayName` and `displayAddress` fallbacks in `PlaceDetailPage` so the UI supports both frontend search-result fields (`name`, `address`) and backend detail fields (`placeName`, `placeAddress`).
+  - Updated hero image alt text, hero title, summary strip, overview heading, and address cards to use the normalized display values.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend data-shape fallback only.
+
+---
+
+## [2026-05-28 21:52] — Restore Place Name Visibility And Compact Q&A Composer
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported the place name disappeared, wanted the create-question area collapsed into a trigger that opens a full popup, and requested livelier hover/effects.
+- **Changes**:
+  - Added a prominent summary strip below the place hero so the place name, address, rating, and price remain visible regardless of hero image contrast.
+  - Replaced the always-visible Q&A create-post form with a compact `Đặt câu hỏi` button.
+  - Added a full-screen modal composer for creating a community question, preserving the existing question creation API flow.
+  - Added subtle hover lift/shadow transitions to the Q&A header, thread cards, voting controls, modal controls, and detail tabs.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend presentation and interaction behavior only.
+
+---
+
+## [2026-05-28 21:49] — Split Place Detail Into Overview, Q&A, And Reviews Tabs
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User said the place detail UI felt misaligned, the always-visible question form would scale poorly with many questions, and requested three tabs: overview, community Q&A, and reviews. User also wanted the overview page to be more detailed.
+- **Changes**:
+  - Added a tab navigation surface to `PlaceDetailPage` with `Thông tin chung`, `Hỏi đáp cộng đồng`, and `Đánh giá`.
+  - Moved the community Q&A surface behind its own tab so the create-question form is not always visible while browsing overview or reviews.
+  - Built a richer overview tab with grounded place description, address, rating, opening-hours placeholder, contact placeholder, website, photo count, amenities, onsite confirmation, and embedded route map.
+  - Moved review creation and review list rendering into the reviews tab while preserving the existing review create/delete logic.
+  - Kept the existing OSRM directions integration available from the overview tab and route map panel.
+  - Hid the previous mixed detail layout while the tabbed layout replaces it.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend page organization and presentation only.
+
+---
+
+## [2026-05-28 21:43] — Apply Reddit Layout To Existing Q&A Section
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User clarified that the Reddit-like forum UI should be applied to the existing community Q&A section, not by creating a new forum card on the place detail page.
+- **Changes**:
+  - Removed the extra Reddit-style discussion card previously added directly to `PlaceDetailPage`.
+  - Restyled `QASection` so the existing question form behaves visually like a Reddit create-post card.
+  - Restyled existing question threads with a vote rail, `r/smacco_qa` metadata, author/time badges, pinned AI answer area, and indented community replies.
+  - Preserved the existing Q&A API flow for creating questions, creating answers, loading threads, and deleting owned questions.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend Q&A presentation only.
+
+---
+
+## [2026-05-28 21:36] — Keep Routing Active When Re-Centering Map
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported that pressing the current-location button while directions are active stops routing, and wanted routing to stop only when pressing the explicit stop button.
+- **Changes**:
+  - Updated `HomePage` state transitions so entering current-location focus no longer clears the active route.
+  - Changed the current-location button behavior to preserve `ROUTING` state when directions are active.
+  - Changed map pan/zoom interaction handling so user map movement no longer exits routing mode.
+  - Kept `handleStopRouting` as the only UI path that clears the route and exits routing mode.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — map routing interaction behavior only.
+
+---
+
+## [2026-05-28 21:34] — Make Place Detail More Forum-Like And Enable Directions
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User wanted the place detail page to feel more detailed and forum-like, similar to Reddit, remove mock content such as static detail/tip copy, and make directions functional.
+- **Changes**:
+  - Added a Reddit-style place discussion card with vote controls, subreddit-like metadata, community count, grounded place fields, amenities, and discussion/direction actions.
+  - Removed visible mock fallbacks from the detail area by replacing invented description, opening hours, and photo counts with explicit "Đang cập nhật" / real-count states.
+  - Hid the old static detail block and travel tips block so the page emphasizes community discussion, Q&A, reviews, onsite status, and map context.
+  - Connected the detail-page `Chỉ đường` buttons to the existing OSRM routing service, requesting the user's current location and drawing the route on the embedded Mapbox map.
+  - Added route distance/duration display and error feedback for missing coordinates, denied geolocation, or routing failures.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend page layout and existing routing-service integration only.
+
+---
+
 ## [2026-05-28 21:28] — Align Place Detail Hero Back Button
 
 - **Branch**: `feat/improve_searchwf_res`

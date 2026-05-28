@@ -16,7 +16,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "config:serpapi": "node scripts/config-serpapi.js"
+    "config:features": "node scripts/config-features.js"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",

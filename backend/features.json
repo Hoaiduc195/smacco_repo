@@ -1,0 +1,6 @@
+{
+  "hotelSearch": true,
+  "photos": false,
+  "reviews": true,
+  "nearbyAmenities": false
+}

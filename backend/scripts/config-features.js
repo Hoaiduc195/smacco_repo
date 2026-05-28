@@ -2,13 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-const configPath = path.join(__dirname, '../serpapi-features.json');
+const configPath = path.join(__dirname, '../features.json');
 
 // Read existing config or set defaults
 let config = {
   hotelSearch: true,
   photos: false,
-  reviews: true
+  reviews: true,
+  nearbyAmenities: true
 };
 
 if (fs.existsSync(configPath)) {
@@ -30,14 +31,12 @@ function askQuestion(query) {
 
 async function main() {
   console.log('\n=============================================');
-  console.log('       CẤU HÌNH TÍNH NĂNG SERPAPI            ');
+  console.log('       CẤU HÌNH TÍNH NĂNG HỆ THỐNG            ');
   console.log('=============================================');
-  console.log('Quản lý sử dụng SerpAPI hiệu quả (250 requests/tháng miễn phí).\n');
+  console.log('Quản lý sử dụng các dịch vụ ngoài hiệu quả (SerpAPI & Overpass API).\n');
 
   // 1. Hotel Search
   const searchAns = await askQuestion(`1. Cho phép Tìm kiếm Khách sạn qua SerpAPI (hiện tại: ${config.hotelSearch ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  if (searchAns.trim().toLowerCase() === 'y') config.hotelSearch = true;
-  if (searchAns.trim().toLowerCase() === 'n') config.search = false; // support old key or keep consistent
   config.hotelSearch = searchAns.trim().toLowerCase() === 'y' ? true : (searchAns.trim().toLowerCase() === 'n' ? false : config.hotelSearch);
 
   // 2. Photos
@@ -47,6 +46,10 @@ async function main() {
   // 3. Reviews
   const reviewAns = await askQuestion(`3. Cho phép Tải đánh giá qua SerpAPI Reviews (hiện tại: ${config.reviews ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.reviews = reviewAns.trim().toLowerCase() === 'y' ? true : (reviewAns.trim().toLowerCase() === 'n' ? false : config.reviews);
+
+  // 4. Nearby Amenities
+  const amenitiesAns = await askQuestion(`4. Cho phép Đếm tiện ích xung quanh qua Overpass API (hiện tại: ${config.nearbyAmenities ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
+  config.nearbyAmenities = amenitiesAns.trim().toLowerCase() === 'y' ? true : (amenitiesAns.trim().toLowerCase() === 'n' ? false : config.nearbyAmenities);
 
   // Write new config
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');

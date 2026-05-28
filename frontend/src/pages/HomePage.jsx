@@ -131,7 +131,6 @@ export default function HomePage() {
       }
       if (nextState === APP_STATES.FOCUS_CURRENT) {
         setIsSidebarOpen(false);
-        setRoute([]);
       }
       if (nextState === APP_STATES.ROUTING) {
         setIsSidebarOpen(false);
@@ -189,24 +188,32 @@ export default function HomePage() {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
-        transitionTo(APP_STATES.FOCUS_CURRENT);
-        setFollowUserLocation(true);
-        startTrackingUserLocation();
+        if (appState !== APP_STATES.ROUTING) {
+          transitionTo(APP_STATES.FOCUS_CURRENT);
+        }
+        if (appState !== APP_STATES.ROUTING) {
+          setFollowUserLocation(true);
+          startTrackingUserLocation();
+        } else {
+          setFollowUserLocation(false);
+          stopTrackingUserLocation();
+        }
         setUserLocation(newLocation);
         focusMapAt(newLocation, CURRENT_LOCATION_ZOOM, { source: 'current-location' });
         setLocationStatus('success');
       },
       (error) => {
         setLocationStatus('error');
-        setError('Không thể lấy vị trí. Vui lòng cho phép truy cập vị trị trong trình duyệt.');
+        setError('Không thể lấy vị trí. Vui lòng cho phép truy cập vị trí trong trình duyệt.');
         console.error('Geolocation error:', error);
       }
     );
-  }, [focusMapAt, startTrackingUserLocation, transitionTo]);
+  }, [appState, focusMapAt, startTrackingUserLocation, stopTrackingUserLocation, transitionTo]);
 
   useEffect(() => {
     requestCurrentLocation();
-  }, [requestCurrentLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const ownedPlaceBySource = useMemo(() => {
     const map = {};
@@ -227,7 +234,6 @@ export default function HomePage() {
       })),
     [ownedPlaces]
   );
-
   const checkInsByPlaceId = useMemo(() => {
     const map = {};
     checkIns.forEach((ci) => {
@@ -585,18 +591,19 @@ export default function HomePage() {
       });
       setUserLocation(origin);
       focusMapAt(origin, 16);
-      setFollowUserLocation(true);
-      startTrackingUserLocation();
       const routeCoords = await getRoute(origin, { lat: place.lat, lng: place.lng });
       setRoute(routeCoords);
       setSelectedPlaceId(place.id);
+      setFollowUserLocation(false);
+      stopTrackingUserLocation();
     } catch (err) {
       setError(err.message || 'Không thể lấy chỉ đường');
     }
   };
 
   const handleUserMapInteraction = useCallback(() => {
-    if (appState === APP_STATES.ROUTING || appState === APP_STATES.FOCUS_CURRENT) {
+    setDisableAutoFit(true);
+    if (appState === APP_STATES.FOCUS_CURRENT) {
       transitionTo(APP_STATES.IDLE);
     }
   }, [appState, transitionTo]);

@@ -393,8 +393,8 @@ export class PlacesService {
   }
 
   private getFeaturesConfig() {
-    const configPath = path.join(process.cwd(), 'serpapi-features.json');
-    const defaults = { hotelSearch: true, photos: false, reviews: true };
+    const configPath = path.join(process.cwd(), 'features.json');
+    const defaults = { hotelSearch: true, photos: false, reviews: true, nearbyAmenities: true };
     try {
       if (fs.existsSync(configPath)) {
         const content = fs.readFileSync(configPath, 'utf8');
