@@ -2,6 +2,246 @@
 
 ---
 
+## [2026-05-28 21:28] — Align Place Detail Hero Back Button
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported the place detail background image looked shifted downward, likely because of the back-to-map button.
+- **Changes**:
+  - Moved the `Quay lại bản đồ` action from a separate block above the hero into an absolute overlay inside the hero image.
+  - Kept the button visible with a translucent white surface and backdrop blur, without adding vertical layout height above the image.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — place detail presentation/layout only.
+
+---
+
+## [2026-05-28 21:23] — Improve LLM Chat History Context
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to verify whether the LLM receives chat history because follow-up context seemed weak.
+- **Changes**:
+  - Confirmed the composer already received conversation history, but the Groq task router ignored it when classifying follow-up requests.
+  - Updated the Groq task router to include the last 6 user/assistant messages as compact context, so follow-up references can influence workflow routing and parameter extraction.
+  - Added compact history formatting in the response composer: last 10 messages only, long messages truncated, and legacy place-chat wrapper prompts stripped before sending to Groq.
+  - Persisted the user message at the start of each chat request/stream so interrupted streams do not silently lose the user's turn.
+  - Added backend validation that ignores non-UUID `conversationId` values and creates a fresh conversation instead of corrupting or failing persistence.
+  - Changed `PlaceChatPanel` so place-specific chat no longer uses `place.id` as the conversation ID and no longer stores an English prompt wrapper as the user's message.
+  - Verified backend and frontend compilation with `npm run build` in both `backend/` and `frontend/`.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `backend/src/modules/ai/orchestration/router/groq-task-router.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `frontend/src/components/PlaceChatPanel.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — chat routing, response composition, and persistence now share a cleaner bounded conversation-history contract.
+
+---
+
+## [2026-05-28 21:42] — Render Chat Messages Optimistically Before AI Response
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User reported that after sending a message to AI, the user message disappeared until the AI response arrived, instead of behaving like a normal chat.
+- **Changes**:
+  - Updated `useStreamingChat` to flush the optimistic user message, empty assistant bubble, cleared input, and streaming state before starting the SSE request.
+  - Prevented `ChatWidget` conversation-history effects from reloading and overwriting optimistic local messages while a response is streaming.
+  - Added an inline "Đang suy nghĩ..." loading state inside empty assistant bubbles for both the global chat widget and place-specific chat panel.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+- **Modified files**:
+  - `frontend/src/hooks/useStreamingChat.js`
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceChatPanel.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — chat UI state/rendering behavior only.
+
+---
+
+## [2026-05-28 21:34] — Let Composer Infer User Criteria From Search Query
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked whether the LLM can receive the user's request and infer which criteria matter, then evaluate results based on `SearchResultContext`.
+- **Changes**:
+  - Updated search result context guidance so the composer infers user criteria from the original query and parsed intent before answering.
+  - Updated the Groq composer prompt to silently infer criteria such as proximity, budget, type, amenities, ambience, rating, or review count from the user's wording.
+  - Required search answers to order their reasoning by inferred user criteria, while still staying grounded in `SearchResultContext`.
+  - Added explicit fallback behavior: if context lacks evidence for a criterion the user cares about, the answer should say that data is not well covered instead of guessing.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/search-result-context.builder.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — response-composition prompt behavior only.
+
+---
+
+## [2026-05-28 21:27] — Prioritize User Intent In Search Result Answers
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User showed an AI search answer for "nhà nghỉ gần trung tâm thành phố Hồ Chí Minh" that over-emphasized nearby amenities instead of proximity to the requested center.
+- **Changes**:
+  - Added `distanceKm` and `anchorLabel` to ranked place outputs when proximity scoring is available.
+  - Added `priorityCriteria` to `SearchResultContextBuilder` so the composer knows whether the user's main intent is proximity, budget, or general fit.
+  - Updated search answer guidance so proximity queries must discuss distance/location first and treat amenities as secondary evidence.
+  - Strengthened the composer prompt to avoid using "xung quanh có N tiện ích" as the main reason when the user asked for places near a target location.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/src/modules/recommendations/recommendations.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/search-result-context.builder.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — response synthesis and ranking metadata only.
+
+---
+
+## [2026-05-28 21:18] — Guard Google Review Cache Refresh From User Reviews
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to verify that the 90-day `review.createdAt` TTL does not accidentally target user reviews.
+- **Changes**:
+  - Confirmed TTL lookup was already scoped to `source: google`, so normal user reviews were not used for the refresh timestamp.
+  - Added an extra safety guard requiring `reviewText` to start with the internal `__GOOGLE_REVIEW__::` prefix for Google review TTL lookup, deletion, and AI-context retrieval.
+  - Centralized the Google review prefix in `PlacesService` so cache writes and reads use the same marker.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/src/modules/places/places.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — data safety guard for cached Google reviews only.
+
+---
+
+## [2026-05-28 21:12] — Use Google Reviews As Hidden AI Context Only
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User decided not to show Google reviews in the product UI, but wanted cached Google reviews to improve AI answers on place detail pages with one controlled SerpAPI request and a 3-month refresh window.
+- **Changes**:
+  - Changed `PlacesService.findReviews` so public review/media endpoints exclude `source: google` reviews, keeping Google reviews out of the visible detail UI.
+  - Added `PlacesService.ensureGoogleReviewsForAiContext`, which refreshes cached Google reviews only when missing or older than 90 days.
+  - Limited SerpAPI review caching to the first response page and at most 10 reviews to keep each refresh to one SerpAPI request.
+  - Updated the Groq response composer to call the AI-only review cache path for tagged place context before answering place-detail questions.
+  - Added lightweight retrieval over cached reviews so the composer sends only the 10 most relevant reviews for the user's current question.
+  - Strengthened composer instructions so the LLM must avoid hallucinating and say it does not have enough information when review evidence is weak or missing.
+  - Added frontend defense in `PlaceDetailPage` so Google reviews are filtered from visible community review counts and lists even if returned accidentally.
+  - Registered `PlacesModule` in `AiModule` so the composer can access the AI-only review cache helper.
+  - Verified backend and frontend compilation with `npm run build` in both `backend/` and `frontend/`.
+- **Modified files**:
+  - `backend/src/modules/places/places.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `backend/src/modules/ai/ai.module.ts`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — Google reviews are now hidden AI context with TTL-based SerpAPI refresh rather than user-visible review content.
+
+---
+
+## [2026-05-28 21:00] — Show SerpAPI Google Reviews On Place Detail
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User enabled SerpAPI reviews but still did not see reviews on the place detail page.
+- **Changes**:
+  - Enabled SerpAPI review fetching in `backend/serpapi-features.json`.
+  - Updated `PlaceDetailPage` so Google-sourced reviews are included in the review count and rendered in the review list instead of being filtered out.
+  - Updated the SerpAPI hotel provider to prefer `property_token` over `property_id`, because hotel review/photo endpoints use `property_token`.
+  - Verified backend and frontend compilation with `npm run build` in both `backend/` and `frontend/`.
+- **Modified files**:
+  - `backend/serpapi-features.json`
+  - `backend/src/modules/search/serpapi-hotels.service.ts`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — external Google reviews from SerpAPI are now enabled and visible in the detail review surface.
+
+---
+
+## [2026-05-28 20:51] — Omit Raw Search Tool Dumps From Groq Composer
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to optimize the current Groq pipeline for rate limits by avoiding duplicated search context.
+- **Changes**:
+  - Updated the Groq response composer to omit raw `toolResults` for `SEARCH_PLACES` when `searchResultContext` is available.
+  - Kept raw tool dumps available for non-search workflows and as a fallback if a search summary is not present.
+  - This reduces composer prompt size because search answers now rely on the compact summary context instead of both summary and full raw result payloads.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — Groq composer prompt construction now uses compact search summaries as the primary evidence payload for search workflows.
+
+---
+
+## [2026-05-28 20:43] — Add Search Result Summary Context For LLM Answers
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User wanted the LLM to answer search results more visually and objectively by receiving more context about returned places.
+- **Changes**:
+  - Added `SearchResultContextBuilder` to convert raw place results into a concise summary for the response composer.
+  - The summary includes user intent, total result count, rating/review/price/amenity coverage, source counts, limitations, and the top 5 place candidates with evidence fields.
+  - Updated `AiOrchestratorService` to build and pass this summary context for both normal chat and streaming chat search workflows.
+  - Updated the composer interface to accept optional `searchResultContext`.
+  - Revised the Groq response composer prompt so search answers start with an objective overview, highlight 3-5 useful suggestions, and explicitly mention missing data instead of overclaiming.
+  - Registered the new builder in `AiModule`.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/search-result-context.builder.ts`
+  - `backend/src/modules/ai/orchestration/composer/response-composer.interface.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `backend/src/modules/ai/ai.module.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**:
+  - `backend/src/modules/ai/orchestration/composer/search-result-context.builder.ts`
+- **Deleted files**: —
+- **Architecture impact**: Yes — AI search responses now use a structured result-summary layer between workflow execution and LLM composition.
+
+---
+
+## [2026-05-28 20:30] — Normalize Search Workflow Inputs And Reduce External Search Calls
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to inspect the current `search_places` autoworkflow for ways to save SerpAPI requests and improve parsing/output accuracy.
+- **Changes**:
+  - Updated `SearchService` to stop appending `type` and `location` onto an already parsed natural-language query, which removes duplicate tokens from external provider searches.
+  - Added support for multi-type queries end-to-end by normalizing comma-separated `type` values and `types[]` arrays before DB filtering and provider execution.
+  - Changed `PlacesService.findAll` to use `hasSome` when multiple accommodation types are requested, so DB search now matches user intent for queries like `resort hoặc villa`.
+  - Made the SerpAPI provider call conditional: the backend now skips external provider search when the local DB already returns enough usable results, reducing unnecessary external requests.
+  - Added deterministic router normalization for query, budget, type, location, and anchor fields so malformed or incomplete LLM output is repaired before the workflow runs.
+  - Extended the shared search parameter contract so the workflow can pass `types[]` through the tool layer without type errors.
+- **Modified files**:
+  - `backend/src/modules/search/search.service.ts`
+  - `backend/src/modules/places/places.service.ts`
+  - `backend/src/common/tools/search-places.tool.ts`
+  - `backend/src/modules/search/accommodation-provider.interface.ts`
+  - `backend/src/modules/ai/orchestration/router/groq-task-router.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+  - `.ppms/architecture-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — the search autoworkflow now supports multi-type intent cleanly, repairs malformed router output deterministically, and avoids external SerpAPI calls when internal coverage is sufficient.
+
+---
+
 ## [2026-05-27 21:26] — Enrich Search Result Cards
 
 - **Branch**: `feat/improve_searchwf_res`

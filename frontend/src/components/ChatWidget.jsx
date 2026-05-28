@@ -127,6 +127,7 @@ export default function ChatWidget() {
   }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
 
   useEffect(() => {
+    if (isStreaming) return;
     if (!selectedConversationId) {
       setConversationId(null);
       setMessages(defaultMessages);
@@ -147,15 +148,16 @@ export default function ChatWidget() {
     return () => {
       active = false;
     };
-  }, [defaultMessages, selectConversation, selectedConversationId, setConversationId, setMessages]);
+  }, [defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
 
   useEffect(() => {
+    if (isStreaming) return;
     if (selectedConversationId || !conversations?.length) return;
     selectConversation(conversations[0].id).then((history) => {
       setConversationId(conversations[0].id);
       setMessages(history?.length ? history : defaultMessages);
     });
-  }, [conversations, defaultMessages, selectConversation, selectedConversationId, setConversationId, setMessages]);
+  }, [conversations, defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
 
   const handleSend = async (e) => {
     e?.preventDefault();
@@ -392,11 +394,16 @@ export default function ChatWidget() {
                         ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap'
                         : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'
                     }`}
-                  >
-                    {msg.role === 'user' ? (
-                      msg.content
-                    ) : (
-                      <ReactMarkdown
+                    >
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : !msg.content && isStreaming && idx === messages.length - 1 ? (
+                        <span className="inline-flex items-center gap-2 text-white/80">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
+                          Đang suy nghĩ...
+                        </span>
+                      ) : (
+                        <ReactMarkdown
                         components={{
                           a: ({ href, children, ...props }) => {
                             let placeId = null;

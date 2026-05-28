@@ -8,6 +8,7 @@ import { GroqClientService } from './groq-client.service';
 import { ConversationStoreService } from './conversation-store.service';
 import { ConversationsService } from './conversations.service';
 import { SearchModule } from '../search/search.module';
+import { PlacesModule } from '../places/places.module';
 import { HttpModule } from '@nestjs/axios';
 
 // Orchestration
@@ -19,10 +20,11 @@ import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
 
 import { WorkflowEngineService } from './orchestration/engine/workflow-engine.service';
 import { GroqResponseComposerService } from './orchestration/composer/groq-response-composer.service';
+import { SearchResultContextBuilder } from './orchestration/composer/search-result-context.builder';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 
 @Module({
-  imports: [RecommendationsModule, SearchModule, HttpModule],
+  imports: [RecommendationsModule, SearchModule, PlacesModule, HttpModule],
   controllers: [AiController],
   providers: [
     NlpService, 
@@ -40,6 +42,7 @@ import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 
     WorkflowEngineService,
     GroqResponseComposerService,
+    SearchResultContextBuilder,
     AiOrchestratorService,
   ],
   exports: [NlpService, ChatService],

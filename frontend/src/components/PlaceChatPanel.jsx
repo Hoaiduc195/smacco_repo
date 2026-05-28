@@ -17,15 +17,12 @@ export default function PlaceChatPanel({ place, onClose }) {
     abortStreaming,
     clearConversation,
   } = useStreamingChat({
-    initialConversationId: place.id,
     initialMessages: [
       {
         role: 'assistant',
         content: `Bạn có thể hỏi mọi thứ về địa điểm ${place.name}.`,
       },
     ],
-    buildPrompt: (userText) =>
-      `You are a travel assistant. Answer about this place using provided context if any. Place name: ${place.name}. Address: ${place.address || ''}. Question: ${userText}`,
   });
 
   const bottomRef = useRef(null);
@@ -104,6 +101,11 @@ export default function PlaceChatPanel({ place, onClose }) {
             >
               {msg.role === 'user' ? (
                 msg.content
+              ) : !msg.content && isStreaming && idx === messages.length - 1 ? (
+                <span className="inline-flex items-center gap-2 text-white/80">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
+                  Đang suy nghĩ...
+                </span>
               ) : (
                 <ReactMarkdown
                   components={{

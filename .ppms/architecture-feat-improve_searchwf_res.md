@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-27 20:48
+> Last updated: 2026-05-28 21:23
 > Branch: feat/improve_searchwf_res
 
 ## Overview
@@ -47,8 +47,11 @@ A modular monolith web application for discovering accommodations, dining spots,
 ### Backend
 - **Framework**: NestJS with module-based organization.
 - **Module structure**: `ai`, `search`, `places`, `recommendations`, `reviews`, `users`, `presence`, `rag`, `contributions`, `health`, `saved-places`, `questions`.
-- **AI Orchestration**: `ai/orchestration` contains router, workflow engine, response composer, and shared tools under `src/common/tools/`.
-- **Database & Persistence**: Prisma client is provided via `prisma/prisma.module.ts` and `prisma/prisma.service.ts`. Schema is located at `backend/prisma/schema.prisma`.
+- **AI Orchestration**: `ai/orchestration` contains router, workflow engine, response composer, and shared tools under `src/common/tools/`. The Groq task router and response composer both receive bounded recent conversation history; history is compacted before LLM calls so follow-up questions retain context without sending unbounded chat logs.
+- **Search Answer Synthesis**: Search workflows now pass raw results through `SearchResultContextBuilder` before response composition, giving the LLM a concise objective summary with result count, rating/review/price/amenity coverage, limitations, and top candidates.
+- **Place AI Context**: Place-detail AI chat can use cached Google reviews as hidden context. The backend refreshes at most 10 Google reviews from the first SerpAPI review response only when missing or older than 90 days, while visible review endpoints continue to exclude Google-sourced reviews.
+- **Groq Prompt Efficiency**: For `SEARCH_PLACES`, the composer now sends the compact search summary instead of the full raw tool result dump when summary context is available.
+- **Database & Persistence**: Prisma client is provided via `prisma/prisma.module.ts` and `prisma/prisma.service.ts`. Schema is located at `backend/prisma/schema.prisma`. AI chat validates conversation IDs as UUIDs, creates a fresh conversation for invalid IDs, and stores the user's turn at the start of request handling so interrupted streams do not lose the prompt.
 
 ### Frontend ↔ Backend Interaction
 - Primary communication: REST JSON APIs through frontend service modules.
@@ -75,6 +78,10 @@ PostgreSQL stores users, places, reviews, questions, answers, answer votes, file
 - [x] Search result cards now render backend-fetched thumbnails when available instead of only showing the category icon fallback.
 - [x] Home map result list now hydrates images only, while place reviews are fetched lazily when a place is selected and the detail page uses the combined backend media endpoint.
 - [x] SerpAPI is now backend-only: the frontend no longer reads `VITE_SERP_API_KEY` and fetches place images through the backend `/places/:id/photos` endpoint instead of calling SerpAPI directly.
+- [x] SerpAPI Google hotel reviews can be fetched with `property_token`, cached in the backend, and used as hidden AI context without rendering them in place detail review lists.
+- [x] Autoworkflow search now canonicalizes multi-type intent, repairs incomplete router output deterministically, and skips external SerpAPI provider calls when the local DB already has enough usable results.
+- [x] AI search answers now receive a structured summary context so the LLM can explain result quality, notable candidates, and missing data more objectively.
+- [x] Groq composer prompt size is reduced for search workflows by omitting duplicated raw tool dumps when compact search summaries are available.
 - [x] Landing page now has cohesive hover interactions on hero actions, navigation chips, feature cards, workflow cards, FAQ, prompt demo, and auth panel blocks.
 - [x] Clicking the current-location button now always snaps Mapbox to a fixed zoom level and resets follow-state so the map does not preserve an old zoom from previous interactions.
 - [x] Advanced filter popover on the map navbar closes with smoother opacity/transform animation, and Mapbox repaint invalidation no longer forces a resize when the sidebar closes.

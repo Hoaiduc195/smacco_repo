@@ -1,5 +1,5 @@
 {
   "hotelSearch": true,
-  "photos": true,
+  "photos": false,
   "reviews": true
 }

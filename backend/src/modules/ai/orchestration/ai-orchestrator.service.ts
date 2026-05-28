@@ -6,30 +6,35 @@ import { WORKFLOW_REGISTRY } from './engine/workflow-registry';
 import { ChatRequestDto } from '../dto/chat-request.dto';
 import { ConversationStoreService } from '../conversation-store.service';
 import { ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
+import { SearchResultContextBuilder } from './composer/search-result-context.builder';
 
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
+  private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   constructor(
     private readonly router: GroqTaskRouterService,
     private readonly engine: WorkflowEngineService,
     private readonly composer: GroqResponseComposerService,
     private readonly store: ConversationStoreService,
+    private readonly searchResultContextBuilder: SearchResultContextBuilder,
   ) {}
 
   /**
    * Orchestrates the entire AI flow for a non-streaming request.
    */
   async processQuery(request: ChatRequestDto): Promise<ChatResponseDto> {
-    const conversationId = request.conversationId || this.store.createId();
+    const conversationId = this.resolveConversationId(request.conversationId);
     const history = await this.store.getHistory(conversationId);
+    await this.store.append(conversationId, { role: 'user', content: request.text });
 
     // 1. Task Router: Classify intent and extract params
     const route = await this.router.route(request.text, history);
     
     let searchAction;
     let toolResults: Record<string, any> = {};
+    let searchResultContext: Record<string, any> | undefined;
     const workflow = WORKFLOW_REGISTRY[route.workflowId];
 
     // 2. Workflow Engine: Execute tools if steps exist (runs BEFORE composing response)
@@ -46,6 +51,10 @@ export class AiOrchestratorService {
       const searchData = searchStep ? toolResults[searchStep.id]?.data : null;
 
       const places = recommendedData?.items || searchData || [];
+      searchResultContext = this.searchResultContextBuilder.build({
+        places,
+        parameters: route.parameters,
+      });
 
       searchAction = {
         isSearch: true,
@@ -64,12 +73,11 @@ export class AiOrchestratorService {
       workflowId: route.workflowId,
       parameters: route.parameters,
       toolResults,
+      searchResultContext,
       taggedPlaceIds: request.taggedPlaceIds,
       taggedPlaces: request.taggedPlaces,
     }, history);
 
-    // Store in history
-    await this.store.append(conversationId, { role: 'user', content: request.text });
     await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer });
 
     return {
@@ -85,13 +93,15 @@ export class AiOrchestratorService {
    * Orchestrates the entire AI flow with a streaming response.
    */
   async *streamQuery(request: ChatRequestDto): AsyncGenerator<StreamChunkDto> {
-    const conversationId = request.conversationId || this.store.createId();
+    const conversationId = this.resolveConversationId(request.conversationId);
     const history = await this.store.getHistory(conversationId);
+    await this.store.append(conversationId, { role: 'user', content: request.text });
 
     // 1. Task Router
     const route = await this.router.route(request.text, history);
 
     let toolResults: Record<string, any> = {};
+    let searchResultContext: Record<string, any> | undefined;
     const workflow = WORKFLOW_REGISTRY[route.workflowId];
 
     // 2. Workflow Engine (Executes BEFORE yielding anything to frontend)
@@ -109,6 +119,10 @@ export class AiOrchestratorService {
       const searchData = searchStep ? toolResults[searchStep.id]?.data : null;
 
       const places = recommendedData?.items || searchData || [];
+      searchResultContext = this.searchResultContextBuilder.build({
+        places,
+        parameters: route.parameters,
+      });
 
       const searchAction = {
         isSearch: true,
@@ -133,6 +147,7 @@ export class AiOrchestratorService {
       workflowId: route.workflowId,
       parameters: route.parameters,
       toolResults,
+      searchResultContext,
       taggedPlaceIds: request.taggedPlaceIds,
       taggedPlaces: request.taggedPlaces,
     }, history);
@@ -144,9 +159,16 @@ export class AiOrchestratorService {
     }
 
     const fullAnswer = assistantParts.join('');
-    await this.store.append(conversationId, { role: 'user', content: request.text });
     await this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
 
     yield { conversationId, delta: '', finishReason: 'stop' };
+  }
+
+  private resolveConversationId(candidate?: string): string {
+    if (!candidate) return this.store.createId();
+    if (this.uuidRegex.test(candidate)) return candidate;
+
+    this.logger.warn(`Ignoring invalid conversationId "${candidate}" and creating a new conversation.`);
+    return this.store.createId();
   }
 }

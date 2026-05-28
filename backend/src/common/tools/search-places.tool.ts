@@ -16,6 +16,7 @@ export class SearchPlacesTool implements IUnifiedTool {
         location: inputs.location,
         budget: inputs.budget,
         type: inputs.type,
+        types: inputs.types,
       });
 
       return {

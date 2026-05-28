@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { streamChat } from '../services/aiService';
 
 const defaultAssistantError = ' (đã gặp lỗi, vui lòng thử lại sau)';
@@ -40,10 +41,12 @@ export default function useStreamingChat({
 
     const promptText = typeof buildPrompt === 'function' ? buildPrompt(userText) : userText;
 
-    setInput('');
-    setError('');
-    setMessages((prev) => [...prev, { role: 'user', content: userText }, { role: 'assistant', content: '' }]);
-    setIsStreaming(true);
+    flushSync(() => {
+      setInput('');
+      setError('');
+      setMessages((prev) => [...prev, { role: 'user', content: userText }, { role: 'assistant', content: '' }]);
+      setIsStreaming(true);
+    });
 
     const controller = new AbortController();
     abortRef.current = controller;

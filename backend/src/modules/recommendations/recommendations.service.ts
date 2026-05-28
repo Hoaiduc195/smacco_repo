@@ -24,6 +24,8 @@ export interface RankedPlace {
   source?: string;
   sourcePlaceId?: string;
   types?: string[];
+  distanceKm?: number;
+  anchorLabel?: string;
   score: number;
   reasons: string[];
 }
@@ -123,6 +125,7 @@ export class RecommendationsService {
 
       const amenityScore = toolResults.nearby_amenities?.[placeId]?.score ?? 0;
       const proximityScore = toolResults.proximity_checker?.[placeId]?.score ?? 0;
+      const proximityDetails = toolResults.proximity_checker?.[placeId]?.details;
       const hasProximity = toolResults.proximity_checker != null;
 
       const ratingW = 0.30;
@@ -150,6 +153,8 @@ export class RecommendationsService {
         source: place.source,
         sourcePlaceId: place.sourcePlaceId,
         types: place.types,
+        distanceKm: typeof proximityDetails?.distanceKm === 'number' ? proximityDetails.distanceKm : undefined,
+        anchorLabel: anchorLabel || proximityDetails?.targetLabel,
         score,
         reasons: this.buildReasons(place, budget, anchorLabel, distanceScore, toolResults, placeId),
       } as RankedPlace;

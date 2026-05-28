@@ -12,6 +12,9 @@ import * as path from 'path';
 export class PlacesService {
   private readonly logger = new Logger(PlacesService.name);
   private readonly apiKey: string;
+  private readonly googleReviewTtlMs = 90 * 24 * 60 * 60 * 1000;
+  private readonly googleReviewContextLimit = 10;
+  private readonly googleReviewPrefix = '__GOOGLE_REVIEW__::';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -114,9 +117,11 @@ export class PlacesService {
     }
   }
 
-  async findAll(filters?: { type?: string; city?: string; q?: string }) {
+  async findAll(filters?: { type?: string | string[]; city?: string; q?: string }) {
     const where: any = {};
-    if (filters?.type) where.categories = { has: filters.type };
+    const types = this.normalizeTypes(filters?.type);
+    if (types.length === 1) where.categories = { has: types[0] };
+    if (types.length > 1) where.categories = { hasSome: types };
     
     if (filters?.city && filters?.q) {
       // If both city and q are provided, search for either name matching q OR address matching city
@@ -182,24 +187,11 @@ export class PlacesService {
   async findReviews(id: string) {
     const place = await this.findOne(id);
 
-    // Check if Google reviews have been cached yet
-    const config = this.getFeaturesConfig();
-    if (config.reviews && place.source === 'serpapi' && place.sourcePlaceId) {
-      const googleReviewsCount = await this.prisma.review.count({
-        where: { placeId: place.id, source: 'google' }
-      });
-
-      if (googleReviewsCount === 0) {
-        try {
-          await this.fetchSerpApiReviewsAndCache(place.sourcePlaceId, place.id);
-        } catch (error) {
-          this.logger.error(`Error caching SerpAPI reviews for place ${place.id}: ${error.message}`);
-        }
-      }
-    }
-
     const reviews = await this.prisma.review.findMany({
-      where: { placeId: place.id },
+      where: {
+        placeId: place.id,
+        source: { not: 'google' },
+      },
       include: {
         place: true,
         user: true,
@@ -232,6 +224,63 @@ export class PlacesService {
     return { reviews, photos };
   }
 
+  async ensureGoogleReviewsForAiContext(id: string) {
+    const place = await this.findOne(id);
+    const config = this.getFeaturesConfig();
+
+    if (!config.reviews || place.source !== 'serpapi' || !place.sourcePlaceId) {
+      return [];
+    }
+
+    const latestGoogleReview = await this.prisma.review.findFirst({
+      where: {
+        placeId: place.id,
+        source: 'google',
+        reviewText: { startsWith: this.googleReviewPrefix },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const isStale = latestGoogleReview
+      ? Date.now() - latestGoogleReview.createdAt.getTime() > this.googleReviewTtlMs
+      : true;
+
+    if (isStale) {
+      try {
+        await this.prisma.review.deleteMany({
+          where: {
+            placeId: place.id,
+            source: 'google',
+            reviewText: { startsWith: this.googleReviewPrefix },
+          },
+        });
+        await this.fetchSerpApiReviewsAndCache(
+          place.sourcePlaceId,
+          place.id,
+          this.googleReviewContextLimit,
+        );
+      } catch (error: any) {
+        this.logger.error(`Error refreshing SerpAPI reviews for AI context ${place.id}: ${error.message}`);
+      }
+    }
+
+    return this.findGoogleReviewsForAiContext(place.id);
+  }
+
+  async findGoogleReviewsForAiContext(placeId: string) {
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        placeId,
+        source: 'google',
+        reviewText: { startsWith: this.googleReviewPrefix },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: this.googleReviewContextLimit,
+    });
+
+    return reviews.map((r) => this.parseReviewForContext(r));
+  }
+
   async findPhotos(id: string): Promise<string[]> {
     const place = await this.findOne(id);
     const config = this.getFeaturesConfig();
@@ -255,7 +304,7 @@ export class PlacesService {
     return [];
   }
 
-  async fetchSerpApiReviewsAndCache(propertyToken: string, placeId: string): Promise<void> {
+  async fetchSerpApiReviewsAndCache(propertyToken: string, placeId: string, limit = 10): Promise<void> {
     if (!this.apiKey) {
       this.logger.warn('SERPAPI_API_KEY is not configured. Skipping reviews fetch.');
       return;
@@ -273,7 +322,7 @@ export class PlacesService {
         },
       });
 
-      const reviews = response.data?.reviews ?? [];
+      const reviews = (response.data?.reviews ?? []).slice(0, limit);
       if (reviews.length === 0) {
         return;
       }
@@ -282,7 +331,7 @@ export class PlacesService {
         const author = r.user?.name || 'Ẩn danh';
         const date = r.date || '';
         const snippet = r.snippet || '';
-        const encodedText = `__GOOGLE_REVIEW__::${author}::${date}::${snippet}`;
+        const encodedText = `${this.googleReviewPrefix}${author}::${date}::${snippet}`;
 
         return {
           placeId,
@@ -435,6 +484,40 @@ export class PlacesService {
       .replace(/[^a-z0-9\s]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private parseReviewForContext(review: any) {
+    let author: string | undefined;
+    let date: string | undefined;
+    let text = review.reviewText || '';
+
+    if (review.source === 'google' && text.startsWith(this.googleReviewPrefix)) {
+      const parts = text.split('::');
+      author = parts[1] || 'Ẩn danh';
+      date = parts[2] || '';
+      text = parts.slice(3).join('::') || '';
+    }
+
+    return {
+      id: review.id,
+      source: review.source,
+      rating: review.rating,
+      author,
+      date,
+      reviewText: text,
+      createdAt: review.createdAt,
+    };
+  }
+
+  private normalizeTypes(type?: string | string[]): string[] {
+    const values = [
+      ...(Array.isArray(type) ? type : []),
+      ...(typeof type === 'string' ? type.split(',') : []),
+    ]
+      .map((value) => String(value).trim().toLowerCase())
+      .filter(Boolean);
+
+    return Array.from(new Set(values));
   }
 
   private jaccardSimilarity(a: string, b: string): number {

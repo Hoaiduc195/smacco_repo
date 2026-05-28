@@ -11,6 +11,7 @@ import {
 export interface SearchFilters {
   q?: string;
   type?: string;
+  types?: string[];
   location?: string;
   budget?: string;
   latitude?: number;
@@ -34,47 +35,25 @@ export class SearchService {
 
   async search(filters: SearchFilters): Promise<PlaceResult[]> {
     const budget = this.normalizeBudget(filters.budget);
+    const typeFilters = this.normalizeTypes(filters.type, filters.types);
+    const providerQuery = this.buildProviderQuery(filters.q, typeFilters, filters.location);
 
-    const typeQuery = filters.type ? filters.type.replace(/,/g, ' ') : undefined;
-    const queryParts = [filters.q, typeQuery, filters.location].filter(Boolean);
-    const query = queryParts.length ? queryParts.join(' ') : 'lodging';
-
-    this.logger.log(`Searching for: "${query}" with budget: ${budget || 'any'}`);
+    this.logger.log(`Searching for: "${providerQuery}" with budget: ${budget || 'any'}`);
 
     let externalResults: PlaceResult[] = [];
     let localResults: PlaceResult[] = [];
 
     try {
-      // 1. Execute DB search and External Provider searches concurrently
-      const providerRequests = this.providers.map((provider) =>
-        provider.searchAccommodations({
-          query,
-          type: filters.type,
-          budget,
-          locationName: filters.location,
-          latitude: filters.latitude,
-          longitude: filters.longitude,
-          checkInDate: filters.checkInDate,
-          checkOutDate: filters.checkOutDate,
-        }),
-      );
-
       const dbRequest = this.placesService.findAll({
-        type: filters.type,
+        type: typeFilters.length > 0 ? typeFilters : filters.type,
         city: filters.location,
         q: filters.q,
       });
 
-      const [dbPlaces, ...resultsArray] = await Promise.all([
-        dbRequest.catch(err => {
-          this.logger.error(`Database search failed: ${err.message}`);
-          return []; // Return empty array on DB failure to not block external search
-        }),
-        ...providerRequests.map(p => p.catch(err => {
-          this.logger.error(`External provider search failed: ${err.message}`);
-          return []; // Return empty array on provider failure
-        }))
-      ]);
+      const dbPlaces = await dbRequest.catch((err) => {
+        this.logger.error(`Database search failed: ${err.message}`);
+        return [];
+      });
 
       // 2. Process Local Results
       localResults = (dbPlaces as any[]).map((p: any): PlaceResult => ({
@@ -89,8 +68,37 @@ export class SearchService {
         source: p.source || 'internal', // Mark as internal
       }));
 
-      // 3. Process External Results
-      externalResults = resultsArray.flatMap(res => res as PlaceResult[]);
+      // 3. Query external providers only when the local DB is sparse.
+      if (this.shouldQueryExternalProviders(localResults, filters, typeFilters)) {
+        const providerRequests = this.providers.map((provider) =>
+          provider.searchAccommodations({
+            query: providerQuery,
+            type: typeFilters.join(', '),
+            types: typeFilters,
+            budget,
+            locationName: filters.location,
+            latitude: filters.latitude,
+            longitude: filters.longitude,
+            checkInDate: filters.checkInDate,
+            checkOutDate: filters.checkOutDate,
+          }),
+        );
+
+        const resultsArray = await Promise.all(
+          providerRequests.map((p) =>
+            p.catch((err) => {
+              this.logger.error(`External provider search failed: ${err.message}`);
+              return [];
+            }),
+          ),
+        );
+
+        externalResults = resultsArray.flatMap((res) => res as PlaceResult[]);
+      } else {
+        this.logger.log(
+          `Skipping external provider search because local DB returned ${localResults.length} usable results.`,
+        );
+      }
 
     } catch (error) {
       this.logger.error(`Search process failed critically: ${(error as any).message}`);
@@ -189,5 +197,41 @@ export class SearchService {
     if (['mid', 'medium', 'midrange', 'mid-range', 'vừa'].includes(value)) return 'mid';
     if (['high', 'luxury', 'premium', 'sang trọng', 'cao cấp'].includes(value)) return 'high';
     return undefined;
+  }
+
+  private normalizeTypes(type?: string, types?: string[]): string[] {
+    const values = [
+      ...(Array.isArray(types) ? types : []),
+      ...(typeof type === 'string' ? type.split(',') : []),
+    ]
+      .map((value) => String(value).trim().toLowerCase())
+      .filter(Boolean);
+
+    return Array.from(new Set(values));
+  }
+
+  private buildProviderQuery(query?: string, typeFilters: string[] = [], location?: string): string {
+    const trimmedQuery = query?.trim();
+    if (trimmedQuery) return trimmedQuery;
+
+    const providerParts = [
+      typeFilters.join(' '),
+      location?.trim(),
+    ].filter(Boolean);
+
+    return providerParts.length ? providerParts.join(' ') : 'lodging';
+  }
+
+  private shouldQueryExternalProviders(
+    localResults: PlaceResult[],
+    filters: SearchFilters,
+    typeFilters: string[],
+  ): boolean {
+    if (!this.providers.length) return false;
+    if (localResults.length === 0) return true;
+
+    const hasStructuredIntent = Boolean(typeFilters.length || filters.location || filters.latitude || filters.longitude);
+    const minimumLocalResults = hasStructuredIntent ? 8 : 12;
+    return localResults.length < minimumLocalResults;
   }
 }

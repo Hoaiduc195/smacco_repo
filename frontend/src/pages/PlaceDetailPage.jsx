@@ -318,21 +318,11 @@ export default function PlaceDetailPage() {
   const rating = place.rating || 0;
   const ratingStars = Array.from({ length: 5 }, (_, i) => i < Math.floor(rating) ? '★' : '☆').join('');
   const placeholderImg = `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=400`;
+  const visibleReviews = reviews.filter((review) => review.source !== 'google');
 
   return (
     <div className="flex flex-col min-h-screen bg-base-50 overflow-x-hidden">
       <Navbar className="sticky top-0 z-50 shadow-md" />
-
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4">
-        <button
-          type="button"
-          onClick={handleBackToMap}
-          className="inline-flex items-center gap-2 rounded-2xl border border-base-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-primary-200 hover:text-primary-700 hover:shadow-md"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Quay lại bản đồ
-        </button>
-      </div>
 
       {error && (
         <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 flex items-center gap-2 text-amber-800 text-sm font-medium animate-soft-in">
@@ -343,6 +333,18 @@ export default function PlaceDetailPage() {
 
       {/* Hero Section */}
       <div className="relative h-[300px] sm:h-[450px] w-full overflow-hidden group bg-slate-200 flex items-center justify-center">
+        <div className="absolute left-4 right-4 top-4 z-20 sm:left-6 sm:right-6">
+          <div className="max-w-7xl mx-auto">
+            <button
+              type="button"
+              onClick={handleBackToMap}
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/40 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-800 shadow-lg backdrop-blur-md transition hover:bg-white hover:text-primary-700 hover:shadow-xl"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Quay lại bản đồ
+            </button>
+          </div>
+        </div>
         {(photos.length > 0 || place.coverImageUrl || place.imageUrl) ? (
           <img 
             src={photos[0] || place.coverImageUrl || place.imageUrl} 
@@ -506,7 +508,7 @@ export default function PlaceDetailPage() {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">Đánh giá từ cộng đồng</h2>
-                  <p className="text-sm text-slate-500 mt-1">{reviews.filter(review => review.source !== 'google').length} đánh giá</p>
+                  <p className="text-sm text-slate-500 mt-1">{visibleReviews.length} đánh giá</p>
                 </div>
                 <button
                   onClick={() => {
@@ -635,11 +637,9 @@ export default function PlaceDetailPage() {
               )}
 
               {/* Review List */}
-              {reviews.filter(review => review.source !== 'google').length > 0 ? (
+              {visibleReviews.length > 0 ? (
                 <div className="space-y-5">
-                  {reviews
-                    .filter(review => review.source !== 'google')
-                    .map((review) => {
+                  {visibleReviews.map((review) => {
                     const authorName = review.user?.displayName || review.author || 'Ẩn danh';
                     const authorInitial = authorName.charAt(0).toUpperCase();
                     const reviewDate = review.createdAt

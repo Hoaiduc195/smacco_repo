@@ -23,6 +23,7 @@ export interface PlaceResult {
 export interface SearchParams {
   query?: string;
   type?: string;
+  types?: string[];
   location?: LatLngLiteral;
   locationName?: string;
   radius?: number;

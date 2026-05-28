@@ -59,6 +59,7 @@ Rules:
 - If multiple types of accommodations are mentioned:
   - put them into "types" (array)
   - also create a comma-separated "type" (string) for backward compatibility
+- If the model returns incomplete or inconsistent fields, prefer preserving the original user intent and normalize the values deterministically before execution.
 - If user mentions:
   - "rẻ", "bình dân", "giá sinh viên" => "low"
   - "tầm trung", "ổn", "vừa phải" => "mid"
@@ -126,9 +127,14 @@ export class GroqTaskRouterService implements ITaskRouter {
 
   async route(userQuery: string, conversationHistory: any[] = []): Promise<TaskRouteResult> {
     try {
+      const recentHistory = this.formatRecentHistory(conversationHistory);
       const messages: ChatMessage[] = [
         { role: 'system', content: ROUTER_SYSTEM_PROMPT },
-        // Optionally inject recent history for context
+        ...recentHistory,
+        {
+          role: 'system',
+          content: 'Use the recent conversation only to resolve follow-up references, omitted details, pronouns, or phrases like "cái thứ 2". The current user message remains the primary routing input.',
+        },
         { role: 'user', content: userQuery },
       ];
 
@@ -171,7 +177,7 @@ export class GroqTaskRouterService implements ITaskRouter {
           if (parts.length > 1) params.types = parts;
         }
 
-        result.parameters = params;
+        result.parameters = this.normalizeParameters(params, userQuery);
       } catch (e) {
         this.logger.warn('Failed to normalize location parameters');
       }
@@ -186,5 +192,139 @@ export class GroqTaskRouterService implements ITaskRouter {
       this.logger.error(`Task Routing Failed: ${error.message}. Falling back to GENERAL_CHAT.`);
       return { workflowId: 'GENERAL_CHAT', parameters: {} };
     }
+  }
+
+  private normalizeParameters(params: Record<string, any>, userQuery: string): Record<string, any> {
+    const normalizedQuery = typeof params.query === 'string' && params.query.trim()
+      ? params.query.trim()
+      : userQuery.trim();
+    const normalizedTypes = this.normalizeTypes(params.types, params.type, normalizedQuery);
+    const normalizedBudget = this.normalizeBudget(params.budget, normalizedQuery);
+    const normalizedLocation = this.normalizeLocation(params.location, params.locations);
+    const normalizedAnchor = this.normalizeAnchor(params.anchor, normalizedQuery);
+
+    const nextParams: Record<string, any> = {
+      ...params,
+      query: normalizedQuery,
+    };
+
+    if (normalizedLocation) nextParams.location = normalizedLocation;
+    if (normalizedAnchor) nextParams.anchor = normalizedAnchor;
+    if (normalizedBudget) nextParams.budget = normalizedBudget;
+    if (normalizedTypes.length > 0) {
+      nextParams.types = normalizedTypes;
+      nextParams.type = normalizedTypes.join(', ');
+    }
+
+    return nextParams;
+  }
+
+  private normalizeTypes(types: any, type: any, query: string): string[] {
+    const allowed = new Map<string, string>([
+      ['hotel', 'hotel'],
+      ['khach san', 'hotel'],
+      ['nha nghi', 'hostel'],
+      ['hostel', 'hostel'],
+      ['nha khach', 'guesthouse'],
+      ['guesthouse', 'guesthouse'],
+      ['can ho', 'apartment'],
+      ['apartment', 'apartment'],
+      ['resort', 'resort'],
+      ['khu nghi duong', 'resort'],
+      ['villa', 'villa'],
+      ['motel', 'motel'],
+      ['camping', 'camping'],
+      ['homestay', 'homestay'],
+    ]);
+
+    const values = [
+      ...(Array.isArray(types) ? types : []),
+      ...(typeof type === 'string' ? type.split(',') : []),
+    ]
+      .map((value) => this.canonicalizeText(String(value)))
+      .filter(Boolean)
+      .map((value) => allowed.get(value) || value)
+      .filter((value, index, array) => array.indexOf(value) === index);
+
+    if (values.length > 0) return values;
+
+    const queryNormalized = this.canonicalizeText(query);
+    const inferred: string[] = [];
+    for (const [keyword, canonical] of allowed.entries()) {
+      if (queryNormalized.includes(keyword) && !inferred.includes(canonical)) {
+        inferred.push(canonical);
+      }
+    }
+
+    return inferred;
+  }
+
+  private normalizeBudget(budget: any, query: string): string | undefined {
+    const value = typeof budget === 'string' ? this.canonicalizeText(budget) : '';
+    if (['low', 'cheap', 'budget', 're', 'binh dan', 'gia sinh vien'].includes(value)) return 'low';
+    if (['mid', 'medium', 'midrange', 'mid range', 'vua', 'tam trung', 'on', 'vua phai'].includes(value)) return 'mid';
+    if (['high', 'expensive', 'luxury', 'premium', 'sang', 'cao cap', '5 sao'].includes(value)) return 'high';
+
+    const queryNormalized = this.canonicalizeText(query);
+    if (/(re|binh dan|gia sinh vien)/.test(queryNormalized)) return 'low';
+    if (/(tam trung|vua phai|vua|on)/.test(queryNormalized)) return 'mid';
+    if (/(sang|cao cap|luxury|premium|5 sao)/.test(queryNormalized)) return 'high';
+    return undefined;
+  }
+
+  private normalizeLocation(location: any, locations: any): string | undefined {
+    if (typeof location === 'string' && location.trim()) return location.trim();
+    if (Array.isArray(locations) && locations.length > 0) {
+      const first = locations.find((item) => typeof item === 'string' && item.trim());
+      if (typeof first === 'string') return first.trim();
+    }
+    return undefined;
+  }
+
+  private normalizeAnchor(anchor: any, query: string): string | undefined {
+    if (typeof anchor === 'string' && anchor.trim()) return anchor.trim();
+
+    const queryNormalized = this.canonicalizeText(query);
+    const match = queryNormalized.match(/(?:gan|near|nearby|xung quanh|around|close to|within)\s+(.+?)(?=\s+(?:gia|re|binh dan|tam trung|sang|cao cap|luxury|premium|5 sao)\b|$)/i);
+    if (match?.[1]) {
+      return match[1].trim();
+    }
+
+    return undefined;
+  }
+
+  private canonicalizeText(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private formatRecentHistory(conversationHistory: any[] = []): ChatMessage[] {
+    return conversationHistory
+      .filter((message) => message?.role === 'user' || message?.role === 'assistant')
+      .slice(-6)
+      .map((message) => ({
+        role: message.role,
+        content: this.truncateForRouter(String(message.content || '')),
+      }))
+      .filter((message) => message.content.trim().length > 0);
+  }
+
+  private truncateForRouter(content: string): string {
+    const normalized = this.stripLegacyPlacePrompt(content).replace(/\s+/g, ' ').trim();
+    return normalized.length > 800 ? `${normalized.slice(0, 800)}...` : normalized;
+  }
+
+  private stripLegacyPlacePrompt(content: string): string {
+    const match = content.match(/Question:\s*([\s\S]+)$/i);
+    if (content.startsWith('You are a travel assistant.') && match?.[1]) {
+      return match[1].trim();
+    }
+
+    return content;
   }
 }

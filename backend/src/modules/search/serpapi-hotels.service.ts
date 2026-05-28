@@ -100,7 +100,7 @@ export class SerpApiHotelsService implements AccommodationProvider {
   }
 
   private resolveSourcePlaceId(property: any): string | undefined {
-    const value = property?.property_id ?? property?.property_token ?? property?.id;
+    const value = property?.property_token ?? property?.property_id ?? property?.id;
     return value ? String(value) : undefined;
   }
 

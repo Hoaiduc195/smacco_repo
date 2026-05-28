@@ -3,6 +3,7 @@ import { IResponseComposer, ComposerContext, ComposerResult } from './response-c
 import { GroqClientService } from '../../groq-client.service';
 import { ChatMessage } from '../../dto/chat-response.dto';
 import { PrismaService } from '../../../../prisma/prisma.service';
+import { PlacesService } from '../../../places/places.service';
 
 const COMPOSER_SYSTEM_PROMPT = `
 You are a response formatting engine for a chat UI system. Answer in Vietnamese.
@@ -29,6 +30,8 @@ Your only job is to generate clean, properly structured GitHub-Flavored Markdown
 4. DO NOT include raw backend data structures, coordinates, or system IDs unless explicitly asked.
 
 5. DO NOT hallucinate data not present in the tool results or the tagged place reviews context.
+   - If the context does not contain enough evidence, say you do not have enough information.
+   - Do not infer room quality, service quality, cleanliness, safety, or pricing unless reviews or place metadata explicitly support it.
 
 ---
 
@@ -45,10 +48,26 @@ Your only job is to generate clean, properly structured GitHub-Flavored Markdown
 ## REQUIRED STRUCTURE FOR PLACE RESULTS
 
 When responding with place results:
-1) Start with a brief, friendly introduction (e.g. "Dưới đây là các địa điểm mà tôi tìm được:").
-2) Provide a bullet list. Each bullet format MUST strictly be:
-   - [Place Name](place:place_id) — short address or type. Do NOT write redundant AI reviews, comments, or rankings based on aggregated scores (e.g., "Xếp hạng dựa trên điểm tổng hợp"). Keep explanations extremely concise, direct, and factual.
-3) End with one short follow-up question asking what the user wants next.
+0) First infer the user's evaluation criteria from the original User Query and Extracted Parameters. Do this silently; do not output an explicit "criteria analysis" section unless the user asks.
+   - Examples: "gần trung tâm" => proximity/location; "giá rẻ" => budget; "đẹp/yên tĩnh" => ambience if review/context supports it; "có hồ bơi" => amenities; "được đánh giá tốt" => rating/review count.
+   - If multiple criteria appear, evaluate in the user's likely priority order from the query wording.
+1) Start with a 1-2 sentence overview that directly answers those inferred criteria.
+   - If the user asks for "gần", "near", "trung tâm", "xung quanh", or a specific anchor/location, discuss proximity/location fit first.
+   - Do not lead with amenities unless the user asked about amenities.
+2) Then provide 3-5 highlighted suggestions as bullets. Each bullet MUST include a clickable place link and 1 concise, evidence-based reason tied to the inferred user criteria.
+3) If useful, add one short "Lưu ý" sentence about missing data or why the user should compare details.
+4) End with one short follow-up question asking what the user wants next.
+
+When Search Result Summary Context is provided:
+- Prefer that context over raw tool dumps for synthesis.
+- Use priorityCriteria and the original User Query together as the ordering principle for the answer.
+- Use topPlaces.distanceKm / topPlaces.anchorLabel / reasons about distance when available for proximity queries.
+- Use overview, topPlaces, dataCompleteness, and limitations to make the answer more objective.
+- Mention uncertainty when fields such as price, amenities, review count, or distance are missing.
+- Do NOT claim "best", "nearest", "cheapest", or "most suitable" unless the context directly supports it.
+- If priorityCriteria.primary is "proximity" but distanceKm is missing, say the system only has approximate location/address evidence and avoid ranking by amenities.
+- Amenities are secondary evidence. Never present "xung quanh có N tiện ích" as the main reason for a query whose main intent is proximity.
+- If the context lacks evidence for a criterion the user cares about, explicitly say that criterion is not well covered by the current data.
 
 ---
 
@@ -74,10 +93,17 @@ export class GroqResponseComposerService implements IResponseComposer {
   constructor(
     private readonly groqClient: GroqClientService,
     private readonly prisma: PrismaService,
+    private readonly placesService: PlacesService,
   ) {}
 
   private async buildMessages(context: ComposerContext, history: any[] = []): Promise<ChatMessage[]> {
-    const rawDataDump = JSON.stringify(context.toolResults, null, 2);
+    const searchResultSummary = context.searchResultContext
+      ? JSON.stringify(context.searchResultContext, null, 2)
+      : 'N/A';
+    const shouldIncludeRawToolResults = context.workflowId !== 'SEARCH_PLACES' || !context.searchResultContext;
+    const rawDataDump = shouldIncludeRawToolResults
+      ? JSON.stringify(context.toolResults, null, 2)
+      : '[Omitted for SEARCH_PLACES because Search Result Summary Context already contains the compact result evidence.]';
     
     // Check if there are tagged places and perform RAG from database reviews or frontend metadata fallbacks
     let taggedPlacesContext = '';
@@ -91,7 +117,7 @@ export class GroqResponseComposerService implements IResponseComposer {
       longitude?: number;
       rating?: number;
       categories?: string[];
-      reviews?: Array<{ rating: number; reviewText: string }>;
+      reviews?: Array<{ rating: number; reviewText: string; source?: string; date?: string }>;
     }> = [];
 
     // Map existing context.taggedPlaces into a fast lookup by ID
@@ -111,6 +137,15 @@ export class GroqResponseComposerService implements IResponseComposer {
     ]));
 
     if (allIds.length > 0) {
+      await Promise.all(
+        allIds.map((id) =>
+          this.placesService.ensureGoogleReviewsForAiContext(id).catch((err: any) => {
+            this.logger.warn(`Unable to refresh Google review context for ${id}: ${err.message}`);
+            return [];
+          }),
+        ),
+      );
+
       // 1. Separate UUID IDs from non-UUID IDs to prevent database exceptions
       const uuidIds = allIds.filter(id => UUID_REGEX.test(id));
       const nonUuidIds = allIds.filter(id => !UUID_REGEX.test(id));
@@ -125,7 +160,7 @@ export class GroqResponseComposerService implements IResponseComposer {
             include: {
               reviews: {
                 orderBy: { createdAt: 'desc' },
-                take: 15,
+                take: 40,
               },
             },
           });
@@ -149,7 +184,7 @@ export class GroqResponseComposerService implements IResponseComposer {
             include: {
               reviews: {
                 orderBy: { createdAt: 'desc' },
-                take: 15,
+                take: 40,
               },
             },
           });
@@ -183,25 +218,12 @@ export class GroqResponseComposerService implements IResponseComposer {
               ? `${dbPlace.source}-${dbPlace.sourcePlaceId}`
               : dbPlace.id,
             name: dbPlace.placeName,
-            address: dbPlace.address,
-            latitude: dbPlace.latitude,
-            longitude: dbPlace.longitude,
+            address: dbPlace.placeAddress,
+            latitude: dbPlace.lat,
+            longitude: dbPlace.lng,
             rating: dbPlace.averageRating ? parseFloat(dbPlace.averageRating.toString()) : undefined,
             categories: dbPlace.categories,
-            reviews: dbPlace.reviews.map((r: any) => {
-              let text = r.reviewText || r.comment || '';
-              if (r.source === 'google' && text.startsWith('__GOOGLE_REVIEW__::')) {
-                const parts = text.split('::');
-                const author = parts[1] || 'Ẩn danh';
-                const date = parts[2] || '';
-                const cleanText = parts.slice(3).join('::') || '';
-                text = `${author} (${date}): ${cleanText}`;
-              }
-              return {
-                rating: r.rating,
-                reviewText: text
-              };
-            })
+            reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, 10),
           });
         } else if (fePlace) {
           // Place does not exist in DB but has details in FE payload - use FE data as fallback
@@ -234,9 +256,11 @@ export class GroqResponseComposerService implements IResponseComposer {
         taggedPlacesContext += `Địa điểm: ${place.name} (ID: ${place.id}, Loại: ${place.categories?.join(', ') || 'N/A'}, Đánh giá trung bình: ${place.rating || 'N/A'}${coordsStr}${addressStr})\n`;
         
         if (place.reviews && place.reviews.length > 0) {
-          taggedPlacesContext += `Các nhận xét thực tế từ khách hàng:\n`;
+          taggedPlacesContext += `Các nhận xét dùng làm context AI (có thể gồm review Google đã cache, không hiển thị trực tiếp trên UI):\n`;
           place.reviews.forEach((r, idx) => {
-            taggedPlacesContext += `- [Đánh giá ${r.rating}/5 sao]: ${r.reviewText || '(Không có nội dung)'}\n`;
+            const source = r.source ? `Nguồn: ${r.source}. ` : '';
+            const date = r.date ? `Ngày: ${r.date}. ` : '';
+            taggedPlacesContext += `- [Đánh giá ${r.rating}/5 sao] ${source}${date}${r.reviewText || '(Không có nội dung)'}\n`;
           });
         } else {
           taggedPlacesContext += `Địa điểm này hiện chưa có nhận xét thực tế từ khách hàng trong cơ sở dữ liệu.\n`;
@@ -250,17 +274,20 @@ export class GroqResponseComposerService implements IResponseComposer {
 [SYSTEM CONTEXT - TOOL RESULTS]
 Workflow Executed: ${context.workflowId}
 Extracted Parameters: ${JSON.stringify(context.parameters)}
+Search Result Summary Context:
+${searchResultSummary}
 Raw Data from Tools:
 ${rawDataDump}
 [END SYSTEM CONTEXT]
 ${taggedPlacesContext}
 User Query: "${context.userQuery}"
-Based on the tool results and any tagged place reviews context above, please answer the user's query. If the user asks about a specific tagged place, base your answer directly on its customer reviews listed in the context.
+Based on the search summary context, tool results, and any tagged place reviews context above, please answer the user's query. For search results, synthesize a brief objective overview before listing places. If the user asks about a specific tagged place, base your answer directly on its customer reviews listed in the context.
+If the tagged place context is weak or missing, say you do not have enough review evidence instead of guessing.
 `;
 
     return [
       { role: 'system', content: COMPOSER_SYSTEM_PROMPT },
-      ...history,
+      ...this.formatConversationHistory(history),
       { role: 'user', content: contextPrompt }
     ];
   }
@@ -294,5 +321,88 @@ Based on the tool results and any tagged place reviews context above, please ans
       this.logger.error(`Stream composition failed: ${error.message}`);
       yield '\n\n(Lỗi: Không thể kết nối với dịch vụ tạo câu trả lời.)';
     }
+  }
+
+  private selectRelevantReviews(reviews: any[] = [], userQuery: string, limit: number) {
+    const queryTokens = this.tokenizeForRetrieval(userQuery);
+
+    return reviews
+      .map((review) => {
+        const parsed = this.parseReview(review);
+        const reviewTokens = this.tokenizeForRetrieval(parsed.reviewText);
+        const overlap = reviewTokens.filter((token) => queryTokens.includes(token)).length;
+        const sourceBoost = parsed.source === 'google' ? 1 : 1.5;
+        const textLengthBoost = parsed.reviewText.length > 40 ? 1 : 0;
+
+        return {
+          ...parsed,
+          retrievalScore: overlap * 3 + sourceBoost + textLengthBoost,
+        };
+      })
+      .filter((review) => review.reviewText.trim().length > 0)
+      .sort((a, b) => b.retrievalScore - a.retrievalScore)
+      .slice(0, limit)
+      .map(({ retrievalScore, ...review }) => review);
+  }
+
+  private parseReview(review: any) {
+    let text = review.reviewText || review.comment || '';
+    let author = review.user?.displayName || review.author;
+    let date = review.createdAt ? new Date(review.createdAt).toLocaleDateString('vi-VN') : undefined;
+
+    if (review.source === 'google' && text.startsWith('__GOOGLE_REVIEW__::')) {
+      const parts = text.split('::');
+      author = parts[1] || 'Ẩn danh';
+      date = parts[2] || date;
+      text = parts.slice(3).join('::') || '';
+    }
+
+    return {
+      rating: review.rating,
+      source: review.source,
+      author,
+      date,
+      reviewText: text,
+    };
+  }
+
+  private tokenizeForRetrieval(text: string): string[] {
+    const stopwords = new Set([
+      'toi', 'minh', 'ban', 'la', 'co', 'va', 'o', 'tai', 'cho', 've', 'nay',
+      'the', 'a', 'an', 'is', 'are', 'for', 'with', 'this', 'that',
+    ]);
+
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((token) => token.length >= 2 && !stopwords.has(token));
+  }
+
+  private formatConversationHistory(history: any[] = []): ChatMessage[] {
+    return history
+      .filter((message) => message?.role === 'user' || message?.role === 'assistant')
+      .slice(-10)
+      .map((message) => ({
+        role: message.role,
+        content: this.truncateHistoryMessage(this.stripLegacyPlacePrompt(String(message.content || ''))),
+      }))
+      .filter((message) => message.content.trim().length > 0);
+  }
+
+  private stripLegacyPlacePrompt(content: string): string {
+    const match = content.match(/Question:\s*([\s\S]+)$/i);
+    if (content.startsWith('You are a travel assistant.') && match?.[1]) {
+      return match[1].trim();
+    }
+
+    return content;
+  }
+
+  private truncateHistoryMessage(content: string): string {
+    const normalized = content.replace(/\s+/g, ' ').trim();
+    return normalized.length > 1200 ? `${normalized.slice(0, 1200)}...` : normalized;
   }
 }
