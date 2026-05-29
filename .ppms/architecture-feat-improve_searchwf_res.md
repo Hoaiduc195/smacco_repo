@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-28 22:25
+> Last updated: 2026-05-29 08:28
 > Branch: feat/improve_searchwf_res
 
 ## Overview
@@ -50,6 +50,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 - **AI Orchestration**: `ai/orchestration` contains router, workflow engine, response composer, and shared tools under `src/common/tools/`. The Groq task router and response composer both receive bounded recent conversation history; history is compacted before LLM calls so follow-up questions retain context without sending unbounded chat logs.
 - **Search Answer Synthesis**: Search workflows now pass raw results through `SearchResultContextBuilder` before response composition, giving the LLM a concise objective summary with result count, rating/review/price/amenity coverage, limitations, and top candidates.
 - **Place AI Context**: Place-detail AI chat can use cached Google reviews as hidden context. The backend refreshes at most 10 Google reviews from the first SerpAPI review response only when missing or older than 90 days, while visible review endpoints continue to exclude Google-sourced reviews.
+- **SerpAPI Property Details & Photos**: SerpAPI-backed place detail loading can call Google Hotels Property Details through `engine=google_hotels` plus `property_token`, controlled by `backend/features.json` via `propertyDetails`, merges returned address, coordinates, rating, review count, pricing, amenities, nearby places, and hotel metadata into the detail response, and persists the raw property payload plus latest sync timestamp on the `Place` row. Google Hotels Photos can be enabled through `features.json` via `photos`; fetched photos are returned through place media endpoints and rendered in the place overview gallery.
 - **Groq Prompt Efficiency**: For `SEARCH_PLACES`, the composer now sends the compact search summary instead of the full raw tool result dump when summary context is available.
 - **Database & Persistence**: Prisma client is provided via `prisma/prisma.module.ts` and `prisma/prisma.service.ts`. Schema is located at `backend/prisma/schema.prisma`. AI chat validates conversation IDs as UUIDs, creates a fresh conversation for invalid IDs, and stores the user's turn at the start of request handling so interrupted streams do not lose the prompt.
 

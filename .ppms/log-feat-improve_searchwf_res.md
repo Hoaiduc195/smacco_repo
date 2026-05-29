@@ -2,6 +2,69 @@
 
 ---
 
+## [2026-05-29 08:43] — Show SerpAPI Hotel Photos In Place Overview
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to integrate SerpAPI Google Hotels Photos API into the place detail page and show photos in the overview tab.
+- **Changes**:
+  - Checked SerpAPI Google Hotels Photos API documentation and confirmed it uses `GET https://serpapi.com/search` with `engine=google_hotels_photos` and `property_token`.
+  - Enabled the existing backend hotel photos integration by setting `photos: true` in `backend/features.json`.
+  - Added a photo gallery to the `PlaceDetailPage` overview tab using photos from `/places/:id/media`, with fallback to `coverImageUrl` or `imageUrl`.
+  - Kept the UI grounded: when no photos exist, the overview tab shows an explicit empty state instead of mock imagery.
+  - Verified frontend compilation with `npm run build` in `frontend/`.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/features.json`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — place overview now renders backend-fetched SerpAPI hotel photos when available.
+
+---
+
+## [2026-05-29 08:38] — Persist SerpAPI Property Details Payloads
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to ensure SerpAPI hotel property details are saved into the database on every detail load.
+- **Changes**:
+  - Added nullable `rawSerpApiPropertyDetails` and `serpApiPropertyDetailsSyncedAt` fields to the Prisma `Place` model.
+  - Added a Prisma migration that stores raw SerpAPI property detail payloads in `places.raw_serpapi_property_details` and records the latest sync time in `places.serpapi_property_details_synced_at`.
+  - Updated `PlacesService.persistPropertyDetails` so every successful property detail fetch writes the raw payload, sync timestamp, `updatedAt`, and supported normalized fields back to the place row.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/prisma/schema.prisma`
+  - `backend/src/modules/places/places.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**:
+  - `backend/prisma/migrations/202605290835_add_serpapi_property_details/migration.sql`
+- **Deleted files**: —
+- **Architecture impact**: Yes — SerpAPI property details are now persisted as raw JSON plus sync metadata in the place record.
+
+---
+
+## [2026-05-29 08:28] — Add SerpAPI Google Hotels Property Details Fetch
+
+- **Branch**: `feat/improve_searchwf_res`
+- **Prompt**: User asked to verify whether the system calls the SerpAPI Google Hotels Property Details endpoint with the correct JSON/request format to fetch complete hotel detail results.
+- **Changes**:
+  - Checked SerpAPI documentation and confirmed Google Hotels Property Details uses `GET https://serpapi.com/search` with `engine=google_hotels` and required `property_token`.
+  - Confirmed the existing system only called Google Hotels search, photos, and reviews endpoints; it did not call the property details flow.
+  - Added `PlacesService.fetchSerpApiPropertyDetails`, using `engine=google_hotels`, `property_token`, `api_key`, `hl=vi`, `gl=vn`, and `currency=VND`.
+  - Added property details enrichment to `findOne` for SerpAPI places, mapping name, address, description, website, directions, phone, check-in/out, rates, typical price range, nearby places, amenities, rating, review count, and coordinates.
+  - Persisted core detail fields back into `places` where the Prisma schema supports them.
+  - Added `propertyDetails: true` to the generalized `backend/features.json` feature config.
+  - Verified backend compilation with `npm run build` in `backend/`.
+- **Modified files**:
+  - `backend/features.json`
+  - `backend/src/modules/places/places.service.ts`
+  - `.ppms/log-feat-improve_searchwf_res.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — place detail loading can now call SerpAPI Property Details and return enriched hotel metadata.
+
+---
+
 ## [2026-05-28 22:25] — Generalize Features Config and Enable NearbyAmenitiesTool Bypass
 
 - **Branch**: `feat/improve_searchwf_res`

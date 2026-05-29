@@ -7,6 +7,7 @@ const configPath = path.join(__dirname, '../features.json');
 // Read existing config or set defaults
 let config = {
   hotelSearch: true,
+  propertyDetails: true,
   photos: false,
   reviews: true,
   nearbyAmenities: true
@@ -39,16 +40,20 @@ async function main() {
   const searchAns = await askQuestion(`1. Cho phép Tìm kiếm Khách sạn qua SerpAPI (hiện tại: ${config.hotelSearch ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.hotelSearch = searchAns.trim().toLowerCase() === 'y' ? true : (searchAns.trim().toLowerCase() === 'n' ? false : config.hotelSearch);
 
-  // 2. Photos
-  const photoAns = await askQuestion(`2. Cho phép Tải ảnh chi tiết qua SerpAPI Photos (hiện tại: ${config.photos ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
+  // 2. Property Details
+  const detailsAns = await askQuestion(`2. Cho phép Tải chi tiết khách sạn qua SerpAPI Property Details (hiện tại: ${config.propertyDetails ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
+  config.propertyDetails = detailsAns.trim().toLowerCase() === 'y' ? true : (detailsAns.trim().toLowerCase() === 'n' ? false : config.propertyDetails);
+
+  // 3. Photos
+  const photoAns = await askQuestion(`3. Cho phép Tải ảnh chi tiết qua SerpAPI Photos (hiện tại: ${config.photos ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.photos = photoAns.trim().toLowerCase() === 'y' ? true : (photoAns.trim().toLowerCase() === 'n' ? false : config.photos);
 
-  // 3. Reviews
-  const reviewAns = await askQuestion(`3. Cho phép Tải đánh giá qua SerpAPI Reviews (hiện tại: ${config.reviews ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
+  // 4. Reviews
+  const reviewAns = await askQuestion(`4. Cho phép Tải đánh giá qua SerpAPI Reviews (hiện tại: ${config.reviews ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.reviews = reviewAns.trim().toLowerCase() === 'y' ? true : (reviewAns.trim().toLowerCase() === 'n' ? false : config.reviews);
 
-  // 4. Nearby Amenities
-  const amenitiesAns = await askQuestion(`4. Cho phép Đếm tiện ích xung quanh qua Overpass API (hiện tại: ${config.nearbyAmenities ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
+  // 5. Nearby Amenities
+  const amenitiesAns = await askQuestion(`5. Cho phép Đếm tiện ích xung quanh qua Overpass API (hiện tại: ${config.nearbyAmenities ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.nearbyAmenities = amenitiesAns.trim().toLowerCase() === 'y' ? true : (amenitiesAns.trim().toLowerCase() === 'n' ? false : config.nearbyAmenities);
 
   // Write new config

@@ -4,7 +4,8 @@ import {
   ArrowLeft, MapPin, AlertCircle, Loader, 
   Star, Globe, Phone, Clock, Share2, Bookmark,
   ThumbsUp, ThumbsDown, MessageCircle, Navigation,
-  Image as ImageIcon, Send, X, Edit3, Trash2
+  Image as ImageIcon, Send, X, Edit3, Trash2,
+  ChevronLeft, ChevronRight, ExternalLink
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
@@ -36,6 +37,7 @@ export default function PlaceDetailPage() {
   const [isRouting, setIsRouting] = useState(false);
   const [routeError, setRouteError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+  const [activePhotoIndex, setActivePhotoIndex] = useState(null);
   const syncInProgress = useRef({});
   const { currentUser } = useAuth();
 
@@ -343,6 +345,43 @@ export default function PlaceDetailPage() {
     }
   };
 
+  const displayName = place 
+    ? (place.name || place.placeName || place.title || `Địa điểm #${String(id || '').slice(0, 8)}`)
+    : `Địa điểm #${String(id || '').slice(0, 8)}`;
+
+  const galleryPhotos = place 
+    ? Array.from(new Set([
+        ...photos,
+        place.coverImageUrl,
+        place.imageUrl,
+      ].filter(Boolean)))
+    : [];
+
+  const nextPhoto = () => {
+    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => (prev + 1) % galleryPhotos.length);
+  };
+
+  const prevPhoto = () => {
+    if (activePhotoIndex === null || galleryPhotos.length === 0) return;
+    setActivePhotoIndex((prev) => (prev - 1 + galleryPhotos.length) % galleryPhotos.length);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (activePhotoIndex === null) return;
+      if (e.key === 'ArrowRight') {
+        setActivePhotoIndex((prev) => (prev + 1) % galleryPhotos.length);
+      } else if (e.key === 'ArrowLeft') {
+        setActivePhotoIndex((prev) => (prev - 1 + galleryPhotos.length) % galleryPhotos.length);
+      } else if (e.key === 'Escape') {
+        setActivePhotoIndex(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activePhotoIndex, galleryPhotos.length]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-base-50">
@@ -377,7 +416,6 @@ export default function PlaceDetailPage() {
   const ratingStars = Array.from({ length: 5 }, (_, i) => i < Math.floor(rating) ? '★' : '☆').join('');
   const placeholderImg = `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=400`;
   const visibleReviews = reviews.filter((review) => review.source !== 'google');
-  const displayName = place.name || place.placeName || place.title || `Địa điểm #${String(id || '').slice(0, 8)}`;
   const displayAddress = place.address || place.placeAddress || place.formattedAddress || '';
   const tabs = [
     { id: 'overview', label: 'Thông tin chung' },
@@ -618,6 +656,76 @@ export default function PlaceDetailPage() {
                     </div>
                   </div>
                 ) : null}
+              </section>
+
+              {/* Photo Gallery Grid */}
+              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Ảnh địa điểm</p>
+                    <h3 className="mt-2 text-2xl font-black text-slate-950">Góc nhìn thực tế</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {galleryPhotos.length
+                        ? `${galleryPhotos.length} ảnh được lấy từ dữ liệu địa điểm.`
+                        : 'Chưa có ảnh cho địa điểm này.'}
+                    </p>
+                  </div>
+                  {galleryPhotos.length ? (
+                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
+                      <ImageIcon className="h-4 w-4 text-primary-600" />
+                      {galleryPhotos.length} ảnh
+                    </span>
+                  ) : null}
+                </div>
+
+                {galleryPhotos.length ? (
+                  <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-4">
+                    <div
+                      onClick={() => setActivePhotoIndex(0)}
+                      className="group relative col-span-2 h-64 overflow-hidden rounded-2xl bg-slate-100 text-left sm:h-80 cursor-pointer"
+                    >
+                      <img
+                        src={galleryPhotos[0]}
+                        alt={`${displayName} - ảnh chính`}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent opacity-80" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Ảnh nổi bật</p>
+                        <p className="mt-1 text-lg font-black text-white">{displayName}</p>
+                      </div>
+                    </div>
+
+                    {galleryPhotos.slice(1, 5).map((photo, index) => (
+                      <div
+                        key={photo}
+                        onClick={() => setActivePhotoIndex(index + 1)}
+                        className="group relative h-32 overflow-hidden rounded-2xl bg-slate-100 sm:h-[9.75rem] cursor-pointer"
+                      >
+                        <img
+                          src={photo}
+                          alt={`${displayName} - ảnh ${index + 2}`}
+                          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/15" />
+                        {index === 3 && galleryPhotos.length > 5 ? (
+                          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 text-lg font-black text-white">
+                            +{galleryPhotos.length - 5}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mx-6 mb-6 flex min-h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+                    <ImageIcon className="mb-3 h-12 w-12 text-slate-300" />
+                    <p className="font-bold text-slate-600">Chưa có ảnh để hiển thị</p>
+                    <p className="mt-1 max-w-md text-sm text-slate-400">
+                      Hình ảnh địa điểm sẽ tự động đồng bộ khi tính năng ảnh được bật trong cấu hình hệ thống.
+                    </p>
+                  </div>
+                )}
               </section>
 
               <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1245,6 +1353,85 @@ export default function PlaceDetailPage() {
           </div>
         </div>
       </footer>
+
+      {/* Fullscreen Photo Lightbox Overlay */}
+      {activePhotoIndex !== null && galleryPhotos.length > 0 && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 select-none animate-fade-in">
+          {/* Top Header */}
+          <div className="flex items-center justify-between w-full text-white/90">
+            <span className="text-sm font-bold bg-white/10 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm">
+              Ảnh {activePhotoIndex + 1} / {galleryPhotos.length}
+            </span>
+            <div className="flex items-center gap-2">
+              <a
+                href={galleryPhotos[activePhotoIndex]}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Mở ảnh gốc trong tab mới"
+                className="p-2 rounded-xl bg-white/5 text-white/70 hover:text-white hover:bg-white/10 transition border border-white/5 backdrop-blur-sm"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </a>
+              <button
+                onClick={() => setActivePhotoIndex(null)}
+                title="Đóng (Esc)"
+                className="p-2 rounded-xl bg-white/5 text-white/70 hover:text-white hover:bg-white/10 transition border border-white/5 backdrop-blur-sm"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Visual Display */}
+          <div className="relative flex flex-1 items-center justify-center py-4 w-full h-[60vh] max-h-[75vh]">
+            {/* Nav Arrows */}
+            <button
+              onClick={prevPhoto}
+              className="absolute left-0 sm:left-4 z-50 p-3 rounded-full bg-slate-900/60 text-white hover:bg-slate-900/80 transition-all border border-white/10 backdrop-blur-sm active:scale-90"
+              title="Ảnh trước (ArrowLeft)"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <img
+              src={galleryPhotos[activePhotoIndex]}
+              alt={`${displayName} - ảnh phóng to ${activePhotoIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-all duration-300 transform scale-100 border border-white/5"
+            />
+
+            <button
+              onClick={nextPhoto}
+              className="absolute right-0 sm:right-4 z-50 p-3 rounded-full bg-slate-900/60 text-white hover:bg-slate-900/80 transition-all border border-white/10 backdrop-blur-sm active:scale-90"
+              title="Ảnh tiếp theo (ArrowRight)"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Bottom Thumbnails Navigation */}
+          <div className="w-full max-w-4xl mx-auto mt-2">
+            <div className="flex justify-center gap-2 overflow-x-auto py-3 px-4 max-w-full scrollbar-thin scrollbar-thumb-white/20">
+              {galleryPhotos.map((photo, index) => (
+                <button
+                  key={`${photo}-${index}`}
+                  onClick={() => setActivePhotoIndex(index)}
+                  className={`relative h-14 w-20 sm:h-16 sm:w-24 overflow-hidden rounded-xl bg-slate-900 flex-shrink-0 transition duration-300 ${
+                    index === activePhotoIndex
+                      ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-slate-950 scale-105 opacity-100'
+                      : 'opacity-50 hover:opacity-80 hover:scale-105'
+                  }`}
+                >
+                  <img
+                    src={photo}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
