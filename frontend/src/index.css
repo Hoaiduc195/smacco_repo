@@ -192,6 +192,69 @@
   }
 }
 
+@keyframes bubbleInUser {
+  from {
+    opacity: 0;
+    transform: translate3d(26px, 14px, 0) scale(0.82);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(-4px, -2px, 0) scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes bubbleInAssistant {
+  from {
+    opacity: 0;
+    transform: translate3d(-26px, 14px, 0) scale(0.82);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(4px, -2px, 0) scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes panelInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes panelInRight {
+  from {
+    opacity: 0;
+    transform: translateX(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes controlFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animate-card-enter {
   opacity: 0;
   animation: cardEnter 0.36s ease forwards;
@@ -202,7 +265,22 @@
 }
 
 .animate-chat-message {
-  animation: messageRise 0.2s ease;
+  animation: messageRise 0.24s ease;
+  animation-fill-mode: both;
+}
+
+.chat-bubble-user {
+  transform-origin: right bottom;
+  animation: bubbleInUser 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  box-shadow: 0 14px 30px -22px rgba(32, 143, 124, 0.85);
+}
+
+.chat-bubble-assistant {
+  transform-origin: left bottom;
+  animation: bubbleInAssistant 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  box-shadow: 0 16px 36px -24px rgba(25, 21, 18, 0.75);
 }
 
 .leaflet-control-attribution {
@@ -276,16 +354,28 @@
   animation: chatPop 0.24s ease;
 }
 
-.animate-chat-message {
-  animation: messageRise 0.2s ease;
-}
-
 .animate-floaty {
   animation: floaty 2.6s ease-in-out infinite;
 }
 
   .animate-soft-in {
     animation: softIn 0.22s ease-in-out;
+  }
+
+  .animate-panel-in-left {
+    animation: panelInLeft 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-panel-in-right {
+    animation: panelInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .animate-control-fade-in {
+    animation: controlFadeIn 0.24s ease-out;
+  }
+
+  .workspace-panel-shell {
+    @apply h-full rounded-3xl border border-base-200/80 bg-white/[0.90] shadow-card backdrop-blur-xl;
   }
 
   .hover-lift {

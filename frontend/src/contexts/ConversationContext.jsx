@@ -3,6 +3,7 @@ import { createConversation, deleteConversation as deleteConversationApi, getCon
 
 const ConversationContext = createContext();
 const STORAGE_KEY = 'chat_selected_conversation';
+export const MAX_TAGGED_PLACES = 4;
 
 export function ConversationProvider({ children }) {
   const [conversations, setConversations] = useState([]);
@@ -84,7 +85,15 @@ export function ConversationProvider({ children }) {
       };
 
       if (normalizedId && !taggedPlaces.some((p) => p.id === normalizedId)) {
-        setTaggedPlaces((prev) => [...prev, normalizedPlace]);
+        setTaggedPlaces((prev) => {
+          if (prev.length >= MAX_TAGGED_PLACES) {
+            window.dispatchEvent(new CustomEvent('app:tag-limit-reached', {
+              detail: { max: MAX_TAGGED_PLACES }
+            }));
+            return prev;
+          }
+          return [...prev, normalizedPlace];
+        });
       }
     }
   };

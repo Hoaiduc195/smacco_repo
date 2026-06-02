@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Navigation2, AlertCircle, X, Route, Star, MessageSquare, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, Bot, Compass, Crosshair, MapPin, PanelLeftOpen, Route, Sparkles } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
-import PlaceCard from '../components/PlaceCard';
-import PlaceChatPanel from '../components/PlaceChatPanel';
-import SidebarOverlay from '../components/SidebarOverlay';
+import AIWorkspacePanel from '../components/AIWorkspacePanel';
+import AIChatPanel from '../components/AIChatPanel';
 import { searchPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
-// import { getRecommendations } from '../services/recommendationService';
 import { getRoute } from '../services/routingService';
 import { fetchPlaceImage } from '../services/serpService';
 import { useTravelData } from '../contexts/TravelDataContext';
+import { useConversation } from '../contexts/ConversationContext';
+import useStreamingChat from '../hooks/useStreamingChat';
+import useWorkflowWizard from '../hooks/useWorkflowWizard';
 
 const FALLBACK_CENTER = { lat: 21.0285, lng: 105.8542 };
 const CURRENT_LOCATION_ZOOM = 18;
@@ -22,6 +23,8 @@ const APP_STATES = {
   ROUTING: 'routing',
 };
 const NAVBAR_HEIGHT = 64;
+const DESKTOP_PANEL_GAP = 20;
+const DESKTOP_WORKSPACE_WIDTH = 380;
 
 export default function HomePage() {
   const {
@@ -33,6 +36,21 @@ export default function HomePage() {
     removeCheckIn,
     error: travelError,
   } = useTravelData();
+
+  const {
+    conversations,
+    selectedConversationId,
+    setSelectedConversationId,
+    refreshConversations,
+    selectConversation,
+    startNewConversation,
+    deleteConversation,
+    taggedPlaces,
+    tagPlace,
+    untagPlace,
+  } = useConversation();
+
+  // Basic Page States
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState('idle');
@@ -46,26 +64,45 @@ export default function HomePage() {
   const [route, setRoute] = useState([]);
   const [reviewsByPlace, setReviewsByPlace] = useState({});
   const [imagesByPlace, setImagesByPlace] = useState({});
-  const [chatPlace, setChatPlace] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showPlaceDetailPanel, setShowPlaceDetailPanel] = useState(false);
   const [appState, setAppState] = useState(APP_STATES.IDLE);
-  const [sidebarWidth, setSidebarWidth] = useState(384);
-  const [isResizing, setIsResizing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Navbar Filters (kept for backend compatibility)
+  const [locationInput, setLocationInput] = useState('');
+  const [placeType, setPlaceType] = useState('');
   const [budget, setBudget] = useState('');
-  const [mapInvalidateTick, setMapInvalidateTick] = useState(0);
-  const invalidateTimerRef = useRef(null);
+
+  // AI-Agent-First States
+  const [comparedPlaces, setComparedPlaces] = useState([]);
+  const [itinerary, setItinerary] = useState(null);
+  const [areaInsight, setAreaInsight] = useState(null);
+  const [budgetData, setBudgetData] = useState(null);
+  const [foodRecommendations, setFoodRecommendations] = useState([]);
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState(null);
+  const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'workspace' | 'map'
+  const [showHistory, setShowHistory] = useState(false);
+  const [isWorkspaceExpanded, setWorkspaceExpanded] = useState(false);
+  const [isChatExpanded, setChatExpanded] = useState(false);
+
+  // Workflow / Agent States
+  const [isProgressActive, setProgressActive] = useState(false);
+  const [progressSteps, setProgressSteps] = useState([]);
+  const [quickReplies, setQuickReplies] = useState([]);
+  const [workflowCard, setWorkflowCard] = useState(null);
+  const [workflowContext, setWorkflowContext] = useState(null); // Keeps track of pending parameters
+
   const [pois, setPois] = useState([]);
   const [isPoisLoading, setIsPoisLoading] = useState(false);
   const lastPoiKeyRef = useRef('');
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const [locationInput, setLocationInput] = useState('');
-  const [placeType, setPlaceType] = useState('');
+  // Wizard hook
+  const wizard = useWorkflowWizard();
+  const [pendingSearchResults, setPendingSearchResults] = useState(null);
+
   const normalizeBudget = useCallback((value) => {
     if (!value) return '';
     const normalized = String(value).toLowerCase();
@@ -75,6 +112,7 @@ export default function HomePage() {
     return '';
   }, []);
 
+  // Sync Mobile
   useEffect(() => {
     const syncMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -84,19 +122,7 @@ export default function HomePage() {
     return () => window.removeEventListener('resize', syncMobile);
   }, []);
 
-  useEffect(() => {
-    // Always start with a collapsed sidebar on Home.
-    setIsSidebarOpen(false);
-    setAppState(APP_STATES.IDLE);
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) {
-      setSidebarWidth(340);
-      setIsSidebarOpen(false);
-    }
-  }, [isMobile]);
-
+  // Map focus helper
   const focusMapAt = useCallback((point, zoom = 15, options = {}) => {
     if (!point?.lat || !point?.lng) return;
     setDisableAutoFit(true);
@@ -109,6 +135,7 @@ export default function HomePage() {
     });
   }, []);
 
+  // Geolocation handling
   const stopTrackingUserLocation = useCallback(() => {
     if (userLocationWatchIdRef.current !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(userLocationWatchIdRef.current);
@@ -120,20 +147,18 @@ export default function HomePage() {
     (nextState) => {
       setAppState(nextState);
       if (nextState === APP_STATES.IDLE) {
-        setIsSidebarOpen(false);
         setFollowUserLocation(false);
         stopTrackingUserLocation();
       }
       if (nextState === APP_STATES.ON_SEARCH) {
-        setIsSidebarOpen(true);
         setFollowUserLocation(false);
         stopTrackingUserLocation();
       }
       if (nextState === APP_STATES.FOCUS_CURRENT) {
-        setIsSidebarOpen(false);
+        // Handled internally
       }
       if (nextState === APP_STATES.ROUTING) {
-        setIsSidebarOpen(false);
+        // Handled internally
       }
     },
     [stopTrackingUserLocation]
@@ -215,57 +240,7 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ownedPlaceBySource = useMemo(() => {
-    const map = {};
-    ownedPlaces.forEach((ownedPlace) => {
-      if (ownedPlace.sourcePlaceId) {
-        map[ownedPlace.sourcePlaceId] = ownedPlace;
-      }
-    });
-    return map;
-  }, [ownedPlaces]);
-
-  const ownedPlacesForMap = useMemo(
-    () =>
-      ownedPlaces.map((place) => ({
-        ...place,
-        lat: Number(place.lat),
-        lng: Number(place.lng),
-      })),
-    [ownedPlaces]
-  );
-  const checkInsByPlaceId = useMemo(() => {
-    const map = {};
-    checkIns.forEach((ci) => {
-      map[ci.placeId] = ci;
-    });
-    return map;
-  }, [checkIns]);
-
-  const visiblePlaces = useMemo(() => places.map((p) => ({
-    ...p,
-    type: p.type || p.categories?.[0] || 'default',
-  })), [places]);
-
-  const selectedPlace = useMemo(
-    () => visiblePlaces.find((place) => place.id === selectedPlaceId) || null,
-    [selectedPlaceId, visiblePlaces]
-  );
-  const selectedPlaceReviews = useMemo(
-    () => (selectedPlace ? (reviewsByPlace[selectedPlace.id] || []) : []),
-    [reviewsByPlace, selectedPlace]
-  );
-
-  useEffect(() => {
-    if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
-    invalidateTimerRef.current = setTimeout(() => {
-      setMapInvalidateTick((tick) => tick + 1);
-    }, isResizing ? 60 : 140);
-    return () => {
-      if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
-    };
-  }, [sidebarWidth, isSidebarOpen, isResizing]);
-
+  // Restore states
   useEffect(() => {
     const applySavedState = (saved) => {
       if (!saved || typeof saved !== 'object') return;
@@ -276,8 +251,6 @@ export default function HomePage() {
       if (typeof saved.placeType === 'string') setPlaceType(saved.placeType);
       if (typeof saved.budget === 'string') setBudget(saved.budget);
       if (saved.selectedPlaceId !== undefined) setSelectedPlaceId(saved.selectedPlaceId);
-      if (typeof saved.isSidebarOpen === 'boolean') setIsSidebarOpen(saved.isSidebarOpen);
-      if (typeof saved.showPlaceDetailPanel === 'boolean') setShowPlaceDetailPanel(saved.showPlaceDetailPanel);
       if (typeof saved.appState === 'string') setAppState(saved.appState);
       if (Array.isArray(saved.route)) setRoute(saved.route);
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
@@ -306,6 +279,7 @@ export default function HomePage() {
     }
   }, [location.state]);
 
+  // Load POIs
   const loadPois = useCallback(
     async (centerPoint) => {
       if (!centerPoint?.lat || !centerPoint?.lng) return;
@@ -325,17 +299,19 @@ export default function HomePage() {
     [pois.length]
   );
 
-  // Get current location
-  const getCurrentLocation = requestCurrentLocation;
+  useEffect(() => {
+    const anchor =
+      userLocation ||
+      places.find((p) => p.lat && p.lng) ||
+      FALLBACK_CENTER;
+    loadPois(anchor);
+  }, [loadPois, userLocation, places]);
 
-  // Unified Search Logic
-  // Sử dụng mock data thay cho API thật
+  // Unified Search Logic (Phase 5 real backend connection)
   const performUnifiedSearch = useCallback(async (query, filters = {}) => {
-    // Nếu không có gì, reset
     if (!query.trim() && !filters.type && !filters.locationInput && !filters.budget) {
       setPlaces([]);
       setError('');
-      setIsSidebarOpen(false);
       transitionTo(APP_STATES.IDLE);
       return;
     }
@@ -345,17 +321,19 @@ export default function HomePage() {
       setDisableAutoFit(true);
       setIsSearching(true);
       setError('');
-      setIsSidebarOpen(true);
 
-      // Gọi mock searchPlaces thay vì getRecommendations
       const results = await searchPlaces(query.trim(), {
         type: filters.type,
         locationInput: filters.locationInput,
         budget: filters.budget,
       });
+
       setPlaces(results);
       setSelectedPlaceId(null);
       setRoute([]);
+      
+      // Auto expand Search results accordion
+      setActiveWorkspaceTab('search');
     } catch (err) {
       setError(err.message);
       console.error('Unified search error:', err);
@@ -364,221 +342,346 @@ export default function HomePage() {
     }
   }, [transitionTo]);
 
-  const handleSearchSubmit = useCallback((queryToSearch) => {
-    setSearchQuery(queryToSearch);
-    performUnifiedSearch(queryToSearch, {
-      type: placeType,
-      locationInput,
-      budget,
-    });
-  }, [performUnifiedSearch, placeType, locationInput, budget, setSearchQuery]);
+  // AI Streaming Chat integration
+  const defaultMessages = useMemo(() => [
+    {
+      role: 'assistant',
+      content: 'Xin chào! Tôi là trợ lý du lịch AI Smacco. Tôi có thể hỗ trợ bạn tìm kiếm phòng nghỉ, so sánh các chỗ ở, lên lịch trình, dự trù ngân sách và tìm quán ăn ngon xung quanh.\n\nBạn muốn tìm chỗ ở như thế nào? Ví dụ: *"Tìm homestay yên tĩnh ở Đà Lạt dưới 1 triệu cho 2 người"*'
+    }
+  ], []);
 
-  const handleSearchInputChange = useCallback(
-    (value) => {
-      // We no longer open the sidebar immediately when typing starts.
-      // The sidebar will open in performUnifiedSearch when Enter is pressed.
-      if (!value?.trim() && appState === APP_STATES.ON_SEARCH) {
-        transitionTo(APP_STATES.IDLE);
+  const handleAiSearch = useCallback((filters) => {
+    const query = filters.query || '';
+    const normalizedBudget = normalizeBudget(filters.budget);
+    
+    setSearchQuery(query);
+    if (Array.isArray(filters.types) && filters.types.length > 0) {
+      setPlaceType(filters.types.map(t => t.trim()).join(','));
+    } else if (filters.type) {
+      setPlaceType(filters.type.split(',').map(t => t.trim()).join(','));
+    }
+    if (filters.location) setLocationInput(filters.location);
+    if (normalizedBudget) setBudget(normalizedBudget);
+
+    if (filters.results && filters.results.length > 0) {
+      const transformed = filters.results.map(place => ({
+        id: place.locationId || place.id,
+        name: place.name,
+        address: place.address,
+        lat: place.location?.lat || place.lat,
+        lng: place.location?.lng || place.lng,
+        type: place.types?.[0] || place.type || 'default',
+        rating: place.rating,
+        priceLevel: place.priceLevel,
+        price: place.price,
+        amenities: place.amenities,
+        userRatingsTotal: place.userRatingsTotal,
+        imageUrl: place.imageUrl,
+        source: place.source,
+        sourcePlaceId: place.sourcePlaceId,
+        score: place.score || 95,
+        reasons: place.reasons || 'Không gian yên tĩnh, thiết kế vintage ấm cúng phù hợp để thư giãn.',
+      }));
+      setPlaces(transformed);
+      setSelectedPlaceId(null);
+      setRoute([]);
+      setActiveWorkspaceTab('search');
+      return;
+    }
+
+    performUnifiedSearch(query, {
+      type: filters.type || (Array.isArray(filters.types) ? filters.types.join(',') : placeType),
+      locationInput: filters.location || locationInput,
+      budget: normalizedBudget || budget,
+    });
+  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget]);
+
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    conversationId,
+    setConversationId,
+    isStreaming,
+    error: streamingError,
+    sendMessage,
+    clearConversation,
+  } = useStreamingChat({
+    initialMessages: defaultMessages,
+    initialConversationId: selectedConversationId,
+    onSearchAction: (action) => {
+      // Don't auto-execute. Propose wizard instead.
+      if (wizard.wizardState === 'idle') {
+        setPendingSearchResults(action.results || null);
+        wizard.proposeWorkflow('SEARCH_PLACES', {
+          query: action.query,
+          location: action.location,
+          type: action.type,
+          types: action.types,
+          budget: action.budget,
+        }, action.query || '');
+      } else {
+        // If wizard is already active, fallback to direct handling
+        handleAiSearch(action);
       }
     },
-    [appState, transitionTo]
-  );
-
-  useEffect(() => {
-    const handleAiSearch = (e) => {
-      const filters = e.detail;
-      const query = filters.query || '';
-      const normalizedBudget = normalizeBudget(filters.budget);
-      
-      // Update Navbar states so the UI reflects the AI's parsed search
-      setSearchQuery(query);
-      // Support multiple types from AI (array) or single type (string)
-      if (Array.isArray(filters.types) && filters.types.length > 0) {
-        setPlaceType(filters.types.map(t => t.trim()).join(','));
-      } else if (filters.type) {
-        setPlaceType(filters.type.split(',').map(t => t.trim()).join(','));
+    onWorkflowAction: (action) => {
+      if (wizard.wizardState === 'idle') {
+        if (action.type === 'compare') {
+          wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '');
+        } else if (action.type === 'analyze') {
+          wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '');
+        }
       }
-      if (filters.location) setLocationInput(filters.location);
-      if (normalizedBudget) setBudget(normalizedBudget);
+    },
+  });
 
-      // If AI already computed results (via backend workflow), use them directly
-      // This eliminates the duplicate search call
-      if (filters.results && filters.results.length > 0) {
-        const transformed = filters.results.map(place => ({
-          id: place.locationId,
-          name: place.name,
-          address: place.address,
-          lat: place.location?.lat,
-          lng: place.location?.lng,
-          type: place.types?.[0] || place.type || 'default',
-          rating: place.rating,
-          priceLevel: place.priceLevel,
-          price: place.price,
-          amenities: place.amenities,
-          userRatingsTotal: place.userRatingsTotal,
-          imageUrl: place.imageUrl,
-          source: place.source,
-          sourcePlaceId: place.sourcePlaceId,
-          score: place.score,
-          reasons: place.reasons,
-        }));
-        setIsSidebarOpen(true);
-        transitionTo(APP_STATES.ON_SEARCH);
-        setDisableAutoFit(true);
-        setError('');
-        setPlaces(transformed);
-        setSelectedPlaceId(null);
-        setRoute([]);
-        return;
-      }
-
-      // Fallback: perform search manually via GET /search
-      performUnifiedSearch(query, {
-        type: filters.type || (Array.isArray(filters.types) ? filters.types.join(',') : placeType),
-        locationInput: filters.location || locationInput,
-        budget: normalizedBudget || budget,
-      });
-    };
-
-    window.addEventListener('app:ai-search', handleAiSearch);
-    return () => window.removeEventListener('app:ai-search', handleAiSearch);
-  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget, transitionTo]);
+  // Load active replies on mount
+  useEffect(() => {
+    setQuickReplies([
+      'Tìm homestay yên tĩnh ở Đà Lạt',
+      'So sánh homestay Đà Lạt',
+      'Lên lịch trình 3 ngày 2 đêm',
+      'Đánh giá khu vực Phường 4',
+      'Dự trù ngân sách đi Đà Lạt',
+      'Quán ăn ngon gần Moc House'
+    ]);
+  }, []);
 
   useEffect(() => {
-    if (!rehydratedRef.current) return;
-    const payload = {
-      searchQuery,
-      places,
-      userLocation,
-      locationInput,
-      placeType,
-      budget,
-      selectedPlaceId,
-      isSidebarOpen,
-      showPlaceDetailPanel,
-      appState,
-      route,
-      mapFocusTarget,
-    };
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  }, [
-    searchQuery,
-    places,
-    userLocation,
-    locationInput,
-    placeType,
-    budget,
-    selectedPlaceId,
-    isSidebarOpen,
-    showPlaceDetailPanel,
-    appState,
-    route,
-    mapFocusTarget,
-  ]);
-
-  useEffect(() => {
-    const anchor =
-      userLocation ||
-      visiblePlaces.find((p) => p.lat && p.lng) ||
-      ownedPlacesForMap.find((p) => p.lat && p.lng) ||
-      FALLBACK_CENTER;
-    loadPois(anchor);
-  }, [loadPois, userLocation, visiblePlaces, ownedPlacesForMap]);
-
-  useEffect(() => {
-    if (travelError) {
-      setError(travelError);
+    if (conversationId && conversationId !== selectedConversationId) {
+      setSelectedConversationId(conversationId);
+      refreshConversations?.();
     }
-  }, [travelError]);
+  }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
 
-  // Handle marker click - open place detail in new tab
-  const handleMarkerClick = (place) => {
-    setSelectedPlaceId(place.id);
-    navigate(`/places/${place.id}`, {
-      state: {
-        place,
-        returnToMapState: {
-          searchQuery,
-          places,
-          userLocation,
-          locationInput,
-          placeType,
-          budget,
-          selectedPlaceId: place.id,
-          isSidebarOpen,
-          showPlaceDetailPanel,
-          appState,
-          route,
-          mapFocusTarget,
-        },
-      },
-    });
+  useEffect(() => {
+    if (isStreaming) return;
+    if (!selectedConversationId) {
+      setConversationId(null);
+      setMessages(defaultMessages);
+      return;
+    }
+
+    let active = true;
+    const loadSelectedConversation = async () => {
+      const history = await selectConversation(selectedConversationId);
+      if (!active) return;
+      setConversationId(selectedConversationId);
+      setMessages(history?.length ? history : defaultMessages);
+    };
+
+    loadSelectedConversation();
+    return () => {
+      active = false;
+    };
+  }, [defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
+
+  useEffect(() => {
+    const handleSelectPlaceEvent = (event) => {
+      const placeId = event?.detail?.id;
+      if (!placeId) return;
+      const selectedPlace =
+        places.find((place) => String(place.id) === String(placeId)) ||
+        taggedPlaces.find((place) => String(place.id) === String(placeId)) ||
+        ownedPlaces.find((place) => String(place.id) === String(placeId));
+      if (!selectedPlace) return;
+
+      const lat = Number(selectedPlace.lat ?? selectedPlace.latitude ?? selectedPlace.location?.lat);
+      const lng = Number(selectedPlace.lng ?? selectedPlace.longitude ?? selectedPlace.location?.lng);
+      setSelectedPlaceId(selectedPlace.id);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        focusMapAt({ lat, lng }, 15);
+      }
+      setActiveWorkspaceTab(taggedPlaces.some((place) => String(place.id) === String(placeId)) ? 'pinned' : 'search');
+      if (isMobile) setActiveMobileTab('workspace');
+    };
+
+    window.addEventListener('app:select-place', handleSelectPlaceEvent);
+    return () => window.removeEventListener('app:select-place', handleSelectPlaceEvent);
+  }, [focusMapAt, isMobile, ownedPlaces, places, taggedPlaces]);
+
+  // Main input submission handler — all messages go through backend
+  const handleSendMessage = async (text) => {
+    const userText = text.trim();
+    if (!userText) return;
+
+    // If wizard is active, ignore text input
+    if (wizard.wizardState !== 'idle') return;
+
+    // Reset states
+    setWorkflowCard(null);
+    setQuickReplies([]);
+
+    // Always call backend streaming
+    const taggedPayload = taggedPlaces.map(p => ({
+      id: p.id, name: p.name || p.placeName,
+      address: p.address, rating: p.rating, type: p.type
+    }));
+
+    try {
+      await sendMessage(userText, taggedPlaces.map(p => p.id), taggedPayload);
+    } catch (err) {
+      console.error('Error in streaming chat:', err);
+    }
   };
 
-  const handleSelectPlace = (place) => {
+  // Prompt builders for enriched wizard execution
+  const buildSearchPrompt = (data) => {
+    const parts = [data.query || 'Tìm chỗ ở'];
+    if (data.location) parts.push(`ở ${data.location}`);
+    if (data.types?.length) parts.push(`loại: ${data.types.join(', ')}`);
+    if (data.guests) parts.push(`cho ${data.guests} người`);
+    if (data.budget) {
+      const budgetLabels = { low: 'bình dân', mid: 'tầm trung', high: 'cao cấp' };
+      parts.push(`ngân sách: ${budgetLabels[data.budget] || data.budget}`);
+    }
+    return parts.join(', ');
+  };
+
+  const buildComparePrompt = (data) => {
+    let prompt = 'So sánh các địa điểm lưu trú đã tag';
+    if (data.criteria?.length) prompt += ` theo ${data.criteria.join(', ')}`;
+    if (data.guests) prompt += `, cho ${data.guests} người ở`;
+    return prompt;
+  };
+
+  const buildAnalyzePrompt = (data) => {
+    let prompt = 'Phân tích chi tiết chỗ ở đã tag';
+    if (data.criteria?.length) prompt += ` theo ${data.criteria.join(', ')}`;
+    return prompt;
+  };
+
+  // Handle wizard execution
+  useEffect(() => {
+    if (wizard.wizardState !== 'executing') return;
+
+    const data = wizard.summaryData;
+    const wfId = wizard.activeWorkflow?.workflowId;
+
+    const execute = async () => {
+      const taggedPayload = taggedPlaces.map(p => ({
+        id: p.id, name: p.name || p.placeName,
+        address: p.address, rating: p.rating, type: p.type
+      }));
+
+      if (wfId === 'SEARCH_PLACES') {
+        // If we have pending results, use them for map display
+        if (pendingSearchResults?.length) {
+          handleAiSearch({
+            query: data.query, location: data.location,
+            types: data.types, budget: data.budget,
+            results: pendingSearchResults,
+          });
+        }
+        // Send enriched prompt for AI response
+        try {
+          await sendMessage(buildSearchPrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+        } catch (err) { console.error(err); }
+      } else if (wfId === 'COMPARE_PLACES') {
+        try {
+          await sendMessage(buildComparePrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+        } catch (err) { console.error(err); }
+      } else if (wfId === 'ANALYZE_PLACE') {
+        try {
+          await sendMessage(buildAnalyzePrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+        } catch (err) { console.error(err); }
+      }
+
+      setPendingSearchResults(null);
+      wizard.resetWizard();
+    };
+
+    execute();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wizard.wizardState]);
+
+  // Quick Reply handler
+  const handleQuickReplyClick = (replyText) => {
+    handleSendMessage(replyText);
+  };
+
+  // Workflow Cancel (legacy — kept for compatibility)
+  const handleWorkflowCancel = () => {
+    setWorkflowCard(null);
+    setWorkflowContext(null);
+    wizard.cancelWizard();
+    setQuickReplies([
+      'Tìm homestay yên tĩnh ở Đà Lạt',
+      'So sánh homestay Đà Lạt',
+      'Lên lịch trình 3 ngày 2 đêm'
+    ]);
+  };
+
+  // Pin place action
+  const handlePinPlace = (place) => {
+    tagPlace(place);
+  };
+
+  // Compare place action
+  const handleComparePlace = (place) => {
+    const isAlreadyCompared = comparedPlaces.some(p => p.id === place.id);
+    let nextCompared = [];
+    if (isAlreadyCompared) {
+      nextCompared = comparedPlaces.filter(p => p.id !== place.id);
+    } else {
+      nextCompared = [...comparedPlaces, place];
+    }
+    setComparedPlaces(nextCompared);
+    setActiveWorkspaceTab('comparison');
+    if (isMobile) setActiveMobileTab('workspace');
+  };
+
+  // Ask AI about specific place
+  const handleAskAIAboutPlace = (place) => {
+    setInput(`Cho tôi hỏi thêm thông tin về ${place.name} (vị trí, tiện ích, và nó có thực sự yên tĩnh không?)`);
+    setActiveMobileTab('chat');
+  };
+
+  // Itinerary generation from place detail
+  const onCreateItinerary = (place) => {
+    handleSendMessage(`Lên lịch trình 3 ngày 2 đêm quanh chỗ ở ${place.name}`);
+  };
+
+  // Close workspace panels handler
+  const handleClosePanel = (panelId) => {
+    // If search panel closed, clear places
+    if (panelId === 'search') setPlaces([]);
+    if (panelId === 'comparison') setComparedPlaces([]);
+    if (panelId === 'itinerary') setItinerary(null);
+    if (panelId === 'insight') setAreaInsight(null);
+    if (panelId === 'budget') setBudgetData(null);
+    if (panelId === 'food') setFoodRecommendations([]);
+  };
+
+  // Interaction Sync (Phase 4): clicking marker expands workspace panel
+  const handleMarkerClick = (place) => {
     setSelectedPlaceId(place.id);
-    setShowPlaceDetailPanel(false);
+    focusMapAt({ lat: place.lat, lng: place.lng }, 15);
+    
+    // Check if the place is in searchResults, or pinned list, etc.
+    const isPinned = taggedPlaces.some(p => p.id === place.id);
+    if (isPinned) {
+      setActiveWorkspaceTab('pinned');
+    } else {
+      setActiveWorkspaceTab('search');
+    }
+
+    if (isMobile) {
+      setActiveMobileTab('workspace');
+    }
+  };
+
+  const handleSelectPlaceFromWorkspace = (place) => {
+    setSelectedPlaceId(place.id);
     focusMapAt({ lat: place.lat, lng: place.lng }, 15);
   };
 
-  const handleShowPlaceDetails = (place) => {
-    setSelectedPlaceId(place.id);
-    navigate(`/places/${place.id}`, {
-      state: {
-        place,
-        returnToMapState: {
-          searchQuery,
-          places,
-          userLocation,
-          locationInput,
-          placeType,
-          budget,
-          selectedPlaceId: place.id,
-          isSidebarOpen,
-          showPlaceDetailPanel,
-          appState,
-          route,
-          mapFocusTarget,
-        },
-      },
-    });
-  };
-
-  const handleChat = (place) => {
-    setChatPlace(place);
-  };
-
-  const handleToggleOwnedPlace = async (place) => {
-    try {
-      const existing = ownedPlaceBySource[place.id];
-      if (existing) {
-        await removeOwnedPlace(existing.id);
-      } else {
-        await saveOwnedPlace(place);
-      }
-    } catch (err) {
-      setError(err?.message || 'Không thể cập nhật địa điểm đã lưu.');
-    }
-  };
-
-  const handleToggleCheckIn = async (place) => {
-    try {
-      const existing = checkInsByPlaceId[place.id];
-      if (existing) {
-        await removeCheckIn(existing.id);
-      } else {
-        await saveCheckIn(place);
-      }
-    } catch (err) {
-      setError(err?.message || 'Không thể thực hiện check-in.');
-    }
-  };
-
+  // Routing directions requested
   const handleDirections = async (place) => {
     try {
       transitionTo(APP_STATES.ROUTING);
-      setShowPlaceDetailPanel(false);
-      setDisableAutoFit(true);
       setError('');
       setRoute([]);
       const origin = await new Promise((resolve, reject) => {
@@ -601,6 +704,12 @@ export default function HomePage() {
     }
   };
 
+  const handleStopRouting = useCallback(() => {
+    setRoute([]);
+    setSelectedPlaceId(null);
+    transitionTo(APP_STATES.IDLE);
+  }, [transitionTo]);
+
   const handleUserMapInteraction = useCallback(() => {
     setDisableAutoFit(true);
     if (appState === APP_STATES.FOCUS_CURRENT) {
@@ -608,73 +717,49 @@ export default function HomePage() {
     }
   }, [appState, transitionTo]);
 
-  const handleStopRouting = useCallback(() => {
-    setRoute([]);
-    setSelectedPlaceId(null);
-    transitionTo(APP_STATES.IDLE);
-  }, [transitionTo]);
+  // Sync state snapshot to session
+  useEffect(() => {
+    if (!rehydratedRef.current) return;
+    const payload = {
+      searchQuery,
+      places,
+      userLocation,
+      locationInput,
+      placeType,
+      budget,
+      selectedPlaceId,
+      appState,
+      route,
+      mapFocusTarget,
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [
+    searchQuery,
+    places,
+    userLocation,
+    locationInput,
+    placeType,
+    budget,
+    selectedPlaceId,
+    appState,
+    route,
+    mapFocusTarget,
+  ]);
 
-  const handleSidebarToggle = useCallback(
-    (nextOpen) => {
-      setIsSidebarOpen(nextOpen);
-      if (!nextOpen) {
-        if (appState === APP_STATES.ON_SEARCH) {
-          transitionTo(APP_STATES.IDLE);
-        }
-        return;
-      }
-
-      if (searchQuery.trim() || visiblePlaces.length) {
-        setAppState(APP_STATES.ON_SEARCH);
-      }
-    },
-    [appState, searchQuery, transitionTo, visiblePlaces.length]
-  );
-
-  const hydrateImages = async (list) => {
-    const limited = list.slice(0, 10);
-    const promises = limited.map(async (p) => {
-      if (!imagesByPlace[p.id]) {
-        const img = await fetchPlaceImage(p.id).catch(() => null);
-        if (img) setImagesByPlace((prev) => ({ ...prev, [p.id]: img }));
-      }
-    });
-    await Promise.all(promises);
+  // Navbar redirection to Chat Widget message submission
+  const handleSearchSubmit = (queryToSearch) => {
+    if (!queryToSearch.trim()) return;
+    handleSendMessage(queryToSearch);
   };
 
-  useEffect(() => {
-    if (places.length) hydrateImages(places);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [places]);
-
-  useEffect(() => {
-    if (!selectedPlace?.id) return;
-    if (reviewsByPlace[selectedPlace.id]) return;
-
-    let cancelled = false;
-
-    const loadSelectedPlaceReviews = async () => {
-      const reviews = await getPlaceReviews(selectedPlace.id).catch(() => []);
-      if (!cancelled) {
-        setReviewsByPlace((prev) => ({ ...prev, [selectedPlace.id]: reviews }));
-      }
-    };
-
-    loadSelectedPlaceReviews();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [reviewsByPlace, selectedPlace?.id]);
-
   return (
-    <div className="relative h-screen w-full bg-base-50 overflow-hidden">
+    <div className="relative h-screen w-full bg-base-50 overflow-hidden flex flex-col font-sans">
       <Navbar
-        className="absolute top-0 left-0 right-0"
+        className="absolute top-0 left-0 right-0 h-16 z-40"
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearch={handleSearchSubmit}
-        onSearchInputChange={handleSearchInputChange}
+        onSearchInputChange={() => {}}
         locationInput={locationInput}
         setLocationInput={setLocationInput}
         placeType={placeType}
@@ -689,226 +774,308 @@ export default function HomePage() {
         }}
       />
 
-      <div className="absolute inset-0 bg-base-50 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(47,183,156,0.14)_0%,rgba(249,115,22,0.08)_42%,rgba(255,255,255,0)_100%)] pointer-events-none" />
-        {/* Map layer */}
-        <div className="absolute inset-0">
+      <div className="relative flex-1 w-full overflow-hidden mt-16">
+        {/* Background Map layer */}
+        <div className="absolute inset-0 z-0">
           <MapComponent
             userLocation={userLocation}
             followUserLocation={followUserLocation}
             currentLocationZoom={CURRENT_LOCATION_ZOOM}
             onUserMapInteraction={handleUserMapInteraction}
-            places={visiblePlaces}
-            ownedPlaces={ownedPlacesForMap}
+            places={places}
+            ownedPlaces={ownedPlaces.map(p => ({ ...p, lat: Number(p.lat), lng: Number(p.lng) }))}
             onDirectionsRequested={handleDirections}
-            onOwnedMarkerClick={(ownedPlace) => {
-              const linkedSourcePlace = ownedPlace?.sourcePlaceId;
-              if (linkedSourcePlace) {
-                setSelectedPlaceId(linkedSourcePlace);
-              }
-            }}
+            onMarkerClick={handleMarkerClick}
             selectedPlaceId={selectedPlaceId}
             route={route}
             mapStyle="standard"
             pois={pois}
             focusTarget={mapFocusTarget}
             disableAutoFit={disableAutoFit}
-            invalidateKey={mapInvalidateTick}
+            invalidateKey={0}
           />
         </div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,28,23,0.16)_0%,rgba(34,28,23,0.04)_24%,transparent_48%,rgba(47,183,156,0.05)_78%,rgba(34,28,23,0.10)_100%)] pointer-events-none" />
-
-        {/* Sidebar overlay */}
-        <SidebarOverlay
-          isOpen={isSidebarOpen}
-          width={sidebarWidth}
-          minWidth={300}
-          maxWidth={560}
-          topOffset={NAVBAR_HEIGHT + 10}
-          isMobile={isMobile}
-          onToggle={handleSidebarToggle}
-          onWidthChange={setSidebarWidth}
-          onResizeStateChange={setIsResizing}
-        >
-          {showPlaceDetailPanel && selectedPlace ? (
-            <div className="space-y-3 animate-soft-in">
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setShowPlaceDetailPanel(false)}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Quay lại danh sách
-                </button>
-                <span className="text-xs px-2 py-1 rounded-lg bg-primary-50 text-primary-800 border border-primary-200">
-                  Chi tiết
-                </span>
+        {/* Desktop Layout Overlay */}
+        {!isMobile && (
+          <div className="absolute inset-0 flex justify-between p-5 pointer-events-none z-10 font-sans">
+            {/* Left AI Workspace Panel */}
+            {isWorkspaceExpanded ? (
+              <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">
+                <AIWorkspacePanel
+                  searchPlaces={places}
+                  comparedPlaces={comparedPlaces}
+                  pinnedPlaces={taggedPlaces}
+                  itinerary={itinerary}
+                  areaInsight={areaInsight}
+                  budget={budgetData}
+                  foodRecommendations={foodRecommendations}
+                  
+                  selectedPlaceId={selectedPlaceId}
+                  pinnedPlaceIds={taggedPlaces.map(p => p.id)}
+                  
+                  onSelectPlace={handleSelectPlaceFromWorkspace}
+                  onPinPlace={handlePinPlace}
+                  onRemovePin={(id) => untagPlace(id)}
+                  onComparePlace={handleComparePlace}
+                  onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
+                  onAskAIAboutPlace={handleAskAIAboutPlace}
+                  onHoverPlace={(id) => setSelectedPlaceId(id)}
+                  onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
+                  onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
+                  onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
+                  onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
+                  onSelectFood={(food) => {
+                    const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
+                    const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
+                    focusMapAt({ lat, lng });
+                  }}
+                  onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
+                  onCreateItinerary={onCreateItinerary}
+                  
+                  activePanel={activeWorkspaceTab}
+                  setActivePanel={setActiveWorkspaceTab}
+                  onClosePanel={handleClosePanel}
+                  onCollapse={() => setWorkspaceExpanded(false)}
+                />
               </div>
+            ) : (
+              <div />
+            )}
 
-              <div className="space-y-3">
-                <div className="map-surface px-3 py-3">
-                  <p className="text-base font-semibold text-slate-900 line-clamp-1">{selectedPlace.name}</p>
-                  {selectedPlace.address ? (
-                    <p className="mt-1 text-sm text-slate-600 line-clamp-2">{selectedPlace.address}</p>
-                  ) : null}
-                  <div className="mt-2 flex items-center gap-3 text-xs text-slate-600">
-                    {selectedPlace.rating ? (
-                      <span className="inline-flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                        {selectedPlace.rating}
-                      </span>
-                    ) : (
-                      <span>Chưa có điểm đánh giá</span>
-                    )}
-                    {selectedPlace.type ? (
-                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700">{selectedPlace.type}</span>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDirections(selectedPlace)}
-                    className="mt-3 inline-flex items-center gap-2 px-3 py-2 text-sm rounded-2xl border border-primary-200 bg-primary-50 text-primary-800 hover:bg-primary-100"
-                  >
-                    <Navigation2 className="w-4 h-4" />
-                    Chỉ đường
-                  </button>
-                </div>
+            {/* Right AI Chat control center */}
+            {isChatExpanded ? (
+              <div className="w-[400px] h-full flex flex-col pointer-events-auto animate-panel-in-right">
+                <AIChatPanel
+                  messages={messages}
+                  input={input}
+                  setInput={setInput}
+                  isStreaming={isStreaming}
+                  isProgressActive={isProgressActive}
+                  progressSteps={progressSteps}
+                  quickReplies={quickReplies}
+                  workflowCard={workflowCard}
+                  referenceChips={taggedPlaces}
+                  onSendMessage={handleSendMessage}
+                  onQuickReplyClick={handleQuickReplyClick}
+                  onWorkflowConfirm={() => {}}
+                  onWorkflowCancel={handleWorkflowCancel}
+                  onRemoveReference={(id) => untagPlace(id)}
+                  onClearConversation={clearConversation}
+                  
+                  conversations={conversations}
+                  selectedConversationId={selectedConversationId}
+                  onSelectConversation={async (id) => {
+                    const history = await selectConversation(id);
+                    setConversationId(id);
+                    setMessages(history?.length ? history : defaultMessages);
+                  }}
+                  onNewConversation={async () => {
+                    const conv = await startNewConversation();
+                    if (conv?.id) {
+                      setConversationId(conv.id);
+                      setMessages(defaultMessages);
+                    }
+                  }}
+                  onDeleteConversation={deleteConversation}
+                  showHistory={showHistory}
+                  setShowHistory={setShowHistory}
+                  onCollapse={() => setChatExpanded(false)}
 
-                <div className="map-surface px-3 py-3">
-                  <p className="text-sm font-semibold text-slate-800 mb-2">Đánh giá gần đây</p>
-                  {selectedPlaceReviews.length ? (
-                    <div className="space-y-2">
-                      {selectedPlaceReviews.slice(0, 3).map((review, idx) => (
-                        <div key={`${selectedPlace.id}-review-${idx}`} className="rounded-xl bg-base-50 px-2.5 py-2 text-xs text-slate-700 border border-base-200">
-                          {review.comment || review.text || 'Đánh giá không có nội dung.'}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">Chưa có đánh giá cho địa điểm này.</p>
-                  )}
-                </div>
-
-                <div className="map-surface px-3 py-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="w-4 h-4 text-primary-600" />
-                    <p className="text-sm font-semibold text-slate-800">Chatbot địa điểm</p>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-3">UI đã sẵn sàng. Tính năng trả lời chatbot sẽ được bật ở bước tiếp theo.</p>
-                  <div className="rounded-xl border border-base-200 bg-base-50 px-3 py-2 text-xs text-slate-500">
-                    Xin chào, mình có thể tư vấn lịch trình, chi phí, và mẹo tham quan cho địa điểm này.
-                  </div>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      disabled
-                      placeholder="Sắp hỗ trợ hỏi đáp về địa điểm..."
-                      className="flex-1 h-9 rounded-xl border border-base-200 bg-base-50 px-3 text-xs text-slate-400"
-                    />
-                    <button
-                      type="button"
-                      disabled
-                      className="h-9 px-3 rounded-xl border border-base-200 bg-base-50 text-xs text-slate-400"
-                    >
-                      Gửi
-                    </button>
-                  </div>
-                </div>
+                  wizardState={wizard.wizardState}
+                  wizardActiveWorkflow={wizard.activeWorkflow}
+                  wizardCurrentStep={wizard.currentStep}
+                  wizardCurrentStepIndex={wizard.currentStepIndex}
+                  wizardSteps={wizard.steps}
+                  wizardCollectedData={wizard.collectedData}
+                  wizardProgress={wizard.progress}
+                  onWizardAccept={wizard.acceptWorkflow}
+                  onWizardDecline={wizard.declineWorkflow}
+                  onWizardSubmitStep={wizard.submitStep}
+                  onWizardSkipStep={wizard.skipStep}
+                  onWizardGoBack={wizard.goBackStep}
+                  onWizardConfirm={wizard.confirmAndExecute}
+                  onWizardCancel={wizard.cancelWizard}
+                  onWizardEditStep={wizard.editFromSummary}
+                />
               </div>
-            </div>
-          ) : (
-            <>
+            ) : (
+              <div className="ml-auto" />
+            )}
+          </div>
+        )}
 
-              <div className="mb-3 rounded-2xl border border-ink-900 bg-ink-900 px-3 py-2 text-xs font-bold text-white flex items-center justify-between shadow-soft">
-                <p>Kết quả tìm kiếm & gợi ý</p>
-              </div>
+        {!isMobile && !isChatExpanded && (
+          <button
+            onClick={() => setChatExpanded(true)}
+            className="absolute z-20 right-5 bottom-5 h-11 px-4 bg-ink-900 border border-ink-800 text-white rounded-2xl shadow-soft hover:bg-ink-800 transition text-xs font-black inline-flex items-center gap-2 pointer-events-auto animate-control-fade-in"
+            title="Mở Chat AI"
+          >
+            <Bot className="w-4 h-4 text-primary-300" />
+            <span>Trợ lý AI</span>
+          </button>
+        )}
 
-              {isSearching ? (
-                <div className="mb-3 flex flex-col items-center justify-center map-surface py-8 text-ink-500">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary-200 bg-primary-50">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary-700" />
-                  </div>
-                  <p className="mt-3 text-sm font-medium text-slate-700">Đang tìm kết quả...</p>
-                </div>
-              ) : null}
+        {!isMobile && !isWorkspaceExpanded && (
+          <button
+            onClick={() => setWorkspaceExpanded(true)}
+            className="absolute z-20 left-0 top-1/2 -translate-y-1/2 h-32 w-12 bg-ink-900 border border-l-0 border-ink-800 text-white rounded-r-2xl shadow-soft hover:bg-ink-800 transition text-[10px] font-black inline-flex flex-col items-center justify-center gap-2 pointer-events-auto animate-control-fade-in"
+            title="Mở AI Workspace"
+          >
+            <PanelLeftOpen className="w-4 h-4 text-primary-300" />
+            <span className="[writing-mode:vertical-rl] rotate-180 tracking-wide">Workspace</span>
+          </button>
+        )}
 
-              {visiblePlaces.length ? (
-                <div className="mb-3 px-1">
-                  <p className="text-xs uppercase tracking-wide font-semibold text-slate-500">Kết quả tìm kiếm</p>
-                  <p className="text-sm font-medium text-slate-700">{visiblePlaces.length} địa điểm</p>
-                </div>
-              ) : null}
-              {!visiblePlaces.length && !isSearching && appState === APP_STATES.ON_SEARCH ? (
-                <div className="text-sm text-gray-500">Không có kết quả phù hợp.</div>
-              ) : null}
-              <div className="space-y-3 pb-1">
-                {visiblePlaces.map((place, index) => (
-                  <PlaceCard
-                    key={place.id}
-                    place={place}
-                    itemIndex={index}
-                    imageUrl={imagesByPlace[place.id]}
-                    reviews={reviewsByPlace[place.id]}
-                    userLocation={userLocation}
-                    isSelected={selectedPlaceId === place.id}
-                    onSelect={() => handleSelectPlace(place)}
-                    onNavigate={() => handleMarkerClick(place)}
-                    onShowDetails={() => handleShowPlaceDetails(place)}
-                    onChat={() => handleChat(place)}
-                    onDirections={() => handleDirections(place)}
-                    onSave={() => handleToggleOwnedPlace(place)}
-                    isSaved={Boolean(ownedPlaceBySource[place.id])}
-                    onCheckIn={() => handleToggleCheckIn(place)}
-                    isCheckedIn={Boolean(checkInsByPlaceId[place.id])}
-                    showActions={false}
+        {/* Mobile Layout Tab Contents */}
+        {isMobile && (
+          <div className="absolute inset-0 flex flex-col z-10 pointer-events-none p-3 pb-16">
+            <div className="flex-1 w-full pointer-events-auto overflow-hidden">
+              {activeMobileTab === 'chat' && (
+                <div className="w-full h-full">
+                  <AIChatPanel
+                    messages={messages}
+                    input={input}
+                    setInput={setInput}
+                    isStreaming={isStreaming}
+                    isProgressActive={isProgressActive}
+                    progressSteps={progressSteps}
+                    quickReplies={quickReplies}
+                    workflowCard={workflowCard}
+                    referenceChips={taggedPlaces}
+                    onSendMessage={handleSendMessage}
+                    onQuickReplyClick={handleQuickReplyClick}
+                    onWorkflowConfirm={() => {}}
+                    onWorkflowCancel={handleWorkflowCancel}
+                    onRemoveReference={(id) => untagPlace(id)}
+                    onClearConversation={clearConversation}
+                    
+                    conversations={conversations}
+                    selectedConversationId={selectedConversationId}
+                    onSelectConversation={async (id) => {
+                      const history = await selectConversation(id);
+                      setConversationId(id);
+                      setMessages(history?.length ? history : defaultMessages);
+                    }}
+                    onNewConversation={async () => {
+                      const conv = await startNewConversation();
+                      if (conv?.id) {
+                        setConversationId(conv.id);
+                        setMessages(defaultMessages);
+                      }
+                    }}
+                    onDeleteConversation={deleteConversation}
+                    showHistory={showHistory}
+                    setShowHistory={setShowHistory}
+
+                    wizardState={wizard.wizardState}
+                    wizardActiveWorkflow={wizard.activeWorkflow}
+                    wizardCurrentStep={wizard.currentStep}
+                    wizardCurrentStepIndex={wizard.currentStepIndex}
+                    wizardSteps={wizard.steps}
+                    wizardCollectedData={wizard.collectedData}
+                    wizardProgress={wizard.progress}
+                    onWizardAccept={wizard.acceptWorkflow}
+                    onWizardDecline={wizard.declineWorkflow}
+                    onWizardSubmitStep={wizard.submitStep}
+                    onWizardSkipStep={wizard.skipStep}
+                    onWizardGoBack={wizard.goBackStep}
+                    onWizardConfirm={wizard.confirmAndExecute}
+                    onWizardCancel={wizard.cancelWizard}
+                    onWizardEditStep={wizard.editFromSummary}
                   />
-                ))}
-              </div>
-            </>
-          )}
-        </SidebarOverlay>
+                </div>
+              )}
+              {activeMobileTab === 'workspace' && (
+                <div className="w-full h-full">
+                  <AIWorkspacePanel
+                    searchPlaces={places}
+                    comparedPlaces={comparedPlaces}
+                    pinnedPlaces={taggedPlaces}
+                    itinerary={itinerary}
+                    areaInsight={areaInsight}
+                    budget={budgetData}
+                    foodRecommendations={foodRecommendations}
+                    
+                    selectedPlaceId={selectedPlaceId}
+                    pinnedPlaceIds={taggedPlaces.map(p => p.id)}
+                    
+                    onSelectPlace={handleSelectPlaceFromWorkspace}
+                    onPinPlace={handlePinPlace}
+                    onRemovePin={(id) => untagPlace(id)}
+                    onComparePlace={handleComparePlace}
+                    onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
+                    onAskAIAboutPlace={handleAskAIAboutPlace}
+                    onHoverPlace={(id) => setSelectedPlaceId(id)}
+                    onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
+                    onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
+                    onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
+                    onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
+                    onSelectFood={(food) => {
+                      const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
+                      const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
+                      focusMapAt({ lat, lng });
+                    }}
+                    onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
+                    onCreateItinerary={onCreateItinerary}
+                    
+                    activePanel={activeWorkspaceTab}
+                    setActivePanel={setActiveWorkspaceTab}
+                    onClosePanel={handleClosePanel}
+                  />
+                </div>
+              )}
+              {activeMobileTab === 'map' && (
+                <div className="w-full h-full pointer-events-none" /> /* Just show map in background */
+              )}
+            </div>
+          </div>
+        )}
 
-        {/* Quick Location Button + Style toggle */}
+        {/* Quick Location Button */}
         <div
-          className="absolute z-20 flex gap-2 transition-all duration-300 ease-in-out animate-soft-in"
+          className="absolute z-20 flex gap-2 transition-all duration-300 ease-out pointer-events-auto"
           style={{
-            bottom: isMobile ? 12 : 16,
-            left: `${isMobile ? 16 : isSidebarOpen ? sidebarWidth + 30 : 16}px`,
+            bottom: isMobile ? '72px' : `${DESKTOP_PANEL_GAP}px`,
+            left: isMobile
+              ? `${DESKTOP_PANEL_GAP}px`
+              : (isWorkspaceExpanded
+                ? `${DESKTOP_PANEL_GAP + DESKTOP_WORKSPACE_WIDTH + DESKTOP_PANEL_GAP}px`
+                : `${DESKTOP_PANEL_GAP}px`),
           }}
         >
           <button
-            onClick={getCurrentLocation}
+            onClick={requestCurrentLocation}
             disabled={locationStatus === 'loading'}
             title={locationStatus === 'loading' ? 'Đang tìm vị trí...' : 'Lấy vị trí của tôi'}
-            className="p-3 bg-ink-900 text-white rounded-2xl shadow-soft border border-ink-900 hover:bg-ink-700 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-11 px-4 bg-ink-900 text-white rounded-2xl shadow-soft hover:bg-ink-700 transition disabled:opacity-50 text-xs font-black"
           >
-            <Navigation2 className={`w-5 h-5 ${locationStatus === 'loading' ? 'animate-spin' : ''}`} />
+            <Crosshair className={`inline-block w-4 h-4 mr-2 ${locationStatus === 'loading' ? 'animate-spin' : ''}`} />
+            {locationStatus === 'loading' ? 'Đang tìm...' : 'Vị trí'}
           </button>
 
-          {(route?.length || appState === APP_STATES.ROUTING) ? (
+          {(route?.length || appState === APP_STATES.ROUTING) && (
             <button
               onClick={handleStopRouting}
               title="Ngừng chỉ đường"
-              className="inline-flex items-center gap-2 px-3 py-3 bg-rose-50 rounded-2xl shadow-soft border border-rose-200 text-rose-700 hover:bg-rose-100 transition-all duration-200 ease-in-out"
+              className="inline-flex items-center px-4 h-11 bg-rose-50 rounded-2xl shadow-soft border border-rose-200 text-rose-700 hover:bg-rose-100 transition text-xs font-bold"
             >
-              <Route className="w-4 h-4" />
-              <span className="text-sm font-medium">Ngừng chỉ đường</span>
-              <X className="w-4 h-4" />
+              <Route className="w-4 h-4 mr-2" />
+              Dừng chỉ đường
             </button>
-          ) : null}
+          )}
         </div>
 
+        {/* Error notification */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 w-[min(88vw,26rem)]"
-          style={{ top: NAVBAR_HEIGHT + 10 }}
+          className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 w-[min(88vw,26rem)] pointer-events-auto"
+          style={{ top: '16px' }}
         >
-          {error && (
-            <div className="w-full bg-white border border-rose-200 text-rose-700 px-3 py-2 rounded-2xl flex items-start gap-2 shadow-soft animate-soft-in">
+          {(error || streamingError) && (
+            <div className="w-full bg-white border border-rose-200 text-rose-700 px-3.5 py-2.5 rounded-2xl flex items-start gap-2 shadow-soft animate-soft-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs font-medium">{error}</p>
+                <p className="text-xs font-semibold">{error || streamingError}</p>
               </div>
               <button
                 onClick={() => setError('')}
@@ -919,10 +1086,40 @@ export default function HomePage() {
             </div>
           )}
         </div>
-
-        {chatPlace ? <PlaceChatPanel place={chatPlace} onClose={() => setChatPlace(null)} /> : null}
       </div>
+
+      {/* Mobile Tab Navigation bar */}
+      {isMobile && (
+        <div className="absolute bottom-0 left-0 right-0 h-14 bg-ink-900 text-white border-t border-ink-800 flex items-center justify-around z-30 shadow-card">
+          <button
+            onClick={() => setActiveMobileTab('chat')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition text-xs ${
+              activeMobileTab === 'chat' ? 'text-primary-400 bg-white/5 font-black' : 'text-slate-400'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Chat AI</span>
+          </button>
+          <button
+            onClick={() => setActiveMobileTab('workspace')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition text-xs ${
+              activeMobileTab === 'workspace' ? 'text-primary-400 bg-white/5 font-black' : 'text-slate-400'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            <span>Workspace</span>
+          </button>
+          <button
+            onClick={() => setActiveMobileTab('map')}
+            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition text-xs ${
+              activeMobileTab === 'map' ? 'text-primary-400 bg-white/5 font-black' : 'text-slate-400'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Bản đồ</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-

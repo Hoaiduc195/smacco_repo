@@ -9,6 +9,7 @@ export default function useStreamingChat({
   initialConversationId = null,
   buildPrompt,
   onSearchAction,
+  onWorkflowAction,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
@@ -67,6 +68,9 @@ export default function useStreamingChat({
           }
           if (chunk?.searchAction && typeof onSearchAction === 'function') {
             onSearchAction(chunk.searchAction);
+          }
+          if (chunk?.workflowAction && typeof onWorkflowAction === 'function') {
+            onWorkflowAction(chunk.workflowAction);
           }
           if (chunk?.conversationId || chunk?.conversation_id) {
             setConversationId((prev) => prev || chunk.conversationId || chunk.conversation_id);
