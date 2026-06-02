@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Place } from '@prisma/client';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Request } from 'express';
 
 @Injectable()
 export class PlacesService {
@@ -24,7 +25,35 @@ export class PlacesService {
     this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
   }
 
-  async create(createPlaceDto: CreatePlaceDto) {
+  private getBaseUrl(req?: Request): string {
+    if (req) {
+      const protocol = req.protocol;
+      const host = req.get('host');
+      return `${protocol}://${host}/api/v1`;
+    }
+    const port = this.configService.get<number>('app.port') || 3001;
+    return `http://localhost:${port}/api/v1`;
+  }
+
+  private formatCoverImageUrl(url: string | null, req?: Request): string | null {
+    if (!url) return null;
+    if (url.startsWith('/images/')) {
+      const baseUrl = this.getBaseUrl(req);
+      const filename = url.replace('/images/', '');
+      return `${baseUrl}/places/test-data/images/${filename}`;
+    }
+    return url;
+  }
+
+  mapPlace(place: Place | null, req?: Request): any {
+    if (!place) return null;
+    return {
+      ...place,
+      coverImageUrl: this.formatCoverImageUrl(place.coverImageUrl, req),
+    };
+  }
+
+  async create(createPlaceDto: CreatePlaceDto, req?: Request) {
     const source = (createPlaceDto.source || 'unknown').trim().toLowerCase();
     const sourcePlaceId = createPlaceDto.locationId;
     const lat = createPlaceDto.coordinates?.lat ?? null;
@@ -33,7 +62,7 @@ export class PlacesService {
     const normalizedAddress = this.normalizeText(createPlaceDto.addressCache || '');
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const place = await this.prisma.$transaction(async (tx) => {
         const existingSource = await tx.placeSource.findUnique({
           where: {
             source_sourcePlaceId: {
@@ -48,8 +77,6 @@ export class PlacesService {
           if (existingSource.place) {
             return existingSource.place;
           }
-          // If for some reason the place relation is null but the source record exists,
-          // let's delete the orphaned source record to clean up and allow re-creation.
           await tx.placeSource.delete({ where: { id: existingSource.id } });
         }
 
@@ -106,18 +133,19 @@ export class PlacesService {
 
         return place;
       });
+      return this.mapPlace(place, req);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         const existing = await this.findBySourcePlaceId(sourcePlaceId, source);
         if (existing) {
-          return existing;
+          return this.mapPlace(existing, req);
         }
       }
       throw error;
     }
   }
 
-  async findAll(filters?: { type?: string | string[]; city?: string; q?: string }) {
+  async findAll(filters?: { type?: string | string[]; city?: string; q?: string }, req?: Request) {
     const where: any = {};
     const types = this.normalizeTypes(filters?.type);
     if (types.length === 1) where.categories = { has: types[0] };
@@ -138,10 +166,11 @@ export class PlacesService {
       }
     }
 
-    return this.prisma.place.findMany({ where });
+    const places = await this.prisma.place.findMany({ where });
+    return places.map(p => this.mapPlace(p, req));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, req?: Request) {
     if (!this.isUuid(id)) {
       const dashIndex = id.indexOf('-');
       const source = dashIndex !== -1 ? id.substring(0, dashIndex) : 'serpapi';
@@ -186,12 +215,12 @@ export class PlacesService {
           }
         }
       }
-      return place;
+      return this.mapPlace(place, req);
     }
 
     const place = await this.prisma.place.findUnique({ where: { id } });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
-    return place;
+    return this.mapPlace(place, req);
   }
 
   async findReviews(id: string) {
@@ -227,9 +256,9 @@ export class PlacesService {
     });
   }
 
-  async findMedia(id: string) {
+  async findMedia(id: string, req?: Request) {
     const reviews = await this.findReviews(id);
-    const photos = await this.findPhotos(id);
+    const photos = await this.findPhotos(id, req);
 
     return { reviews, photos };
   }
@@ -291,8 +320,8 @@ export class PlacesService {
     return reviews.map((r) => this.parseReviewForContext(r));
   }
 
-  async findPhotos(id: string): Promise<string[]> {
-    const place = await this.findOne(id);
+  async findPhotos(id: string, req?: Request): Promise<string[]> {
+    const place = await this.findOne(id, req);
     const config = this.getFeaturesConfig();
 
     if (config.photos && place.source === 'serpapi' && place.sourcePlaceId) {
@@ -303,6 +332,19 @@ export class PlacesService {
         }
       } catch (error) {
         this.logger.error(`Error fetching SerpAPI photos for place ${id}: ${error.message}`);
+      }
+    }
+
+    // Check if it has local test data photos stored in rawSerpApiPropertyDetails
+    if (place.rawSerpApiPropertyDetails && typeof place.rawSerpApiPropertyDetails === 'object') {
+      const details = place.rawSerpApiPropertyDetails as any;
+      if (Array.isArray(details.images)) {
+        const baseUrl = this.getBaseUrl(req);
+        return details.images.map((img: string) => {
+          const filename = img.startsWith('/') ? img.substring(1) : img;
+          const cleanFilename = filename.startsWith('images/') ? filename.replace('images/', '') : filename;
+          return `${baseUrl}/places/test-data/images/${cleanFilename}`;
+        });
       }
     }
 
@@ -430,13 +472,13 @@ export class PlacesService {
     return record?.place ?? null;
   }
 
-  async update(id: string, updatePlaceDto: UpdatePlaceDto) {
+  async update(id: string, updatePlaceDto: UpdatePlaceDto, req?: Request) {
     const place = await this.prisma.place.update({
       where: { id },
       data: updatePlaceDto,
     });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
-    return place;
+    return this.mapPlace(place, req);
   }
 
   async remove(id: string): Promise<void> {

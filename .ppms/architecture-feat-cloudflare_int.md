@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-06-02 10:13
+> Last updated: 2026-06-02 11:45
 > Branch: feat/cloudflare_int
 
 ## Overview
@@ -58,6 +58,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 | POST   | `/upload/post`                | Upload post/contribution picture to R2     | Yes  |
 | POST   | `/api/v1/contributions/files` | Record contributed file                    | Yes  |
 | GET    | `/api/v1/contributions/files` | List contributed files                     | Yes  |
+| GET    | `/places/test-data/images/:filename` | Get local test data image                 | No   |
 | GET    | `/api/docs`                   | Swagger UI                                 | No   |
 
 ## Database Schema
@@ -77,27 +78,32 @@ PostgreSQL stores users, places, reviews, questions, answers, answer votes, file
 mono/
 ├── backend/
 │   ├── prisma/
-│   └── src/
-│       ├── common/
-│       ├── config/
-│       │   ├── r2.config.ts (New)
-│       │   ├── cloudflare-ai.config.ts (New)
-│       │   └── ...
-│       ├── modules/
-│       │   ├── ai/
-│       │   │   ├── cloudflare-ai-client.service.ts (New)
-│       │   │   └── ...
-│       │   ├── upload/ (New Module)
-│       │   │   ├── upload.module.ts
-│       │   │   ├── upload.service.ts
-│       │   │   └── upload.controller.ts
-│       │   └── ...
-│       └── prisma/
+│   ├── src/
+│   │   ├── common/
+│   │   ├── config/
+│   │   │   ├── r2.config.ts (New)
+│   │   │   ├── cloudflare-ai.config.ts (New)
+│   │   │   └── ...
+│   │   ├── modules/
+│   │   │   ├── ai/
+│   │   │   │   ├── cloudflare-ai-client.service.ts (New)
+│   │   │   │   └── ...
+│   │   │   ├── upload/ (New Module)
+│   │   │   │   ├── upload.module.ts
+│   │   │   │   ├── upload.service.ts
+│   │   │   │   └── upload.controller.ts
+│   │   │   └── ...
+│   │   └── prisma/
+│   └── test/ (New Reorganization)
+│       ├── fixtures/ (data.json & images/)
+│       └── test-cloudflare.ts
 ├── frontend/
-│   └── src/
-│       ├── App.jsx
-│       ├── components/
-│       ├── pages/
-│       └── services/
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── services/
+│   └── test/ (New Reorganization)
+│       └── connection-check.js
 └── .ppms/
 ```

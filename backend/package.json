@@ -16,7 +16,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "config:features": "node scripts/config-features.js"
+    "config:features": "node scripts/config-features.js",
+    "test:cloudflare": "ts-node test/test-cloudflare.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",
