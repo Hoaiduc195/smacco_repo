@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ChatRequestDto } from './dto/chat-request.dto';
 import { ChatMessage, ChatResponseDto, StreamChunkDto } from './dto/chat-response.dto';
 import { ConversationStoreService } from './conversation-store.service';
-import { GroqClientService } from './groq-client.service';
+import { ILlmClient } from './interfaces/llm-client.interface';
 
 const SYSTEM_PROMPT =
   'You are a helpful travel and local guide assistant. ' +
@@ -17,7 +17,7 @@ const SYSTEM_PROMPT =
 export class ChatService {
   constructor(
     private readonly store: ConversationStoreService,
-    private readonly groqClient: GroqClientService,
+    private readonly llmClient: ILlmClient,
   ) {}
 
   async answerPlaceQuestion(params: {
@@ -39,7 +39,7 @@ export class ChatService {
       .filter(Boolean)
       .join('\n');
 
-    const { content } = await this.groqClient.chat([
+    const { content } = await this.llmClient.chat([
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ]);
@@ -68,8 +68,8 @@ export class ChatService {
     Câu của người dùng: "${text}"`;
 
     try {
-      // Use groqClient directly for a fast extraction call
-      const { content } = await this.groqClient.chat([{ role: 'user', content: prompt }]);
+      // Use llmClient directly for a fast extraction call
+      const { content } = await this.llmClient.chat([{ role: 'user', content: prompt }]);
       // Llama 3 might wrap JSON in Markdown blocks, so we clean it
       const cleanContent = content.replace(/```json/gi, '').replace(/```/gi, '').trim();
       return JSON.parse(cleanContent);
@@ -87,7 +87,7 @@ export class ChatService {
 
     const messages = await this.buildMessages(conversationId, request.text);
 
-    const { content, finishReason, usage } = await this.groqClient.chat(messages);
+    const { content, finishReason, usage } = await this.llmClient.chat(messages);
 
     // Update history
     await this.store.append(conversationId, { role: 'user', content: request.text });
@@ -121,7 +121,7 @@ export class ChatService {
 
     const assistantParts: string[] = [];
 
-    for await (const { delta, finishReason } of this.groqClient.streamChat(messages)) {
+    for await (const { delta, finishReason } of this.llmClient.streamChat(messages)) {
       if (delta) {
         assistantParts.push(delta);
         yield { conversationId, delta };

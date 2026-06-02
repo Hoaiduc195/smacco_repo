@@ -1,15 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { ChatMessage } from './dto/chat-response.dto';
+import { ILlmClient } from '../interfaces/llm-client.interface';
+import { ChatMessage } from '../dto/chat-response.dto';
 
 /**
- * Client for Cloudflare Workers AI Chat Completions API.
+ * Concrete LLM client for Cloudflare Workers AI Chat Completions API.
  * Uses Cloudflare's OpenAI-compatible endpoint.
  */
 @Injectable()
-export class CloudflareAiClientService {
-  private readonly logger = new Logger(CloudflareAiClientService.name);
+export class CloudflareAiLlmClientService implements ILlmClient {
+  private readonly logger = new Logger(CloudflareAiLlmClientService.name);
   private readonly baseUrl: string;
   private readonly apiToken: string;
   private readonly model: string;
@@ -20,7 +21,11 @@ export class CloudflareAiClientService {
     const rawBaseUrl = this.configService.get<string>('cloudflareAi.baseUrl') || 'https://api.cloudflare.com/client/v4/accounts';
     
     // Construct standard OpenAI-compatible base URL for Cloudflare Workers AI
-    this.baseUrl = `${rawBaseUrl.replace(/\/$/, '')}/${accountId}/ai/v1`;
+    if (rawBaseUrl.includes('api.cloudflare.com')) {
+      this.baseUrl = `${rawBaseUrl.replace(/\/$/, '')}/${accountId}/ai/v1`;
+    } else {
+      this.baseUrl = rawBaseUrl.replace(/\/$/, '');
+    }
     this.apiToken = this.configService.get<string>('cloudflareAi.apiToken') || '';
     this.model = this.configService.get<string>('cloudflareAi.model') || '@cf/meta/llama-3.1-8b-instruct';
     this.timeout = (this.configService.get<number>('cloudflareAi.timeout') || 20) * 1000;
@@ -63,7 +68,7 @@ export class CloudflareAiClientService {
       const usage = data.usage;
 
       return { content, finishReason, usage };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Cloudflare AI chat completion error: ${error.message}`, error.stack);
       throw error;
     }
@@ -128,7 +133,7 @@ export class CloudflareAiClientService {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Cloudflare AI streamChat error: ${error.message}`, error.stack);
       throw error;
     }

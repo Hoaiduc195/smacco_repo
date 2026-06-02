@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-06-02 11:45
+> Last updated: 2026-06-02 15:10
 > Branch: feat/cloudflare_int
 
 ## Overview
@@ -38,7 +38,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 - **Framework**: NestJS with module-based organization.
 - **Module structure**: `ai`, `search`, `places`, `recommendations`, `reviews`, `users`, `presence`, `rag`, `contributions`, `health`, `saved-places`, `questions`, `upload`.
 - **Upload Module (New)**: Coordinates file uploads to S3-compatible **Cloudflare R2** buckets, exposing secure and optimized REST endpoints for user avatars, place photographs, and post assets.
-- **AI Orchestration**: `ai/orchestration` contains router, workflow engine, response composer, and shared tools. Integrates both `GroqClientService` and `CloudflareAiClientService` (OpenAI-compatible) under a unified router switcher controlled via `AI_PROVIDER` environment variable or the dynamic `features.json` configuration file.
+- **AI Orchestration**: Design based on interface-segregation and provider-agnostic injection. All core capabilities are decoupled through abstract class interfaces (`ILlmClient`, `ITaskRouter`, `IResponseComposer`, `IAiOrchestrator`). Providers (`GroqLlmClientService` and `CloudflareAiLlmClientService`) implement `ILlmClient`. The active client is resolved dynamically via a NestJS factory using config provider key `groq.provider` (mapping to `AI_PROVIDER` or `features.json`).
 
 ### Frontend ↔ Backend Interaction
 - Primary communication: REST JSON APIs through frontend service modules.
@@ -71,6 +71,7 @@ PostgreSQL stores users, places, reviews, questions, answers, answer votes, file
 - [x] Firebase authentication for login/signup/profile flows.
 - [x] Mapbox GL map renderer with clustered markers, user location layer, and Mapbox-token fallback behavior.
 - [x] Saved places and check-in flows.
+- [x] In-memory local test data query fallback with on-demand DB stub creation.
 
 ## Directory Structure
 
@@ -86,8 +87,21 @@ mono/
 │   │   │   └── ...
 │   │   ├── modules/
 │   │   │   ├── ai/
-│   │   │   │   ├── cloudflare-ai-client.service.ts (New)
-│   │   │   │   └── ...
+│   │   │   │   ├── interfaces/ (New interfaces)
+│   │   │   │   │   ├── llm-client.interface.ts
+│   │   │   │   │   ├── task-router.interface.ts
+│   │   │   │   │   ├── response-composer.interface.ts
+│   │   │   │   │   └── ai-orchestrator.interface.ts
+│   │   │   │   ├── providers/ (Concrete clients)
+│   │   │   │   │   ├── groq-llm-client.service.ts
+│   │   │   │   │   └── cloudflare-ai-llm-client.service.ts
+│   │   │   │   ├── orchestration/
+│   │   │   │   │   ├── router/
+│   │   │   │   │   │   └── llm-task-router.service.ts
+│   │   │   │   │   ├── composer/
+│   │   │   │   │   │   ├── llm-response-composer.service.ts
+│   │   │   │   │   │   └── search-result-context.builder.ts
+│   │   │   │   │   └── ai-orchestrator.service.ts
 │   │   │   ├── upload/ (New Module)
 │   │   │   │   ├── upload.module.ts
 │   │   │   │   ├── upload.service.ts

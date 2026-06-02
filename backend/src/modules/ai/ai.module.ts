@@ -1,28 +1,36 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
 
 import { AiController } from './ai.controller';
 import { NlpService } from './nlp.service';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
 import { ChatService } from './chat.service';
-import { GroqClientService } from './groq-client.service';
-import { CloudflareAiClientService } from './cloudflare-ai-client.service';
 import { ConversationStoreService } from './conversation-store.service';
 import { ConversationsService } from './conversations.service';
 import { SearchModule } from '../search/search.module';
 import { PlacesModule } from '../places/places.module';
-import { HttpModule } from '@nestjs/axios';
 
-// Orchestration
-import { GroqTaskRouterService } from './orchestration/router/groq-task-router.service';
+// Interfaces
+import { ILlmClient } from './interfaces/llm-client.interface';
+import { ITaskRouter } from './interfaces/task-router.interface';
+import { IResponseComposer } from './interfaces/response-composer.interface';
+import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
+
+// Concrete Providers
+import { GroqLlmClientService } from './providers/groq-llm-client.service';
+import { CloudflareAiLlmClientService } from './providers/cloudflare-ai-llm-client.service';
+import { LlmTaskRouterService } from './orchestration/router/llm-task-router.service';
+import { LlmResponseComposerService } from './orchestration/composer/llm-response-composer.service';
+import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
+
+// Engine & Tools
+import { WorkflowEngineService } from './orchestration/engine/workflow-engine.service';
+import { SearchResultContextBuilder } from './orchestration/composer/search-result-context.builder';
 import { ToolRegistryService } from '../../common/tools/tool-registry.service';
 import { SearchPlacesTool } from '../../common/tools/search-places.tool';
 import { GeocodeAnchorTool } from '../../common/tools/geocode-anchor.tool';
 import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
-
-import { WorkflowEngineService } from './orchestration/engine/workflow-engine.service';
-import { GroqResponseComposerService } from './orchestration/composer/groq-response-composer.service';
-import { SearchResultContextBuilder } from './orchestration/composer/search-result-context.builder';
-import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
 
 @Module({
   imports: [RecommendationsModule, SearchModule, PlacesModule, HttpModule],
@@ -30,22 +38,46 @@ import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
   providers: [
     NlpService, 
     ChatService, 
-    GroqClientService, 
-    CloudflareAiClientService,
     ConversationStoreService,
     ConversationsService,
 
-    // New Orchestration Providers
-    GroqTaskRouterService,
+    // Concrete LLM Clients
+    GroqLlmClientService,
+    CloudflareAiLlmClientService,
+
+    // Interface providers
+    {
+      provide: ILlmClient,
+      useFactory: (
+        configService: ConfigService,
+        groq: GroqLlmClientService,
+        cloudflare: CloudflareAiLlmClientService,
+      ) => {
+        const provider = configService.get<string>('groq.provider') || 'groq';
+        return provider === 'cloudflare' ? cloudflare : groq;
+      },
+      inject: [ConfigService, GroqLlmClientService, CloudflareAiLlmClientService],
+    },
+    {
+      provide: ITaskRouter,
+      useClass: LlmTaskRouterService,
+    },
+    {
+      provide: IResponseComposer,
+      useClass: LlmResponseComposerService,
+    },
+    {
+      provide: IAiOrchestrator,
+      useClass: AiOrchestratorService,
+    },
+
+    // Tools & engine
     ToolRegistryService,
     SearchPlacesTool,
     GeocodeAnchorTool,
     RecommendPlacesTool,
-
     WorkflowEngineService,
-    GroqResponseComposerService,
     SearchResultContextBuilder,
-    AiOrchestratorService,
   ],
   exports: [NlpService, ChatService],
 })

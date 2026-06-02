@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { GroqTaskRouterService } from './router/groq-task-router.service';
+import { IAiOrchestrator } from '../interfaces/ai-orchestrator.interface';
+import { ITaskRouter } from '../interfaces/task-router.interface';
+import { IResponseComposer } from '../interfaces/response-composer.interface';
 import { WorkflowEngineService } from './engine/workflow-engine.service';
-import { GroqResponseComposerService } from './composer/groq-response-composer.service';
 import { WORKFLOW_REGISTRY } from './engine/workflow-registry';
 import { ChatRequestDto } from '../dto/chat-request.dto';
 import { ConversationStoreService } from '../conversation-store.service';
@@ -9,14 +10,14 @@ import { ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
 import { SearchResultContextBuilder } from './composer/search-result-context.builder';
 
 @Injectable()
-export class AiOrchestratorService {
+export class AiOrchestratorService implements IAiOrchestrator {
   private readonly logger = new Logger(AiOrchestratorService.name);
   private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
   constructor(
-    private readonly router: GroqTaskRouterService,
+    private readonly router: ITaskRouter,
     private readonly engine: WorkflowEngineService,
-    private readonly composer: GroqResponseComposerService,
+    private readonly composer: IResponseComposer,
     private readonly store: ConversationStoreService,
     private readonly searchResultContextBuilder: SearchResultContextBuilder,
   ) {}

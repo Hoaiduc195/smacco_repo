@@ -7,7 +7,7 @@ import { NlpService } from './nlp.service';
 import { RecommendationsService } from '../recommendations/recommendations.service';
 import { ParseRequestDto } from './dto/parse-request.dto';
 import { ParseResponseDto } from './dto/parse-response.dto';
-import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
+import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
 import { ChatRequestDto } from './dto/chat-request.dto';
 import { ConversationsService } from './conversations.service';
 
@@ -17,7 +17,7 @@ export class AiController {
   constructor(
     private readonly nlpService: NlpService,
     private readonly recommendationsService: RecommendationsService,
-    private readonly orchestrator: AiOrchestratorService,
+    private readonly orchestrator: IAiOrchestrator,
     private readonly conversationsService: ConversationsService,
   ) {}
 

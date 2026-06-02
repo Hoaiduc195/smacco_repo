@@ -179,16 +179,58 @@ export class PlacesService {
       let place = await this.findBySourcePlaceId(sourcePlaceId, source);
       if (!place) {
         try {
+          let placeName = `Địa điểm #${sourcePlaceId.slice(0, 8)}`;
+          let placeAddress = 'Địa chỉ đang được cập nhật';
+          let categories = ['hotel'];
+          let lat = 16.047;
+          let lng = 108.206;
+          let coverImageUrl: string | null = null;
+          let averageRating: number | null = null;
+          let reviewCount = 0;
+          let details: any = null;
+          let reviewsList: any[] = [];
+
+          if (source === 'local') {
+            const localItem = this.getLocalTestDataItem(sourcePlaceId);
+            if (localItem) {
+              placeName = localItem.name;
+              placeAddress = localItem.address || placeAddress;
+              categories = localItem.type ? [localItem.type] : categories;
+              lat = localItem.latitude || lat;
+              lng = localItem.longitude || lng;
+              coverImageUrl = localItem.images && localItem.images.length > 0
+                ? `/images/${localItem.images[0]}`
+                : null;
+              reviewsList = localItem.reviews || [];
+              reviewCount = reviewsList.length;
+              averageRating = reviewCount > 0
+                ? reviewsList.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviewCount
+                : null;
+              details = {
+                phone: localItem.phone,
+                email: localItem.email,
+                rooms: localItem.rooms,
+                website: localItem.website,
+                images: localItem.images,
+                amenities: localItem.amenities,
+              };
+            }
+          }
+
           // Automatically create a stub place in DB so it exists for reviews, saved lists, presence
           place = await this.prisma.place.create({
             data: {
               source,
               sourcePlaceId,
-              placeName: `Địa điểm #${sourcePlaceId.slice(0, 8)}`,
-              placeAddress: 'Địa chỉ đang được cập nhật',
-              categories: ['hotel'],
-              lat: 16.047,
-              lng: 108.206,
+              placeName,
+              placeAddress,
+              categories,
+              lat,
+              lng,
+              coverImageUrl,
+              averageRating,
+              reviewCount,
+              rawSerpApiPropertyDetails: details,
             },
           });
           
@@ -201,10 +243,24 @@ export class PlacesService {
               rawAddress: place.placeAddress,
               normalizedName: this.normalizeText(place.placeName),
               normalizedAddress: this.normalizeText(place.placeAddress || ''),
-              lat: 16.047,
-              lng: 108.206,
+              lat,
+              lng,
             },
           });
+
+          // Insert the initial reviews from test data
+          if (source === 'local' && reviewsList.length > 0) {
+            for (const r of reviewsList) {
+              await this.prisma.review.create({
+                data: {
+                  placeId: place.id,
+                  rating: r.rating,
+                  reviewText: r.content,
+                  source: 'user',
+                }
+              });
+            }
+          }
         } catch (error: any) {
           // Concurrency race condition: another parallel request created the place first.
           // Recover by fetching the newly created place record.
@@ -616,5 +672,111 @@ export class PlacesService {
 
   private isUuid(value: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  }
+
+  loadLocalTestData(): any[] {
+    const candidates = [
+      path.join(process.cwd(), 'test', 'fixtures', 'data.json'),
+      path.join(process.cwd(), 'backend', 'test', 'fixtures', 'data.json'),
+    ];
+    let testDataPath = '';
+    for (const c of candidates) {
+      if (fs.existsSync(c)) {
+        testDataPath = c;
+        break;
+      }
+    }
+    
+    if (!testDataPath) {
+      this.logger.error(`Local test data file data.json not found in candidates: ${candidates.join(', ')}`);
+      return [];
+    }
+
+    try {
+      const content = fs.readFileSync(testDataPath, 'utf8');
+      const data = JSON.parse(content);
+      return data.map((item: any, idx: number) => ({
+        ...item,
+        index: idx,
+      }));
+    } catch (err) {
+      this.logger.error(`Failed to load local test data from ${testDataPath}: ${err.message}`);
+    }
+    return [];
+  }
+
+  getLocalTestDataItem(index: string): any {
+    const data = this.loadLocalTestData();
+    const idx = parseInt(index, 10);
+    if (!isNaN(idx) && idx >= 0 && idx < data.length) {
+      return data[idx];
+    }
+    return null;
+  }
+
+  findLocalTestData(filters?: { type?: string | string[]; city?: string; q?: string }, req?: Request): any[] {
+    const data = this.loadLocalTestData();
+    const types = this.normalizeTypes(filters?.type);
+    
+    const filtered = data.filter(item => {
+      // 1. Filter by categories/types
+      if (types.length > 0) {
+        const itemType = String(item.type || '').toLowerCase();
+        const matchesType = types.some(t => 
+          itemType.includes(t) || 
+          (Array.isArray(item.amenities) && item.amenities.some((a: string) => String(a).toLowerCase().includes(t)))
+        );
+        if (!matchesType) return false;
+      }
+
+      // 2. Filter by city/location in address
+      if (filters?.city) {
+        const cityLower = filters.city.toLowerCase();
+        const addressLower = String(item.address || '').toLowerCase();
+        if (!addressLower.includes(cityLower)) return false;
+      }
+
+      // 3. Filter by keyword q
+      if (filters?.q) {
+        const qLower = filters.q.toLowerCase();
+        const nameLower = String(item.name || '').toLowerCase();
+        const addressLower = String(item.address || '').toLowerCase();
+        const descLower = String(item.description || '').toLowerCase();
+        if (!nameLower.includes(qLower) && !addressLower.includes(qLower) && !descLower.includes(qLower)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return filtered.map(item => {
+      const coverImageUrl = item.images && item.images.length > 0
+        ? `/images/${item.images[0]}`
+        : null;
+      return {
+        id: `local-${item.index}`,
+        source: 'local',
+        sourcePlaceId: String(item.index),
+        placeName: item.name,
+        placeAddress: item.address,
+        categories: item.type ? [item.type] : [],
+        lat: item.latitude || 0,
+        lng: item.longitude || 0,
+        coverImageUrl: this.formatCoverImageUrl(coverImageUrl, req),
+        averageRating: Array.isArray(item.reviews) && item.reviews.length > 0
+          ? item.reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / item.reviews.length
+          : null,
+        reviewCount: Array.isArray(item.reviews) ? item.reviews.length : 0,
+        rawSerpApiPropertyDetails: {
+          phone: item.phone,
+          email: item.email,
+          rooms: item.rooms,
+          website: item.website,
+          images: item.images,
+          amenities: item.amenities,
+        },
+      };
+    });
   }
 }

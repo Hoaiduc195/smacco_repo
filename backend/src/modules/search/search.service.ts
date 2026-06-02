@@ -55,20 +55,58 @@ export class SearchService {
         return [];
       });
 
-      // 2. Process Local Results
-      localResults = (dbPlaces as any[]).map((p: any): PlaceResult => ({
+      // 2. Load and filter local test data in-memory directly from file
+      const inMemoryLocalPlaces = (this.placesService as any).findLocalTestData({
+        type: typeFilters.length > 0 ? typeFilters : filters.type,
+        city: filters.location,
+        q: filters.q,
+      });
+
+      // 3. Process Local Results (Combine DB places and in-memory local places)
+      // First, map database places
+      const mappedDbPlaces = (dbPlaces as any[]).map((p: any): PlaceResult => ({
         locationId: (p.source && p.source !== 'internal' && p.sourcePlaceId)
           ? `${p.source}-${p.sourcePlaceId}`
           : p.id,
         sourcePlaceId: p.sourcePlaceId, // Keep source ID to deduplicate against external
         name: p.placeName || 'Unknown',
         address: p.placeAddress,
+        description: p.rawSerpApiPropertyDetails?.description || undefined,
         location: p.lat && p.lng ? { lat: p.lat, lng: p.lng } : undefined,
         types: p.categories,
+        imageUrl: p.coverImageUrl || undefined,
         source: p.source || 'internal', // Mark as internal
+        rating: p.averageRating || undefined,
+        userRatingsTotal: p.reviewCount || undefined,
       }));
 
-      // 3. Query external providers only when the local DB is sparse.
+      // Now map in-memory local places
+      const mappedInMemoryPlaces = inMemoryLocalPlaces.map((p: any): PlaceResult => ({
+        locationId: p.id,
+        sourcePlaceId: p.sourcePlaceId,
+        name: p.placeName,
+        address: p.placeAddress,
+        description: p.rawSerpApiPropertyDetails?.description,
+        location: { lat: p.lat, lng: p.lng },
+        types: p.categories,
+        imageUrl: p.coverImageUrl || undefined,
+        source: 'local',
+        rating: p.averageRating || undefined,
+        userRatingsTotal: p.reviewCount || undefined,
+        amenities: p.rawSerpApiPropertyDetails?.amenities,
+      }));
+
+      // Merge database places and in-memory test data (prioritizing DB stub records if they exist)
+      const localMap = new Map<string, PlaceResult>();
+      for (const p of mappedInMemoryPlaces) {
+        localMap.set(p.locationId, p);
+      }
+      for (const p of mappedDbPlaces) {
+        localMap.set(p.locationId, p);
+      }
+      localResults = Array.from(localMap.values());
+
+      // 4. Query external providers only when the local DB + in-memory results are sparse.
       if (this.shouldQueryExternalProviders(localResults, filters, typeFilters)) {
         const providerRequests = this.providers.map((provider) =>
           provider.searchAccommodations({
@@ -96,7 +134,7 @@ export class SearchService {
         externalResults = resultsArray.flatMap((res) => res as PlaceResult[]);
       } else {
         this.logger.log(
-          `Skipping external provider search because local DB returned ${localResults.length} usable results.`,
+          `Skipping external provider search because local results returned ${localResults.length} usable results.`,
         );
       }
 

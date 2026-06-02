@@ -2,6 +2,63 @@
 
 ---
 
+## [2026-06-02 15:10] — In-Memory Local Test Data Query Fallback
+
+- **Branch**: `feat/cloudflare_int`
+- **Prompt**: à à vậy là hiện tại trông nó hơi bẩn ấy vì dữ liệu thật nằm trong db với dữ liệu mẫu, có cách nào để cho backend tự đọc file trong folder rồi trả ra không, chứ không cần phải lưu lại trong db
+- **Changes**:
+  - Implemented dynamic in-memory test data querying from `data.json` directly within `PlacesService` and `SearchService`.
+  - Created `findLocalTestData` helper in `PlacesService` to load, filter, and format records from the JSON mock file on-the-fly.
+  - Modified `findOne` in `PlacesService` to automatically generate database stub records and insert corresponding reviews dynamically on-demand only when a specific local mock place is requested by ID, maintaining full foreign-key schema integrity.
+  - Updated `SearchService.search` to merge database results with local in-memory search results, prioritizing the database stub records when they exist.
+  - Created and ran `clean-local-db.js` utility script to purge pre-seeded test data places from the database.
+- **Modified files**:
+  - `backend/src/modules/places/places.service.ts`
+  - `backend/src/modules/search/search.service.ts`
+- **Created files**:
+  - `backend/scripts/clean-local-db.js`
+- **Deleted files**: —
+- **Architecture impact**: Yes — eliminated the need to bulk pre-seed mock data inside the database. Local test data is queried in-memory and stubbed in the database on-demand, keeping the persistent database clean of unused mock data while preserving schema relations.
+
+---
+
+## [2026-06-02 14:45] — Refactor AI Module to Interfaces & Clean Directory Structure
+
+- **Branch**: `feat/cloudflare_int`
+- **Prompt**: tôi muốn cài lại cấu trúc của AI module, các task như taskrouter, ochestrator phải là interface, LLM client cũng nên là interface, hiện tại thì đang sử dụng 2 loại LLM provider là groq và cloudflare worker AI, hãy cài chi tiết từng class cho tùng cái, cấu trúc lại thư mục một cách sạch sẽ
+- **Changes**:
+  - Defined abstract class interfaces for all major AI components: `ILlmClient`, `ITaskRouter`, `IResponseComposer`, and `IAiOrchestrator` under the `interfaces/` subfolder.
+  - Implemented concrete clients `GroqLlmClientService` and `CloudflareAiLlmClientService` adhering to `ILlmClient`.
+  - Removed internal Cloudflare delegation logic from Groq Client, replacing it with a NestJS dynamic factory binding `ILlmClient` at configuration level. Added smart resolution for custom Worker AI proxy base URLs.
+  - Refactored `GroqTaskRouterService` and `GroqResponseComposerService` to provider-agnostic versions `LlmTaskRouterService` and `LlmResponseComposerService`, injecting `ILlmClient` instead of concrete client.
+  - Refactored `AiOrchestratorService` to implement `IAiOrchestrator` and inject interfaces `ITaskRouter` and `IResponseComposer`.
+  - Updated `AiController` to inject `IAiOrchestrator`, and `ChatService` to inject `ILlmClient`.
+  - Cleaned up directory structure under `backend/src/modules/ai/` and removed legacy service files.
+- **Modified files**:
+  - `backend/src/modules/ai/ai.module.ts`
+  - `backend/src/modules/ai/ai.controller.ts`
+  - `backend/src/modules/ai/chat.service.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+- **Created files**:
+  - `backend/src/modules/ai/interfaces/llm-client.interface.ts`
+  - `backend/src/modules/ai/interfaces/task-router.interface.ts`
+  - `backend/src/modules/ai/interfaces/response-composer.interface.ts`
+  - `backend/src/modules/ai/interfaces/ai-orchestrator.interface.ts`
+  - `backend/src/modules/ai/providers/groq-llm-client.service.ts`
+  - `backend/src/modules/ai/providers/cloudflare-ai-llm-client.service.ts`
+  - `backend/src/modules/ai/orchestration/router/llm-task-router.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`
+- **Deleted files**:
+  - `backend/src/modules/ai/groq-client.service.ts`
+  - `backend/src/modules/ai/cloudflare-ai-client.service.ts`
+  - `backend/src/modules/ai/orchestration/router/groq-task-router.service.ts`
+  - `backend/src/modules/ai/orchestration/router/task-router.interface.ts`
+  - `backend/src/modules/ai/orchestration/composer/groq-response-composer.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/response-composer.interface.ts`
+- **Architecture impact**: Yes — complete separation of concerns and decoupling of AI infrastructure via interface abstraction. Dynamic multi-provider integration is now managed purely by NestJS Dependency Injection, simplifying LLM swapping and unit-testing.
+
+---
+
 ## [2026-06-02 11:45] — Reorganize Test Data to Backend Test Fixtures
 
 - **Branch**: `feat/cloudflare_int`
