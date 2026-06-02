@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { ChatMessage } from './dto/chat-response.dto';
+import { CloudflareAiClientService } from './cloudflare-ai-client.service';
 
 /**
  * Thin client for Groq Chat Completions API.
  * Ported from Python GroqClient (httpx → axios).
+ * Dynamically delegates to Cloudflare Workers AI if configured.
  */
 @Injectable()
 export class GroqClientService {
@@ -14,12 +16,17 @@ export class GroqClientService {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly timeout: number;
+  private readonly provider: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly cloudflareAiService: CloudflareAiClientService,
+  ) {
     this.baseUrl = (this.configService.get<string>('groq.baseUrl') || 'https://api.groq.com/openai/v1').replace(/\/$/, '');
     this.apiKey = this.configService.get<string>('groq.apiKey') || '';
     this.model = this.configService.get<string>('groq.model') || 'llama-3.1-70b-versatile';
     this.timeout = (this.configService.get<number>('groq.timeout') || 20) * 1000; // seconds → ms
+    this.provider = this.configService.get<string>('groq.provider') || 'groq';
   }
 
   private headers() {
@@ -37,6 +44,11 @@ export class GroqClientService {
     messages: ChatMessage[],
     options?: { response_format?: { type: string } }
   ): Promise<{ content: string; finishReason?: string; usage?: Record<string, number> }> {
+    if (this.provider === 'cloudflare') {
+      this.logger.log('Routing chat request to Cloudflare Workers AI client');
+      return this.cloudflareAiService.chat(messages, options);
+    }
+
     const payload: any = {
       model: this.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -67,6 +79,12 @@ export class GroqClientService {
   async *streamChat(
     messages: ChatMessage[],
   ): AsyncGenerator<{ delta: string; finishReason?: string }> {
+    if (this.provider === 'cloudflare') {
+      this.logger.log('Routing streamChat request to Cloudflare Workers AI client');
+      yield* this.cloudflareAiService.streamChat(messages);
+      return;
+    }
+
     const payload = {
       model: this.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),

@@ -10,7 +10,8 @@ let config = {
   propertyDetails: true,
   photos: false,
   reviews: true,
-  nearbyAmenities: true
+  nearbyAmenities: true,
+  aiProvider: 'groq'
 };
 
 if (fs.existsSync(configPath)) {
@@ -55,6 +56,13 @@ async function main() {
   // 5. Nearby Amenities
   const amenitiesAns = await askQuestion(`5. Cho phép Đếm tiện ích xung quanh qua Overpass API (hiện tại: ${config.nearbyAmenities ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
   config.nearbyAmenities = amenitiesAns.trim().toLowerCase() === 'y' ? true : (amenitiesAns.trim().toLowerCase() === 'n' ? false : config.nearbyAmenities);
+
+  // 6. AI Provider
+  const providerAns = await askQuestion(`6. Chọn AI Provider (hiện tại: ${config.aiProvider || 'groq'})? (groq/cloudflare hoặc enter để giữ nguyên): `);
+  const providerAnsTrimmed = providerAns.trim().toLowerCase();
+  if (providerAnsTrimmed === 'groq' || providerAnsTrimmed === 'cloudflare') {
+    config.aiProvider = providerAnsTrimmed;
+  }
 
   // Write new config
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');

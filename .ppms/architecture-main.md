@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-29 09:08
+> Last updated: 2026-05-31 04:03
 > Branch: main
 
 ## Overview
@@ -176,6 +176,81 @@ mono/
 - The navbar logo now routes to `/app` so the main application entry stays inside the map workflow instead of resetting to landing.
 - A dedicated `Bản đồ` action is visible in the desktop header, and the avatar dropdown now includes `Quay lại bản đồ` for quick recovery from any authenticated page.
 - Together with the detail and profile back buttons, the app now has multiple redundant paths back to the map to reduce user friction.
+- [x] Clicking the current-location button now always snaps Mapbox to a fixed zoom level and resets follow-state so the map does not preserve an old zoom from previous interactions.
+- [x] Advanced filter popover on the map navbar closes with smoother opacity/transform animation, and Mapbox repaint invalidation no longer forces a resize when the sidebar closes.
+- [x] Public landing page before the protected map experience.
+- [x] Reusable Tailwind theme system with warm base colors, primary/accent tokens, radius scale, shared shadows, card styles, button variants, input styles, badge styles, and section utilities.
+- [x] Premium SaaS-style accommodation landing page with hero mockup, social proof, feature cards, workflow, prompt demo, trust/security, testimonials, FAQ, and CTA footer.
+- [x] Landing page copy aligned to the product goal of helping users find suitable accommodations through chatbot-guided discovery and interactive place data.
+- [x] Unified warm neutral / primary green / accent orange UI theme across public landing, login, profile, map workspace controls, panels, result cards, Q&A, modals, map popups, and chat widget.
+- [x] Map workspace uses solid theme surfaces without glassmorphism/backdrop blur effects.
+- [x] Public routes render immediately while protected routes continue to wait for Firebase authentication state.
+- [x] Map workspace logo returns users to the public landing page and chatbot opens by default.
+- [x] Embedded login on the overview page.
+- [x] Smacco branding with custom non-neon favicon and logo usage.
+- [x] Firebase authentication for login/signup/profile flows.
+- [x] Mapbox GL map renderer with clustered markers, route layer, user location layer, and Mapbox-token fallback behavior.
+- [x] Search filters for location, place type, and budget.
+- [x] AI chat with streaming support.
+- [x] Place detail pages with reviews, Q&A, and place chat.
+- [x] Saved places and check-in flows.
+- [x] User profile page.
+
+## In-Progress Features
+- [ ] Continue polishing responsive UI and bundle code splitting for large frontend chunks.
+
+## Directory Structure
+
+```
+mono/
+├── backend/
+│   ├── prisma/
+│   └── src/
+│       ├── common/
+│       ├── config/
+│       ├── modules/
+│       └── prisma/
+├── frontend/
+│   ├── public/
+│   │   └── favicon.svg
+│   └── src/
+│       ├── App.jsx
+│       ├── components/
+│       ├── contexts/
+│       ├── hooks/
+│       ├── layouts/
+│       ├── pages/
+│       │   ├── LandingPage.jsx
+│       │   ├── HomePage.jsx
+│       │   ├── LoginPage.jsx
+│       │   ├── PlaceDetailPage.jsx
+│       │   └── ProfilePage.jsx
+│       └── services/
+├── docs/
+├── docker-compose.yml
+└── .ppms/
+```
+## 2026-05-27 21:35 - Preserve map workflow across detail navigation
+
+- HomePage now restores persisted state before writing back to `sessionStorage`, which prevents the default empty initial render from erasing the active search workflow.
+- The persisted snapshot includes the query, filters, visible places, selection, sidebar state, route state, and map focus target, so returning from detail recreates the same search context.
+- PlaceDetailPage now returns to `/app` with a captured `returnToMapState` snapshot, giving the user an explicit way back to the main map without losing the active workflow.
+
+## 2026-05-27 21:40 - Reset workflow on landing page entry
+
+- The public landing page now clears `home_search_state` on mount, so `/` becomes the reset boundary for the map workflow.
+- Returning from detail to `/app` still restores the preserved search context, but navigating to landing discards it and starts a clean session for the next visit.
+
+## 2026-05-27 21:46 - Add direct back-to-map affordance in profile
+
+- The profile page now exposes a dedicated `Quay lại bản đồ` button at the top of the page, reducing friction when users move from personal views back to the active map workflow.
+- The place detail page already returns to `/app` with preserved state, so both detail and profile now offer clear return paths into the main map experience.
+
+## 2026-05-27 21:52 - Make navbar the primary map hub
+
+- The navbar logo now routes to `/app` so the main application entry stays inside the map workflow instead of resetting to landing.
+- A dedicated `Bản đồ` action is visible in the desktop header, and the avatar dropdown now includes `Quay lại bản đồ` for quick recovery from any authenticated page.
+- Together with the detail and profile back buttons, the app now has multiple redundant paths back to the map to reduce user friction.
 
 ## 2026-05-27 21:58 - Reduce unnecessary visual noise in navigation and cards
 
@@ -187,3 +262,7 @@ mono/
 - Search result cards no longer render the place type chip, so generic fallback values like `hotel` do not pollute the visual layout.
 - The `type` field still exists in data for theme and logic, but the UI now prioritizes more useful information such as image, price, rating, and distance.
 
+## 2026-05-29 09:17 - Remove return to map option from navbar avatar dropdown
+
+- The `Quay lại bản đồ` option was removed from the user profile/avatar dropdown menu inside `Navbar.jsx`.
+- This streamlines the profile navigation dropdown, keeping only "Trang cá nhân" (Personal Profile) and "Đăng xuất" (Log Out) options, avoiding redundancy since other explicit back-to-map pathways exist.

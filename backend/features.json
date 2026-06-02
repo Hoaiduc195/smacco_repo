@@ -1,7 +1,8 @@
 {
   "hotelSearch": true,
   "propertyDetails": true,
-  "photos": true,
+  "photos": false,
   "reviews": true,
-  "nearbyAmenities": false
+  "nearbyAmenities": false,
+  "aiProvider": "groq"
 }

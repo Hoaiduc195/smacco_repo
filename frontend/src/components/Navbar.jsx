@@ -337,17 +337,6 @@ export default function Navbar({
               </button>
 
               <button
-                onClick={() => {
-                  navigate('/app');
-                  setShowUserMenu(false);
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
-              >
-                <MapPin className="w-4 h-4" />
-                Quay lại bản đồ
-              </button>
-
-              <button
                 onClick={handleLogout}
               disabled={isLoggingOut}
               className="w-full flex items-center gap-2 px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"

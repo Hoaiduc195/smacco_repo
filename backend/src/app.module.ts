@@ -8,6 +8,8 @@ import databaseConfig from './config/database.config';
 import firebaseConfig from './config/firebase.config';
 import osmConfig from './config/osm.config';
 import groqConfig from './config/groq.config';
+import r2Config from './config/r2.config';
+import cloudflareAiConfig from './config/cloudflare-ai.config';
 
 // Feature modules — existing (from core-service)
 import { UsersModule } from './modules/users/users.module';
@@ -26,13 +28,14 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { ContributionsModule } from './modules/contributions/contributions.module';
 import { QuestionsModule } from './modules/questions/questions.module';
 import { SavedPlacesModule } from './modules/saved-places/saved-places.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
     // ── Configuration ─────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig],
+      load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig, r2Config, cloudflareAiConfig],
     }),
 
     // ── Database ──────────────────────────────────
@@ -55,6 +58,7 @@ import { SavedPlacesModule } from './modules/saved-places/saved-places.module';
     ContributionsModule,
     QuestionsModule,
     SavedPlacesModule,
+    UploadModule,
   ],
 })
 export class AppModule {}

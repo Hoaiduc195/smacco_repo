@@ -5,6 +5,7 @@ import { NlpService } from './nlp.service';
 import { RecommendationsModule } from '../recommendations/recommendations.module';
 import { ChatService } from './chat.service';
 import { GroqClientService } from './groq-client.service';
+import { CloudflareAiClientService } from './cloudflare-ai-client.service';
 import { ConversationStoreService } from './conversation-store.service';
 import { ConversationsService } from './conversations.service';
 import { SearchModule } from '../search/search.module';
@@ -30,6 +31,7 @@ import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
     NlpService, 
     ChatService, 
     GroqClientService, 
+    CloudflareAiClientService,
     ConversationStoreService,
     ConversationsService,
 

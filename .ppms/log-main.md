@@ -2,6 +2,40 @@
 
 ---
 
+## [2026-05-31 04:03] — Update data_assignment.md schema and JSON model
+
+- **Branch**: `main`
+- **Prompt**: "chỉnh lại file md, phần json thêm luôn cả sđt, email, số phòng, website"
+- **Changes**:
+  - Added contact information and room count requirements to `data_assignment.md`'s required location properties.
+  - Added `phone`, `email`, `rooms`, and `website` properties to the sample location JSON structure.
+- **Modified files**:
+  - `tmp/data_assignment.md`
+  - `.ppms/architecture-main.md`
+  - `.ppms/log-main.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — updated schema documentation and templates for data assignments.
+
+---
+
+## [2026-05-29 09:17] — Remove Return to Map Option from User Profile Dropdown
+
+- **Branch**: `main`
+- **Prompt**: "chỉnh lại nút trang cá nhân không còn hiện option quay lại bản đồ nữa" (Modify the personal page button so that it no longer shows the option to return to the map).
+- **Changes**:
+  - Removed the `Quay lại bản đồ` (Return to map) option button from the user profile dropdown menu inside the `Navbar` component (`Navbar.jsx`).
+  - This ensures that when a user clicks on their avatar/profile button in the navigation header, the dropdown menu shows only "Trang cá nhân" (Personal Profile) and "Đăng xuất" (Log Out) options, reducing redundant options in that menu.
+- **Modified files**:
+  - `frontend/src/components/Navbar.jsx`
+  - `.ppms/architecture-main.md`
+  - `.ppms/log-main.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend UI adjustments to the header navigation dropdown.
+
+---
+
 ## [2026-05-29 09:08] — Complete Frontend Lightbox Gallery and Solve Hook Order Mismatch
 
 - **Branch**: `main`
