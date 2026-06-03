@@ -35,7 +35,7 @@ export default function useStreamingChat({
     });
   };
 
-  const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces) => {
+  const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces, options = {}) => {
     const rawText = textOverride ?? input;
     const userText = rawText.trim();
     if (!userText || isStreaming) return;
@@ -58,6 +58,8 @@ export default function useStreamingChat({
         conversationId,
         taggedPlaceIds,
         taggedPlaces,
+        workflowExecution: options.workflowExecution,
+        wizardPreferences: options.wizardPreferences,
         signal: controller.signal,
         onChunk: (chunk) => {
           if (chunk?.error) {

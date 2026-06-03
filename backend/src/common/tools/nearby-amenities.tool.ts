@@ -3,8 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { IUnifiedTool, UnifiedToolInput, UnifiedToolOutput } from './tool.interface';
 import { distanceKm } from '../utils/geo.util';
-import * as fs from 'fs';
-import * as path from 'path';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 const AMENITY_CATEGORIES = [
   'restaurant', 'cafe', 'supermarket', 'convenience_store',
@@ -21,21 +20,10 @@ export class NearbyAmenitiesTool implements IUnifiedTool {
   readonly id = 'nearby_amenities';
   readonly description = 'Counts nearby POIs (restaurants, cafes, ATMs, etc.) for each place via Overpass API.';
 
-  constructor(private readonly httpService: HttpService) {}
-
-  private isAmenitiesToolDisabled(): boolean {
-    const configPath = path.join(process.cwd(), 'features.json');
-    try {
-      if (fs.existsSync(configPath)) {
-        const content = fs.readFileSync(configPath, 'utf8');
-        const config = JSON.parse(content);
-        return config.nearbyAmenities === false;
-      }
-    } catch (err) {
-      // ignore
-    }
-    return false;
-  }
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   async execute(inputs: UnifiedToolInput): Promise<UnifiedToolOutput> {
     const places = inputs.places || [];
@@ -48,7 +36,7 @@ export class NearbyAmenitiesTool implements IUnifiedTool {
 
     if (validPlaces.length === 0) return { status: 'success', scoringMap: results };
 
-    if (this.isAmenitiesToolDisabled()) {
+    if (!this.runtimeConfig.overpass.nearbyAmenities) {
       this.logger.log('NearbyAmenitiesTool is disabled by configuration (Overpass API skipped to avoid timeouts).');
       for (const place of validPlaces) {
         results[place.locationId || place.id] = { score: 0.5, details: { disabled: true } };

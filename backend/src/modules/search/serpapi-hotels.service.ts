@@ -2,8 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { AccommodationProvider, PlaceResult, SearchParams } from './accommodation-provider.interface';
-import * as fs from 'fs';
-import * as path from 'path';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 @Injectable()
 export class SerpApiHotelsService implements AccommodationProvider {
@@ -11,27 +10,16 @@ export class SerpApiHotelsService implements AccommodationProvider {
   private readonly apiKey: string;
   private readonly logger = new Logger(SerpApiHotelsService.name);
 
-  constructor(private readonly http: HttpService, private readonly configService: ConfigService) {
+  constructor(
+    private readonly http: HttpService,
+    private readonly configService: ConfigService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {
     this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
   }
 
-  private getFeaturesConfig() {
-    const configPath = path.join(process.cwd(), 'features.json');
-    const defaults = { hotelSearch: true, photos: false, reviews: true, nearbyAmenities: true };
-    try {
-      if (fs.existsSync(configPath)) {
-        const content = fs.readFileSync(configPath, 'utf8');
-        return { ...defaults, ...JSON.parse(content) };
-      }
-    } catch (err) {
-      // ignore config loading errors and fallback
-    }
-    return defaults;
-  }
-
   async searchAccommodations(params: SearchParams): Promise<PlaceResult[]> {
-    const config = this.getFeaturesConfig();
-    if (!config.hotelSearch) {
+    if (!this.runtimeConfig.serpApi.hotelSearch) {
       this.logger.log('SerpAPI Hotel Search is disabled by configuration.');
       return [];
     }

@@ -19,6 +19,15 @@ export interface ComposerContext {
 
   /** Optional tagged place details from the user's active session */
   taggedPlaces?: any[];
+
+  /** Optional user context: name, location, timezone, locale */
+  userContext?: {
+    displayName?: string;
+    lat?: number;
+    lng?: number;
+    timezone?: string;
+    locale?: string;
+  };
 }
 
 export interface ComposerResult {

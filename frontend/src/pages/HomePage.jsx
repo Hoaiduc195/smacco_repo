@@ -101,7 +101,6 @@ export default function HomePage() {
 
   // Wizard hook
   const wizard = useWorkflowWizard();
-  const [pendingSearchResults, setPendingSearchResults] = useState(null);
 
   const normalizeBudget = useCallback((value) => {
     if (!value) return '';
@@ -411,24 +410,13 @@ export default function HomePage() {
     initialMessages: defaultMessages,
     initialConversationId: selectedConversationId,
     onSearchAction: (action) => {
-      // Don't auto-execute. Propose wizard instead.
-      if (wizard.wizardState === 'idle') {
-        setPendingSearchResults(action.results || null);
-        wizard.proposeWorkflow('SEARCH_PLACES', {
-          query: action.query,
-          location: action.location,
-          type: action.type,
-          types: action.types,
-          budget: action.budget,
-        }, action.query || '');
-      } else {
-        // If wizard is already active, fallback to direct handling
-        handleAiSearch(action);
-      }
+      handleAiSearch(action);
     },
     onWorkflowAction: (action) => {
       if (wizard.wizardState === 'idle') {
-        if (action.type === 'compare') {
+        if (action.type === 'search') {
+          wizard.proposeWorkflow('SEARCH_PLACES', action.parameters || {}, action.parameters?.query || '');
+        } else if (action.type === 'compare') {
           wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '');
         } else if (action.type === 'analyze') {
           wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '');
@@ -567,17 +555,20 @@ export default function HomePage() {
       }));
 
       if (wfId === 'SEARCH_PLACES') {
-        // If we have pending results, use them for map display
-        if (pendingSearchResults?.length) {
-          handleAiSearch({
-            query: data.query, location: data.location,
-            types: data.types, budget: data.budget,
-            results: pendingSearchResults,
-          });
-        }
-        // Send enriched prompt for AI response
         try {
-          await sendMessage(buildSearchPrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+          await sendMessage(buildSearchPrompt(data), taggedPlaces.map(p => p.id), taggedPayload, {
+            workflowExecution: {
+              workflowId: 'SEARCH_PLACES',
+              confirmed: true,
+              parameters: data,
+            },
+            wizardPreferences: {
+              guestCount: data.guests,
+              budget: data.budget,
+              types: data.types,
+              preferences: data.preferences,
+            },
+          });
         } catch (err) { console.error(err); }
       } else if (wfId === 'COMPARE_PLACES') {
         try {
@@ -589,7 +580,6 @@ export default function HomePage() {
         } catch (err) { console.error(err); }
       }
 
-      setPendingSearchResults(null);
       wizard.resetWizard();
     };
 

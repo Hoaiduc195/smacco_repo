@@ -7,6 +7,8 @@ import {
   AccommodationProvider,
   PlaceResult,
 } from './accommodation-provider.interface';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
+import { ExternalProviderPolicy } from '../../config/runtime-config';
 
 export interface SearchFilters {
   q?: string;
@@ -29,6 +31,7 @@ export class SearchService {
     private readonly placesService: PlacesService,
     private readonly recommendationsService: RecommendationsService,
     private readonly goongPlacesService: GoongPlacesService,
+    private readonly runtimeConfig: RuntimeConfigService,
     @Inject(ACCOMMODATION_PROVIDERS)
     private readonly providers: AccommodationProvider[],
   ) {}
@@ -42,29 +45,35 @@ export class SearchService {
 
     let externalResults: PlaceResult[] = [];
     let localResults: PlaceResult[] = [];
+    const searchConfig = this.runtimeConfig.search;
 
     try {
-      const dbRequest = this.placesService.findAll({
-        type: typeFilters.length > 0 ? typeFilters : filters.type,
-        city: filters.location,
-        q: filters.q,
-      });
+      const dbPlaces = searchConfig.localDatabase
+        ? await this.placesService.findAll({
+            type: typeFilters.length > 0 ? typeFilters : filters.type,
+            city: filters.location,
+            q: filters.q,
+          }).catch((err) => {
+            this.logger.error(`Database search failed: ${err.message}`);
+            return [];
+          })
+        : [];
 
-      const dbPlaces = await dbRequest.catch((err) => {
-        this.logger.error(`Database search failed: ${err.message}`);
-        return [];
-      });
+      const dbPlacesForMode = this.runtimeConfig.environment === 'production'
+        ? (dbPlaces as any[]).filter((p: any) => p.source !== 'local')
+        : (dbPlaces as any[]);
 
-      // 2. Load and filter local test data in-memory directly from file
-      const inMemoryLocalPlaces = (this.placesService as any).findLocalTestData({
-        type: typeFilters.length > 0 ? typeFilters : filters.type,
-        city: filters.location,
-        q: filters.q,
-      });
+      const inMemoryLocalPlaces = searchConfig.localFixture
+        ? (this.placesService as any).findLocalTestData({
+            type: typeFilters.length > 0 ? typeFilters : filters.type,
+            city: filters.location,
+            q: filters.q,
+          })
+        : [];
 
       // 3. Process Local Results (Combine DB places and in-memory local places)
       // First, map database places
-      const mappedDbPlaces = (dbPlaces as any[]).map((p: any): PlaceResult => ({
+      const mappedDbPlaces = dbPlacesForMode.map((p: any): PlaceResult => ({
         locationId: (p.source && p.source !== 'internal' && p.sourcePlaceId)
           ? `${p.source}-${p.sourcePlaceId}`
           : p.id,
@@ -106,8 +115,7 @@ export class SearchService {
       }
       localResults = Array.from(localMap.values());
 
-      // 4. Query external providers only when the local DB + in-memory results are sparse.
-      if (this.shouldQueryExternalProviders(localResults, filters, typeFilters)) {
+      if (this.shouldQueryExternalProviders(localResults, filters, typeFilters, searchConfig.externalProviderPolicy)) {
         const providerRequests = this.providers.map((provider) =>
           provider.searchAccommodations({
             query: providerQuery,
@@ -264,8 +272,11 @@ export class SearchService {
     localResults: PlaceResult[],
     filters: SearchFilters,
     typeFilters: string[],
+    policy: ExternalProviderPolicy,
   ): boolean {
+    if (policy === 'never') return false;
     if (!this.providers.length) return false;
+    if (policy === 'always') return true;
     if (localResults.length === 0) return true;
 
     const hasStructuredIntent = Boolean(typeFilters.length || filters.location || filters.latitude || filters.longitude);

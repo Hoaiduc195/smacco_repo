@@ -35,9 +35,19 @@ Available Workflows:
 2. "GENERAL_CHAT"
    - Greetings or unrelated questions.
 
+3. "COMPARE_PLACES"
+   - User wants to compare two or more accommodations side by side.
+   - Keywords: "so sánh", "compare", "cái nào tốt hơn", "nên chọn cái nào", "khác nhau", "versus", "vs"
+   - The user usually has tagged/selected places and asks to compare.
+
+4. "ANALYZE_PLACE"
+   - User wants in-depth analysis/evaluation of a specific tagged place.
+   - Keywords: "phân tích", "đánh giá", "review", "ưu nhược điểm", "điểm mạnh", "điểm yếu", "thế nào", "tốt không", "có nên", "hợp với tôi không"
+   - If user mentions preferences/priorities (giá, vị trí, yên tĩnh, tiện nghi...), extract into "preferences" array.
+
 Output Schema:
 {
-  "workflowId": "SEARCH_PLACES" | "GENERAL_CHAT",
+  "workflowId": "SEARCH_PLACES" | "GENERAL_CHAT" | "COMPARE_PLACES" | "ANALYZE_PLACE",
   "parameters": {
     "query": "string", // Keep the user's specific search terms intact (e.g., "nhà nghỉ gần đà nẵng", "khách sạn gần sân bay Nội Bài") instead of simplifying it to just the category word.
     "location": "string",
@@ -45,7 +55,11 @@ Output Schema:
     "anchor": "string",
     "budget": "low" | "mid" | "high",
     "type": "hotel" | "hostel" | "homestay" | "apartment" | "resort" | "villa" | "guesthouse" | "motel" | "camping",
-    "types": ["hotel", "hostel", "homestay", "apartment", "resort", "villa", "guesthouse", "motel", "camping"]
+    "types": ["hotel", "hostel", "homestay", "apartment", "resort", "villa", "guesthouse", "motel", "camping"],
+    "placeNames": ["string"],
+    "criteria": "string",
+    "placeName": "string",
+    "preferences": ["string"]
   }
 }
 
@@ -72,6 +86,14 @@ Rules:
 - Crucial:
   - Map "nhà nghỉ" to "hostel"
   - Map "nhà khách" to "guesthouse"
+- For COMPARE_PLACES:
+  - Route here when user explicitly compares or asks which is better between places.
+  - If no specific place names are in the text, leave "placeNames" as empty array (the system uses tagged places from the UI).
+  - If user mentions a comparison aspect (giá, vị trí, đánh giá), set "criteria" to: "price", "rating", "location", "amenities", or "overall".
+- For ANALYZE_PLACE:
+  - Route here when user wants analysis, review, or evaluation of a place.
+  - If the previous assistant message asked about user preferences for analyzing a place, and the user responds with preference keywords (giá, vị trí, sạch sẽ, yên tĩnh, tiện nghi, hồ bơi, view, gần biển...), route to "ANALYZE_PLACE" with those preferences extracted.
+  - If the user includes preferences in the same message as the analysis request, extract them directly.
 
 Examples:
 
@@ -117,6 +139,66 @@ Output:
     "types": ["resort", "villa"]
   }
 }
+
+User:
+so sánh hai khách sạn này giúp tôi
+
+Output:
+{
+  "workflowId": "COMPARE_PLACES",
+  "parameters": {
+    "placeNames": [],
+    "criteria": "overall"
+  }
+}
+
+User:
+cái nào rẻ hơn?
+
+Output:
+{
+  "workflowId": "COMPARE_PLACES",
+  "parameters": {
+    "placeNames": [],
+    "criteria": "price"
+  }
+}
+
+User:
+phân tích chỗ này giúp tôi
+
+Output:
+{
+  "workflowId": "ANALYZE_PLACE",
+  "parameters": {
+    "placeName": "",
+    "preferences": []
+  }
+}
+
+User:
+tôi quan tâm giá cả và vị trí
+
+Output:
+{
+  "workflowId": "ANALYZE_PLACE",
+  "parameters": {
+    "placeName": "",
+    "preferences": ["giá cả", "vị trí"]
+  }
+}
+
+User:
+khách sạn này tốt không? tôi cần chỗ yên tĩnh gần biển
+
+Output:
+{
+  "workflowId": "ANALYZE_PLACE",
+  "parameters": {
+    "placeName": "",
+    "preferences": ["yên tĩnh", "gần biển"]
+  }
+}
 `;
 
 @Injectable()
@@ -134,7 +216,7 @@ export class LlmTaskRouterService implements ITaskRouter {
         ...recentHistory,
         {
           role: 'system',
-          content: 'Use the recent conversation only to resolve follow-up references, omitted details, pronouns, or phrases like "cái thứ 2". The current user message remains the primary routing input.',
+          content: 'Use the recent conversation to resolve follow-up references, omitted details, pronouns, phrases like "cái thứ 2", and multi-turn intent continuations (e.g., user responding with preferences after being asked by the assistant). The current user message remains the primary routing input.',
         },
         { role: 'user', content: userQuery },
       ];

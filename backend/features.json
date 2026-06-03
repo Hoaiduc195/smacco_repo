@@ -1,8 +1,23 @@
 {
-  "hotelSearch": false,
-  "propertyDetails": false,
-  "photos": false,
-  "reviews": false,
-  "nearbyAmenities": false,
-  "aiProvider": "groq"
+  "environment": "production",
+  "search": {
+    "localDatabase": true,
+    "localFixture": false,
+    "externalProviders": true,
+    "externalProviderPolicy": "fallback"
+  },
+  "externalApis": {
+    "serpapi": {
+      "hotelSearch": true,
+      "propertyDetails": false,
+      "photos": false,
+      "reviews": true
+    },
+    "overpass": {
+      "nearbyAmenities": true
+    }
+  },
+  "ai": {
+    "provider": "cloudflare"
+  }
 }

@@ -31,20 +31,21 @@ export class AiOrchestratorService implements IAiOrchestrator {
     await this.store.append(conversationId, { role: 'user', content: request.text });
 
     // 1. Task Router: Classify intent and extract params
-    const route = await this.router.route(request.text, history);
+    const route = await this.resolveRoute(request, history);
+    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(request, route.workflowId);
     
     let searchAction;
     let toolResults: Record<string, any> = {};
     let searchResultContext: Record<string, any> | undefined;
     const workflow = WORKFLOW_REGISTRY[route.workflowId];
 
-    // 2. Workflow Engine: Execute tools if steps exist (runs BEFORE composing response)
-    if (workflow && workflow.steps.length > 0) {
+    // 2. Workflow Engine: Execute tools only after the workflow card has been confirmed.
+    if (shouldExecuteWorkflow && workflow && workflow.steps.length > 0) {
       const execution = await this.engine.executeWorkflow(workflow, route.parameters);
       toolResults = execution.stepResults;
     }
 
-    if (route.workflowId === 'SEARCH_PLACES') {
+    if (route.workflowId === 'SEARCH_PLACES' && shouldExecuteWorkflow) {
       const recommendStep = workflow?.steps?.find(s => s.tool === 'recommend_places');
       const searchStep = workflow?.steps?.find(s => s.tool === 'hybrid_search');
 
@@ -68,6 +69,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
       };
     }
 
+    const workflowAction = this.buildWorkflowAction(route.workflowId, route.parameters, shouldExecuteWorkflow);
+
     // 3. Response Composer: Generate final text
     const composerResult = await this.composer.compose({
       userQuery: request.text,
@@ -77,6 +80,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       searchResultContext,
       taggedPlaceIds: request.taggedPlaceIds,
       taggedPlaces: request.taggedPlaces,
+      userContext: request.userContext,
     }, history);
 
     await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer });
@@ -85,6 +89,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       conversationId,
       answer: composerResult.answer,
       searchAction,
+      workflowAction,
       messages: await this.store.getHistory(conversationId),
       finishReason: 'stop'
     };
@@ -99,20 +104,21 @@ export class AiOrchestratorService implements IAiOrchestrator {
     await this.store.append(conversationId, { role: 'user', content: request.text });
 
     // 1. Task Router
-    const route = await this.router.route(request.text, history);
+    const route = await this.resolveRoute(request, history);
+    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(request, route.workflowId);
 
     let toolResults: Record<string, any> = {};
     let searchResultContext: Record<string, any> | undefined;
     const workflow = WORKFLOW_REGISTRY[route.workflowId];
 
-    // 2. Workflow Engine (Executes BEFORE yielding anything to frontend)
-    if (workflow && workflow.steps.length > 0) {
+    // 2. Workflow Engine: Execute tools only after the workflow card has been confirmed.
+    if (shouldExecuteWorkflow && workflow && workflow.steps.length > 0) {
       const execution = await this.engine.executeWorkflow(workflow, route.parameters);
       toolResults = execution.stepResults;
     }
 
     // Yield structured search data after tools complete
-    if (route.workflowId === 'SEARCH_PLACES') {
+    if (route.workflowId === 'SEARCH_PLACES' && shouldExecuteWorkflow) {
       const recommendStep = workflow?.steps?.find(s => s.tool === 'recommend_places');
       const searchStep = workflow?.steps?.find(s => s.tool === 'hybrid_search');
 
@@ -142,6 +148,16 @@ export class AiOrchestratorService implements IAiOrchestrator {
       } as any;
     }
 
+    // Yield workflow metadata so the frontend can collect/confirm intent before executing.
+    const workflowAction = this.buildWorkflowAction(route.workflowId, route.parameters, shouldExecuteWorkflow);
+    if (workflowAction) {
+      yield {
+        conversationId,
+        delta: '',
+        workflowAction,
+      } as any;
+    }
+
     // 3. Response Composer Stream
     const stream = this.composer.streamCompose({
       userQuery: request.text,
@@ -151,6 +167,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       searchResultContext,
       taggedPlaceIds: request.taggedPlaceIds,
       taggedPlaces: request.taggedPlaces,
+      userContext: request.userContext,
     }, history);
 
     const assistantParts: string[] = [];
@@ -171,5 +188,63 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
     this.logger.warn(`Ignoring invalid conversationId "${candidate}" and creating a new conversation.`);
     return this.store.createId();
+  }
+
+  private async resolveRoute(request: ChatRequestDto, history: any[]) {
+    const execution = request.workflowExecution;
+    if (execution?.confirmed && execution.workflowId) {
+      return {
+        workflowId: execution.workflowId,
+        parameters: this.normalizeExecutionParameters(execution.parameters || {}, request),
+      };
+    }
+
+    return this.router.route(request.text, history);
+  }
+
+  private shouldExecuteWorkflow(request: ChatRequestDto, workflowId: string): boolean {
+    return Boolean(
+      request.workflowExecution?.confirmed &&
+      request.workflowExecution.workflowId === workflowId
+    );
+  }
+
+  private buildWorkflowAction(
+    workflowId: string,
+    parameters: Record<string, any>,
+    alreadyExecuting: boolean,
+  ): { type: string; parameters?: Record<string, any> } | undefined {
+    if (alreadyExecuting) return undefined;
+
+    if (workflowId === 'SEARCH_PLACES') {
+      return { type: 'search', parameters };
+    }
+
+    if (workflowId === 'COMPARE_PLACES') {
+      return { type: 'compare', parameters };
+    }
+
+    if (workflowId === 'ANALYZE_PLACE') {
+      return { type: 'analyze', parameters };
+    }
+
+    return undefined;
+  }
+
+  private normalizeExecutionParameters(
+    parameters: Record<string, any>,
+    request: ChatRequestDto,
+  ): Record<string, any> {
+    const types = Array.isArray(parameters.types)
+      ? parameters.types.filter(Boolean)
+      : (typeof parameters.type === 'string' ? parameters.type.split(/,/).map((type: string) => type.trim()).filter(Boolean) : []);
+
+    return {
+      ...parameters,
+      ...request.wizardPreferences,
+      query: parameters.query || request.text,
+      type: types.length ? types.join(', ') : parameters.type,
+      types: types.length ? types : parameters.types,
+    };
   }
 }

@@ -4,78 +4,123 @@ const readline = require('readline');
 
 const configPath = path.join(__dirname, '../features.json');
 
-// Read existing config or set defaults
-let config = {
-  hotelSearch: true,
-  propertyDetails: true,
-  photos: false,
-  reviews: true,
-  nearbyAmenities: true,
-  aiProvider: 'groq'
+const TEST_PROFILE = {
+  environment: 'test',
+  search: {
+    localDatabase: true,
+    localFixture: true,
+    externalProviders: false,
+    externalProviderPolicy: 'never',
+  },
+  externalApis: {
+    serpapi: {
+      hotelSearch: false,
+      propertyDetails: false,
+      photos: false,
+      reviews: false,
+    },
+    overpass: {
+      nearbyAmenities: false,
+    },
+  },
+  ai: {
+    provider: 'groq',
+  },
 };
 
-if (fs.existsSync(configPath)) {
+const PRODUCTION_PROFILE = {
+  environment: 'production',
+  search: {
+    localDatabase: true,
+    localFixture: false,
+    externalProviders: true,
+    externalProviderPolicy: 'fallback',
+  },
+  externalApis: {
+    serpapi: {
+      hotelSearch: true,
+      propertyDetails: true,
+      photos: true,
+      reviews: true,
+    },
+    overpass: {
+      nearbyAmenities: true,
+    },
+  },
+  ai: {
+    provider: 'groq',
+  },
+};
+
+function readConfig() {
+  if (!fs.existsSync(configPath)) return TEST_PROFILE;
   try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    return JSON.parse(fs.readFileSync(configPath, 'utf8'));
   } catch (err) {
-    // ignore
+    return TEST_PROFILE;
   }
 }
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-function askQuestion(query) {
+function askQuestion(rl, query) {
   return new Promise((resolve) => rl.question(query, resolve));
 }
 
+function mergeAiProvider(profile, current) {
+  return {
+    ...profile,
+    ai: {
+      ...profile.ai,
+      provider: current?.ai?.provider || current?.aiProvider || profile.ai.provider,
+    },
+  };
+}
+
 async function main() {
+  const current = readConfig();
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
   console.log('\n=============================================');
-  console.log('       CẤU HÌNH TÍNH NĂNG HỆ THỐNG            ');
+  console.log('           RUNTIME CONFIGURATION             ');
   console.log('=============================================');
-  console.log('Quản lý sử dụng các dịch vụ ngoài hiệu quả (SerpAPI & Overpass API).\n');
+  console.log('Choose a profile to separate test and production behavior.\n');
+  console.log('1. test       - Database + local fixture, no SerpAPI/Overpass calls');
+  console.log('2. production - Production database + SerpAPI/Overpass, no local fixture');
+  console.log(`\nCurrent profile: ${current.environment || current.mode || 'test'}\n`);
 
-  // 1. Hotel Search
-  const searchAns = await askQuestion(`1. Cho phép Tìm kiếm Khách sạn qua SerpAPI (hiện tại: ${config.hotelSearch ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  config.hotelSearch = searchAns.trim().toLowerCase() === 'y' ? true : (searchAns.trim().toLowerCase() === 'n' ? false : config.hotelSearch);
+  const profileAnswer = (await askQuestion(rl, 'Select profile (test/production, press Enter to keep current): ')).trim().toLowerCase();
+  let next = current;
 
-  // 2. Property Details
-  const detailsAns = await askQuestion(`2. Cho phép Tải chi tiết khách sạn qua SerpAPI Property Details (hiện tại: ${config.propertyDetails ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  config.propertyDetails = detailsAns.trim().toLowerCase() === 'y' ? true : (detailsAns.trim().toLowerCase() === 'n' ? false : config.propertyDetails);
-
-  // 3. Photos
-  const photoAns = await askQuestion(`3. Cho phép Tải ảnh chi tiết qua SerpAPI Photos (hiện tại: ${config.photos ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  config.photos = photoAns.trim().toLowerCase() === 'y' ? true : (photoAns.trim().toLowerCase() === 'n' ? false : config.photos);
-
-  // 4. Reviews
-  const reviewAns = await askQuestion(`4. Cho phép Tải đánh giá qua SerpAPI Reviews (hiện tại: ${config.reviews ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  config.reviews = reviewAns.trim().toLowerCase() === 'y' ? true : (reviewAns.trim().toLowerCase() === 'n' ? false : config.reviews);
-
-  // 5. Nearby Amenities
-  const amenitiesAns = await askQuestion(`5. Cho phép Đếm tiện ích xung quanh qua Overpass API (hiện tại: ${config.nearbyAmenities ? 'Bật' : 'Tắt'})? (y/n hoặc enter để giữ nguyên): `);
-  config.nearbyAmenities = amenitiesAns.trim().toLowerCase() === 'y' ? true : (amenitiesAns.trim().toLowerCase() === 'n' ? false : config.nearbyAmenities);
-
-  // 6. AI Provider
-  const providerAns = await askQuestion(`6. Chọn AI Provider (hiện tại: ${config.aiProvider || 'groq'})? (groq/cloudflare hoặc enter để giữ nguyên): `);
-  const providerAnsTrimmed = providerAns.trim().toLowerCase();
-  if (providerAnsTrimmed === 'groq' || providerAnsTrimmed === 'cloudflare') {
-    config.aiProvider = providerAnsTrimmed;
+  if (profileAnswer === 'test') {
+    next = mergeAiProvider(TEST_PROFILE, current);
+  } else if (profileAnswer === 'production') {
+    next = mergeAiProvider(PRODUCTION_PROFILE, current);
   }
 
-  // Write new config
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-  console.log('\n[Thành công] Cấu hình mới đã được lưu thành công!');
-  console.log('Đường dẫn:', configPath);
-  console.log('Nội dung cấu hình:');
-  console.log(JSON.stringify(config, null, 2));
+  const providerAnswer = (await askQuestion(rl, `AI provider (${next.ai?.provider || 'groq'})? (groq/cloudflare, press Enter to keep current): `)).trim().toLowerCase();
+  if (providerAnswer === 'groq' || providerAnswer === 'cloudflare') {
+    next.ai = { ...(next.ai || {}), provider: providerAnswer };
+  }
+
+  if (next.environment === 'production') {
+    const policyAnswer = (await askQuestion(rl, `External provider policy (${next.search.externalProviderPolicy})? (fallback/always/never, press Enter to keep current): `)).trim().toLowerCase();
+    if (['fallback', 'always', 'never'].includes(policyAnswer)) {
+      next.search.externalProviderPolicy = policyAnswer;
+      next.search.externalProviders = policyAnswer !== 'never';
+    }
+  }
+
+  fs.writeFileSync(configPath, JSON.stringify(next, null, 2), 'utf8');
+  console.log('\n[OK] Runtime configuration saved:');
+  console.log(configPath);
+  console.log(JSON.stringify(next, null, 2));
   console.log('=============================================\n');
 
   rl.close();
 }
 
-main().catch(err => {
-  console.error('Lỗi khi cấu hình:', err);
-  rl.close();
+main().catch((err) => {
+  console.error('Configuration error:', err);
 });

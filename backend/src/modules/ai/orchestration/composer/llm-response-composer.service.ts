@@ -86,6 +86,139 @@ Return exactly:
 "Xin lỗi, tôi không tìm thấy kết quả nào phù hợp với yêu cầu của bạn lúc này."
 `;
 
+const COMPARE_COMPOSER_PROMPT = `
+## COMPARE_PLACES — CHUYÊN BIỆT
+
+So sánh các địa điểm mà user đã tag. Dùng reviews, ratings, metadata từ context.
+
+PRE-CHECK:
+- Nếu context có ít hơn 2 địa điểm được tag, chỉ trả lời:
+  "Để so sánh, bạn hãy chọn (tag) ít nhất 2 địa điểm trên bản đồ nhé! 📍"
+  KHÔNG phân tích gì thêm.
+
+ĐỊNH DẠNG OUTPUT:
+
+1. **Mở đầu** (2-3 câu): Đặt bối cảnh so sánh một cách tự nhiên, nhắc tên 2 nơi bằng link.
+   Ví dụ: "Cùng xem **[Khách sạn Mường Thanh](place:abc-123)** và **[Vinpearl Resort](place:def-456)** khác nhau thế nào nhé!"
+
+2. **Bảng so sánh nhanh** (Markdown table):
+
+   | | [Tên A](place:id_a) | [Tên B](place:id_b) |
+   |---|---|---|
+   | ⭐ Đánh giá | 4.2/5 (120 reviews) | 4.5/5 (85 reviews) |
+   | 💰 Tầm giá | ~500K/đêm | ~1.2tr/đêm |
+   | 📍 Vị trí | Cách trung tâm 2km | Ngay bãi biển |
+   | 🏊 Nổi bật | Hồ bơi, gym | Spa, view biển |
+
+   Lưu ý: Tên trong header bảng PHẢI là link place:id.
+   Chỉ điền thông tin có trong data. Nếu thiếu, ghi "Chưa rõ".
+
+3. **Phân tích từng nơi** — viết ngắn gọn, dẫn chứng review:
+
+   ### [Tên A](place:id_a)
+   ✅ Điểm mạnh: ... — _"review trích dẫn"_
+   ⚠️ Lưu ý: ... — _"review trích dẫn"_
+
+   ### [Tên B](place:id_b)
+   ✅ Điểm mạnh: ... — _"review trích dẫn"_
+   ⚠️ Lưu ý: ... — _"review trích dẫn"_
+
+4. **🎯 Nên chọn nơi nào?** — Gợi ý dựa trên tiêu chí user hỏi (nếu có), hoặc tổng quan.
+   Viết dạng: "Nếu bạn ưu tiên X → chọn A. Nếu quan tâm Y → chọn B."
+   KHÔNG tuyên bố winner tuyệt đối trừ khi data rõ ràng.
+
+5. **Câu hỏi follow-up** ngắn gọn.
+
+QUY TẮC LINK:
+- MỌI lần nhắc tên địa điểm đều PHẢI là link: [Tên](place:place_id)
+- Trong bảng, trong heading, trong bullet — không ngoại lệ.
+- Dùng ID thực từ context (UUID hoặc serpapi-xxx).
+
+GIỌNG VĂN:
+- Thân thiện, tự nhiên như đang tư vấn cho bạn bè.
+- Dùng emoji vừa phải để dễ đọc.
+- Tránh liệt kê khô khan — mỗi bullet nên có 1 insight cụ thể.
+- Nếu data thiếu, nói thẳng "Chưa có đủ thông tin về X" thay vì bỏ qua.
+`;
+
+const ANALYZE_COMPOSER_PROMPT = `
+## ANALYZE_PLACE — CHUYÊN BIỆT
+
+Phân tích chi tiết 1 địa điểm user tag, dựa trên preferences của họ.
+
+PRE-CHECK:
+- Nếu context không có địa điểm nào được tag, chỉ trả lời:
+  "Bạn hãy chọn (tag) một địa điểm trên bản đồ để tôi phân tích nhé! 📍"
+  KHÔNG phân tích gì thêm.
+
+---
+
+### PHASE 1 — HỎI PREFERENCES
+
+Khi user CHƯA nêu preferences (kiểm tra cả message hiện tại VÀ lịch sử hội thoại gần nhất):
+
+Trả lời tự nhiên, thân thiện. Ví dụ:
+
+"Tôi sẽ phân tích **[Tên địa điểm](place:id)** cho bạn! Nhưng trước tiên, cho tôi biết bạn đang tìm kiếm gì nhé:
+
+💰 Giá cả hợp lý?
+📍 Vị trí thuận tiện?
+🧹 Phòng sạch sẽ, chất lượng?
+🌊 View đẹp, không gian thoáng?
+🏊 Tiện ích (hồ bơi, gym, spa)?
+🔇 Yên tĩnh, phù hợp nghỉ ngơi?
+🍽️ Gần quán ăn, nhà hàng?
+
+Cứ liệt kê hoặc mô tả theo cách của bạn!"
+
+Lưu ý:
+- PHẢI dùng link place:id cho tên địa điểm.
+- KHÔNG phân tích trong phase này. Chỉ hỏi.
+- Điền tên thật từ context, không dùng placeholder.
+
+---
+
+### PHASE 2 — PHÂN TÍCH
+
+Khi user ĐÃ nêu preferences (trong message hiện tại hoặc lịch sử gần):
+
+ĐỊNH DẠNG OUTPUT:
+
+1. **Verdict** — 1-2 câu nhận định tổng quát:
+   "**[Tên](place:id)** khá phù hợp với nhu cầu của bạn về X và Y, nhưng có vài điểm cần lưu ý về Z."
+
+2. **✅ Điểm mạnh** — liệt kê theo từng preference user quan tâm:
+
+   ✅ **Vị trí**: Ngay trung tâm, cách bãi biển 200m — _"Đi bộ ra biển chỉ 3 phút, rất tiện"_ (⭐4/5)
+
+   ✅ **Giá cả**: Tầm 450K/đêm, hợp lý cho khu vực này — _"Giá phải chăng so với chất lượng"_ (⭐5/5)
+
+   Format: ✅ **[Tiêu chí]**: [Nhận định cụ thể] — _"trích dẫn review"_ (⭐rating)
+
+3. **⚠️ Điểm yếu** — chỉ liệt kê những điểm LIÊN QUAN tới preferences:
+
+   ⚠️ **Yên tĩnh**: Một số khách phản ánh ồn vào buổi tối — _"Phòng gần đường nên khá ồn ban đêm"_ (⭐2/5)
+
+   Format: ⚠️ **[Tiêu chí]**: [Nhận định] — _"trích dẫn review"_ (⭐rating)
+
+4. **📊 Tổng kết nhanh** — bảng mini hoặc bullet:
+
+   | Tiêu chí | Mức phù hợp |
+   |----------|-------------|
+   | 📍 Vị trí | ✅ Phù hợp |
+   | 💰 Giá cả | ✅ Phù hợp |
+   | 🔇 Yên tĩnh | ⚠️ Cần cân nhắc |
+
+5. **Câu hỏi follow-up**: "Bạn muốn tôi tìm thêm lựa chọn khác hay so sánh **[Tên](place:id)** với nơi khác?"
+
+QUY TẮC:
+- MỌI nhận định PHẢI có dẫn chứng từ reviews hoặc metadata. Không bịa.
+- Nếu không có data cho 1 preference → ghi rõ: "📋 **[Tiêu chí]**: Chưa có đủ dữ liệu từ đánh giá khách hàng để nhận xét."
+- MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:id).
+- Phân tích ĐÚNG theo preferences user nêu, không generic.
+- Giọng tự nhiên, tư vấn như bạn bè, tránh ngôn ngữ robot.
+`;
+
 @Injectable()
 export class LlmResponseComposerService implements IResponseComposer {
   private readonly logger = new Logger(LlmResponseComposerService.name);
@@ -95,6 +228,58 @@ export class LlmResponseComposerService implements IResponseComposer {
     private readonly prisma: PrismaService,
     private readonly placesService: PlacesService,
   ) {}
+
+  private getWorkflowInstructions(workflowId: string): string | undefined {
+    const map: Record<string, string> = {
+      'COMPARE_PLACES': COMPARE_COMPOSER_PROMPT,
+      'ANALYZE_PLACE': ANALYZE_COMPOSER_PROMPT,
+    };
+    return map[workflowId];
+  }
+
+  private buildUserContextPrompt(context: ComposerContext): string | undefined {
+    const uc = context.userContext;
+    if (!uc) return undefined;
+
+    const parts: string[] = [];
+
+    // Current time — always include (use server time as fallback)
+    const now = new Date();
+    const tz = uc.timezone || 'Asia/Ho_Chi_Minh';
+    try {
+      const formatted = now.toLocaleString('vi-VN', {
+        timeZone: tz,
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      parts.push(`🕐 Thời gian hiện tại: ${formatted} (${tz})`);
+    } catch {
+      parts.push(`🕐 Thời gian hiện tại: ${now.toISOString()}`);
+    }
+
+    // User name
+    if (uc.displayName) {
+      parts.push(`👤 Tên người dùng: ${uc.displayName}`);
+    }
+
+    // User location
+    if (uc.lat != null && uc.lng != null) {
+      parts.push(`📍 Vị trí hiện tại của người dùng: ${uc.lat.toFixed(4)}, ${uc.lng.toFixed(4)}`);
+    }
+
+    // Locale
+    if (uc.locale) {
+      parts.push(`🌐 Ngôn ngữ: ${uc.locale}`);
+    }
+
+    if (parts.length === 0) return undefined;
+
+    return `[USER CONTEXT]\n${parts.join('\n')}\n[END USER CONTEXT]\n\nSử dụng thông tin trên để cá nhân hóa câu trả lời. Gọi tên user nếu có. Dùng thời gian để gợi ý phù hợp (sáng/trưa/tối). Dùng vị trí user để tính khoảng cách nếu liên quan.`;
+  }
 
   private async buildMessages(context: ComposerContext, history: any[] = []): Promise<ChatMessage[]> {
     const searchResultSummary = context.searchResultContext
@@ -270,7 +455,22 @@ export class LlmResponseComposerService implements IResponseComposer {
       taggedPlacesContext += `[HẾT DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG]\n\n`;
     }
 
-    const contextPrompt = `
+    const contextPrompt = context.workflowId === 'COMPARE_PLACES' || context.workflowId === 'ANALYZE_PLACE'
+      ? `
+[SYSTEM CONTEXT]
+Workflow: ${context.workflowId}
+Extracted Parameters: ${JSON.stringify(context.parameters)}
+[END SYSTEM CONTEXT]
+${taggedPlacesContext}
+User Query: "${context.userQuery}"
+
+IMPORTANT REMINDERS:
+- Dùng dữ liệu từ [DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG] ở trên để phân tích/so sánh.
+- MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:place_id) với ID thực từ context.
+- Nếu data thiếu, nói rõ thay vì bịa.
+- Trả lời bằng tiếng Việt, giọng thân thiện.
+`
+      : `
 [SYSTEM CONTEXT - TOOL RESULTS]
 Workflow Executed: ${context.workflowId}
 Extracted Parameters: ${JSON.stringify(context.parameters)}
@@ -285,8 +485,13 @@ Based on the search summary context, tool results, and any tagged place reviews 
 If the tagged place context is weak or missing, say you do not have enough review evidence instead of guessing.
 `;
 
+    const workflowInstructions = this.getWorkflowInstructions(context.workflowId);
+    const userContextPrompt = this.buildUserContextPrompt(context);
+
     return [
       { role: 'system', content: COMPOSER_SYSTEM_PROMPT },
+      ...(userContextPrompt ? [{ role: 'system' as const, content: userContextPrompt }] : []),
+      ...(workflowInstructions ? [{ role: 'system' as const, content: workflowInstructions }] : []),
       ...this.formatConversationHistory(history),
       { role: 'user', content: contextPrompt }
     ];

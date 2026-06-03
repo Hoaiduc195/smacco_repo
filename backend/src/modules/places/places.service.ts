@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Request } from 'express';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 @Injectable()
 export class PlacesService {
@@ -21,6 +22,7 @@ export class PlacesService {
     private readonly prisma: PrismaService,
     private readonly http: HttpService,
     private readonly configService: ConfigService,
+    private readonly runtimeConfig: RuntimeConfigService,
   ) {
     this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
   }
@@ -175,10 +177,15 @@ export class PlacesService {
       const dashIndex = id.indexOf('-');
       const source = dashIndex !== -1 ? id.substring(0, dashIndex) : 'serpapi';
       const sourcePlaceId = dashIndex !== -1 ? id.substring(dashIndex + 1) : id;
+      const allowLocalFixture = this.runtimeConfig.search.localFixture;
       
       let place = await this.findBySourcePlaceId(sourcePlaceId, source);
       if (!place) {
         try {
+          if (source === 'local' && !allowLocalFixture) {
+            throw new NotFoundException(`Local test-data place ${id} is disabled in ${this.runtimeConfig.environment} mode`);
+          }
+
           let placeName = `Địa điểm #${sourcePlaceId.slice(0, 8)}`;
           let placeAddress = 'Địa chỉ đang được cập nhật';
           let categories = ['hotel'];
@@ -321,9 +328,8 @@ export class PlacesService {
 
   async ensureGoogleReviewsForAiContext(id: string) {
     const place = await this.findOne(id);
-    const config = this.getFeaturesConfig();
 
-    if (!config.reviews || place.source !== 'serpapi' || !place.sourcePlaceId) {
+    if (!this.runtimeConfig.serpApi.reviews || place.source !== 'serpapi' || !place.sourcePlaceId) {
       return [];
     }
 
@@ -378,9 +384,8 @@ export class PlacesService {
 
   async findPhotos(id: string, req?: Request): Promise<string[]> {
     const place = await this.findOne(id, req);
-    const config = this.getFeaturesConfig();
 
-    if (config.photos && place.source === 'serpapi' && place.sourcePlaceId) {
+    if (this.runtimeConfig.serpApi.photos && place.source === 'serpapi' && place.sourcePlaceId) {
       try {
         const serpApiPhotos = await this.fetchSerpApiPhotos(place.sourcePlaceId);
         if (serpApiPhotos.length > 0) {
@@ -498,20 +503,6 @@ export class PlacesService {
       this.logger.error(`SerpAPI photos fetch error: ${error.message}`);
       return [];
     }
-  }
-
-  private getFeaturesConfig() {
-    const configPath = path.join(process.cwd(), 'features.json');
-    const defaults = { hotelSearch: true, photos: false, reviews: true, nearbyAmenities: true };
-    try {
-      if (fs.existsSync(configPath)) {
-        const content = fs.readFileSync(configPath, 'utf8');
-        return { ...defaults, ...JSON.parse(content) };
-      }
-    } catch (err) {
-      // ignore config loading errors and fallback
-    }
-    return defaults;
   }
 
   async findBySourcePlaceId(sourcePlaceId: string, source = 'serpapi') {

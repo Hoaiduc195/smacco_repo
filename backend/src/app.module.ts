@@ -10,6 +10,7 @@ import osmConfig from './config/osm.config';
 import groqConfig from './config/groq.config';
 import r2Config from './config/r2.config';
 import cloudflareAiConfig from './config/cloudflare-ai.config';
+import { RuntimeConfigModule } from './config/runtime-config.module';
 
 // Feature modules — existing (from core-service)
 import { UsersModule } from './modules/users/users.module';
@@ -37,6 +38,7 @@ import { UploadModule } from './modules/upload/upload.module';
       isGlobal: true,
       load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig, r2Config, cloudflareAiConfig],
     }),
+    RuntimeConfigModule,
 
     // ── Database ──────────────────────────────────
     PrismaModule,

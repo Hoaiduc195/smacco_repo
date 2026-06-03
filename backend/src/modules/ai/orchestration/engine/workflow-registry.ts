@@ -41,5 +41,15 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
     id: 'GENERAL_CHAT',
     description: 'Bypasses tools and goes straight to composer for generic conversation',
     steps: [] // No tools needed
+  },
+  COMPARE_PLACES: {
+    id: 'COMPARE_PLACES',
+    description: 'Compares two or more tagged places using review data and metadata. No tool steps — analysis is done by the composer using tagged place context.',
+    steps: []
+  },
+  ANALYZE_PLACE: {
+    id: 'ANALYZE_PLACE',
+    description: 'Analyzes a single tagged place against user preferences. Two-phase: first asks preferences, then provides strengths/weaknesses. No tool steps.',
+    steps: []
   }
 };

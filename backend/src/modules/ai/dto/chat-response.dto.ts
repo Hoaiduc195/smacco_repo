@@ -11,6 +11,10 @@ export interface ChatResponseDto {
   usageCompletionTokens?: number;
   messages?: ChatMessage[];
   searchAction?: any;
+  workflowAction?: {
+    type: string;
+    parameters?: Record<string, any>;
+  };
 }
 
 export interface StreamChunkDto {
@@ -18,4 +22,8 @@ export interface StreamChunkDto {
   delta: string;
   finishReason?: string;
   searchAction?: any;
+  workflowAction?: {
+    type: string;
+    parameters?: Record<string, any>;
+  };
 }
