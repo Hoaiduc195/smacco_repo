@@ -320,3 +320,50 @@
   - `S:/workspace/computational_thinking/proj/mono/.ppms/architecture-feat-better_ux.md` (Modified)
   - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
 - **Architecture Impact**: Local fixture search now uses the merged 160-place team dataset with stable local image references served through the existing backend test-data image endpoint.
+
+## [2026-06-04 05:13] Fixture-Only Test Runtime Mode
+- **Prompt**: Check and adjust test config so test mode uses only fixture mock data, with no database queries and no external API calls.
+- **Changes**:
+  - Changed test runtime defaults and `config-features.js` test profile to `localDatabase: false`, `localFixture: true`, `externalProviders: false`, and `externalProviderPolicy: never`.
+  - Added runtime normalization that forcibly locks `environment: test` to fixture-only search and disables SerpAPI/Overpass flags, even if stale config values are present.
+  - Updated `SearchService` so recommendation ranking does not geocode through Goong when external providers are disabled.
+  - Updated `PlacesService` so fixture-only mode returns list/detail/reviews/photos from `backend/test/fixtures` without querying Prisma for `local-*` places.
+  - Updated `GeocodeAnchorTool` to skip Goong geocoding whenever external providers are disabled.
+- **Modified/Created Files**:
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/config/runtime-config.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/scripts/config-features.js` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/search/search.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/places/places.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/common/tools/geocode-anchor.tool.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/architecture-feat-better_ux.md` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
+- **Architecture Impact**: The test runtime is now deterministic fixture-only mode. Search and local place detail flows avoid database and external provider paths when `environment` is `test`.
+
+## [2026-06-04 05:19] Prevent Detail Page DB Sync For Local Fixtures
+- **Prompt**: Check whether opening the detail page in test mode saves fixture places to the database.
+- **Changes**:
+  - Confirmed `PlaceDetailPage` had an automatic `createPlace()` sync for any non-UUID place, which included `local-*` fixture records.
+  - Updated `PlaceDetailPage` to skip automatic database sync when the place id starts with `local-`.
+  - Added a backend guard in `PlacesService.create()` so fixture-only mode never writes place records to Prisma; `local` sources return the fixture item directly, and non-local creation is disabled.
+- **Modified/Created Files**:
+  - `S:/workspace/computational_thinking/proj/mono/frontend/src/pages/PlaceDetailPage.jsx` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/places/places.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
+- **Architecture Impact**: Opening a local fixture detail page in test mode no longer writes stub places, place sources, or seeded reviews to the database.
+
+## [2026-06-04 12:48] Extracted Local Fixture Places Service
+- **Prompt**: Split mock data extraction into dedicated functions/services so test mode is complete and isolated.
+- **Changes**:
+  - Added `LocalFixturePlacesService` to own fixture JSON loading, caching, filtering, local place mapping, review mapping, and photo URL generation.
+  - Registered and exported `LocalFixturePlacesService` from `PlacesModule`.
+  - Simplified `PlacesService` fixture-only branches so they delegate to `LocalFixturePlacesService` instead of reading fixture files or mapping mock records inline.
+  - Kept legacy wrapper methods (`loadLocalTestData`, `getLocalTestDataItem`, `findLocalTestData`) delegating to the fixture service for existing search call sites.
+  - Removed the `as any` fixture call from `SearchService`.
+- **Modified/Created Files**:
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/places/local-fixture-places.service.ts` (Created)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/places/places.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/places/places.module.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/search/search.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/architecture-feat-better_ux.md` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
+- **Architecture Impact**: Fixture-only behavior is now isolated behind a dedicated Nest provider, reducing the chance of accidental database access in test mode and making mock fixture behavior easier to audit.

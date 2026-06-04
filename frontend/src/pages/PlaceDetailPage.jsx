@@ -56,6 +56,7 @@ export default function PlaceDetailPage() {
 
   // Automatic database synchronization for external provider search results
   useEffect(() => {
+    if (place && place.id && String(place.id).startsWith('local-')) return;
     if (place && place.id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(place.id)) {
       if (syncInProgress.current[place.id]) return;
       syncInProgress.current[place.id] = true;

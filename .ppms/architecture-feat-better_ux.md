@@ -55,10 +55,11 @@ The default workspace state now prioritizes the map: both side panels start coll
 ### Backend — AI Orchestration Pipeline
 - **Runtime Config**: `RuntimeConfigModule` exposes `RuntimeConfigService`, backed by `backend/features.json`. The schema separates `environment`, `search`, `externalApis`, and `ai` settings.
 - **Runtime Profiles**:
-  - `test`: uses local database plus `backend/test/fixtures/data.json` fixture data; external providers are disabled with policy `never`.
+  - `test`: uses only `backend/test/fixtures/data.json` fixture data and `backend/test/fixtures/images`; local database and external providers are disabled.
   - `production`: uses production database/cache, disables local fixture loading, and can call SerpAPI/Overpass according to `externalProviderPolicy` (`fallback`, `always`, or `never`).
 - **Local Fixture Dataset**: `backend/test/fixtures/data.json` contains the merged team accommodation dataset with 160 places. Local fixture images live in `backend/test/fixtures/images/`, use global record-index filenames (`<recordIndex>-<imageIndex>.<ext>`), and are served through `GET /api/v1/places/test-data/images/:filename`.
-- **Search Provider Policy**: `SearchService` always respects `search.localDatabase`, `search.localFixture`, and `search.externalProviderPolicy`. Production excludes DB rows with `source = local` from search results to avoid leaking test fixture data.
+- **Search Provider Policy**: `SearchService` always respects `search.localDatabase`, `search.localFixture`, and `search.externalProviderPolicy`. `environment: test` is forcibly normalized to fixture-only mode (`localDatabase: false`, `localFixture: true`, external policy `never`) and skips Goong geocoding. Production excludes DB rows with `source = local` from search results to avoid leaking test fixture data.
+- **Fixture-Only Place Reads**: `LocalFixturePlacesService` owns fixture JSON loading/caching, filtering, local place mapping, review mapping, and photo URL generation. In fixture-only mode, `PlacesService` delegates `findAll`, `findOne(local-*)`, `findReviews(local-*)`, `findPhotos(local-*)`, and guarded local `create()` calls to this provider without Prisma reads or writes.
 - **Router** (`LlmTaskRouterService`): Classifies user intent via LLM into workflow IDs.
   - Supported intents: `SEARCH_PLACES`, `GENERAL_CHAT`, `COMPARE_PLACES`, `ANALYZE_PLACE`
   - Uses conversation history for multi-turn intent continuations (e.g., ANALYZE_PLACE preference follow-up).

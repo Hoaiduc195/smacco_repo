@@ -7,7 +7,7 @@ const configPath = path.join(__dirname, '../features.json');
 const TEST_PROFILE = {
   environment: 'test',
   search: {
-    localDatabase: true,
+    localDatabase: false,
     localFixture: true,
     externalProviders: false,
     externalProviderPolicy: 'never',
@@ -86,7 +86,7 @@ async function main() {
   console.log('           RUNTIME CONFIGURATION             ');
   console.log('=============================================');
   console.log('Choose a profile to separate test and production behavior.\n');
-  console.log('1. test       - Database + local fixture, no SerpAPI/Overpass calls');
+  console.log('1. test       - Fixture-only mock data, no database or external API calls');
   console.log('2. production - Production database + SerpAPI/Overpass, no local fixture');
   console.log(`\nCurrent profile: ${current.environment || current.mode || 'test'}\n`);
 

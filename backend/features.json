@@ -1,20 +1,20 @@
 {
-  "environment": "production",
+  "environment": "test",
   "search": {
-    "localDatabase": true,
-    "localFixture": false,
-    "externalProviders": true,
-    "externalProviderPolicy": "fallback"
+    "localDatabase": false,
+    "localFixture": true,
+    "externalProviders": false,
+    "externalProviderPolicy": "never"
   },
   "externalApis": {
     "serpapi": {
-      "hotelSearch": true,
+      "hotelSearch": false,
       "propertyDetails": false,
       "photos": false,
-      "reviews": true
+      "reviews": false
     },
     "overpass": {
-      "nearbyAmenities": true
+      "nearbyAmenities": false
     }
   },
   "ai": {

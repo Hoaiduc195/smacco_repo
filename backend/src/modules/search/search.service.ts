@@ -64,7 +64,7 @@ export class SearchService {
         : (dbPlaces as any[]);
 
       const inMemoryLocalPlaces = searchConfig.localFixture
-        ? (this.placesService as any).findLocalTestData({
+        ? this.placesService.findLocalTestData({
             type: typeFilters.length > 0 ? typeFilters : filters.type,
             city: filters.location,
             q: filters.q,
@@ -156,7 +156,7 @@ export class SearchService {
     // 5. Apply Recommendations if requested
     if (filters.applyRecommendations) {
       let anchorLocation = null;
-      if (filters.location) {
+      if (filters.location && searchConfig.externalProviders) {
         const geoResults = await this.goongPlacesService.searchAccommodations({ query: filters.location });
         if (geoResults.length > 0 && geoResults[0].location) {
           anchorLocation = geoResults[0].location;

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { IUnifiedTool, UnifiedToolInput, UnifiedToolOutput } from './tool.interface';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 @Injectable()
 export class GeocodeAnchorTool implements IUnifiedTool {
@@ -10,11 +11,20 @@ export class GeocodeAnchorTool implements IUnifiedTool {
   private readonly logger = new Logger(GeocodeAnchorTool.name);
   private readonly baseUrl = 'https://rsapi.goong.io/geocode';
 
-  constructor(private readonly http: HttpService, private readonly configService: ConfigService) {}
+  constructor(
+    private readonly http: HttpService,
+    private readonly configService: ConfigService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   async execute(inputs: UnifiedToolInput): Promise<UnifiedToolOutput> {
     const rawQuery = typeof inputs.query === 'string' ? inputs.query.trim() : '';
     if (!rawQuery) return { status: 'success', data: null };
+
+    if (!this.runtimeConfig.search.externalProviders) {
+      this.logger.log('External providers are disabled. Skipping Goong geocode.');
+      return { status: 'success', data: null };
+    }
 
     const apiKey = this.configService.get<string>('GOONG_API_KEY') || '';
     if (!apiKey) {

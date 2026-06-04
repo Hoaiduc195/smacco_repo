@@ -5,10 +5,9 @@ import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
-import * as path from 'path';
 import { Request } from 'express';
 import { RuntimeConfigService } from '../../config/runtime-config.service';
+import { LocalFixturePlacesService } from './local-fixture-places.service';
 
 @Injectable()
 export class PlacesService {
@@ -23,6 +22,7 @@ export class PlacesService {
     private readonly http: HttpService,
     private readonly configService: ConfigService,
     private readonly runtimeConfig: RuntimeConfigService,
+    private readonly localFixtures: LocalFixturePlacesService,
   ) {
     this.apiKey = this.configService.get<string>('SERPAPI_API_KEY') || '';
   }
@@ -47,6 +47,11 @@ export class PlacesService {
     return url;
   }
 
+  private isFixtureOnlyMode(): boolean {
+    const searchConfig = this.runtimeConfig.search;
+    return searchConfig.localFixture && !searchConfig.localDatabase;
+  }
+
   mapPlace(place: Place | null, req?: Request): any {
     if (!place) return null;
     return {
@@ -62,6 +67,13 @@ export class PlacesService {
     const lng = createPlaceDto.coordinates?.lng ?? null;
     const normalizedName = this.normalizeText(createPlaceDto.nameCache);
     const normalizedAddress = this.normalizeText(createPlaceDto.addressCache || '');
+
+    if (this.isFixtureOnlyMode()) {
+      if (source === 'local') {
+        return this.localFixtures.findOne(sourcePlaceId, req);
+      }
+      throw new NotFoundException(`Place creation from ${source} is disabled in test fixture-only mode`);
+    }
 
     try {
       const place = await this.prisma.$transaction(async (tx) => {
@@ -148,6 +160,10 @@ export class PlacesService {
   }
 
   async findAll(filters?: { type?: string | string[]; city?: string; q?: string }, req?: Request) {
+    if (this.isFixtureOnlyMode()) {
+      return this.localFixtures.findAll(filters, req);
+    }
+
     const where: any = {};
     const types = this.normalizeTypes(filters?.type);
     if (types.length === 1) where.categories = { has: types[0] };
@@ -178,6 +194,10 @@ export class PlacesService {
       const source = dashIndex !== -1 ? id.substring(0, dashIndex) : 'serpapi';
       const sourcePlaceId = dashIndex !== -1 ? id.substring(dashIndex + 1) : id;
       const allowLocalFixture = this.runtimeConfig.search.localFixture;
+
+      if (source === 'local' && this.isFixtureOnlyMode()) {
+        return this.localFixtures.findOne(sourcePlaceId, req);
+      }
       
       let place = await this.findBySourcePlaceId(sourcePlaceId, source);
       if (!place) {
@@ -198,7 +218,7 @@ export class PlacesService {
           let reviewsList: any[] = [];
 
           if (source === 'local') {
-            const localItem = this.getLocalTestDataItem(sourcePlaceId);
+            const localItem = this.localFixtures.getItem(sourcePlaceId);
             if (localItem) {
               placeName = localItem.name;
               placeAddress = localItem.address || placeAddress;
@@ -281,12 +301,21 @@ export class PlacesService {
       return this.mapPlace(place, req);
     }
 
+    if (this.isFixtureOnlyMode()) {
+      throw new NotFoundException(`Database place ${id} is disabled in test fixture-only mode`);
+    }
+
     const place = await this.prisma.place.findUnique({ where: { id } });
     if (!place) throw new NotFoundException(`Place #${id} not found`);
     return this.mapPlace(place, req);
   }
 
   async findReviews(id: string) {
+    const localSourcePlaceId = this.getLocalSourcePlaceId(id);
+    if (localSourcePlaceId !== null && this.isFixtureOnlyMode()) {
+      return this.localFixtures.findReviews(localSourcePlaceId);
+    }
+
     const place = await this.findOne(id);
 
     const reviews = await this.prisma.review.findMany({
@@ -383,6 +412,11 @@ export class PlacesService {
   }
 
   async findPhotos(id: string, req?: Request): Promise<string[]> {
+    const localSourcePlaceId = this.getLocalSourcePlaceId(id);
+    if (localSourcePlaceId !== null && this.isFixtureOnlyMode()) {
+      return this.localFixtures.findPhotos(localSourcePlaceId, req);
+    }
+
     const place = await this.findOne(id, req);
 
     if (this.runtimeConfig.serpApi.photos && place.source === 'serpapi' && place.sourcePlaceId) {
@@ -665,109 +699,24 @@ export class PlacesService {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   }
 
+  private getLocalSourcePlaceId(id: string): string | null {
+    if (!id || this.isUuid(id)) return null;
+    const dashIndex = id.indexOf('-');
+    if (dashIndex === -1) return null;
+    const source = id.substring(0, dashIndex);
+    if (source !== 'local') return null;
+    return id.substring(dashIndex + 1);
+  }
+  
   loadLocalTestData(): any[] {
-    const candidates = [
-      path.join(process.cwd(), 'test', 'fixtures', 'data.json'),
-      path.join(process.cwd(), 'backend', 'test', 'fixtures', 'data.json'),
-    ];
-    let testDataPath = '';
-    for (const c of candidates) {
-      if (fs.existsSync(c)) {
-        testDataPath = c;
-        break;
-      }
-    }
-    
-    if (!testDataPath) {
-      this.logger.error(`Local test data file data.json not found in candidates: ${candidates.join(', ')}`);
-      return [];
-    }
-
-    try {
-      const content = fs.readFileSync(testDataPath, 'utf8');
-      const data = JSON.parse(content);
-      return data.map((item: any, idx: number) => ({
-        ...item,
-        index: idx,
-      }));
-    } catch (err) {
-      this.logger.error(`Failed to load local test data from ${testDataPath}: ${err.message}`);
-    }
-    return [];
+    return this.localFixtures.loadAll();
   }
 
   getLocalTestDataItem(index: string): any {
-    const data = this.loadLocalTestData();
-    const idx = parseInt(index, 10);
-    if (!isNaN(idx) && idx >= 0 && idx < data.length) {
-      return data[idx];
-    }
-    return null;
+    return this.localFixtures.getItem(index);
   }
 
   findLocalTestData(filters?: { type?: string | string[]; city?: string; q?: string }, req?: Request): any[] {
-    const data = this.loadLocalTestData();
-    const types = this.normalizeTypes(filters?.type);
-    
-    const filtered = data.filter(item => {
-      // 1. Filter by categories/types
-      if (types.length > 0) {
-        const itemType = String(item.type || '').toLowerCase();
-        const matchesType = types.some(t => 
-          itemType.includes(t) || 
-          (Array.isArray(item.amenities) && item.amenities.some((a: string) => String(a).toLowerCase().includes(t)))
-        );
-        if (!matchesType) return false;
-      }
-
-      // 2. Filter by city/location in address
-      if (filters?.city) {
-        const cityLower = filters.city.toLowerCase();
-        const addressLower = String(item.address || '').toLowerCase();
-        if (!addressLower.includes(cityLower)) return false;
-      }
-
-      // 3. Filter by keyword q
-      if (filters?.q) {
-        const qLower = filters.q.toLowerCase();
-        const nameLower = String(item.name || '').toLowerCase();
-        const addressLower = String(item.address || '').toLowerCase();
-        const descLower = String(item.description || '').toLowerCase();
-        if (!nameLower.includes(qLower) && !addressLower.includes(qLower) && !descLower.includes(qLower)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    return filtered.map(item => {
-      const coverImageUrl = item.images && item.images.length > 0
-        ? `/images/${item.images[0]}`
-        : null;
-      return {
-        id: `local-${item.index}`,
-        source: 'local',
-        sourcePlaceId: String(item.index),
-        placeName: item.name,
-        placeAddress: item.address,
-        categories: item.type ? [item.type] : [],
-        lat: item.latitude || 0,
-        lng: item.longitude || 0,
-        coverImageUrl: this.formatCoverImageUrl(coverImageUrl, req),
-        averageRating: Array.isArray(item.reviews) && item.reviews.length > 0
-          ? item.reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / item.reviews.length
-          : null,
-        reviewCount: Array.isArray(item.reviews) ? item.reviews.length : 0,
-        rawSerpApiPropertyDetails: {
-          phone: item.phone,
-          email: item.email,
-          rooms: item.rooms,
-          website: item.website,
-          images: item.images,
-          amenities: item.amenities,
-        },
-      };
-    });
+    return this.localFixtures.findAll(filters, req);
   }
 }

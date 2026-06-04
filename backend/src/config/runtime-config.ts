@@ -32,7 +32,7 @@ export interface RuntimeConfig {
 const TEST_DEFAULTS: RuntimeConfig = {
   environment: 'test',
   search: {
-    localDatabase: true,
+    localDatabase: false,
     localFixture: true,
     externalProviders: false,
     externalProviderPolicy: 'never',
@@ -143,6 +143,26 @@ export function readRuntimeConfig(): RuntimeConfig {
   merged.search.externalProviderPolicy = normalizePolicy(merged.search.externalProviderPolicy);
   if (!merged.search.externalProviders) {
     merged.search.externalProviderPolicy = 'never';
+  }
+
+  if (merged.environment === 'test') {
+    merged.search = {
+      localDatabase: false,
+      localFixture: true,
+      externalProviders: false,
+      externalProviderPolicy: 'never',
+    };
+    merged.externalApis = {
+      serpapi: {
+        hotelSearch: false,
+        propertyDetails: false,
+        photos: false,
+        reviews: false,
+      },
+      overpass: {
+        nearbyAmenities: false,
+      },
+    };
   }
 
   return merged;
