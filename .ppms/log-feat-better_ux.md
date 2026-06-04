@@ -1,5 +1,213 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-04 14:38] Configurable Chat History Persistence With Test-Mode Memory Only
+- **Branch**: `feat/better_ux`
+- **Prompt**: Add both behaviors: a dedicated config flag for chat-history persistence and automatic no-DB chat history in test mode.
+- **Changes**:
+  - Extended `RuntimeConfig` and `features.json` with `chat.persistHistory`.
+  - Set test defaults to `persistHistory: false` and production defaults to `persistHistory: true`.
+  - Updated `config-features.js` so production profile selection can explicitly toggle chat-history persistence.
+  - Updated `ConversationStoreService` to skip Prisma persistence and DB reloads whenever `chat.persistHistory` is disabled, while continuing to keep recent messages in process memory.
+  - Updated `ConversationsService` so list/create/read/delete conversation APIs fall back to in-memory conversations when persistence is disabled.
+  - Verified backend production build after the persistence change.
+- **Modified files**:
+  - `backend/src/config/runtime-config.ts`
+  - `backend/src/config/runtime-config.service.ts`
+  - `backend/features.json`
+  - `backend/scripts/config-features.js`
+  - `backend/src/modules/ai/conversation-store.service.ts`
+  - `backend/src/modules/ai/conversations.service.ts`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — chat history persistence is now independently configurable, and test mode uses memory-only conversation history with no chat DB writes.
+
+---
+
+## [2026-06-04 14:31] Search Workflow Proposal Without Assistant Fallback Text
+- **Branch**: `feat/better_ux`
+- **Prompt**: Fix the remaining bug where AI still replied with a no-results message before showing the search workflow cards.
+- **Changes**:
+  - Updated `AiOrchestratorService` so unconfirmed `SEARCH_PLACES` turns stop immediately after yielding `workflowAction`, without running the response composer.
+  - Prevented assistant text from being appended to conversation history during the initial search-intent proposal turn.
+  - Updated `useStreamingChat` so workflow-only turns automatically remove the trailing empty assistant bubble when no text delta is received.
+  - Verified backend and frontend production builds after the workflow change.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `frontend/src/hooks/useStreamingChat.js`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — the first `SEARCH_PLACES` turn is now metadata-only and cannot emit fallback assistant prose before the workflow cards appear.
+
+---
+
+## [2026-06-04 14:25] Semicircle Workspace Opener Button Shape
+- **Branch**: `feat/better_ux`
+- **Prompt**: Nhìn nó hơi thô, hãy chỉnh lại thành nửa hình tròn đi.
+- **Changes**:
+  - Replaced the custom SVG triangle workspace toggle button with a CSS-based semicircle button (`w-8 h-16 rounded-r-full`) flush with the left screen edge.
+  - Added a hover width transition (`hover:w-9`) and smooth hover background transition (`hover:bg-ink-700`) using the theme's colors (`bg-ink-900` and `text-primary-200`).
+  - Centered the `Layers` icon inside the semicircle with `pl-2` alignment.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual layout adjustment.
+
+---
+
+## [2026-06-04 14:22] Horizontal Rounded Triangle Workspace Opener Button Shape
+- **Branch**: `feat/better_ux`
+- **Prompt**: Change the shape of the workspace button to a horizontal triangle pointing into the map, keeping the Layers icon.
+- **Changes**:
+  - Restored the `Layers` icon on the collapsed desktop Workspace panel button.
+  - Replaced the button HTML styling with a custom inline SVG rounded triangle path pointing horizontally to the right (`M 0,5 L 0,45 Q 0,48 3,47 L 45,27 Q 48,25 45,23 L 3,3 Q 0,2 0,5 Z`).
+  - Flush-aligned the flat left side of the triangle to the left screen edge while centering the `Layers` icon in the pointer.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual button layout shape adjustment only.
+
+---
+
+## [2026-06-04 14:18] Change Workspace collapsed button icon to Triangle
+- **Branch**: `feat/better_ux`
+- **Prompt**: Change workspace button to a rounded triangle icon.
+- **Changes**:
+  - Replaced the `Layers` icon on the collapsed desktop Workspace panel button with the `Triangle` icon.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual icon adjustment only.
+
+---
+
+## [2026-06-04 14:15] Icon-Only Compact Location and Workspace Floating Buttons
+- **Branch**: `feat/better_ux`
+- **Prompt**: Change icons of the location button and workspace button, and remove their text.
+- **Changes**:
+  - Removed text and converted the collapsed floating Workspace panel opener on desktop from a tall vertical bar to a compact square `h-11 w-11` button with a `Layers` icon.
+  - Removed text and converted the desktop floating Current Location button from a wide button to a compact square `h-11 w-11` button with a `Navigation` icon that spins during loading.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual control layout refinement only.
+
+---
+
+## [2026-06-04 14:08] Random Fixture Search Results In Test Mode
+- **Branch**: `feat/better_ux`
+- **Prompt**: Make search in test mode return random places, and verify place detail behavior under test mode.
+- **Changes**:
+  - Updated `SearchService` so fixture-only test mode exits early and returns a random sample of up to 12 places from the full merged local fixture dataset.
+  - Removed dependency on incoming search filters, recommendations, database queries, and provider logic for test-mode search responses.
+  - Re-verified the fixture-only place detail path in `PlacesService`: `findOne('local-*')`, reviews, and photos continue to resolve through `LocalFixturePlacesService` without Prisma writes.
+  - Verified backend production build after the search behavior change.
+- **Modified files**:
+  - `backend/src/modules/search/search.service.ts`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — test mode search semantics are now explicitly random-fixture sampling instead of deterministic filtered search.
+
+---
+
+## [2026-06-04 13:50] Balanced Bottom Chat Panel Controls Height
+- **Branch**: `feat/better_ux`
+- **Prompt**: Make the 3 buttons/controls at the bottom of the chatbox have the same height.
+- **Changes**:
+  - Replaced `items-end` with `items-stretch` inside the chat form flex row container.
+  - Removed fixed `h-9` heights from the Plus (New Chat) and Send buttons, enabling them to stretch and match the height of the multiline text input area dynamically.
+- **Modified files**:
+  - `frontend/src/components/AIChatPanel.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual control layout refinement only.
+
+---
+
+## [2026-06-04 13:48] Shortened Input Placeholders
+- **Branch**: `feat/better_ux`
+- **Prompt**: Make the query search and chatbot input placeholders shorter/cleaner.
+- **Changes**:
+  - Shortened Navbar search input placeholder to: `Tìm homestay, khách sạn hoặc lịch trình...`
+  - Shortened AIChatPanel chatbox input placeholder to: `Nhập yêu cầu (VD: Homestay Đà Lạt dưới 1 triệu)...`
+- **Modified files**:
+  - `frontend/src/components/Navbar.jsx`
+  - `frontend/src/components/AIChatPanel.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Text placeholder content refinement only.
+
+---
+
+## [2026-06-04 13:46] Chat Message Bubble Shrink-to-Fit Widths
+- **Branch**: `feat/better_ux`
+- **Prompt**: Adjust chat message boxes so they fit the text.
+- **Changes**:
+  - Added `w-fit` utility class to the base chat message bubble container.
+  - Removed `max-w-none` override from the assistant bubble class list to allow it to respect the `max-w-[85%]` boundary while letting short replies shrink dynamically.
+- **Modified files**:
+  - `frontend/src/components/AIChatPanel.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual layout refinement only.
+
+---
+
+## [2026-06-04 13:42] More Professional Placeholders in Inputs
+- **Branch**: `feat/better_ux`
+- **Prompt**: Make the placeholders in search and chat frames more professional.
+- **Changes**:
+  - Replaced placeholders in Navbar search input, advanced location filter, chat panel prompt input, and wizard location input field with cleaner, prompt-guiding examples in Vietnamese.
+- **Modified files**:
+  - `frontend/src/components/Navbar.jsx`
+  - `frontend/src/components/AIChatPanel.jsx`
+  - `frontend/src/components/chat/wizard-inputs/LocationInput.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Text placeholders refinement only.
+
+---
+
+## [2026-06-04 13:35] Redesigned Chat Panel UI and Bouncing Typing Dots
+- **Branch**: `feat/better_ux`
+- **Prompt**: Improve UI of chatbox (redesign top buttons, move new conversation to bottom with plus icon, attach history panel flush to chatbox like a panel drawer, and add Instagram-like 3-dots typing animation during streaming).
+- **Changes**:
+  - Removed top "Lịch sử" and "Mới" buttons from the header.
+  - Replaced the top right collapse chevron with a clean `X` close icon.
+  - Added a toggle history button `History` icon to the top right header.
+  - Aligned the bot profile and title to the left of the header.
+  - Docked the history drawer flush to the left of the main chatbox by removing the margin offset and matching the borders and rounded corners dynamically (`showHistory ? 'rounded-r-3xl rounded-l-none border-l-0' : 'rounded-3xl'`).
+  - Added a new conversation `Plus` button on the far left of the text input form.
+  - Added an Instagram-like bouncing dot typing animation inside the assistant's chat bubble when the message content is empty while streaming.
+  - Removed the redundant "AI đang phản hồi..." text loader from the bottom of the input form to simplify the UI.
+  - Appended `.typing-indicator` and `.typing-dot` styling rules to `index.css`.
+- **Modified files**:
+  - `frontend/src/components/AIChatPanel.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual/UI refinement only.
+
+---
+
 ## [2026-06-02 18:05] Modern Edge-Attached Workspace Tab
 - **Branch**: `feat/better_ux`
 - **Prompt**: Put the collapsed Workspace control in the center and attached to the side for a modern feel.
@@ -367,3 +575,25 @@
   - `S:/workspace/computational_thinking/proj/mono/.ppms/architecture-feat-better_ux.md` (Modified)
   - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
 - **Architecture Impact**: Fixture-only behavior is now isolated behind a dedicated Nest provider, reducing the chance of accidental database access in test mode and making mock fixture behavior easier to audit.
+
+## [2026-06-04 13:14] Cloudflare Content Normalization
+- **Prompt**: Fix Cloudflare AI routing failure where `(response.content || '').trim is not a function`.
+- **Changes**:
+  - Added content normalization in `CloudflareAiLlmClientService` so chat and stream responses accept string content, `{ text }` objects, or content-part arrays.
+  - Hardened `LlmTaskRouterService` to trim only when `response.content` is actually a string.
+- **Modified/Created Files**:
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/ai/providers/cloudflare-ai-llm-client.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/backend/src/modules/ai/orchestration/router/llm-task-router.service.ts` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
+- **Architecture Impact**: The LLM provider boundary now normalizes Cloudflare content shapes before orchestration code consumes them, preventing routing failures caused by non-string message payloads.
+
+## [2026-06-04 13:26] Frontend Guard For Confirmed Search Execution
+- **Prompt**: Search workflow still triggered map search and workflow cards at the same time; the initial search request should only open AI workflow cards first.
+- **Changes**:
+  - Added a confirmed-search guard ref in `HomePage` so `onSearchAction` ignores any premature `searchAction` chunks before the wizard-confirmed search request is sent.
+  - Set the guard only for confirmed `SEARCH_PLACES` execution and reset it on manual chat sends, wizard cancel, and failed confirmed-search requests.
+- **Modified/Created Files**:
+  - `S:/workspace/computational_thinking/proj/mono/frontend/src/pages/HomePage.jsx` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/architecture-feat-better_ux.md` (Modified)
+  - `S:/workspace/computational_thinking/proj/mono/.ppms/log-feat-better_ux.md` (Modified)
+- **Architecture Impact**: The frontend now treats `SEARCH_PLACES` as a two-phase contract and will not update map/workspace results unless the search came from a wizard-confirmed execution pass.

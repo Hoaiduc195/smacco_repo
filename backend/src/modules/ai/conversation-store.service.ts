@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage } from './dto/chat-response.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 interface ConversationRecord {
   createdAt: number;
@@ -18,7 +19,10 @@ export class ConversationStoreService {
   private readonly ttlSeconds: number = 3600;
   private readonly store = new Map<string, ConversationRecord>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly runtimeConfig: RuntimeConfigService,
+  ) {}
 
   createId(): string {
     const id = uuidv4();
@@ -36,6 +40,10 @@ export class ConversationStoreService {
       }
 
       this.store.delete(conversationId);
+    }
+
+    if (!this.shouldPersistHistory()) {
+      return [];
     }
 
     const messages = await this.loadHistoryFromDb(conversationId);
@@ -59,11 +67,38 @@ export class ConversationStoreService {
       record.messages = record.messages.slice(-this.maxMessages);
     }
 
-    await this.persistMessage(conversationId, message);
+    if (this.shouldPersistHistory()) {
+      await this.persistMessage(conversationId, message);
+    }
   }
 
   reset(conversationId: string): void {
     this.store.delete(conversationId);
+  }
+
+  listMemoryConversations(limit: number = 20) {
+    return Array.from(this.store.entries())
+      .sort((a, b) => b[1].createdAt - a[1].createdAt)
+      .slice(0, limit)
+      .map(([id, record]) => {
+        const lastMessage = record.messages[record.messages.length - 1];
+        return {
+          id,
+          createdAt: new Date(record.createdAt * 1000),
+          lastMessage: lastMessage?.content || null,
+          lastRole: lastMessage?.role || null,
+        };
+      });
+  }
+
+  getMemoryMessages(conversationId: string, limit: number = 50): ChatMessage[] {
+    const record = this.store.get(conversationId);
+    if (!record) return [];
+    return record.messages.slice(-limit);
+  }
+
+  private shouldPersistHistory(): boolean {
+    return this.runtimeConfig.chat.persistHistory;
   }
 
   private async persistMessage(conversationId: string, message: ChatMessage): Promise<void> {

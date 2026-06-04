@@ -226,7 +226,7 @@ export class LlmTaskRouterService implements ITaskRouter {
         response_format: { type: 'json_object' }
       });
 
-      cleanContent = (response.content || '').trim();
+      cleanContent = typeof response.content === 'string' ? response.content.trim() : '';
       this.logger.log(`Raw LLM content response: "${cleanContent}"`);
       // Handle potential markdown wrapping just in case
       if (cleanContent.startsWith('```json')) {

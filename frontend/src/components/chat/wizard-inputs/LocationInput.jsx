@@ -39,7 +39,7 @@ export default function LocationInput({ value = '', onChange, suggestions }) {
           onChange={(e) => onChange?.(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="VD: Đà Lạt, Đà Nẵng..."
+          placeholder="Nhập địa điểm, ví dụ: Đà Lạt, Nha Trang..."
           className="flex-1 bg-transparent outline-none text-sm text-ink-900 placeholder-ink-500/60"
         />
         {value && (

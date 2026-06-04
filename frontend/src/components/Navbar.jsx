@@ -103,7 +103,7 @@ export default function Navbar({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" />
             <input
               type="text"
-              placeholder="Hỏi AI tìm phòng nghỉ (nhấn Enter để gửi)..."
+              placeholder="Tìm homestay, khách sạn hoặc lịch trình..."
               value={localSearchQuery}
               onChange={(e) => {
                 const nextValue = e.target.value;
@@ -161,7 +161,7 @@ export default function Navbar({
                     type="text"
                     value={locationInput}
                     onChange={e => setLocationInput(e.target.value)}
-                    placeholder="Nhập tên thành phố, khu vực..."
+                    placeholder="Ví dụ: Đà Lạt, Vũng Tàu, Quận 1..."
                     className="input-field h-10 rounded-xl pr-12"
                   />
                   <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">

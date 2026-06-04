@@ -12,6 +12,9 @@ const TEST_PROFILE = {
     externalProviders: false,
     externalProviderPolicy: 'never',
   },
+  chat: {
+    persistHistory: false,
+  },
   externalApis: {
     serpapi: {
       hotelSearch: false,
@@ -35,6 +38,9 @@ const PRODUCTION_PROFILE = {
     localFixture: false,
     externalProviders: true,
     externalProviderPolicy: 'fallback',
+  },
+  chat: {
+    persistHistory: true,
   },
   externalApis: {
     serpapi: {
@@ -105,6 +111,13 @@ async function main() {
   }
 
   if (next.environment === 'production') {
+    const persistAnswer = (await askQuestion(rl, `Persist chat history (${next.chat.persistHistory ? 'yes' : 'no'})? (yes/no, press Enter to keep current): `)).trim().toLowerCase();
+    if (persistAnswer === 'yes') {
+      next.chat.persistHistory = true;
+    } else if (persistAnswer === 'no') {
+      next.chat.persistHistory = false;
+    }
+
     const policyAnswer = (await askQuestion(rl, `External provider policy (${next.search.externalProviderPolicy})? (fallback/always/never, press Enter to keep current): `)).trim().toLowerCase();
     if (['fallback', 'always', 'never'].includes(policyAnswer)) {
       next.search.externalProviderPolicy = policyAnswer;

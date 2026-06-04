@@ -19,6 +19,10 @@ export class RuntimeConfigService {
     return this.config.externalApis.serpapi;
   }
 
+  get chat() {
+    return this.config.chat;
+  }
+
   get overpass() {
     return this.config.externalApis.overpass;
   }

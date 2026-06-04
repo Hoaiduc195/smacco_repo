@@ -38,6 +38,25 @@ export class CloudflareAiLlmClientService implements ILlmClient {
     };
   }
 
+  private extractTextContent(content: unknown): string {
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .map((part) => {
+          if (typeof part === 'string') return part;
+          if (part && typeof part === 'object' && typeof (part as any).text === 'string') {
+            return (part as any).text;
+          }
+          return '';
+        })
+        .join('');
+    }
+    if (content && typeof content === 'object' && typeof (content as any).text === 'string') {
+      return (content as any).text;
+    }
+    return '';
+  }
+
   /**
    * Non-streaming chat completion.
    * Returns [content, finishReason, usage].
@@ -63,7 +82,7 @@ export class CloudflareAiLlmClientService implements ILlmClient {
       });
 
       const data = response.data;
-      const content = data.choices[0].message.content;
+      const content = this.extractTextContent(data?.choices?.[0]?.message?.content);
       const finishReason = data.choices[0].finish_reason;
       const usage = data.usage;
 
@@ -121,7 +140,7 @@ export class CloudflareAiLlmClientService implements ILlmClient {
             const choices = parsed.choices || [];
             if (!choices.length) continue;
 
-            const delta = choices[0].delta?.content || '';
+            const delta = this.extractTextContent(choices[0].delta?.content);
             const finishReason = choices[0].finish_reason;
 
             if (delta || finishReason) {

@@ -6,6 +6,9 @@
     "externalProviders": false,
     "externalProviderPolicy": "never"
   },
+  "chat": {
+    "persistHistory": false
+  },
   "externalApis": {
     "serpapi": {
       "hotelSearch": false,
@@ -18,6 +21,6 @@
     }
   },
   "ai": {
-    "provider": "cloudflare"
+    "provider": "groq"
   }
 }

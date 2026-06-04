@@ -17,6 +17,7 @@ export default function useStreamingChat({
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState('');
   const abortRef = useRef(null);
+  const receivedAssistantTextRef = useRef(false);
 
   const canSend = useMemo(
     () => Boolean(input.trim()) && !isStreaming,
@@ -24,6 +25,9 @@ export default function useStreamingChat({
   );
 
   const appendAssistantDelta = (delta) => {
+    if (delta) {
+      receivedAssistantTextRef.current = true;
+    }
     setMessages((prev) => {
       const updated = [...prev];
       const idx = [...updated].reverse().findIndex((msg) => msg.role === 'assistant');
@@ -35,6 +39,17 @@ export default function useStreamingChat({
     });
   };
 
+  const pruneTrailingEmptyAssistant = () => {
+    setMessages((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      if (last?.role === 'assistant' && !(last.content || '').trim()) {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+  };
+
   const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces, options = {}) => {
     const rawText = textOverride ?? input;
     const userText = rawText.trim();
@@ -43,6 +58,7 @@ export default function useStreamingChat({
     const promptText = typeof buildPrompt === 'function' ? buildPrompt(userText) : userText;
 
     flushSync(() => {
+      receivedAssistantTextRef.current = false;
       setInput('');
       setError('');
       setMessages((prev) => [...prev, { role: 'user', content: userText }, { role: 'assistant', content: '' }]);
@@ -81,10 +97,16 @@ export default function useStreamingChat({
             appendAssistantDelta(chunk.delta);
           }
           if (chunk?.finishReason || chunk?.finish_reason) {
+            if (!receivedAssistantTextRef.current) {
+              pruneTrailingEmptyAssistant();
+            }
             setIsStreaming(false);
           }
         },
         onDone: () => {
+          if (!receivedAssistantTextRef.current) {
+            pruneTrailingEmptyAssistant();
+          }
           setIsStreaming(false);
         },
         onError: (err) => {

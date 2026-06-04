@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Bot, Check, ChevronRight, History, Loader2, MapPin, RefreshCw, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Check, ChevronRight, History, Loader2, MapPin, Plus, RefreshCw, Send, Sparkles, Trash2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import WorkflowPromptCard from './chat/WorkflowPromptCard';
 import WizardStepCard from './chat/WizardStepCard';
@@ -64,7 +64,7 @@ export default function AIChatPanel({
       {showHistory && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowHistory(false)} />
-          <div className="absolute right-full mr-3 top-0 bottom-0 z-20 w-72 overflow-hidden rounded-3xl border border-base-200 bg-white/95 shadow-card backdrop-blur-xl flex flex-col animate-panel-in-left">
+          <div className="absolute right-full top-0 bottom-0 z-20 w-72 overflow-hidden rounded-l-3xl border-y border-l border-base-200/80 bg-white/95 shadow-card backdrop-blur-xl flex flex-col animate-panel-in-left">
             <div className="p-3 font-semibold text-ink-900 border-b border-base-200 flex justify-between items-center bg-base-50/90">
               <span className="text-xs font-bold uppercase tracking-wide">Lịch sử chat</span>
               <button
@@ -114,45 +114,44 @@ export default function AIChatPanel({
       )}
 
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden border border-base-200/80 bg-white/[0.90] shadow-card backdrop-blur-xl rounded-3xl">
+      <div className={`flex-1 flex flex-col min-w-0 h-full overflow-hidden border border-base-200/80 bg-white/[0.90] shadow-card backdrop-blur-xl transition-all duration-300 ${
+        showHistory ? 'rounded-r-3xl rounded-l-none border-l-0' : 'rounded-3xl'
+      }`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-base-200 bg-ink-900 text-white rounded-t-3xl">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="px-2 py-1 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors text-[10px] font-black"
-              title="Lịch sử chat"
-            >
-              <History className="w-3.5 h-3.5 mr-1 inline-block" />
-              Lịch sử
-            </button>
-            <div className="w-7 h-7 rounded-xl bg-primary-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-              <Bot className="w-4 h-4 text-white" />
+        <div className={`flex items-center justify-between px-4 py-3 border-b border-base-200 bg-ink-900 text-white transition-all duration-300 ${
+          showHistory ? 'rounded-tr-3xl rounded-tl-none' : 'rounded-t-3xl'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary-500 text-white flex items-center justify-center shrink-0 shadow-sm animate-floaty">
+              <Bot className="w-4.5 h-4.5 text-white" />
             </div>
             <div>
               <p className="text-xs font-black text-white leading-none">Trợ lý AI Smacco</p>
-              <p className="text-[9px] font-semibold text-primary-300 mt-0.5">Hỗ trợ đặt phòng & du lịch</p>
+              <p className="text-[9px] font-medium text-slate-300 mt-0.5">Hỗ trợ đặt phòng & du lịch</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowHistory(!showHistory)}
+              className={`p-1.5 rounded-xl transition-colors ${
+                showHistory ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/70 hover:text-white'
+              }`}
+              title="Lịch sử chat"
+            >
+              <History className="w-4 h-4" />
+            </button>
             {onCollapse && (
               <button
+                type="button"
                 onClick={onCollapse}
                 className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                title="Thu gọn Chat AI"
+                title="Đóng Chat AI"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
-            <button
-              onClick={onNewConversation}
-              className="px-2 py-1 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors text-[10px] font-black"
-              title="Hội thoại mới"
-            >
-              <RefreshCw className="w-3.5 h-3.5 mr-1 inline-block" />
-              Mới
-            </button>
           </div>
         </div>
 
@@ -165,16 +164,16 @@ export default function AIChatPanel({
                 style={{ animationDelay: `${Math.min(idx * 45, 240)}ms` }}
               >
                 <div
-                  className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs transition-[transform,box-shadow] duration-200 ease-out will-change-transform ${
+                  className={`w-fit max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs transition-[transform,box-shadow] duration-200 ease-out will-change-transform ${
                     msg.role === 'user'
                       ? 'chat-bubble-user bg-primary-600 text-white rounded-tr-none font-medium hover:-translate-y-0.5'
-                      : 'chat-bubble-assistant bg-ink-900 text-white rounded-tl-none border border-ink-900 prose prose-sm prose-invert leading-relaxed max-w-none hover:-translate-y-0.5'
+                      : 'chat-bubble-assistant bg-ink-900 text-white rounded-tl-none border border-ink-900 prose prose-sm prose-invert leading-relaxed hover:-translate-y-0.5'
                   }`}
                   style={{ animationDelay: `${Math.min(idx * 45, 240)}ms`, animationFillMode: 'both' }}
                 >
                 {msg.role === 'user' ? (
                   <p className="whitespace-pre-wrap">{msg.content}</p>
-                ) : (
+                ) : msg.content ? (
                   <div className="markdown-chat">
                     <ReactMarkdown
                       components={{
@@ -222,6 +221,12 @@ export default function AIChatPanel({
                     >
                       {msg.content}
                     </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="typing-indicator">
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
+                    <span className="typing-dot"></span>
                   </div>
                 )}
               </div>
@@ -357,7 +362,15 @@ export default function AIChatPanel({
 
         {/* Input box */}
         <form onSubmit={handleFormSubmit} className="p-3 border-t border-base-200 bg-white shrink-0">
-          <div className="flex items-end gap-2">
+          <div className="flex items-stretch gap-2">
+            <button
+              type="button"
+              onClick={onNewConversation}
+              className="w-9 rounded-xl border border-base-200 bg-white hover:bg-base-50 text-ink-600 flex items-center justify-center transition shrink-0 shadow-sm"
+              title="Hội thoại mới"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
             <textarea
               rows={2}
               value={input}
@@ -368,24 +381,18 @@ export default function AIChatPanel({
                   handleFormSubmit(e);
                 }
               }}
-              placeholder="Nhập yêu cầu: Tìm homestay, so sánh, lên lịch trình..."
+              placeholder="Nhập yêu cầu"
               className="flex-grow resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-xs text-ink-900"
             />
             <button
               type="submit"
               disabled={(!input.trim() && !isStreaming) || isStreaming}
-              className="h-9 px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition font-black shrink-0 shadow-sm text-xs"
+              className="px-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition font-black shrink-0 shadow-sm text-xs"
               title="Gửi tin nhắn"
             >
               {isStreaming ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Send className="w-4 h-4 text-white" />}
             </button>
           </div>
-          {isStreaming && (
-            <div className="flex items-center gap-2 text-[10px] text-ink-500 mt-1 pl-1">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-600" />
-              <span>AI đang phản hồi...</span>
-            </div>
-          )}
         </form>
       </div>
     </div>

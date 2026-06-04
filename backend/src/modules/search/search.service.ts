@@ -40,8 +40,14 @@ export class SearchService {
     const budget = this.normalizeBudget(filters.budget);
     const typeFilters = this.normalizeTypes(filters.type, filters.types);
     const providerQuery = this.buildProviderQuery(filters.q, typeFilters, filters.location);
+    const isFixtureOnlyMode = this.runtimeConfig.search.localFixture && !this.runtimeConfig.search.localDatabase;
 
     this.logger.log(`Searching for: "${providerQuery}" with budget: ${budget || 'any'}`);
+
+    if (isFixtureOnlyMode) {
+      const randomPool = this.mapLocalFixturePlaces(this.placesService.findLocalTestData(undefined));
+      return this.takeRandomResults(randomPool, 12);
+    }
 
     let externalResults: PlaceResult[] = [];
     let localResults: PlaceResult[] = [];
@@ -185,6 +191,32 @@ export class SearchService {
     });
 
     return finalResults;
+  }
+
+  private mapLocalFixturePlaces(localPlaces: any[]): PlaceResult[] {
+    return localPlaces.map((place: any): PlaceResult => ({
+      locationId: place.id,
+      sourcePlaceId: place.sourcePlaceId,
+      name: place.placeName,
+      address: place.placeAddress,
+      description: place.rawSerpApiPropertyDetails?.description,
+      location: { lat: place.lat, lng: place.lng },
+      types: place.categories,
+      imageUrl: place.coverImageUrl || undefined,
+      source: 'local',
+      rating: place.averageRating || undefined,
+      userRatingsTotal: place.reviewCount || undefined,
+      amenities: place.rawSerpApiPropertyDetails?.amenities,
+    }));
+  }
+
+  private takeRandomResults(results: PlaceResult[], limit: number): PlaceResult[] {
+    const shuffled = [...results];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, Math.min(limit, shuffled.length));
   }
 
   private mergeAndPrioritizeLocal(localResults: PlaceResult[], externalResults: PlaceResult[]): PlaceResult[] {

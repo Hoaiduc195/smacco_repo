@@ -13,6 +13,9 @@ export interface RuntimeConfig {
     externalProviders: boolean;
     externalProviderPolicy: ExternalProviderPolicy;
   };
+  chat: {
+    persistHistory: boolean;
+  };
   externalApis: {
     serpapi: {
       hotelSearch: boolean;
@@ -37,6 +40,9 @@ const TEST_DEFAULTS: RuntimeConfig = {
     externalProviders: false,
     externalProviderPolicy: 'never',
   },
+  chat: {
+    persistHistory: false,
+  },
   externalApis: {
     serpapi: {
       hotelSearch: false,
@@ -60,6 +66,9 @@ const PRODUCTION_DEFAULTS: RuntimeConfig = {
     localFixture: false,
     externalProviders: true,
     externalProviderPolicy: 'fallback',
+  },
+  chat: {
+    persistHistory: true,
   },
   externalApis: {
     serpapi: {
@@ -122,6 +131,10 @@ export function readRuntimeConfig(): RuntimeConfig {
       ...defaults.search,
       ...(raw.search || {}),
     },
+    chat: {
+      ...defaults.chat,
+      ...(raw.chat || {}),
+    },
     externalApis: {
       serpapi: {
         ...defaults.externalApis.serpapi,
@@ -151,6 +164,9 @@ export function readRuntimeConfig(): RuntimeConfig {
       localFixture: true,
       externalProviders: false,
       externalProviderPolicy: 'never',
+    };
+    merged.chat = {
+      persistHistory: false,
     };
     merged.externalApis = {
       serpapi: {

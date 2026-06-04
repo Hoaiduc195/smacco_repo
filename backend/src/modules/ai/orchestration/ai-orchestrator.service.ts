@@ -71,6 +71,17 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
     const workflowAction = this.buildWorkflowAction(route.workflowId, route.parameters, shouldExecuteWorkflow);
 
+    if (route.workflowId === 'SEARCH_PLACES' && !shouldExecuteWorkflow) {
+      return {
+        conversationId,
+        answer: '',
+        searchAction,
+        workflowAction,
+        messages: await this.store.getHistory(conversationId),
+        finishReason: 'stop'
+      };
+    }
+
     // 3. Response Composer: Generate final text
     const composerResult = await this.composer.compose({
       userQuery: request.text,
@@ -156,6 +167,11 @@ export class AiOrchestratorService implements IAiOrchestrator {
         delta: '',
         workflowAction,
       } as any;
+    }
+
+    if (route.workflowId === 'SEARCH_PLACES' && !shouldExecuteWorkflow) {
+      yield { conversationId, delta: '', finishReason: 'stop' };
+      return;
     }
 
     // 3. Response Composer Stream

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertCircle, Bot, Compass, Crosshair, MapPin, PanelLeftOpen, Route, Sparkles } from 'lucide-react';
+import { AlertCircle, Bot, Compass, Crosshair, MapPin, PanelLeftOpen, Route, Sparkles, Navigation, Layers } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import AIWorkspacePanel from '../components/AIWorkspacePanel';
@@ -921,11 +921,16 @@ export default function HomePage() {
         {!isMobile && !isWorkspaceExpanded && (
           <button
             onClick={() => setWorkspaceExpanded(true)}
-            className="absolute z-20 left-0 top-1/2 -translate-y-1/2 h-32 w-12 bg-ink-900 border border-l-0 border-ink-800 text-white rounded-r-2xl shadow-soft hover:bg-ink-800 transition text-[10px] font-black inline-flex flex-col items-center justify-center gap-2 pointer-events-auto animate-control-fade-in"
+            className="group absolute z-20 left-0 top-1/2 -translate-y-1/2 w-8 h-16 bg-ink-900 border border-l-0 border-ink-700 text-white rounded-r-full shadow-soft hover:bg-ink-700 hover:w-9 active:scale-95 transition-all duration-200 flex items-center justify-start pl-2 pointer-events-auto animate-control-fade-in"
             title="Mở AI Workspace"
           >
-            <PanelLeftOpen className="w-4 h-4 text-primary-300" />
-            <span className="[writing-mode:vertical-rl] rotate-180 tracking-wide">Workspace</span>
+            <Layers className="w-[18px] h-[18px] text-primary-200 transition-colors group-hover:text-white duration-200"
+              onClick={(e) => {
+                // Make sure clicking the icon also triggers the button's action
+                e.stopPropagation();
+                setWorkspaceExpanded(true);
+              }}
+            />
           </button>
         )}
 
@@ -1050,10 +1055,9 @@ export default function HomePage() {
             onClick={requestCurrentLocation}
             disabled={locationStatus === 'loading'}
             title={locationStatus === 'loading' ? 'Đang tìm vị trí...' : 'Lấy vị trí của tôi'}
-            className="h-11 px-4 bg-ink-900 text-white rounded-2xl shadow-soft hover:bg-ink-700 transition disabled:opacity-50 text-xs font-black"
+            className="h-11 w-11 bg-ink-900 text-white rounded-2xl shadow-soft hover:bg-ink-700 transition disabled:opacity-50 flex items-center justify-center"
           >
-            <Crosshair className={`inline-block w-4 h-4 mr-2 ${locationStatus === 'loading' ? 'animate-spin' : ''}`} />
-            {locationStatus === 'loading' ? 'Đang tìm...' : 'Vị trí'}
+            <Navigation className={`w-5 h-5 text-primary-300 ${locationStatus === 'loading' ? 'animate-spin' : ''}`} />
           </button>
 
           {(route?.length || appState === APP_STATES.ROUTING) && (
