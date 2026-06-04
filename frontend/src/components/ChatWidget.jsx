@@ -1,23 +1,47 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Send, X, Loader2, RotateCcw, Tag, Plus, Trash2, MapPin, Sparkles } from 'lucide-react';
+import { Loader2, MapPin, MessageCircle, Plus, RotateCcw, Send, Tag, Trash2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import TaggedPlacesBar from './TaggedPlacesBar';
 import TagPlaceModal from './TagPlaceModal';
 import { useConversation } from '../contexts/ConversationContext';
+import useWorkflowWizard from '../hooks/useWorkflowWizard';
+import WorkflowPromptCard from './chat/WorkflowPromptCard';
+import WizardStepCard from './chat/WizardStepCard';
+import WizardSummaryCard from './chat/WizardSummaryCard';
+
+const QUICK_REPLIES = [
+  'Tìm homestay yên tĩnh ở Đà Lạt',
+  'So sánh homestay Đà Lạt',
+  'Lên lịch trình 3 ngày 2 đêm',
+  'Đánh giá khu vực Phường 4',
+  'Dự trù ngân sách đi Đà Lạt',
+  'Quán ăn ngon gần Moc House',
+];
 
 export default function ChatWidget() {
   const navigate = useNavigate();
-  const defaultMessages = [
-    { role: 'assistant', content: 'Xin chào! Tôi có thể hỗ trợ gợi ý địa điểm, lịch trình, ăn uống.' },
-  ];
+  const defaultMessages = useMemo(() => [
+    {
+      role: 'assistant',
+      content: 'Xin chào! Tôi là trợ lý du lịch AI Smacco. Tôi có thể hỗ trợ bạn tìm kiếm phòng nghỉ, so sánh các chỗ ở, lên lịch trình, dự trù ngân sách và tìm quán ăn ngon xung quanh.\n\nBạn muốn tìm chỗ ở như thế nào? Ví dụ: *"Tìm homestay yên tĩnh ở Đà Lạt dưới 1 triệu cho 2 người"*'
+    },
+  ], []);
+
   const [isOpen, setIsOpen] = useState(true);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  
   const [isPlaceChatOpen, setIsPlaceChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [copiedPlace, setCopiedPlace] = useState(null);
+  const [quickReplies, setQuickReplies] = useState(QUICK_REPLIES);
+  const awaitingConfirmedSearchActionRef = useRef(false);
+  const latestSearchResultsRef = useRef([]);
+  const scrollRef = useRef(null);
+  const bottomRef = useRef(null);
+  const wizard = useWorkflowWizard();
 
   const {
     messages,
@@ -31,13 +55,27 @@ export default function ChatWidget() {
     canSend,
     sendMessage,
     abortStreaming,
-    clearConversation,
   } = useStreamingChat({
     initialMessages: defaultMessages,
     onSearchAction: (action) => {
-      // Dispatch custom event so HomePage can intercept and perform the search
+      if (!awaitingConfirmedSearchActionRef.current) {
+        return;
+      }
+      awaitingConfirmedSearchActionRef.current = false;
+      latestSearchResultsRef.current = Array.isArray(action?.results) ? action.results : [];
+      window.activeSearchResults = latestSearchResultsRef.current;
       window.dispatchEvent(new CustomEvent('app:ai-search', { detail: action }));
-    }
+    },
+    onWorkflowAction: (action) => {
+      if (wizard.wizardState !== 'idle') return;
+      if (action.type === 'search') {
+        wizard.proposeWorkflow('SEARCH_PLACES', action.parameters || {}, action.parameters?.query || '');
+      } else if (action.type === 'compare') {
+        wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '');
+      } else if (action.type === 'analyze') {
+        wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '');
+      }
+    },
   });
 
   const {
@@ -52,21 +90,99 @@ export default function ChatWidget() {
     deleteConversation,
     refreshConversations,
   } = useConversation();
-  const bottomRef = useRef(null);
-  const scrollRef = useRef(null);
 
-  const [copiedPlace, setCopiedPlace] = useState(null);
+  const getActivePlacesAndPayload = () => {
+    const fallbackSearchResults = latestSearchResultsRef.current.length > 0
+      ? latestSearchResultsRef.current
+      : (window.activeSearchResults || []);
+    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : fallbackSearchResults;
+    return {
+      ids: activePlaces.map((place) => place.id),
+      payload: activePlaces.map((place) => ({
+        id: place.id,
+        name: place.name || place.placeName || place.title,
+        address: place.address || place.placeAddress || place.displayAddress,
+        latitude: place.latitude || place.lat || place.coordinates?.lat || place.location?.lat,
+        longitude: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng,
+        rating: place.rating || place.averageRating,
+        type: place.type || place.categories?.[0],
+      })),
+    };
+  };
+
+  const sendTextMessage = async (text, options = {}) => {
+    const userText = String(text || '').trim();
+    if (!userText) return;
+    const { ids, payload } = getActivePlacesAndPayload();
+    await sendMessage(userText, ids, payload, options);
+  };
+
+  const resetQuickReplies = () => {
+    setQuickReplies(QUICK_REPLIES);
+  };
+
+  const buildSearchPrompt = (data) => {
+    const parts = [
+      data.query || 'Tìm giúp tôi chỗ ở phù hợp',
+      data.location ? `ở ${data.location}` : '',
+      Array.isArray(data.types) && data.types.length ? `loại ${data.types.join(', ')}` : '',
+      data.guests ? `cho ${data.guests} người` : '',
+      data.budget ? `ngân sách ${data.budget}` : '',
+    ].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  const buildComparePrompt = (data) => {
+    const criteria = Array.isArray(data.criteria) && data.criteria.length
+      ? ` theo các tiêu chí ${data.criteria.join(', ')}`
+      : '';
+    return `So sánh các địa điểm tôi đã tag${criteria}.`;
+  };
+
+  const buildAnalyzePrompt = (data) => {
+    const criteria = Array.isArray(data.criteria) && data.criteria.length
+      ? ` theo các tiêu chí ${data.criteria.join(', ')}`
+      : '';
+    return `Phân tích chi tiết địa điểm tôi đã tag${criteria}.`;
+  };
+
+  const handleSend = async (e) => {
+    e?.preventDefault();
+    if (wizard.wizardState !== 'idle') return;
+    setQuickReplies([]);
+    awaitingConfirmedSearchActionRef.current = false;
+    await sendTextMessage(input);
+  };
+
+  const handleQuickReplyClick = async (text) => {
+    setIsOpen(true);
+    setQuickReplies([]);
+    wizard.cancelWizard();
+    awaitingConfirmedSearchActionRef.current = false;
+    await sendTextMessage(text);
+  };
+
+  const handleNewConversation = async () => {
+    const conversation = await startNewConversation();
+    if (!conversation?.id) return;
+    setConversationId(conversation.id);
+    setMessages(defaultMessages);
+    setShowHistory(false);
+    wizard.resetWizard();
+    resetQuickReplies();
+  };
 
   useEffect(() => {
     const handlePlaceChatActive = (e) => {
       setIsPlaceChatOpen(e.detail.open);
     };
-    window.addEventListener('app:place-chat-active', handlePlaceChatActive);
 
     const syncMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
+
     syncMobile();
+    window.addEventListener('app:place-chat-active', handlePlaceChatActive);
     window.addEventListener('resize', syncMobile);
 
     return () => {
@@ -75,49 +191,69 @@ export default function ChatWidget() {
     };
   }, []);
 
-  // Sync copied place from clipboard / localStorage / events
   useEffect(() => {
     const checkCopiedPlace = () => {
       try {
         const stored = window.localStorage.getItem('copied_place');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.id && parsed.name) {
-            const isAlreadyTagged = taggedPlaces.some(p => p.id === parsed.id);
-            if (!isAlreadyTagged) {
-              setCopiedPlace(parsed);
-              return;
-            }
-          }
+        if (!stored) {
+          setCopiedPlace(null);
+          return;
+        }
+
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id && parsed.name && !taggedPlaces.some((place) => place.id === parsed.id)) {
+          setCopiedPlace(parsed);
+          return;
         }
       } catch (err) {
         console.error('Lỗi khi đọc copied_place từ localStorage:', err);
       }
+
       setCopiedPlace(null);
     };
 
-    checkCopiedPlace();
-
     const handleLocalCopy = (e) => {
-      if (e.detail && e.detail.id && e.detail.name) {
-        const isAlreadyTagged = taggedPlaces.some(p => p.id === e.detail.id);
-        if (!isAlreadyTagged) {
-          setCopiedPlace(e.detail);
-        }
+      if (e.detail && e.detail.id && e.detail.name && !taggedPlaces.some((place) => place.id === e.detail.id)) {
+        setCopiedPlace(e.detail);
       }
     };
-    window.addEventListener('app:place-copied', handleLocalCopy);
 
-    const handleFocus = () => {
-      checkCopiedPlace();
-    };
-    window.addEventListener('focus', handleFocus);
+    checkCopiedPlace();
+    window.addEventListener('app:place-copied', handleLocalCopy);
+    window.addEventListener('focus', checkCopiedPlace);
 
     return () => {
       window.removeEventListener('app:place-copied', handleLocalCopy);
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('focus', checkCopiedPlace);
     };
   }, [taggedPlaces]);
+
+  useEffect(() => {
+    const handleExternalSend = async (event) => {
+      const text = event?.detail?.text;
+      if (!text) return;
+      setIsOpen(true);
+      setQuickReplies([]);
+      wizard.cancelWizard();
+      awaitingConfirmedSearchActionRef.current = false;
+      await sendTextMessage(text);
+    };
+
+    const handleExternalPrefill = (event) => {
+      const text = event?.detail?.text;
+      if (!text) return;
+      setIsOpen(true);
+      setInput(text);
+    };
+
+    window.addEventListener('app:chat-send', handleExternalSend);
+    window.addEventListener('app:chat-prefill', handleExternalPrefill);
+
+    return () => {
+      window.removeEventListener('app:chat-send', handleExternalSend);
+      window.removeEventListener('app:chat-prefill', handleExternalPrefill);
+    };
+  }, [sendMessage, setInput, taggedPlaces, wizard]);
 
   useEffect(() => {
     if (conversationId && conversationId !== selectedConversationId) {
@@ -133,17 +269,15 @@ export default function ChatWidget() {
       setMessages(defaultMessages);
       return;
     }
+
     let active = true;
     const loadHistory = async () => {
       const history = await selectConversation(selectedConversationId);
       if (!active) return;
       setConversationId(selectedConversationId);
-      if (history?.length) {
-        setMessages(history);
-      } else {
-        setMessages(defaultMessages);
-      }
+      setMessages(history?.length ? history : defaultMessages);
     };
+
     loadHistory();
     return () => {
       active = false;
@@ -153,79 +287,96 @@ export default function ChatWidget() {
   useEffect(() => {
     if (isStreaming) return;
     if (selectedConversationId || !conversations?.length) return;
+
     selectConversation(conversations[0].id).then((history) => {
       setConversationId(conversations[0].id);
       setMessages(history?.length ? history : defaultMessages);
     });
   }, [conversations, defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
 
-  const handleSend = async (e) => {
-    e?.preventDefault();
-    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : (window.activeSearchResults || []);
-    const taggedPlacePayload = activePlaces.map(p => ({
-      id: p.id,
-      name: p.name || p.placeName || p.title,
-      address: p.address || p.placeAddress || p.displayAddress,
-      latitude: p.latitude || p.lat || p.coordinates?.lat || p.location?.lat,
-      longitude: p.longitude || p.lng || p.coordinates?.lng || p.location?.lng,
-      rating: p.rating || p.averageRating,
-      type: p.type || p.categories?.[0]
-    }));
-    await sendMessage(undefined, activePlaces.map(p => p.id), taggedPlacePayload);
-  };
+  useEffect(() => {
+    if (wizard.wizardState !== 'executing') return;
 
-  const handleAbort = () => {
-    abortStreaming();
-  };
+    const execute = async () => {
+      const data = wizard.summaryData;
+      const workflowId = wizard.activeWorkflow?.workflowId;
 
-  const handleNewConversation = async () => {
-    const conversation = await startNewConversation();
-    if (conversation?.id) {
-      setConversationId(conversation.id);
-      setMessages(defaultMessages);
-      setShowHistory(false);
-    }
-  };
+      try {
+        if (workflowId === 'SEARCH_PLACES') {
+          awaitingConfirmedSearchActionRef.current = true;
+          await sendTextMessage(buildSearchPrompt(data), {
+            workflowExecution: {
+              workflowId: 'SEARCH_PLACES',
+              confirmed: true,
+              parameters: data,
+            },
+            wizardPreferences: {
+              guestCount: data.guests,
+              budget: data.budget,
+              types: data.types,
+              preferences: data.preferences,
+            },
+          });
+        } else if (workflowId === 'COMPARE_PLACES') {
+          await sendTextMessage(buildComparePrompt(data));
+        } else if (workflowId === 'ANALYZE_PLACE') {
+          await sendTextMessage(buildAnalyzePrompt(data));
+        }
+      } catch (err) {
+        awaitingConfirmedSearchActionRef.current = false;
+        console.error(err);
+      } finally {
+        wizard.resetWizard();
+      }
+    };
 
-  const [isDragOver, setIsDragOver] = useState(false);
+    execute();
+  }, [sendMessage, taggedPlaces, wizard]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [isOpen, messages, wizard.wizardState, quickReplies]);
 
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
     const placeData = e.dataTransfer.getData('placeData');
-    if (placeData) {
-      try {
-        const place = JSON.parse(placeData);
-        tagPlace(place);
-      } catch (err) {
-        console.error('Lỗi khi parse placeData', err);
-      }
+    if (!placeData) return;
+
+    try {
+      tagPlace(JSON.parse(placeData));
+    } catch (err) {
+      console.error('Lỗi khi parse placeData', err);
     }
-    if (!isOpen) setIsOpen(true);
+
+    if (!isOpen) {
+      setIsOpen(true);
+    }
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    if (!isDragOver) setIsDragOver(true);
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
   };
 
-  const handleDragLeave = () => setIsDragOver(false);
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
 
-  // Hide the floating main ChatWidget on mobile if the place-specific chat panel is open
   if (isPlaceChatOpen && isMobile) {
     return null;
   }
 
   return (
-    <div 
+    <div
       className="fixed bottom-3 sm:bottom-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
-      style={{
-        right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '16px')
-      }}
+      style={{ right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '16px') }}
     >
       <div className="flex flex-row items-end gap-3 pointer-events-none w-full justify-end">
-        {/* Active Tagged Places Stack (Left of chat widget) */}
-        {isOpen && taggedPlaces && taggedPlaces.length > 0 && (
+        {isOpen && taggedPlaces.length > 0 && (
           <div className="flex flex-col gap-2 max-h-[min(450px,calc(100vh-13rem))] overflow-y-auto pointer-events-auto select-none items-end shrink-0 pr-1 pb-1">
             {taggedPlaces.map((place) => (
               <div
@@ -243,7 +394,7 @@ export default function ChatWidget() {
                 <button
                   type="button"
                   onClick={() => untagPlace(place.id)}
-                  className="p-0.5 rounded-full hover:bg-primary-700 text-white hover:text-white transition"
+                  className="p-0.5 rounded-full hover:bg-primary-700 text-white transition"
                   title="Bỏ tag"
                 >
                   <X className="w-3 h-3" />
@@ -253,7 +404,6 @@ export default function ChatWidget() {
           </div>
         )}
 
-        {/* Main Chat Window */}
         <div
           className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-base-200 rounded-3xl shadow-card flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
           onDrop={handleDrop}
@@ -284,7 +434,7 @@ export default function ChatWidget() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto bg-white">
-                {conversations && conversations.length > 0 ? (
+                {conversations.length > 0 ? (
                   conversations.map((conv) => (
                     <button
                       key={conv.id}
@@ -292,6 +442,7 @@ export default function ChatWidget() {
                         const history = await selectConversation(conv.id);
                         setConversationId(conv.id);
                         setMessages(history?.length ? history : defaultMessages);
+                        wizard.resetWizard();
                       }}
                       className={`w-full text-left px-4 py-3 border-b border-base-100 text-sm hover:bg-primary-50/50 transition-colors ${selectedConversationId === conv.id ? 'bg-primary-50 font-black text-primary-900' : 'text-ink-700'}`}
                     >
@@ -335,7 +486,7 @@ export default function ChatWidget() {
                     className="p-1.5 mr-1 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                     title="Mở lịch sử chat"
                   >
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" /></svg>
                   </button>
                 )}
                 <div className="w-8 h-8 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -366,7 +517,7 @@ export default function ChatWidget() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (isStreaming) handleAbort();
+                    if (isStreaming) abortStreaming();
                     setIsOpen(false);
                   }}
                   className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
@@ -377,34 +528,21 @@ export default function ChatWidget() {
               </div>
             </div>
 
-            {/* Bar hiển thị các địa điểm đã tag */}
             <TaggedPlacesBar />
 
-            <div
-              ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white"
-            >
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white">
               {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${
-                      msg.role === 'user'
-                        ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap'
-                        : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'
-                    }`}
-                    >
-                      {msg.role === 'user' ? (
-                        msg.content
-                      ) : !msg.content && isStreaming && idx === messages.length - 1 ? (
-                        <span className="inline-flex items-center gap-2 text-white/80">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
-                          Đang suy nghĩ...
-                        </span>
-                      ) : (
-                        <ReactMarkdown
+                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap' : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'}`}
+                  >
+                    {msg.role === 'user' ? msg.content : (!msg.content && isStreaming && idx === messages.length - 1 ? (
+                      <span className="inline-flex items-center gap-2 text-white/80">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
+                        Đang suy nghĩ...
+                      </span>
+                    ) : (
+                      <ReactMarkdown
                         components={{
                           a: ({ href, children, ...props }) => {
                             let placeId = null;
@@ -450,13 +588,75 @@ export default function ChatWidget() {
                       >
                         {msg.content}
                       </ReactMarkdown>
-                    )}
+                    ))}
                   </div>
                 </div>
               ))}
+
+              {wizard.wizardState === 'prompting' && wizard.activeWorkflow && (
+                <WorkflowPromptCard
+                  workflowId={wizard.activeWorkflow.workflowId}
+                  params={wizard.activeWorkflow.initialParams}
+                  query={wizard.activeWorkflow.detectedQuery}
+                  taggedPlaces={taggedPlaces}
+                  onAccept={wizard.acceptWorkflow}
+                  onDecline={() => {
+                    wizard.declineWorkflow();
+                    resetQuickReplies();
+                  }}
+                />
+              )}
+
+              {wizard.wizardState === 'collecting' && wizard.currentStep && (
+                <WizardStepCard
+                  step={wizard.currentStep}
+                  stepIndex={wizard.currentStepIndex}
+                  totalSteps={wizard.steps.length}
+                  value={wizard.collectedData[wizard.currentStep.id]}
+                  onSubmit={(value) => wizard.submitStep(wizard.currentStep.id, value)}
+                  onSkip={wizard.skipStep}
+                  onBack={wizard.currentStepIndex > 0 ? wizard.goBackStep : undefined}
+                  onCancel={() => {
+                    awaitingConfirmedSearchActionRef.current = false;
+                    wizard.cancelWizard();
+                    resetQuickReplies();
+                  }}
+                />
+              )}
+
+              {wizard.wizardState === 'confirming' && wizard.activeWorkflow && (
+                <WizardSummaryCard
+                  workflowId={wizard.activeWorkflow.workflowId}
+                  steps={wizard.steps}
+                  collectedData={wizard.summaryData}
+                  onConfirm={wizard.confirmAndExecute}
+                  onCancel={() => {
+                    awaitingConfirmedSearchActionRef.current = false;
+                    wizard.cancelWizard();
+                    resetQuickReplies();
+                  }}
+                  onEditStep={wizard.editFromSummary}
+                />
+              )}
+
+              {wizard.wizardState === 'idle' && quickReplies.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {quickReplies.map((reply) => (
+                    <button
+                      key={reply}
+                      type="button"
+                      onClick={() => handleQuickReplyClick(reply)}
+                      className="rounded-full border border-base-200 bg-base-50 px-3 py-1.5 text-[11px] font-semibold text-ink-700 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div ref={bottomRef} />
             </div>
 
-            {/* Floating tag suggestion banner above closed trigger button */}
             {!isOpen && copiedPlace && (
               <div
                 onClick={() => {
@@ -472,10 +672,7 @@ export default function ChatWidget() {
                   <span className="truncate">Phát hiện địa điểm: <strong className="text-primary-900 font-bold">{copiedPlace.name}</strong></span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                  <button
-                    type="button"
-                    className="bg-primary-600 hover:bg-primary-700 text-white px-2 py-0.5 rounded-lg font-medium transition"
-                  >
+                  <button type="button" className="bg-primary-600 hover:bg-primary-700 text-white px-2 py-0.5 rounded-lg font-medium transition">
                     Tag
                   </button>
                   <button
@@ -506,11 +703,12 @@ export default function ChatWidget() {
                     }
                   }}
                   placeholder="Hỏi AI về địa điểm, lịch trình, món ăn..."
-                  className="flex-grow resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                  disabled={wizard.wizardState !== 'idle'}
+                  className="flex-grow resize-none px-3 py-2 border border-base-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm disabled:bg-base-50 disabled:text-ink-400"
                 />
                 <button
                   type="submit"
-                  disabled={!canSend}
+                  disabled={!canSend || wizard.wizardState !== 'idle'}
                   className="h-10 w-10 rounded-xl bg-primary-600 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary-700 font-medium shrink-0"
                   title={isStreaming ? 'Đang gửi' : 'Gửi'}
                 >
@@ -523,20 +721,25 @@ export default function ChatWidget() {
                   <span>AI đang phản hồi... (Streaming)</span>
                   <button
                     type="button"
-                    onClick={handleAbort}
+                    onClick={abortStreaming}
                     className="text-primary-600 hover:underline font-bold"
                   >
                     Dừng
                   </button>
                 </div>
               )}
+              {error ? (
+                <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                  {error}
+                </div>
+              ) : null}
             </form>
+
             <TagPlaceModal open={showTagModal} onClose={() => setShowTagModal(false)} />
           </div>
         </div>
       </div>
 
-      {/* Floating tag suggestion banner above closed trigger button */}
       {!isOpen && copiedPlace && (
         <div
           onClick={() => {
@@ -565,7 +768,7 @@ export default function ChatWidget() {
 
       <button
         type="button"
-        onClick={() => setIsOpen((v) => !v)}
+        onClick={() => setIsOpen((value) => !value)}
         className={`w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 border ${isOpen ? 'bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
         title={isOpen ? 'Đóng chat' : 'Mở chat'}
       >

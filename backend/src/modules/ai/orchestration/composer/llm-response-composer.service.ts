@@ -455,6 +455,8 @@ export class LlmResponseComposerService implements IResponseComposer {
       taggedPlacesContext += `[HẾT DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG]\n\n`;
     }
 
+    const frontendSearchResultsContext = this.buildFrontendSearchResultsContext(context.taggedPlaces || []);
+
     const contextPrompt = context.workflowId === 'COMPARE_PLACES' || context.workflowId === 'ANALYZE_PLACE'
       ? `
 [SYSTEM CONTEXT]
@@ -480,6 +482,7 @@ Raw Data from Tools:
 ${rawDataDump}
 [END SYSTEM CONTEXT]
 ${taggedPlacesContext}
+${frontendSearchResultsContext}
 User Query: "${context.userQuery}"
 Based on the search summary context, tool results, and any tagged place reviews context above, please answer the user's query. For search results, synthesize a brief objective overview before listing places. If the user asks about a specific tagged place, base your answer directly on its customer reviews listed in the context.
 If the tagged place context is weak or missing, say you do not have enough review evidence instead of guessing.
@@ -595,6 +598,43 @@ If the tagged place context is weak or missing, say you do not have enough revie
         content: this.truncateHistoryMessage(this.stripLegacyPlacePrompt(String(message.content || ''))),
       }))
       .filter((message) => message.content.trim().length > 0);
+  }
+
+  private buildFrontendSearchResultsContext(taggedPlaces: any[] = []): string {
+    if (!Array.isArray(taggedPlaces) || taggedPlaces.length === 0) {
+      return '';
+    }
+
+    const normalizedPlaces = taggedPlaces
+      .filter((place) => place && place.id && (place.name || place.placeName || place.title))
+      .slice(0, 12)
+      .map((place) => ({
+        id: place.id,
+        name: place.name || place.placeName || place.title,
+        address: place.address || place.placeAddress || place.displayAddress || '',
+        rating: place.rating || place.averageRating || null,
+        type: place.type || place.categories?.[0] || '',
+        lat: place.latitude || place.lat || place.coordinates?.lat || place.location?.lat || null,
+        lng: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng || null,
+      }));
+
+    if (!normalizedPlaces.length) {
+      return '';
+    }
+
+    const lines = normalizedPlaces.map((place, index) => {
+      const parts = [
+        `${index + 1}. ${place.name} (ID: ${place.id})`,
+        place.type ? `Loại: ${place.type}` : '',
+        place.address ? `Địa chỉ: ${place.address}` : '',
+        place.rating ? `Rating: ${Number(place.rating).toFixed(1)}/5` : '',
+        place.lat != null && place.lng != null ? `Tọa độ: ${place.lat}, ${place.lng}` : '',
+      ].filter(Boolean);
+
+      return parts.join(' | ');
+    });
+
+    return `[ACTIVE SEARCH RESULTS CONTEXT]\n${lines.join('\n')}\n[END ACTIVE SEARCH RESULTS CONTEXT]\n\nNếu user hỏi tiếp về "các kết quả vừa tìm", "kết quả trên", "trong số này", hãy coi danh sách trên là tập kết quả hiện tại để phân tích/sắp xếp. Khi thiếu review thực tế, chỉ nhận xét dựa trên metadata hiện có và nói rõ giới hạn dữ liệu.\n\n`;
   }
 
   private stripLegacyPlacePrompt(content: string): string {

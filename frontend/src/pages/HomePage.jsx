@@ -530,25 +530,9 @@ export default function HomePage() {
 
   // Main input submission handler — all messages go through backend
   const handleSendMessage = async (text) => {
-    const userText = text.trim();
+    const userText = String(text || '').trim();
     if (!userText) return;
-
-    // If wizard is active, ignore text input
-    if (wizard.wizardState !== 'idle') return;
-
-    // Reset states
-    setWorkflowCard(null);
-    setQuickReplies([]);
-    awaitingConfirmedSearchActionRef.current = false;
-
-    // Always call backend streaming with active context
-    const { ids, payload } = getActivePlacesAndPayload();
-
-    try {
-      await sendMessage(userText, ids, payload);
-    } catch (err) {
-      console.error('Error in streaming chat:', err);
-    }
+    window.dispatchEvent(new CustomEvent('app:chat-send', { detail: { text: userText } }));
   };
 
   // Prompt builders for enriched wizard execution
@@ -663,8 +647,11 @@ export default function HomePage() {
 
   // Ask AI about specific place
   const handleAskAIAboutPlace = (place) => {
-    setInput(`Cho tôi hỏi thêm thông tin về ${place.name} (vị trí, tiện ích, và nó có thực sự yên tĩnh không?)`);
-    setActiveMobileTab('chat');
+    window.dispatchEvent(new CustomEvent('app:chat-prefill', {
+      detail: {
+        text: `Cho tôi hỏi thêm thông tin về ${place.name} (vị trí, tiện ích, và nó có thực sự yên tĩnh không?)`,
+      },
+    }));
   };
 
   // Itinerary generation from place detail
@@ -827,51 +814,6 @@ export default function HomePage() {
         {/* Desktop Layout Overlay */}
         {!isMobile && (
           <div className="absolute inset-0 flex justify-between p-5 pointer-events-none z-10 font-sans">
-            {/* Left AI Workspace Panel */}
-            {isWorkspaceExpanded ? (
-              <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">
-                <AIWorkspacePanel
-                  searchPlaces={places}
-                  comparedPlaces={comparedPlaces}
-                  pinnedPlaces={taggedPlaces}
-                  itinerary={itinerary}
-                  areaInsight={areaInsight}
-                  budget={budgetData}
-                  foodRecommendations={foodRecommendations}
-                  
-                  selectedPlaceId={selectedPlaceId}
-                  pinnedPlaceIds={taggedPlaces.map(p => p.id)}
-                  
-                  onSelectPlace={handleSelectPlaceFromWorkspace}
-                  onPinPlace={handlePinPlace}
-                  onRemovePin={(id) => untagPlace(id)}
-                  onComparePlace={handleComparePlace}
-                  onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
-                  onAskAIAboutPlace={handleAskAIAboutPlace}
-                  onHoverPlace={(id) => setSelectedPlaceId(id)}
-                  onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
-                  onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
-                  onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
-                  onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
-                  onSelectFood={(food) => {
-                    const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
-                    const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
-                    focusMapAt({ lat, lng });
-                  }}
-                  onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
-                  onCreateItinerary={onCreateItinerary}
-                  onDirections={handleDirections}
-                  
-                  activePanel={activeWorkspaceTab}
-                  setActivePanel={setActiveWorkspaceTab}
-                  onClosePanel={handleClosePanel}
-                  onCollapse={() => setWorkspaceExpanded(false)}
-                />
-              </div>
-            ) : (
-              <div />
-            )}
-
             {/* Left AI Workspace Panel */}
             {isWorkspaceExpanded ? (
               <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">

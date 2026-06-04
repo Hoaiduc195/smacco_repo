@@ -1,5 +1,78 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-04 15:52] ChatWidget Keeps Latest Search Results Locally
+- **Branch**: `feat/better_ux`
+- **Prompt**: The chatbot still wasn't reliably receiving the latest search result context in test mode.
+- **Changes**:
+  - Added `latestSearchResultsRef` to `ChatWidget` so the widget keeps the newest confirmed search results locally after `SEARCH_PLACES` completes.
+  - `ChatWidget` now prefers its local search result ref when building follow-up chat context, and only falls back to `window.activeSearchResults` when the local ref is empty.
+  - Mirrored the latest confirmed search results back into `window.activeSearchResults` so other app surfaces continue to read the same active set.
+  - Verified frontend production build after the context fix.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — search result context retention is now more robust inside the chat widget itself.
+
+---
+
+## [2026-06-04 15:42] Added Active Search Results Context For Follow-Up Chat
+- **Branch**: `feat/better_ux`
+- **Prompt**: Fix the remaining issue where the chatbot still does not receive the context of the latest search results in test mode.
+- **Changes**:
+  - Updated `LlmResponseComposerService` to build an explicit `[ACTIVE SEARCH RESULTS CONTEXT]` block from frontend-provided `taggedPlaces` / fallback active search results, even when the places do not exist in the database yet.
+  - Included IDs, names, types, addresses, ratings, and coordinates for up to 12 active results in the prompt sent to the LLM.
+  - Added an instruction telling the model to treat that block as the current result set when the user asks follow-up questions such as "các kết quả trên" or "trong số này".
+  - Preserved the existing tagged-place review context logic; the new block supplements it when only metadata is available, which is common in fixture-only test mode.
+  - Verified backend production build.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — follow-up chat can now reason over the current active search result set from frontend metadata, even without database-backed place reviews.
+
+---
+
+## [2026-06-04 15:34] Removed Duplicate Desktop Workspace Panel
+- **Branch**: `feat/better_ux`
+- **Prompt**: Keep the AI workspace panel only on the left; it was appearing on both sides.
+- **Changes**:
+  - Removed the duplicated desktop `AIWorkspacePanel` render block from `HomePage.jsx`.
+  - Kept a single left-side workspace panel and left the chat widget independent on the right.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — duplicate desktop render cleanup only.
+
+---
+
+## [2026-06-04 15:28] Unified Workflow Chat UX On ChatWidget
+- **Branch**: `feat/better_ux`
+- **Prompt**: Replace the deleted `AIChatPanel` by upgrading the existing chat panel/widget to support the workflow cards and wizard flow.
+- **Changes**:
+  - Rebuilt `ChatWidget` to handle backend `workflowAction` events directly and render workflow prompt cards, wizard step cards, and wizard summary cards inline in the chat stream.
+  - Added quick replies, workflow-confirmed search execution, compare/analyze execution prompts, and confirmed-search result dispatch back to the map/workspace via `app:ai-search`.
+  - Added `app:chat-send` and `app:chat-prefill` event handling so `HomePage` and workspace actions can route all AI requests through the visible chat widget.
+  - Updated `HomePage` to dispatch chat send/prefill events instead of using the orphaned hidden AI chat state for navbar/workspace prompts.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — `ChatWidget` is now the single workflow-capable chat surface, and workflow execution is routed through it instead of the removed `AIChatPanel`.
+
+---
+
 ## [2026-06-04 15:20] Implemented Smart Progressive Filtering for Fixture-Only Search Mode
 - **Branch**: `feat/better_ux`
 - **Prompt**: tôi thấy tìm kiếm có kết quả mà chatbot vẫn trả lời là Xin lỗi, tôi không tìm thấy

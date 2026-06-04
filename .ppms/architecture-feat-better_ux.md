@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-04 15:20
+> Last updated: 2026-06-04 15:52
 > Branch: feat-better_ux
 
 ## Overview
@@ -35,10 +35,10 @@ The default workspace state now prioritizes the map: both side panels start coll
 - **Main Layout**: `MainLayout` now supports the AI-agent-first structure on desktop (Map background, left AI Workspace Panel, right AI Chat control panel) and is responsive for mobile/tablet.
 - **Workspace Layout Defaults**: `HomePage` initializes both `AIWorkspacePanel` and `AIChatPanel` collapsed on desktop. Panels use a consistent 20px gutter, 380px left workspace width, 400px right chat width, and matching geolocator offsets.
 - **Visual System**: The AI workspace branch now uses text-only shell controls and reduced iconography in chat/workspace/wizard panels. `index.css` defines panel/control entrance animations for smoother component appearance.
-- **Workflow Wizard**: `useWorkflowWizard` coordinates detected AI intents through confirmation, slot collection, summary review, and execution. Search workflow cards open from backend `workflowAction` metadata; `HomePage` sends confirmed wizard summaries back as `workflowExecution` payloads before any place search is run.
+- **Workflow Wizard**: `useWorkflowWizard` coordinates detected AI intents through confirmation, slot collection, summary review, and execution. The visible `ChatWidget` now owns the workflow proposal cards and wizard flow directly from backend `workflowAction` metadata, then sends confirmed workflow payloads back through `workflowExecution`.
 - **Search Context Fallback**: If no accommodations are explicitly tagged/pinned (`taggedPlaces` is empty), `HomePage` maps and forwards the currently loaded search results (`places`) as fallback context (`taggedPlaceIds` and `taggedPlaces` payloads) in SSE chat requests. This ensures the AI always has the latest search context in follow-up chat turns.
 - **Components**:
-  - `AIChatPanel` — Primary right control panel supporting history toggle, close, workflow cards, quick replies, progress tracking, result cards, reference chips, and Instagram-style typing dots inside message bubbles. Includes an integrated side-by-side history panel drawer and bottom new conversation action.
+  - `ChatWidget` — The single workflow-capable AI chat surface. Supports history toggle, close, workflow proposal cards, wizard step/summary cards, quick replies, tagged-place context, streaming replies, and conversation actions.
   - `AIWorkspacePanel` — Multi-accordion left workspace displaying panels for search results, comparison, pinned places, itineraries, insights, budgets, and food recommendations. Has collapse controls.
   - `SearchResultsPanel` — Renders accommodation search results with match scores, AI reasoning, and sync.
   - `ComparisonPanel` — Displays comparisons of price, location, pros/cons, and conditional AI choices.
@@ -51,7 +51,9 @@ The default workspace state now prioritizes the map: both side panels start coll
   - `Navbar` — Simplified top header with a command-style AI input search bar.
 - **Cross-component Events**:
   - `app:select-place` from AI markdown place links focuses the map marker and opens the relevant workspace panel.
+  - `app:chat-send` and `app:chat-prefill` let `HomePage` and workspace actions route all AI prompts through the visible `ChatWidget` instead of a hidden page-local chat state.
   - Conversation IDs emitted by `useStreamingChat` are mirrored into `ConversationContext`, keeping SSE chat requests, selected history, and new conversation creation aligned.
+- **Chat Result Cache**: `ChatWidget` now keeps the latest confirmed search results in a local ref and uses that as the primary context source for follow-up turns, only falling back to `window.activeSearchResults` when needed. This reduces context loss in test mode when follow-up questions are asked immediately after a search.
 
 ### Backend — AI Orchestration Pipeline
 - **Runtime Config**: `RuntimeConfigModule` exposes `RuntimeConfigService`, backed by `backend/features.json`. The schema separates `environment`, `search`, `chat`, `externalApis`, and `ai` settings.
@@ -70,6 +72,7 @@ The default workspace state now prioritizes the map: both side panels start coll
   - `ANALYZE_PLACE`: Zero-step, two-phase (Phase 1: ask preferences, Phase 2: analyze with evidence)
   - `GENERAL_CHAT`: Zero-step (straight to composer)
 - **Composer** (`LlmResponseComposerService`): Generates final Markdown response with workflow-specific system prompts injected via `getWorkflowInstructions()`.
+- **Active Result Context Bridging**: For follow-up turns after a search, `LlmResponseComposerService` now also builds an `[ACTIVE SEARCH RESULTS CONTEXT]` block from frontend metadata (`taggedPlaces` / fallback active search results). This lets the LLM reason over the current result set even when those places have not been persisted in the database yet, which is especially important in fixture-only test mode.
 - **Orchestrator** (`AiOrchestratorService`): Coordinates the pipeline. For `SEARCH_PLACES`, the initial routed request yields `workflowAction: { type: 'search' }` for frontend intent confirmation, stops before running the response composer, and therefore emits no assistant prose on that first turn. Confirmed wizard requests carry `workflowExecution.confirmed`, execute `hybrid_search -> geocode_anchor -> recommend_places`, then yield `searchAction` with final results. Compare/analyze intents still use `workflowAction` metadata for their cards.
 - **LLM Providers**: `CloudflareAiLlmClientService` normalizes non-stream and stream content parts into plain strings before returning through `ILlmClient`, so orchestration/router code can treat provider output uniformly.
 - **Conversation Persistence**: `ConversationStoreService` now respects `chat.persistHistory`. When disabled, chat turns are kept only in the in-process memory cache and are never written back to Prisma. `ConversationsService` mirrors that behavior so list/create/read/delete conversation endpoints operate against memory-only conversations during test runs.
@@ -78,5 +81,5 @@ The default workspace state now prioritizes the map: both side panels start coll
 ### Frontend — Chat Motion and Layout Polish
 - **Chat Bubble Animation**: `AIChatPanel` now applies staggered entrance timing to each message row, with stronger left/right bubble keyframes, overshoot, and `animation-fill-mode: both` so the effect is visible on mount.
 - **Layout Stability**: The bubble animation changes do not alter flex alignment, panel width, or sidebar offsets. Chat history remains an external popout and the chatbox geometry stays fixed.
-- **Confirmed Search Guard**: `HomePage` now ignores `searchAction` chunks unless they belong to a wizard-confirmed `SEARCH_PLACES` execution pass, preventing map/workspace updates during the initial intent-collection step.
+- **Confirmed Search Guard**: `ChatWidget` now ignores `searchAction` chunks unless they belong to a wizard-confirmed `SEARCH_PLACES` execution pass, preventing map/workspace updates during the initial intent-collection step.
 - **Workflow-Only Turn Cleanup**: `useStreamingChat` removes the trailing empty assistant message whenever a stream finishes without any text delta, which keeps metadata-only workflow proposal turns visually clean.
