@@ -98,6 +98,7 @@ export default function HomePage() {
   const lastPoiKeyRef = useRef('');
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
+  const awaitingConfirmedSearchActionRef = useRef(false);
 
   // Wizard hook
   const wizard = useWorkflowWizard();
@@ -410,6 +411,11 @@ export default function HomePage() {
     initialMessages: defaultMessages,
     initialConversationId: selectedConversationId,
     onSearchAction: (action) => {
+      if (!awaitingConfirmedSearchActionRef.current) {
+        console.warn('Ignoring premature searchAction before workflow confirmation.', action);
+        return;
+      }
+      awaitingConfirmedSearchActionRef.current = false;
       handleAiSearch(action);
     },
     onWorkflowAction: (action) => {
@@ -501,6 +507,7 @@ export default function HomePage() {
     // Reset states
     setWorkflowCard(null);
     setQuickReplies([]);
+    awaitingConfirmedSearchActionRef.current = false;
 
     // Always call backend streaming
     const taggedPayload = taggedPlaces.map(p => ({
@@ -556,6 +563,7 @@ export default function HomePage() {
 
       if (wfId === 'SEARCH_PLACES') {
         try {
+          awaitingConfirmedSearchActionRef.current = true;
           await sendMessage(buildSearchPrompt(data), taggedPlaces.map(p => p.id), taggedPayload, {
             workflowExecution: {
               workflowId: 'SEARCH_PLACES',
@@ -569,7 +577,10 @@ export default function HomePage() {
               preferences: data.preferences,
             },
           });
-        } catch (err) { console.error(err); }
+        } catch (err) {
+          awaitingConfirmedSearchActionRef.current = false;
+          console.error(err);
+        }
       } else if (wfId === 'COMPARE_PLACES') {
         try {
           await sendMessage(buildComparePrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
@@ -596,6 +607,7 @@ export default function HomePage() {
   const handleWorkflowCancel = () => {
     setWorkflowCard(null);
     setWorkflowContext(null);
+    awaitingConfirmedSearchActionRef.current = false;
     wizard.cancelWizard();
     setQuickReplies([
       'Tìm homestay yên tĩnh ở Đà Lạt',
