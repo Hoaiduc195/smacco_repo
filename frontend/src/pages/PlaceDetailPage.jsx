@@ -413,11 +413,30 @@ export default function PlaceDetailPage() {
     );
   }
 
-  const rating = place.rating || 0;
-  const ratingStars = Array.from({ length: 5 }, (_, i) => i < Math.floor(rating) ? '★' : '☆').join('');
+  const rating = place.rating || place.averageRating || place.rawSerpApiPropertyDetails?.rating || 0;
+  const reviewCount = place.reviewCount || place.review_count || place.userRatingsTotal || place.rawSerpApiPropertyDetails?.reviewCount || 0;
+  
+  const getPriceDisplay = () => {
+    if (place.price) return place.price;
+    if (place.priceLevel) {
+      const levels = { 1: 'Giá rẻ ($)', 2: 'Bình dân ($$)', 3: 'Sang trọng ($$$)', 4: 'Cao cấp ($$$$)' };
+      return levels[place.priceLevel] || '$'.repeat(place.priceLevel);
+    }
+    return null;
+  };
+  const priceDisplay = getPriceDisplay();
+
+  const description = place.description || place.rawSerpApiPropertyDetails?.description || 'Địa điểm này chưa có mô tả chính thức. Các thông tin bên dưới được tổng hợp từ dữ liệu hiện có của hệ thống.';
+  const amenities = place.amenities || place.rawSerpApiPropertyDetails?.amenities || [];
+  const phone = place.phone || place.phoneNumber || place.rawSerpApiPropertyDetails?.phone || 'Đang cập nhật';
+  const email = place.email || place.rawSerpApiPropertyDetails?.email || null;
+  const website = place.website || place.rawSerpApiPropertyDetails?.website || 'Đang cập nhật';
+  const openingHours = place.openingHours || place.opening_hours || place.rawSerpApiPropertyDetails?.openingHours || place.rawSerpApiPropertyDetails?.opening_hours || 'Đang cập nhật';
+  const rooms = place.rooms || place.rawSerpApiPropertyDetails?.rooms || null;
+
   const placeholderImg = `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=400`;
   const visibleReviews = reviews.filter((review) => review.source !== 'google');
-  const displayAddress = place.address || place.placeAddress || place.formattedAddress || '';
+  const displayAddress = place.address || place.placeAddress || place.formattedAddress || place.rawSerpApiPropertyDetails?.address || '';
   const tabs = [
     { id: 'overview', label: 'Thông tin chung' },
     { id: 'qa', label: 'Hỏi đáp cộng đồng' },
@@ -478,9 +497,9 @@ export default function PlaceDetailPage() {
               </div>
               <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight drop-shadow-lg tracking-tight inline-flex flex-wrap items-center gap-4">
                 <span>{displayName}</span>
-                {place.price && (
+                {priceDisplay && (
                   <span className="text-lg sm:text-xl font-bold bg-emerald-500 text-white px-3.5 py-1.5 rounded-2xl shadow-xl shadow-emerald-500/20 border border-emerald-400 select-none shrink-0 self-center">
-                    Từ {place.price}
+                    {priceDisplay}
                   </span>
                 )}
               </h1>
@@ -488,7 +507,7 @@ export default function PlaceDetailPage() {
                 <div className="flex items-center gap-1.5">
                   <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
                   <span className="text-xl font-bold">{rating.toFixed(1)}</span>
-                  <span className="text-white/60 text-sm font-medium">({place.review_count || 0} đánh giá)</span>
+                  <span className="text-white/60 text-sm font-medium">({reviewCount} đánh giá)</span>
                 </div>
                 <div className="flex items-center gap-1.5 border-l border-white/20 pl-4">
                   <MapPin className="w-5 h-5 text-cyan-400" />
@@ -547,8 +566,8 @@ export default function PlaceDetailPage() {
             <span className="rounded-2xl bg-amber-50 px-3 py-2 text-sm font-black text-amber-700">
               {rating ? `${rating.toFixed(1)} ★` : 'Chưa có rating'}
             </span>
-            {place.price ? (
-              <span className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700">{place.price}</span>
+            {priceDisplay ? (
+              <span className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700">{priceDisplay}</span>
             ) : null}
           </div>
         </div>
@@ -578,23 +597,14 @@ export default function PlaceDetailPage() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.45fr_0.9fr]">
             <div className="space-y-6">
               <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Overview</p>
                     <h2 className="mt-2 text-2xl font-black text-slate-950">Thông tin về {displayName}</h2>
                     <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
-                      {place.description || 'Địa điểm này chưa có mô tả chính thức. Các thông tin bên dưới được tổng hợp từ dữ liệu hiện có của hệ thống.'}
+                      {description}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleDirections}
-                    disabled={isRouting}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-primary-600 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
-                  >
-                    {isRouting ? <Loader className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                    Chỉ đường
-                  </button>
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -620,21 +630,39 @@ export default function PlaceDetailPage() {
                       <Clock className="h-4 w-4 text-primary-600" />
                       Giờ hoạt động
                     </div>
-                    <p className="mt-2 text-sm font-bold text-slate-900">{place.openingHours || place.opening_hours || 'Đang cập nhật'}</p>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{openingHours}</p>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
                       <Phone className="h-4 w-4 text-primary-600" />
                       Liên hệ
                     </div>
-                    <p className="mt-2 text-sm font-bold text-slate-900">{place.phone || place.phoneNumber || 'Đang cập nhật'}</p>
+                    <p className="mt-2 text-sm font-bold text-slate-900">{phone}</p>
                   </div>
+                  {email && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        Email
+                      </div>
+                      <p className="mt-2 text-sm font-bold text-slate-900 truncate">{email}</p>
+                    </div>
+                  )}
+                  {rooms && (
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                      <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-600"><path d="M2 22h20"/><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18"/><path d="M12 18h.01"/><path d="M12 14h.01"/><path d="M12 10h.01"/><path d="M12 6h.01"/><path d="M8 18h.01"/><path d="M8 14h.01"/><path d="M8 10h.01"/><path d="M8 6h.01"/><path d="M16 18h.01"/><path d="M16 14h.01"/><path d="M16 10h.01"/><path d="M16 6h.01"/></svg>
+                        Số phòng
+                      </div>
+                      <p className="mt-2 text-sm font-bold text-slate-900">{rooms} phòng</p>
+                    </div>
+                  )}
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
                       <Globe className="h-4 w-4 text-primary-600" />
                       Website
                     </div>
-                    <p className="mt-2 truncate text-sm font-bold text-slate-900">{place.website || 'Đang cập nhật'}</p>
+                    <p className="mt-2 truncate text-sm font-bold text-slate-900">{website}</p>
                   </div>
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                     <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-500">
@@ -645,11 +673,11 @@ export default function PlaceDetailPage() {
                   </div>
                 </div>
 
-                {place.amenities?.length ? (
+                {amenities && amenities.length > 0 ? (
                   <div className="mt-6 border-t border-slate-100 pt-6">
                     <h3 className="text-sm font-black uppercase tracking-wide text-slate-600">Tiện ích được ghi nhận</h3>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {place.amenities.map((amenity, idx) => (
+                      {amenities.map((amenity, idx) => (
                         <span key={idx} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700">
                           {amenity}
                         </span>

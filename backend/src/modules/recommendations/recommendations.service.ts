@@ -28,6 +28,11 @@ export interface RankedPlace {
   anchorLabel?: string;
   score: number;
   reasons: string[];
+  userRatingsTotal?: number;
+  price?: string;
+  amenities?: string[];
+  imageUrl?: string;
+  description?: string;
 }
 
 @Injectable()
@@ -157,6 +162,11 @@ export class RecommendationsService {
         anchorLabel: anchorLabel || proximityDetails?.targetLabel,
         score,
         reasons: this.buildReasons(place, budget, anchorLabel, distanceScore, toolResults, placeId),
+        userRatingsTotal: place.userRatingsTotal,
+        price: place.price,
+        amenities: place.amenities,
+        imageUrl: place.imageUrl,
+        description: place.description,
       } as RankedPlace;
     });
 

@@ -45,7 +45,34 @@ export class SearchService {
     this.logger.log(`Searching for: "${providerQuery}" with budget: ${budget || 'any'}`);
 
     if (isFixtureOnlyMode) {
-      const randomPool = this.mapLocalFixturePlaces(this.placesService.findLocalTestData(undefined));
+      // 1. Try strict search with location, type, and query
+      let filteredPool = this.placesService.findLocalTestData({
+        type: typeFilters.length > 0 ? typeFilters : filters.type,
+        city: filters.location,
+        q: filters.q,
+      });
+
+      // 2. Fallback to location only (helps when type/query doesn't match type tags strictly)
+      if (filteredPool.length === 0 && filters.location) {
+        filteredPool = this.placesService.findLocalTestData({
+          city: filters.location,
+        });
+      }
+
+      // 3. Fallback to query/type anywhere if location matches nothing
+      if (filteredPool.length === 0 && (filters.q || filters.type)) {
+        filteredPool = this.placesService.findLocalTestData({
+          type: typeFilters.length > 0 ? typeFilters : filters.type,
+          q: filters.q,
+        });
+      }
+
+      // 4. Default fallback: return all local test data to select from
+      if (filteredPool.length === 0) {
+        filteredPool = this.placesService.findLocalTestData(undefined);
+      }
+
+      const randomPool = this.mapLocalFixturePlaces(filteredPool);
       return this.takeRandomResults(randomPool, 12);
     }
 

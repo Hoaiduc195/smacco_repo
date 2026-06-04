@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-04 14:38
+> Last updated: 2026-06-04 15:20
 > Branch: feat-better_ux
 
 ## Overview
@@ -36,6 +36,7 @@ The default workspace state now prioritizes the map: both side panels start coll
 - **Workspace Layout Defaults**: `HomePage` initializes both `AIWorkspacePanel` and `AIChatPanel` collapsed on desktop. Panels use a consistent 20px gutter, 380px left workspace width, 400px right chat width, and matching geolocator offsets.
 - **Visual System**: The AI workspace branch now uses text-only shell controls and reduced iconography in chat/workspace/wizard panels. `index.css` defines panel/control entrance animations for smoother component appearance.
 - **Workflow Wizard**: `useWorkflowWizard` coordinates detected AI intents through confirmation, slot collection, summary review, and execution. Search workflow cards open from backend `workflowAction` metadata; `HomePage` sends confirmed wizard summaries back as `workflowExecution` payloads before any place search is run.
+- **Search Context Fallback**: If no accommodations are explicitly tagged/pinned (`taggedPlaces` is empty), `HomePage` maps and forwards the currently loaded search results (`places`) as fallback context (`taggedPlaceIds` and `taggedPlaces` payloads) in SSE chat requests. This ensures the AI always has the latest search context in follow-up chat turns.
 - **Components**:
   - `AIChatPanel` — Primary right control panel supporting history toggle, close, workflow cards, quick replies, progress tracking, result cards, reference chips, and Instagram-style typing dots inside message bubbles. Includes an integrated side-by-side history panel drawer and bottom new conversation action.
   - `AIWorkspacePanel` — Multi-accordion left workspace displaying panels for search results, comparison, pinned places, itineraries, insights, budgets, and food recommendations. Has collapse controls.
@@ -58,7 +59,7 @@ The default workspace state now prioritizes the map: both side panels start coll
   - `test`: uses only `backend/test/fixtures/data.json` fixture data and `backend/test/fixtures/images`; local database and external providers are disabled, and chat history persistence is forced off.
   - `production`: uses production database/cache, disables local fixture loading, and can call SerpAPI/Overpass according to `externalProviderPolicy` (`fallback`, `always`, or `never`). Chat history persistence is configurable with `chat.persistHistory`.
 - **Local Fixture Dataset**: `backend/test/fixtures/data.json` contains the merged team accommodation dataset with 160 places. Local fixture images live in `backend/test/fixtures/images/`, use global record-index filenames (`<recordIndex>-<imageIndex>.<ext>`), and are served through `GET /api/v1/places/test-data/images/:filename`.
-- **Search Provider Policy**: `SearchService` always respects `search.localDatabase`, `search.localFixture`, and `search.externalProviderPolicy`. `environment: test` is forcibly normalized to fixture-only mode (`localDatabase: false`, `localFixture: true`, external policy `never`) and skips Goong geocoding. In that mode, search now returns a random sample of up to 12 places from the full fixture dataset instead of performing deterministic filtered search. Production excludes DB rows with `source = local` from search results to avoid leaking test fixture data.
+- **Search Provider Policy**: `SearchService` always respects `search.localDatabase`, `search.localFixture`, and `search.externalProviderPolicy`. `environment: test` is forcibly normalized to fixture-only mode (`localDatabase: false`, `localFixture: true`, external policy `never`) and skips Goong geocoding. In that mode, search filters matching places from the fixture dataset using progressive fallbacks (1: location + type + query, 2: location only, 3: type + query anywhere, 4: full dataset), then shuffle-selects up to 12 places. This keeps the UI results and the LLM context aligned. Production excludes DB rows with `source = local` from search results to avoid leaking test fixture data.
 - **Fixture-Only Place Reads**: `LocalFixturePlacesService` owns fixture JSON loading/caching, filtering, local place mapping, review mapping, and photo URL generation. In fixture-only mode, `PlacesService` delegates `findAll`, `findOne(local-*)`, `findReviews(local-*)`, `findPhotos(local-*)`, and guarded local `create()` calls to this provider without Prisma reads or writes.
 - **Router** (`LlmTaskRouterService`): Classifies user intent via LLM into workflow IDs.
   - Supported intents: `SEARCH_PLACES`, `GENERAL_CHAT`, `COMPARE_PLACES`, `ANALYZE_PLACE`

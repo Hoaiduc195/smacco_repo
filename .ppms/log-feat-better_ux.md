@@ -1,5 +1,165 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-04 15:20] Implemented Smart Progressive Filtering for Fixture-Only Search Mode
+- **Branch**: `feat/better_ux`
+- **Prompt**: tôi thấy tìm kiếm có kết quả mà chatbot vẫn trả lời là Xin lỗi, tôi không tìm thấy
+- **Changes**:
+  - Identified that in test mode (`isFixtureOnlyMode`), `SearchService.search` returned 12 completely random places from the full fixture set, ignoring user filters (location, type, query).
+  - This mismatch between the user's requested location/type and the random pool causes the LLM response composer to correctly output "Xin lỗi, tôi không tìm thấy..." because none of the random results match the location.
+  - Refactored `SearchService.search` to implement a progressive fallback filtering algorithm when in fixture-only mode:
+    1. First tries to filter the local test data strictly by user type, city/location, and query.
+    2. Falls back to filtering by city/location only if strict query fails.
+    3. Falls back to filtering by query/type anywhere if location matches nothing.
+    4. Defaults to the full dataset if all other filters match nothing.
+  - Shuffle-selects up to 12 places from the resolved candidate pool, ensuring the map pins/workspace and LLM response remain strictly in sync.
+  - Verified successful NestJS compilation.
+- **Modified files**:
+  - `backend/src/modules/search/search.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — Changed search result filtering behaviour in test/fixture-only mode to prevent location mismatches between search results and LLM context.
+
+---
+
+## [2026-06-04 15:15] Supported Fallback Search Results Context for Streaming Chat
+- **Branch**: `feat/better_ux`
+- **Prompt**: hiện tại vẫn có lỗi là tôi thực hiện workflow tìm kiếm nhưng sau đó thì AI vẫn không có context về result
+- **Changes**:
+  - Created a helper function `getActivePlacesAndPayload` in `HomePage.jsx` that resolves active place context.
+  - If the user has tagged/pinned places (`taggedPlaces.length > 0`), it passes them to the AI; if not, it automatically falls back to the current search results (`places`).
+  - Included key metadata mapping for ID, name/title, address/displayAddress, rating/averageRating, category/type, and location coordinates (lat/lng) in the resolved fallback context.
+  - Updated `handleSendMessage` and the wizard execution `execute` flow to send the resolved active places context (both `taggedPlaceIds` and `taggedPlaces` payload parameters) to the AI streaming chat endpoint.
+  - Verified successful Vite production build.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Refined frontend context forwarding to prevent LLM context loss for search results.
+
+---
+
+## [2026-06-04 15:10] Fixed Questions Service Invalid UUID DB Exception In Test Mode
+- **Branch**: `feat/better_ux`
+- **Prompt**: Invalid `this.prisma.question.findMany()` invocation in QuestionsService due to invalid UUID: "local-0"
+- **Changes**:
+  - Injected `RuntimeConfigService` into `QuestionsService`.
+  - Added an in-memory questions/answers mock storage (`mockQuestions` and `mockAnswers` arrays) in `QuestionsService` for test mode (`environment === 'test'`) to handle place queries and creates for local mock places (e.g. `local-0`).
+  - Added a validation guard `this.isUuid` check in the production/database path of `listByPlace` to ignore non-UUID place IDs and return an empty list instead of causing database exceptions.
+  - Implemented mock handling in `createQuestion`, `createAnswer`, `getQuestionThread`, `deleteQuestion`, and `createAiAnswer`.
+  - Verified compilation of the NestJS backend.
+- **Modified files**:
+  - `backend/src/modules/questions/questions.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — Q&A features are now backed by an in-memory mock store when in test/fixture-only mode, bypassing DB writes for mock IDs.
+
+---
+
+## [2026-06-04 15:05] Detailed PlaceCard and Cleaned Up Redundant Directions Button
+- **Branch**: `feat/better_ux`
+- **Prompt**: à vậy làm cho place card chi tiết hơn với các thông tin sau: địa chỉ, đánh giá (có làm tròn), nút chỉ đường. Đồng thời, bỏ một nút chỉ đường ở trang thông tin chung đi, hiện tại đang có 2 nút, bỏ nút mà không nằm chung với bản đồ
+- **Changes**:
+  - Added address line rendering (`displayAddress`) back to the `PlaceCard` component layout.
+  - Corrected `roundedRating` calculation in `PlaceCard` to properly read and check `averageRating` as well, ensuring rating display is shown for DB places.
+  - Removed the redundant directions button from the text overview block in `PlaceDetailPage.jsx` to keep only the directions button inside the sidebar map preview card.
+  - Verified compilation of frontend code.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI refinement and bug correction.
+
+---
+
+## [2026-06-04 15:00] Replaced Custom Search Results Cards With Redesigned PlaceCard
+- **Branch**: `feat/better_ux`
+- **Prompt**: à hiện tại đang có lỗi là do claude lỡ generate ra thêm một cái searchresult panel, toi thấy nó không đúng ý tôi, hãy sửa lại để kết quả hiện ra ở AIworkflowPanel là PlaceCard
+- **Changes**:
+  - Rewrote the frontend `SearchResultsPanel.jsx` component to render the unified `PlaceCard` component for each search result instead of its own custom card layout.
+  - Added prop routing for `onDirections` callback from `HomePage.jsx` down to `AIWorkspacePanel.jsx` and finally to `SearchResultsPanel.jsx` and `PlaceCard.jsx`.
+  - Allowed search results cards to natively leverage map focusing (`onSelect`), detail route navigation (`onNavigate`), place saving/pinning (`onSave`), and routing calculation (`onDirections`).
+  - Removed obsolete compare and ask AI buttons from the search results panel cards to align with the simplified PlaceCard design requested.
+  - Verified frontend Vite compilation.
+- **Modified files**:
+  - `frontend/src/components/SearchResultsPanel.jsx`
+  - `frontend/src/components/AIWorkspacePanel.jsx`
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual/interactive card unification.
+
+---
+
+## [2026-06-04 14:55] Updated PlaceDetailPage to Display All New Place Fields
+- **Branch**: `feat/better_ux`
+- **Prompt**: à đúng rồi, với các trường dữ liệu mới đó, tôi muốn bạn cập nhật lại place detail để có thể hiển thị đầy đủ thông tin
+- **Changes**:
+  - Updated the frontend `PlaceDetailPage` component to parse and display all new place fields (rating, review count, price, description, amenities, email, phone, website, opening hours, rooms).
+  - Implemented fallbacks for rating (`place.rating || place.averageRating || place.rawSerpApiPropertyDetails?.rating || 0`), review count (`place.reviewCount || place.review_count || place.userRatingsTotal || place.rawSerpApiPropertyDetails?.reviewCount || 0`), price description, description text, and amenities list to cleanly support both DB records, local fixtures, and search results.
+  - Dynamically resolved budget level to text representations (e.g. "Bình dân ($$)") using price levels.
+  - Added visual cards for "Email" and "Số phòng" in the Overview details grid when email or rooms are available from raw details.
+  - Verified compilation of both frontend and backend projects.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual metadata display enhancement.
+
+---
+
+## [2026-06-04 14:48] Fixed Search Context Retention in Recommendations Module (Test Mode)
+- **Branch**: `feat/better_ux`
+- **Prompt**: à hiện tại khi tôi ở test mode thì mặc dù result có trả ra kết quả nhưng LLM lại không có context về result đó, kiểm tra xem
+- **Changes**:
+  - Identified that the `recommend_places` workflow tool was stripping crucial place metadata (amenities, review counts, images, descriptions, prices) from search results when copying them to `RankedPlace` objects in `RecommendationsService.rankPlaces`.
+  - Added optional fields `userRatingsTotal`, `price`, `amenities`, `imageUrl`, and `description` to the `RankedPlace` interface.
+  - Updated `RecommendationsService.rankPlaces` mapping block to copy these fields from input `PlaceResult` objects into the ranked results list.
+  - This ensures `SearchResultContextBuilder` successfully formats complete context stats (price ranges, review counts, amenities) for the LLM during test mode execution, preventing safety fallbacks.
+  - Verified backend compilation.
+- **Modified files**:
+  - `backend/src/modules/recommendations/recommendations.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — Visual metadata mapping enhancement.
+
+---
+
+## [2026-06-04 14:42] Simplified PlaceCard UI & Test-Mode Saved Places DB Bypass
+- **Branch**: `feat/better_ux`
+- **Prompt**: Chỉnh lại placecard, tôi chỉ muốn nó hiện các thông tin như sau: tên, ảnh đại diện, đánh giá (làm tròn), nút chỉ đường, nút chi tiết (trỏ về trang chi tiết), nút lưu (lưu vào trang của người dùng). À nhớ là trong chế độ test thì không đụng tới db nhé, chế độ test sẽ được định nghĩa trong file features.config
+- **Changes**:
+  - Rewrote the frontend `PlaceCard` component to strictly render only the place's name, image (or category icon fallback), rounded rating (rounded using `Math.round`), save button, directions button, and details button.
+  - Removed unused fields (address, description, reviews count, price, price level, distance from you, travel time, reviews text, amenities list).
+  - Modified the backend `SavedPlacesModule` and `SavedPlacesService` to inject `RuntimeConfigService` and intercept database interactions.
+  - Implemented an in-memory mock saved places store (`mockSavedPlaces` map) inside `SavedPlacesService` when running under test mode (`environment === 'test'`) to prevent any Prisma database reads/writes for user upserts and saved place record CRUD.
+  - Verified compilation of both frontend and backend projects.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `backend/src/modules/saved-places/saved-places.module.ts`
+  - `backend/src/modules/saved-places/saved-places.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — backend saves now dynamically bypass PostgreSQL when test mode configuration is enabled, using process-level memory instead.
+
+---
+
 ## [2026-06-04 14:38] Configurable Chat History Persistence With Test-Mode Memory Only
 - **Branch**: `feat/better_ux`
 - **Prompt**: Add both behaviors: a dedicated config flag for chat-history persistence and automatic no-DB chat history in test mode.

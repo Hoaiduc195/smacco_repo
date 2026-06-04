@@ -3,9 +3,10 @@ import { SavedPlacesController } from './saved-places.controller';
 import { SavedPlacesService } from './saved-places.service';
 import { UsersModule } from '../users/users.module';
 import { PlacesModule } from '../places/places.module';
+import { RuntimeConfigModule } from '../../config/runtime-config.module';
 
 @Module({
-  imports: [UsersModule, PlacesModule],
+  imports: [UsersModule, PlacesModule, RuntimeConfigModule],
   controllers: [SavedPlacesController],
   providers: [SavedPlacesService],
   exports: [SavedPlacesService],

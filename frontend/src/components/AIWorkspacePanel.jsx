@@ -37,6 +37,7 @@ export default function AIWorkspacePanel({
   onSelectFood,
   onAddToItinerary,
   onCreateItinerary,
+  onDirections,
   
   // Panel management functions (if passed, or local state)
   activePanel,
@@ -120,8 +121,7 @@ export default function AIWorkspacePanel({
           pinnedPlaceIds={pinnedPlaceIds}
           onSelectPlace={onSelectPlace}
           onPinPlace={onPinPlace}
-          onComparePlace={onComparePlace}
-          onAskAI={onAskAIAboutPlace}
+          onDirections={onDirections}
           onHoverPlace={onHoverPlace}
         />
       )

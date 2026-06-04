@@ -4,7 +4,6 @@ import { AlertCircle, Bot, Compass, Crosshair, MapPin, PanelLeftOpen, Route, Spa
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import AIWorkspacePanel from '../components/AIWorkspacePanel';
-import AIChatPanel from '../components/AIChatPanel';
 import { searchPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
 import { getRoute } from '../services/routingService';
 import { fetchPlaceImage } from '../services/serpService';
@@ -81,10 +80,9 @@ export default function HomePage() {
   const [budgetData, setBudgetData] = useState(null);
   const [foodRecommendations, setFoodRecommendations] = useState([]);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState(null);
-  const [activeMobileTab, setActiveMobileTab] = useState('chat'); // 'chat' | 'workspace' | 'map'
+  const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
   const [showHistory, setShowHistory] = useState(false);
   const [isWorkspaceExpanded, setWorkspaceExpanded] = useState(false);
-  const [isChatExpanded, setChatExpanded] = useState(false);
 
   // Workflow / Agent States
   const [isProgressActive, setProgressActive] = useState(false);
@@ -496,6 +494,40 @@ export default function HomePage() {
     return () => window.removeEventListener('app:select-place', handleSelectPlaceEvent);
   }, [focusMapAt, isMobile, ownedPlaces, places, taggedPlaces]);
 
+  // Synchronize places to window.activeSearchResults for the global ChatWidget context
+  useEffect(() => {
+    window.activeSearchResults = places;
+  }, [places]);
+
+  // Listen for search actions dispatched by the ChatWidget
+  useEffect(() => {
+    const handleAiSearchEvent = (event) => {
+      if (event?.detail) {
+        handleAiSearch(event.detail);
+      }
+    };
+    window.addEventListener('app:ai-search', handleAiSearchEvent);
+    return () => window.removeEventListener('app:ai-search', handleAiSearchEvent);
+  }, [handleAiSearch]);
+
+  // Get active places (tagged/pinned places, or fallback to current search results) and their payloads for AI context
+  const getActivePlacesAndPayload = () => {
+    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : places;
+    const payload = activePlaces.map(p => ({
+      id: p.id,
+      name: p.name || p.placeName || p.title,
+      address: p.address || p.placeAddress || p.displayAddress,
+      rating: p.rating || p.averageRating,
+      type: p.type || p.categories?.[0],
+      lat: p.lat || p.latitude || p.location?.lat,
+      lng: p.lng || p.longitude || p.location?.lng,
+    }));
+    return {
+      ids: activePlaces.map(p => p.id),
+      payload
+    };
+  };
+
   // Main input submission handler — all messages go through backend
   const handleSendMessage = async (text) => {
     const userText = text.trim();
@@ -509,14 +541,11 @@ export default function HomePage() {
     setQuickReplies([]);
     awaitingConfirmedSearchActionRef.current = false;
 
-    // Always call backend streaming
-    const taggedPayload = taggedPlaces.map(p => ({
-      id: p.id, name: p.name || p.placeName,
-      address: p.address, rating: p.rating, type: p.type
-    }));
+    // Always call backend streaming with active context
+    const { ids, payload } = getActivePlacesAndPayload();
 
     try {
-      await sendMessage(userText, taggedPlaces.map(p => p.id), taggedPayload);
+      await sendMessage(userText, ids, payload);
     } catch (err) {
       console.error('Error in streaming chat:', err);
     }
@@ -556,15 +585,12 @@ export default function HomePage() {
     const wfId = wizard.activeWorkflow?.workflowId;
 
     const execute = async () => {
-      const taggedPayload = taggedPlaces.map(p => ({
-        id: p.id, name: p.name || p.placeName,
-        address: p.address, rating: p.rating, type: p.type
-      }));
+      const { ids, payload } = getActivePlacesAndPayload();
 
       if (wfId === 'SEARCH_PLACES') {
         try {
           awaitingConfirmedSearchActionRef.current = true;
-          await sendMessage(buildSearchPrompt(data), taggedPlaces.map(p => p.id), taggedPayload, {
+          await sendMessage(buildSearchPrompt(data), ids, payload, {
             workflowExecution: {
               workflowId: 'SEARCH_PLACES',
               confirmed: true,
@@ -583,11 +609,11 @@ export default function HomePage() {
         }
       } else if (wfId === 'COMPARE_PLACES') {
         try {
-          await sendMessage(buildComparePrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+          await sendMessage(buildComparePrompt(data), ids, payload);
         } catch (err) { console.error(err); }
       } else if (wfId === 'ANALYZE_PLACE') {
         try {
-          await sendMessage(buildAnalyzePrompt(data), taggedPlaces.map(p => p.id), taggedPayload);
+          await sendMessage(buildAnalyzePrompt(data), ids, payload);
         } catch (err) { console.error(err); }
       }
 
@@ -834,6 +860,7 @@ export default function HomePage() {
                   }}
                   onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
                   onCreateItinerary={onCreateItinerary}
+                  onDirections={handleDirections}
                   
                   activePanel={activeWorkspaceTab}
                   setActivePanel={setActiveWorkspaceTab}
@@ -845,77 +872,51 @@ export default function HomePage() {
               <div />
             )}
 
-            {/* Right AI Chat control center */}
-            {isChatExpanded ? (
-              <div className="w-[400px] h-full flex flex-col pointer-events-auto animate-panel-in-right">
-                <AIChatPanel
-                  messages={messages}
-                  input={input}
-                  setInput={setInput}
-                  isStreaming={isStreaming}
-                  isProgressActive={isProgressActive}
-                  progressSteps={progressSteps}
-                  quickReplies={quickReplies}
-                  workflowCard={workflowCard}
-                  referenceChips={taggedPlaces}
-                  onSendMessage={handleSendMessage}
-                  onQuickReplyClick={handleQuickReplyClick}
-                  onWorkflowConfirm={() => {}}
-                  onWorkflowCancel={handleWorkflowCancel}
-                  onRemoveReference={(id) => untagPlace(id)}
-                  onClearConversation={clearConversation}
+            {/* Left AI Workspace Panel */}
+            {isWorkspaceExpanded ? (
+              <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">
+                <AIWorkspacePanel
+                  searchPlaces={places}
+                  comparedPlaces={comparedPlaces}
+                  pinnedPlaces={taggedPlaces}
+                  itinerary={itinerary}
+                  areaInsight={areaInsight}
+                  budget={budgetData}
+                  foodRecommendations={foodRecommendations}
                   
-                  conversations={conversations}
-                  selectedConversationId={selectedConversationId}
-                  onSelectConversation={async (id) => {
-                    const history = await selectConversation(id);
-                    setConversationId(id);
-                    setMessages(history?.length ? history : defaultMessages);
+                  selectedPlaceId={selectedPlaceId}
+                  pinnedPlaceIds={taggedPlaces.map(p => p.id)}
+                  
+                  onSelectPlace={handleSelectPlaceFromWorkspace}
+                  onPinPlace={handlePinPlace}
+                  onRemovePin={(id) => untagPlace(id)}
+                  onComparePlace={handleComparePlace}
+                  onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
+                  onAskAIAboutPlace={handleAskAIAboutPlace}
+                  onHoverPlace={(id) => setSelectedPlaceId(id)}
+                  onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
+                  onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
+                  onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
+                  onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
+                  onSelectFood={(food) => {
+                    const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
+                    const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
+                    focusMapAt({ lat, lng });
                   }}
-                  onNewConversation={async () => {
-                    const conv = await startNewConversation();
-                    if (conv?.id) {
-                      setConversationId(conv.id);
-                      setMessages(defaultMessages);
-                    }
-                  }}
-                  onDeleteConversation={deleteConversation}
-                  showHistory={showHistory}
-                  setShowHistory={setShowHistory}
-                  onCollapse={() => setChatExpanded(false)}
-
-                  wizardState={wizard.wizardState}
-                  wizardActiveWorkflow={wizard.activeWorkflow}
-                  wizardCurrentStep={wizard.currentStep}
-                  wizardCurrentStepIndex={wizard.currentStepIndex}
-                  wizardSteps={wizard.steps}
-                  wizardCollectedData={wizard.collectedData}
-                  wizardProgress={wizard.progress}
-                  onWizardAccept={wizard.acceptWorkflow}
-                  onWizardDecline={wizard.declineWorkflow}
-                  onWizardSubmitStep={wizard.submitStep}
-                  onWizardSkipStep={wizard.skipStep}
-                  onWizardGoBack={wizard.goBackStep}
-                  onWizardConfirm={wizard.confirmAndExecute}
-                  onWizardCancel={wizard.cancelWizard}
-                  onWizardEditStep={wizard.editFromSummary}
+                  onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
+                  onCreateItinerary={onCreateItinerary}
+                  onDirections={handleDirections}
+                  
+                  activePanel={activeWorkspaceTab}
+                  setActivePanel={setActiveWorkspaceTab}
+                  onClosePanel={handleClosePanel}
+                  onCollapse={() => setWorkspaceExpanded(false)}
                 />
               </div>
             ) : (
-              <div className="ml-auto" />
+              <div />
             )}
           </div>
-        )}
-
-        {!isMobile && !isChatExpanded && (
-          <button
-            onClick={() => setChatExpanded(true)}
-            className="absolute z-20 right-5 bottom-5 h-11 px-4 bg-ink-900 border border-ink-800 text-white rounded-2xl shadow-soft hover:bg-ink-800 transition text-xs font-black inline-flex items-center gap-2 pointer-events-auto animate-control-fade-in"
-            title="Mở Chat AI"
-          >
-            <Bot className="w-4 h-4 text-primary-300" />
-            <span>Trợ lý AI</span>
-          </button>
         )}
 
         {!isMobile && !isWorkspaceExpanded && (
@@ -938,61 +939,6 @@ export default function HomePage() {
         {isMobile && (
           <div className="absolute inset-0 flex flex-col z-10 pointer-events-none p-3 pb-16">
             <div className="flex-1 w-full pointer-events-auto overflow-hidden">
-              {activeMobileTab === 'chat' && (
-                <div className="w-full h-full">
-                  <AIChatPanel
-                    messages={messages}
-                    input={input}
-                    setInput={setInput}
-                    isStreaming={isStreaming}
-                    isProgressActive={isProgressActive}
-                    progressSteps={progressSteps}
-                    quickReplies={quickReplies}
-                    workflowCard={workflowCard}
-                    referenceChips={taggedPlaces}
-                    onSendMessage={handleSendMessage}
-                    onQuickReplyClick={handleQuickReplyClick}
-                    onWorkflowConfirm={() => {}}
-                    onWorkflowCancel={handleWorkflowCancel}
-                    onRemoveReference={(id) => untagPlace(id)}
-                    onClearConversation={clearConversation}
-                    
-                    conversations={conversations}
-                    selectedConversationId={selectedConversationId}
-                    onSelectConversation={async (id) => {
-                      const history = await selectConversation(id);
-                      setConversationId(id);
-                      setMessages(history?.length ? history : defaultMessages);
-                    }}
-                    onNewConversation={async () => {
-                      const conv = await startNewConversation();
-                      if (conv?.id) {
-                        setConversationId(conv.id);
-                        setMessages(defaultMessages);
-                      }
-                    }}
-                    onDeleteConversation={deleteConversation}
-                    showHistory={showHistory}
-                    setShowHistory={setShowHistory}
-
-                    wizardState={wizard.wizardState}
-                    wizardActiveWorkflow={wizard.activeWorkflow}
-                    wizardCurrentStep={wizard.currentStep}
-                    wizardCurrentStepIndex={wizard.currentStepIndex}
-                    wizardSteps={wizard.steps}
-                    wizardCollectedData={wizard.collectedData}
-                    wizardProgress={wizard.progress}
-                    onWizardAccept={wizard.acceptWorkflow}
-                    onWizardDecline={wizard.declineWorkflow}
-                    onWizardSubmitStep={wizard.submitStep}
-                    onWizardSkipStep={wizard.skipStep}
-                    onWizardGoBack={wizard.goBackStep}
-                    onWizardConfirm={wizard.confirmAndExecute}
-                    onWizardCancel={wizard.cancelWizard}
-                    onWizardEditStep={wizard.editFromSummary}
-                  />
-                </div>
-              )}
               {activeMobileTab === 'workspace' && (
                 <div className="w-full h-full">
                   <AIWorkspacePanel
@@ -1025,6 +971,7 @@ export default function HomePage() {
                     }}
                     onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
                     onCreateItinerary={onCreateItinerary}
+                    onDirections={handleDirections}
                     
                     activePanel={activeWorkspaceTab}
                     setActivePanel={setActiveWorkspaceTab}
@@ -1097,15 +1044,6 @@ export default function HomePage() {
       {/* Mobile Tab Navigation bar */}
       {isMobile && (
         <div className="absolute bottom-0 left-0 right-0 h-14 bg-ink-900 text-white border-t border-ink-800 flex items-center justify-around z-30 shadow-card">
-          <button
-            onClick={() => setActiveMobileTab('chat')}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition text-xs ${
-              activeMobileTab === 'chat' ? 'text-primary-400 bg-white/5 font-black' : 'text-slate-400'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Chat AI</span>
-          </button>
           <button
             onClick={() => setActiveMobileTab('workspace')}
             className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition text-xs ${

@@ -161,16 +161,17 @@ export default function ChatWidget() {
 
   const handleSend = async (e) => {
     e?.preventDefault();
-    const taggedPlacePayload = taggedPlaces.map(p => ({
+    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : (window.activeSearchResults || []);
+    const taggedPlacePayload = activePlaces.map(p => ({
       id: p.id,
-      name: p.name || p.placeName,
-      address: p.address,
-      latitude: p.latitude || p.lat || p.coordinates?.lat,
-      longitude: p.longitude || p.lng || p.coordinates?.lng,
-      rating: p.rating,
+      name: p.name || p.placeName || p.title,
+      address: p.address || p.placeAddress || p.displayAddress,
+      latitude: p.latitude || p.lat || p.coordinates?.lat || p.location?.lat,
+      longitude: p.longitude || p.lng || p.coordinates?.lng || p.location?.lng,
+      rating: p.rating || p.averageRating,
       type: p.type || p.categories?.[0]
     }));
-    await sendMessage(undefined, taggedPlaces.map(p => p.id), taggedPlacePayload);
+    await sendMessage(undefined, activePlaces.map(p => p.id), taggedPlacePayload);
   };
 
   const handleAbort = () => {
