@@ -8,6 +8,7 @@ export default function SearchResultsPanel({
   pinnedPlaceIds = [],
   onSelectPlace,
   onPinPlace,
+  onComparePlace,
   onDirections,
   onHoverPlace,
 }) {
@@ -45,6 +46,15 @@ export default function SearchResultsPanel({
               onNavigate={() => navigate(`/places/${place.id}`)}
               onDirections={onDirections ? () => onDirections(place) : undefined}
             />
+            {onComparePlace ? (
+              <button
+                type="button"
+                onClick={() => onComparePlace(place)}
+                className="mt-2 w-full rounded-xl border border-primary-200 bg-white px-3 py-2 text-xs font-bold text-primary-700 transition hover:bg-primary-50"
+              >
+                So sánh địa điểm này
+              </button>
+            ) : null}
           </div>
         );
       })}

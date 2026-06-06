@@ -1,4 +1,4 @@
-{
+  {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.json",
   "compilerOptions": {
@@ -6,3 +6,4 @@
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }
+  

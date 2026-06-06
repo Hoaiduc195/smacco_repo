@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, Compass, MapPin, Route, Navigation, Layers } from 'lucide-react';
+import { AlertCircle, Compass, MapPin, Route, Navigation } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
-import AIWorkspacePanel from '../components/AIWorkspacePanel';
+import LeftContextPanel from '../components/LeftContextPanel';
+import RadialPanelMenu from '../components/RadialPanelMenu';
+import SearchResultsPanel from '../components/SearchResultsPanel';
+import ComparePlacesPanel from '../components/ComparePlacesPanel';
+import PlaceInsightPanel from '../components/PlaceInsightPanel';
 import { searchPlaces, fetchNearbyPois } from '../services/placeService';
 import { getRoute } from '../services/routingService';
 import { useTravelData } from '../contexts/TravelDataContext';
@@ -21,6 +25,19 @@ const APP_STATES = {
 const NAVBAR_HEIGHT = 64;
 const DESKTOP_PANEL_GAP = 20;
 const DESKTOP_WORKSPACE_WIDTH = 380;
+const PANEL_IDS = {
+  RESULTS: 'results',
+  COMPARE: 'compare',
+  INSIGHT: 'insight',
+};
+
+const normalizePanelId = (panelId) => {
+  if (panelId === null) return null;
+  if (panelId === 'search' || panelId === 'pinned') return PANEL_IDS.RESULTS;
+  if (panelId === 'comparison') return PANEL_IDS.COMPARE;
+  if (panelId === 'results' || panelId === 'compare' || panelId === 'insight') return panelId;
+  return null;
+};
 
 export default function HomePage() {
   const {
@@ -30,7 +47,6 @@ export default function HomePage() {
   const {
     taggedPlaces,
     tagPlace,
-    untagPlace,
   } = useConversation();
 
   // Basic Page States
@@ -55,13 +71,10 @@ export default function HomePage() {
 
   // AI-Agent-First States
   const [comparedPlaces, setComparedPlaces] = useState([]);
-  const [itinerary, setItinerary] = useState(null);
   const [areaInsight, setAreaInsight] = useState(null);
-  const [budgetData, setBudgetData] = useState(null);
-  const [foodRecommendations, setFoodRecommendations] = useState([]);
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState(null);
+  const [activePanel, setActivePanel] = useState(null);
+  const [isRadialMenuOpen, setRadialMenuOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
-  const [isWorkspaceExpanded, setWorkspaceExpanded] = useState(false);
 
   const [pois, setPois] = useState([]);
   const lastPoiKeyRef = useRef('');
@@ -220,15 +233,13 @@ export default function HomePage() {
       if (Array.isArray(saved.route)) setRoute(saved.route);
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
       if (Array.isArray(saved.comparedPlaces)) setComparedPlaces(saved.comparedPlaces);
-      if (saved.itinerary !== undefined) setItinerary(saved.itinerary);
       if (saved.areaInsight !== undefined) setAreaInsight(saved.areaInsight);
-      if (saved.budgetData !== undefined) setBudgetData(saved.budgetData);
-      if (Array.isArray(saved.foodRecommendations)) setFoodRecommendations(saved.foodRecommendations);
-      if (typeof saved.activeWorkspaceTab === 'string' || saved.activeWorkspaceTab === null) {
-        setActiveWorkspaceTab(saved.activeWorkspaceTab ?? null);
+      if (saved.activePanel === null) {
+        setActivePanel(null);
+      } else if (typeof saved.activePanel === 'string' || typeof saved.activeWorkspaceTab === 'string') {
+        setActivePanel(normalizePanelId(saved.activePanel || saved.activeWorkspaceTab));
       }
       if (typeof saved.activeMobileTab === 'string') setActiveMobileTab(saved.activeMobileTab);
-      if (typeof saved.isWorkspaceExpanded === 'boolean') setWorkspaceExpanded(saved.isWorkspaceExpanded);
       rehydratedRef.current = true;
     };
 
@@ -303,8 +314,7 @@ export default function HomePage() {
       setSelectedPlaceId(null);
       setRoute([]);
       
-      // Auto expand Search results accordion
-      setActiveWorkspaceTab('search');
+      setActivePanel(PANEL_IDS.RESULTS);
     } catch (err) {
       setError(err.message);
       console.error('Unified search error:', err);
@@ -346,7 +356,7 @@ export default function HomePage() {
       setPlaces(transformed);
       setSelectedPlaceId(null);
       setRoute([]);
-      setActiveWorkspaceTab('search');
+      setActivePanel(PANEL_IDS.RESULTS);
       return;
     }
 
@@ -373,7 +383,7 @@ export default function HomePage() {
       if (Number.isFinite(lat) && Number.isFinite(lng)) {
         focusMapAt({ lat, lng }, 15);
       }
-      setActiveWorkspaceTab(taggedPlaces.some((place) => String(place.id) === String(placeId)) ? 'pinned' : 'search');
+      setActivePanel(PANEL_IDS.RESULTS);
       if (isMobile) setActiveMobileTab('workspace');
     };
 
@@ -419,7 +429,7 @@ export default function HomePage() {
       nextCompared = [...comparedPlaces, place];
     }
     setComparedPlaces(nextCompared);
-    setActiveWorkspaceTab('comparison');
+    setActivePanel(PANEL_IDS.COMPARE);
     if (isMobile) setActiveMobileTab('workspace');
   };
 
@@ -432,34 +442,11 @@ export default function HomePage() {
     }));
   };
 
-  // Itinerary generation from place detail
-  const onCreateItinerary = (place) => {
-    handleSendMessage(`Lên lịch trình 3 ngày 2 đêm quanh chỗ ở ${place.name}`);
-  };
-
-  // Close workspace panels handler
-  const handleClosePanel = (panelId) => {
-    // If search panel closed, clear places
-    if (panelId === 'search') setPlaces([]);
-    if (panelId === 'comparison') setComparedPlaces([]);
-    if (panelId === 'itinerary') setItinerary(null);
-    if (panelId === 'insight') setAreaInsight(null);
-    if (panelId === 'budget') setBudgetData(null);
-    if (panelId === 'food') setFoodRecommendations([]);
-  };
-
   // Interaction Sync (Phase 4): clicking marker expands workspace panel
   const handleMarkerClick = (place) => {
     setSelectedPlaceId(place.id);
     focusMapAt({ lat: place.lat, lng: place.lng }, 15);
-    
-    // Check if the place is in searchResults, or pinned list, etc.
-    const isPinned = taggedPlaces.some(p => p.id === place.id);
-    if (isPinned) {
-      setActiveWorkspaceTab('pinned');
-    } else {
-      setActiveWorkspaceTab('search');
-    }
+    setActivePanel(PANEL_IDS.RESULTS);
 
     if (isMobile) {
       setActiveMobileTab('workspace');
@@ -525,13 +512,9 @@ export default function HomePage() {
       route,
       mapFocusTarget,
       comparedPlaces,
-      itinerary,
       areaInsight,
-      budgetData,
-      foodRecommendations,
-      activeWorkspaceTab,
+      activePanel,
       activeMobileTab,
-      isWorkspaceExpanded,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [
@@ -546,19 +529,65 @@ export default function HomePage() {
     route,
     mapFocusTarget,
     comparedPlaces,
-    itinerary,
     areaInsight,
-    budgetData,
-    foodRecommendations,
-    activeWorkspaceTab,
+    activePanel,
     activeMobileTab,
-    isWorkspaceExpanded,
   ]);
 
   // Navbar redirection to Chat Widget message submission
   const handleSearchSubmit = (queryToSearch) => {
     if (!queryToSearch.trim()) return;
     handleSendMessage(queryToSearch);
+  };
+
+  const selectedContextPlace =
+    places.find((place) => String(place.id) === String(selectedPlaceId)) ||
+    comparedPlaces.find((place) => String(place.id) === String(selectedPlaceId)) ||
+    taggedPlaces.find((place) => String(place.id) === String(selectedPlaceId)) ||
+    ownedPlaces.find((place) => String(place.id) === String(selectedPlaceId));
+
+  const handleSelectPanel = (panelId) => {
+    setActivePanel(panelId);
+    if (isMobile) setActiveMobileTab('workspace');
+  };
+
+  const renderActiveContextPanel = () => {
+    if (!activePanel) return null;
+
+    return (
+      <LeftContextPanel activePanel={activePanel} onCollapse={() => setActivePanel(null)}>
+        {activePanel === PANEL_IDS.RESULTS && (
+            <SearchResultsPanel
+              places={places}
+              selectedPlaceId={selectedPlaceId}
+              pinnedPlaceIds={taggedPlaces.map((place) => place.id)}
+              onSelectPlace={handleSelectPlaceFromWorkspace}
+              onPinPlace={handlePinPlace}
+              onComparePlace={handleComparePlace}
+              onDirections={handleDirections}
+              onHoverPlace={(id) => setSelectedPlaceId(id)}
+            />
+        )}
+        {activePanel === PANEL_IDS.COMPARE && (
+          <ComparePlacesPanel
+            comparedPlaces={comparedPlaces}
+            selectedPlaceId={selectedPlaceId}
+            onSelectPlace={handleSelectPlaceFromWorkspace}
+            onRemoveFromComparison={(id) => setComparedPlaces((prev) => prev.filter((place) => place.id !== id))}
+            onDirections={handleDirections}
+            onAskAIAboutPlace={handleAskAIAboutPlace}
+          />
+        )}
+        {activePanel === PANEL_IDS.INSIGHT && (
+          <PlaceInsightPanel
+            selectedPlace={selectedContextPlace}
+            insight={areaInsight}
+            onAskAIAboutPlace={handleAskAIAboutPlace}
+            onDirections={handleDirections}
+          />
+        )}
+      </LeftContextPanel>
+    );
   };
 
   return (
@@ -609,45 +638,9 @@ export default function HomePage() {
         {!isMobile && (
           <div className="absolute inset-0 flex justify-between p-5 pointer-events-none z-10 font-sans">
             {/* Left AI Workspace Panel */}
-            {isWorkspaceExpanded ? (
+            {activePanel ? (
               <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">
-                <AIWorkspacePanel
-                  searchPlaces={places}
-                  comparedPlaces={comparedPlaces}
-                  pinnedPlaces={taggedPlaces}
-                  itinerary={itinerary}
-                  areaInsight={areaInsight}
-                  budget={budgetData}
-                  foodRecommendations={foodRecommendations}
-                  
-                  selectedPlaceId={selectedPlaceId}
-                  pinnedPlaceIds={taggedPlaces.map(p => p.id)}
-                  
-                  onSelectPlace={handleSelectPlaceFromWorkspace}
-                  onPinPlace={handlePinPlace}
-                  onRemovePin={(id) => untagPlace(id)}
-                  onComparePlace={handleComparePlace}
-                  onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
-                  onAskAIAboutPlace={handleAskAIAboutPlace}
-                  onHoverPlace={(id) => setSelectedPlaceId(id)}
-                  onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
-                  onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
-                  onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
-                  onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
-                  onSelectFood={(food) => {
-                    const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
-                    const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
-                    focusMapAt({ lat, lng });
-                  }}
-                  onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
-                  onCreateItinerary={onCreateItinerary}
-                  onDirections={handleDirections}
-                  
-                  activePanel={activeWorkspaceTab}
-                  setActivePanel={setActiveWorkspaceTab}
-                  onClosePanel={handleClosePanel}
-                  onCollapse={() => setWorkspaceExpanded(false)}
-                />
+                {renderActiveContextPanel()}
               </div>
             ) : (
               <div />
@@ -655,21 +648,14 @@ export default function HomePage() {
           </div>
         )}
 
-        {!isMobile && !isWorkspaceExpanded && (
-          <button
-            onClick={() => setWorkspaceExpanded(true)}
-            className="group absolute z-20 left-0 top-1/2 -translate-y-1/2 w-8 h-16 bg-ink-900 border border-l-0 border-ink-700 text-white rounded-r-full shadow-soft hover:bg-ink-700 hover:w-9 active:scale-95 transition-all duration-200 flex items-center justify-start pl-2 pointer-events-auto animate-control-fade-in"
-            title="Mở AI Workspace"
-          >
-            <Layers className="w-[18px] h-[18px] text-primary-200 transition-colors group-hover:text-white duration-200"
-              onClick={(e) => {
-                // Make sure clicking the icon also triggers the button's action
-                e.stopPropagation();
-                setWorkspaceExpanded(true);
-              }}
-            />
-          </button>
-        )}
+        <div className="absolute left-0 top-1/2 z-40 -translate-y-1/2 pointer-events-auto">
+          <RadialPanelMenu
+            activePanel={activePanel}
+            isOpen={isRadialMenuOpen}
+            onOpenChange={setRadialMenuOpen}
+            onSelectPanel={handleSelectPanel}
+          />
+        </div>
 
         {/* Mobile Layout Tab Contents */}
         {isMobile && (
@@ -677,42 +663,7 @@ export default function HomePage() {
             <div className="flex-1 w-full pointer-events-auto overflow-hidden">
               {activeMobileTab === 'workspace' && (
                 <div className="w-full h-full">
-                  <AIWorkspacePanel
-                    searchPlaces={places}
-                    comparedPlaces={comparedPlaces}
-                    pinnedPlaces={taggedPlaces}
-                    itinerary={itinerary}
-                    areaInsight={areaInsight}
-                    budget={budgetData}
-                    foodRecommendations={foodRecommendations}
-                    
-                    selectedPlaceId={selectedPlaceId}
-                    pinnedPlaceIds={taggedPlaces.map(p => p.id)}
-                    
-                    onSelectPlace={handleSelectPlaceFromWorkspace}
-                    onPinPlace={handlePinPlace}
-                    onRemovePin={(id) => untagPlace(id)}
-                    onComparePlace={handleComparePlace}
-                    onRemoveFromComparison={(id) => setComparedPlaces(prev => prev.filter(p => p.id !== id))}
-                    onAskAIAboutPlace={handleAskAIAboutPlace}
-                    onHoverPlace={(id) => setSelectedPlaceId(id)}
-                    onOptimizeRoute={() => handleSendMessage('Tối ưu hóa lịch trình đường đi')}
-                    onAddFood={() => handleSendMessage('Gợi ý quán ăn ngon lân cận')}
-                    onMakeCheaper={() => handleSendMessage('Lên dự toán chi phí tiết kiệm hơn')}
-                    onMakeRelaxing={() => handleSendMessage('Đưa ra lịch trình du lịch nhẹ nhàng thư giãn')}
-                    onSelectFood={(food) => {
-                      const lat = Number(food.lat ?? food.latitude ?? userLocation?.lat ?? FALLBACK_CENTER.lat);
-                      const lng = Number(food.lng ?? food.longitude ?? userLocation?.lng ?? FALLBACK_CENTER.lng);
-                      focusMapAt({ lat, lng });
-                    }}
-                    onAddToItinerary={(f) => handleSendMessage(`Thêm quán ăn ${f.name} vào lịch trình`)}
-                    onCreateItinerary={onCreateItinerary}
-                    onDirections={handleDirections}
-                    
-                    activePanel={activeWorkspaceTab}
-                    setActivePanel={setActiveWorkspaceTab}
-                    onClosePanel={handleClosePanel}
-                  />
+                  {renderActiveContextPanel()}
                 </div>
               )}
               {activeMobileTab === 'map' && (
@@ -729,7 +680,7 @@ export default function HomePage() {
             bottom: isMobile ? '72px' : `${DESKTOP_PANEL_GAP}px`,
             left: isMobile
               ? `${DESKTOP_PANEL_GAP}px`
-              : (isWorkspaceExpanded
+              : (activePanel
                 ? `${DESKTOP_PANEL_GAP + DESKTOP_WORKSPACE_WIDTH + DESKTOP_PANEL_GAP}px`
                 : `${DESKTOP_PANEL_GAP}px`),
           }}
