@@ -1,8 +1,8 @@
 
-
-import { Controller, Post, Body, Res, HttpException, HttpStatus, Get, Param, Query, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Post, Body, Res, HttpException, HttpStatus, Get, Param, Query, Delete, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
+import { FirebaseAuthGuard } from '../../common/guards/firebase-auth.guard';
 import { NlpService } from './nlp.service';
 import { RecommendationsService } from '../recommendations/recommendations.service';
 import { ParseRequestDto } from './dto/parse-request.dto';
@@ -49,6 +49,8 @@ export class AiController {
   }
 
   @Post('chat')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Send a chat message to the AI assistant' })
   async chat(@Body() request: ChatRequestDto) {
     try {
@@ -62,6 +64,8 @@ export class AiController {
   }
 
   @Post('chat/stream')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Stream a chat response via SSE' })
   async chatStream(@Body() request: ChatRequestDto, @Res() res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -87,6 +91,8 @@ export class AiController {
   }
 
   @Get('conversations')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'List recent chat conversations' })
   async listConversations(@Query('limit') limit?: string) {
     const take = Number(limit) || 20;
@@ -95,6 +101,8 @@ export class AiController {
   }
 
   @Post('conversations')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Create a new conversation' })
   async createConversation() {
     const conversation = await this.conversationsService.createConversation();
@@ -102,6 +110,8 @@ export class AiController {
   }
 
   @Get('conversations/:id/messages')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'List messages for a conversation' })
   async getConversationMessages(@Param('id') id: string, @Query('limit') limit?: string) {
     const take = Number(limit) || 50;
@@ -116,6 +126,8 @@ export class AiController {
   }
 
   @Delete('conversations/:id')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Delete a conversation' })
   async deleteConversation(@Param('id') id: string) {
     await this.conversationsService.deleteConversation(id);

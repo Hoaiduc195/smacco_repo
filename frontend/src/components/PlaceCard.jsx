@@ -1,5 +1,47 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Navigation, Star, BookmarkPlus, BookmarkCheck } from 'lucide-react';
+
+function createDragPreview(placeName) {
+  const dragPreview = document.createElement('div');
+  dragPreview.style.position = 'absolute';
+  dragPreview.style.top = '-1000px';
+  dragPreview.style.left = '-1000px';
+  dragPreview.style.padding = '8px 16px';
+  dragPreview.style.background = '#fff';
+  dragPreview.style.borderRadius = '9999px';
+  dragPreview.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+  dragPreview.style.fontWeight = 'bold';
+  dragPreview.style.fontSize = '14px';
+  dragPreview.style.color = '#2563eb';
+  dragPreview.style.display = 'flex';
+  dragPreview.style.alignItems = 'center';
+
+  const markerIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  markerIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  markerIcon.setAttribute('width', '20');
+  markerIcon.setAttribute('height', '20');
+  markerIcon.setAttribute('fill', 'none');
+  markerIcon.setAttribute('stroke', '#2563eb');
+  markerIcon.setAttribute('stroke-width', '2');
+  markerIcon.setAttribute('viewBox', '0 0 24 24');
+
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', '12');
+  circle.setAttribute('cy', '10');
+  circle.setAttribute('r', '3');
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z');
+
+  markerIcon.append(circle, path);
+
+  const label = document.createElement('span');
+  label.style.marginLeft = '8px';
+  label.textContent = placeName ?? '';
+
+  dragPreview.append(markerIcon, label);
+  return dragPreview;
+}
 
 export default function PlaceCard({
   place,
@@ -77,20 +119,7 @@ export default function PlaceCard({
         e.dataTransfer.setData('placeId', place.id);
         e.dataTransfer.setData('placeData', JSON.stringify(place));
         e.dataTransfer.effectAllowed = 'copy';
-        const dragPreview = document.createElement('div');
-        dragPreview.style.position = 'absolute';
-        dragPreview.style.top = '-1000px';
-        dragPreview.style.left = '-1000px';
-        dragPreview.style.padding = '8px 16px';
-        dragPreview.style.background = '#fff';
-        dragPreview.style.borderRadius = '9999px';
-        dragPreview.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
-        dragPreview.style.fontWeight = 'bold';
-        dragPreview.style.fontSize = '14px';
-        dragPreview.style.color = '#2563eb';
-        dragPreview.style.display = 'flex';
-        dragPreview.style.alignItems = 'center';
-        dragPreview.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='#2563eb' stroke-width='2' viewBox='0 0 24 24'><circle cx='12' cy='10' r='3'/><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'/></svg>` + `<span style='margin-left:8px;'>${place.name}</span>`;
+        const dragPreview = createDragPreview(place.name);
         document.body.appendChild(dragPreview);
         e.dataTransfer.setDragImage(dragPreview, 10, 18);
         setTimeout(() => document.body.removeChild(dragPreview), 0);

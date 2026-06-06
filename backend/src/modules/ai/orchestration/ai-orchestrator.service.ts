@@ -27,8 +27,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
    */
   async processQuery(request: ChatRequestDto): Promise<ChatResponseDto> {
     const conversationId = this.resolveConversationId(request.conversationId);
-    const history = await this.store.getHistory(conversationId);
     await this.store.append(conversationId, { role: 'user', content: request.text });
+    const history = await this.store.getHistory(conversationId);
 
     // 1. Task Router: Classify intent and extract params
     const route = await this.resolveRoute(request, history);
@@ -111,8 +111,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
    */
   async *streamQuery(request: ChatRequestDto): AsyncGenerator<StreamChunkDto> {
     const conversationId = this.resolveConversationId(request.conversationId);
-    const history = await this.store.getHistory(conversationId);
     await this.store.append(conversationId, { role: 'user', content: request.text });
+    const history = await this.store.getHistory(conversationId);
 
     // 1. Task Router
     const route = await this.resolveRoute(request, history);

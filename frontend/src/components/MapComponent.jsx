@@ -136,22 +136,79 @@ const buildUserCollection = (userLocation) => ({
     : [],
 });
 
-const popupHtml = (feature, showDirections = true) => {
+const setStyles = (element, styles) => {
+  Object.assign(element.style, styles);
+  return element;
+};
+
+export const createPopupNode = (feature, { showDirections = true, onDirectionsRequested, payload } = {}) => {
   const { name, address, rating, kind } = feature.properties || {};
   const kindLabel = kind === 'owned' ? 'Địa điểm đã lưu' : kind === 'poi' ? 'Gợi ý gần đây' : '';
-  return `
-    <div style="min-width:180px;max-width:240px">
-      <div style="font-weight:800;font-size:14px;color:#191512;margin-bottom:4px">${name || 'Địa điểm'}</div>
-      ${address ? `<div style="font-size:12px;color:#6b665e;margin-bottom:6px">${address}</div>` : ''}
-      ${rating ? `<div style="font-size:12px;color:#ea580c;margin-bottom:6px">★ ${rating}</div>` : ''}
-      ${kindLabel ? `<div style="font-size:11px;color:#208f7c;margin-bottom:8px;font-weight:800">${kindLabel}</div>` : ''}
-      ${
-        showDirections
-          ? '<button type="button" data-smacco-directions="true" style="border:0;border-radius:14px;background:#208f7c;color:#fff;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer">Chỉ đường</button>'
-          : ''
-      }
-    </div>
-  `;
+
+  const root = setStyles(document.createElement('div'), {
+    minWidth: '180px',
+    maxWidth: '240px',
+  });
+
+  const title = setStyles(document.createElement('div'), {
+    fontWeight: '800',
+    fontSize: '14px',
+    color: '#191512',
+    marginBottom: '4px',
+  });
+  title.textContent = name || 'Địa điểm';
+  root.appendChild(title);
+
+  if (address) {
+    const addressNode = setStyles(document.createElement('div'), {
+      fontSize: '12px',
+      color: '#6b665e',
+      marginBottom: '6px',
+    });
+    addressNode.textContent = address;
+    root.appendChild(addressNode);
+  }
+
+  if (rating) {
+    const ratingNode = setStyles(document.createElement('div'), {
+      fontSize: '12px',
+      color: '#ea580c',
+      marginBottom: '6px',
+    });
+    ratingNode.textContent = `★ ${rating}`;
+    root.appendChild(ratingNode);
+  }
+
+  if (kindLabel) {
+    const kindNode = setStyles(document.createElement('div'), {
+      fontSize: '11px',
+      color: '#208f7c',
+      marginBottom: '8px',
+      fontWeight: '800',
+    });
+    kindNode.textContent = kindLabel;
+    root.appendChild(kindNode);
+  }
+
+  if (showDirections) {
+    const directionsButton = setStyles(document.createElement('button'), {
+      border: '0',
+      borderRadius: '14px',
+      background: '#208f7c',
+      color: '#fff',
+      padding: '8px 11px',
+      fontSize: '12px',
+      fontWeight: '800',
+      cursor: 'pointer',
+    });
+    directionsButton.type = 'button';
+    directionsButton.dataset.smaccoDirections = 'true';
+    directionsButton.textContent = 'Chỉ đường';
+    directionsButton.addEventListener('click', () => onDirectionsRequested?.(payload));
+    root.appendChild(directionsButton);
+  }
+
+  return root;
 };
 
 export default function MapComponent({
@@ -393,10 +450,10 @@ export default function MapComponent({
       }
 
       popupRef.current?.remove();
-      const popupNode = document.createElement('div');
-      popupNode.innerHTML = popupHtml(feature);
-      const directionButton = popupNode.querySelector('[data-smacco-directions="true"]');
-      directionButton?.addEventListener('click', () => callbacksRef.current.onDirectionsRequested?.(payload));
+      const popupNode = createPopupNode(feature, {
+        payload,
+        onDirectionsRequested: callbacksRef.current.onDirectionsRequested,
+      });
 
       popupRef.current = new mapboxgl.Popup({ offset: 18, closeButton: false })
         .setLngLat(feature.geometry.coordinates)

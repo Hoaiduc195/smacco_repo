@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 import { AiController } from './ai.controller';
 import { NlpService } from './nlp.service';
@@ -31,6 +31,7 @@ import { ToolRegistryService } from '../../common/tools/tool-registry.service';
 import { SearchPlacesTool } from '../../common/tools/search-places.tool';
 import { GeocodeAnchorTool } from '../../common/tools/geocode-anchor.tool';
 import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
+import { selectLlmClientByProvider } from './llm-provider.selector';
 
 @Module({
   imports: [RecommendationsModule, SearchModule, PlacesModule, HttpModule],
@@ -49,14 +50,11 @@ import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
     {
       provide: ILlmClient,
       useFactory: (
-        configService: ConfigService,
+        runtimeConfigService: RuntimeConfigService,
         groq: GroqLlmClientService,
         cloudflare: CloudflareAiLlmClientService,
-      ) => {
-        const provider = configService.get<string>('groq.provider') || 'groq';
-        return provider === 'cloudflare' ? cloudflare : groq;
-      },
-      inject: [ConfigService, GroqLlmClientService, CloudflareAiLlmClientService],
+      ) => selectLlmClientByProvider(runtimeConfigService.ai.provider, groq, cloudflare),
+      inject: [RuntimeConfigService, GroqLlmClientService, CloudflareAiLlmClientService],
     },
     {
       provide: ITaskRouter,

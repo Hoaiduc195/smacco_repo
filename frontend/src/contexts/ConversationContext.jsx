@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createConversation, deleteConversation as deleteConversationApi, getConversationMessages, listConversations } from '../services/aiService';
+import { useAuth } from './AuthContext';
 
 const ConversationContext = createContext();
 const STORAGE_KEY = 'chat_selected_conversation';
 export const MAX_TAGGED_PLACES = 4;
 
 export function ConversationProvider({ children }) {
+  const { currentUser, loading: authLoading } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(() =>
     window.localStorage.getItem(STORAGE_KEY)
@@ -28,8 +30,20 @@ export function ConversationProvider({ children }) {
   };
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!currentUser) {
+      setConversations([]);
+      setSelectedConversationId(null);
+      setError('');
+      setLoading(false);
+      return;
+    }
+
     refreshConversations();
-  }, []);
+  }, [authLoading, currentUser]);
 
   useEffect(() => {
     if (selectedConversationId) {
