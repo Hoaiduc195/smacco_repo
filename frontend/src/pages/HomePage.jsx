@@ -1,16 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertCircle, Bot, Compass, Crosshair, MapPin, PanelLeftOpen, Route, Sparkles, Navigation, Layers } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { AlertCircle, Compass, MapPin, Route, Navigation, Layers } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import AIWorkspacePanel from '../components/AIWorkspacePanel';
-import { searchPlaces, getPlaceReviews, fetchNearbyPois } from '../services/placeService';
+import { searchPlaces, fetchNearbyPois } from '../services/placeService';
 import { getRoute } from '../services/routingService';
-import { fetchPlaceImage } from '../services/serpService';
 import { useTravelData } from '../contexts/TravelDataContext';
 import { useConversation } from '../contexts/ConversationContext';
-import useStreamingChat from '../hooks/useStreamingChat';
-import useWorkflowWizard from '../hooks/useWorkflowWizard';
 
 const FALLBACK_CENTER = { lat: 21.0285, lng: 105.8542 };
 const CURRENT_LOCATION_ZOOM = 18;
@@ -28,22 +25,9 @@ const DESKTOP_WORKSPACE_WIDTH = 380;
 export default function HomePage() {
   const {
     ownedPlaces,
-    checkIns,
-    saveOwnedPlace,
-    removeOwnedPlace,
-    saveCheckIn,
-    removeCheckIn,
-    error: travelError,
   } = useTravelData();
 
   const {
-    conversations,
-    selectedConversationId,
-    setSelectedConversationId,
-    refreshConversations,
-    selectConversation,
-    startNewConversation,
-    deleteConversation,
     taggedPlaces,
     tagPlace,
     untagPlace,
@@ -55,17 +39,13 @@ export default function HomePage() {
   const [locationStatus, setLocationStatus] = useState('idle');
   const [places, setPlaces] = useState([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
   const [mapFocusTarget, setMapFocusTarget] = useState(null);
   const [followUserLocation, setFollowUserLocation] = useState(false);
   const [disableAutoFit, setDisableAutoFit] = useState(false);
   const [route, setRoute] = useState([]);
-  const [reviewsByPlace, setReviewsByPlace] = useState({});
-  const [imagesByPlace, setImagesByPlace] = useState({});
   const [appState, setAppState] = useState(APP_STATES.IDLE);
   const [isMobile, setIsMobile] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
 
   // Navbar Filters (kept for backend compatibility)
@@ -81,25 +61,12 @@ export default function HomePage() {
   const [foodRecommendations, setFoodRecommendations] = useState([]);
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
-  const [showHistory, setShowHistory] = useState(false);
   const [isWorkspaceExpanded, setWorkspaceExpanded] = useState(false);
 
-  // Workflow / Agent States
-  const [isProgressActive, setProgressActive] = useState(false);
-  const [progressSteps, setProgressSteps] = useState([]);
-  const [quickReplies, setQuickReplies] = useState([]);
-  const [workflowCard, setWorkflowCard] = useState(null);
-  const [workflowContext, setWorkflowContext] = useState(null); // Keeps track of pending parameters
-
   const [pois, setPois] = useState([]);
-  const [isPoisLoading, setIsPoisLoading] = useState(false);
   const lastPoiKeyRef = useRef('');
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
-  const awaitingConfirmedSearchActionRef = useRef(false);
-
-  // Wizard hook
-  const wizard = useWorkflowWizard();
 
   const normalizeBudget = useCallback((value) => {
     if (!value) return '';
@@ -252,6 +219,16 @@ export default function HomePage() {
       if (typeof saved.appState === 'string') setAppState(saved.appState);
       if (Array.isArray(saved.route)) setRoute(saved.route);
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
+      if (Array.isArray(saved.comparedPlaces)) setComparedPlaces(saved.comparedPlaces);
+      if (saved.itinerary !== undefined) setItinerary(saved.itinerary);
+      if (saved.areaInsight !== undefined) setAreaInsight(saved.areaInsight);
+      if (saved.budgetData !== undefined) setBudgetData(saved.budgetData);
+      if (Array.isArray(saved.foodRecommendations)) setFoodRecommendations(saved.foodRecommendations);
+      if (typeof saved.activeWorkspaceTab === 'string' || saved.activeWorkspaceTab === null) {
+        setActiveWorkspaceTab(saved.activeWorkspaceTab ?? null);
+      }
+      if (typeof saved.activeMobileTab === 'string') setActiveMobileTab(saved.activeMobileTab);
+      if (typeof saved.isWorkspaceExpanded === 'boolean') setWorkspaceExpanded(saved.isWorkspaceExpanded);
       rehydratedRef.current = true;
     };
 
@@ -284,14 +261,11 @@ export default function HomePage() {
       const key = `${centerPoint.lat.toFixed(3)}:${centerPoint.lng.toFixed(3)}`;
       if (key === lastPoiKeyRef.current && pois.length) return;
       try {
-        setIsPoisLoading(true);
         const fetchedPois = await fetchNearbyPois(centerPoint.lat, centerPoint.lng, 1700);
         setPois(fetchedPois);
         lastPoiKeyRef.current = key;
       } catch (err) {
         console.error('POI fetch error:', err);
-      } finally {
-        setIsPoisLoading(false);
       }
     },
     [pois.length]
@@ -317,7 +291,6 @@ export default function HomePage() {
     try {
       transitionTo(APP_STATES.ON_SEARCH);
       setDisableAutoFit(true);
-      setIsSearching(true);
       setError('');
 
       const results = await searchPlaces(query.trim(), {
@@ -335,18 +308,8 @@ export default function HomePage() {
     } catch (err) {
       setError(err.message);
       console.error('Unified search error:', err);
-    } finally {
-      setIsSearching(false);
     }
   }, [transitionTo]);
-
-  // AI Streaming Chat integration
-  const defaultMessages = useMemo(() => [
-    {
-      role: 'assistant',
-      content: 'Xin chào! Tôi là trợ lý du lịch AI Smacco. Tôi có thể hỗ trợ bạn tìm kiếm phòng nghỉ, so sánh các chỗ ở, lên lịch trình, dự trù ngân sách và tìm quán ăn ngon xung quanh.\n\nBạn muốn tìm chỗ ở như thế nào? Ví dụ: *"Tìm homestay yên tĩnh ở Đà Lạt dưới 1 triệu cho 2 người"*'
-    }
-  ], []);
 
   const handleAiSearch = useCallback((filters) => {
     const query = filters.query || '';
@@ -394,82 +357,6 @@ export default function HomePage() {
     });
   }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget]);
 
-  const {
-    messages,
-    setMessages,
-    input,
-    setInput,
-    conversationId,
-    setConversationId,
-    isStreaming,
-    error: streamingError,
-    sendMessage,
-    clearConversation,
-  } = useStreamingChat({
-    initialMessages: defaultMessages,
-    initialConversationId: selectedConversationId,
-    onSearchAction: (action) => {
-      if (!awaitingConfirmedSearchActionRef.current) {
-        console.warn('Ignoring premature searchAction before workflow confirmation.', action);
-        return;
-      }
-      awaitingConfirmedSearchActionRef.current = false;
-      handleAiSearch(action);
-    },
-    onWorkflowAction: (action) => {
-      if (wizard.wizardState === 'idle') {
-        if (action.type === 'search') {
-          wizard.proposeWorkflow('SEARCH_PLACES', action.parameters || {}, action.parameters?.query || '');
-        } else if (action.type === 'compare') {
-          wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '');
-        } else if (action.type === 'analyze') {
-          wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '');
-        }
-      }
-    },
-  });
-
-  // Load active replies on mount
-  useEffect(() => {
-    setQuickReplies([
-      'Tìm homestay yên tĩnh ở Đà Lạt',
-      'So sánh homestay Đà Lạt',
-      'Lên lịch trình 3 ngày 2 đêm',
-      'Đánh giá khu vực Phường 4',
-      'Dự trù ngân sách đi Đà Lạt',
-      'Quán ăn ngon gần Moc House'
-    ]);
-  }, []);
-
-  useEffect(() => {
-    if (conversationId && conversationId !== selectedConversationId) {
-      setSelectedConversationId(conversationId);
-      refreshConversations?.();
-    }
-  }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
-
-  useEffect(() => {
-    if (isStreaming) return;
-    if (!selectedConversationId) {
-      setConversationId(null);
-      setMessages(defaultMessages);
-      return;
-    }
-
-    let active = true;
-    const loadSelectedConversation = async () => {
-      const history = await selectConversation(selectedConversationId);
-      if (!active) return;
-      setConversationId(selectedConversationId);
-      setMessages(history?.length ? history : defaultMessages);
-    };
-
-    loadSelectedConversation();
-    return () => {
-      active = false;
-    };
-  }, [defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
-
   useEffect(() => {
     const handleSelectPlaceEvent = (event) => {
       const placeId = event?.detail?.id;
@@ -510,120 +397,11 @@ export default function HomePage() {
     return () => window.removeEventListener('app:ai-search', handleAiSearchEvent);
   }, [handleAiSearch]);
 
-  // Get active places (tagged/pinned places, or fallback to current search results) and their payloads for AI context
-  const getActivePlacesAndPayload = () => {
-    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : places;
-    const payload = activePlaces.map(p => ({
-      id: p.id,
-      name: p.name || p.placeName || p.title,
-      address: p.address || p.placeAddress || p.displayAddress,
-      rating: p.rating || p.averageRating,
-      type: p.type || p.categories?.[0],
-      lat: p.lat || p.latitude || p.location?.lat,
-      lng: p.lng || p.longitude || p.location?.lng,
-    }));
-    return {
-      ids: activePlaces.map(p => p.id),
-      payload
-    };
-  };
-
   // Main input submission handler — all messages go through backend
   const handleSendMessage = async (text) => {
     const userText = String(text || '').trim();
     if (!userText) return;
     window.dispatchEvent(new CustomEvent('app:chat-send', { detail: { text: userText } }));
-  };
-
-  // Prompt builders for enriched wizard execution
-  const buildSearchPrompt = (data) => {
-    const parts = [data.query || 'Tìm chỗ ở'];
-    if (data.location) parts.push(`ở ${data.location}`);
-    if (data.types?.length) parts.push(`loại: ${data.types.join(', ')}`);
-    if (data.guests) parts.push(`cho ${data.guests} người`);
-    if (data.budget) {
-      const budgetLabels = { low: 'bình dân', mid: 'tầm trung', high: 'cao cấp' };
-      parts.push(`ngân sách: ${budgetLabels[data.budget] || data.budget}`);
-    }
-    return parts.join(', ');
-  };
-
-  const buildComparePrompt = (data) => {
-    let prompt = 'So sánh các địa điểm lưu trú đã tag';
-    if (data.criteria?.length) prompt += ` theo ${data.criteria.join(', ')}`;
-    if (data.guests) prompt += `, cho ${data.guests} người ở`;
-    return prompt;
-  };
-
-  const buildAnalyzePrompt = (data) => {
-    let prompt = 'Phân tích chi tiết chỗ ở đã tag';
-    if (data.criteria?.length) prompt += ` theo ${data.criteria.join(', ')}`;
-    return prompt;
-  };
-
-  // Handle wizard execution
-  useEffect(() => {
-    if (wizard.wizardState !== 'executing') return;
-
-    const data = wizard.summaryData;
-    const wfId = wizard.activeWorkflow?.workflowId;
-
-    const execute = async () => {
-      const { ids, payload } = getActivePlacesAndPayload();
-
-      if (wfId === 'SEARCH_PLACES') {
-        try {
-          awaitingConfirmedSearchActionRef.current = true;
-          await sendMessage(buildSearchPrompt(data), ids, payload, {
-            workflowExecution: {
-              workflowId: 'SEARCH_PLACES',
-              confirmed: true,
-              parameters: data,
-            },
-            wizardPreferences: {
-              guestCount: data.guests,
-              budget: data.budget,
-              types: data.types,
-              preferences: data.preferences,
-            },
-          });
-        } catch (err) {
-          awaitingConfirmedSearchActionRef.current = false;
-          console.error(err);
-        }
-      } else if (wfId === 'COMPARE_PLACES') {
-        try {
-          await sendMessage(buildComparePrompt(data), ids, payload);
-        } catch (err) { console.error(err); }
-      } else if (wfId === 'ANALYZE_PLACE') {
-        try {
-          await sendMessage(buildAnalyzePrompt(data), ids, payload);
-        } catch (err) { console.error(err); }
-      }
-
-      wizard.resetWizard();
-    };
-
-    execute();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wizard.wizardState]);
-
-  // Quick Reply handler
-  const handleQuickReplyClick = (replyText) => {
-    handleSendMessage(replyText);
-  };
-
-  // Workflow Cancel (legacy — kept for compatibility)
-  const handleWorkflowCancel = () => {
-    setWorkflowCard(null);
-    setWorkflowContext(null);
-    awaitingConfirmedSearchActionRef.current = false;
-    wizard.cancelWizard();
-    setQuickReplies([
-      'Tìm homestay yên tĩnh ở Đà Lạt',
-      'So sánh homestay Đà Lạt',
-      'Lên lịch trình 3 ngày 2 đêm'
-    ]);
   };
 
   // Pin place action
@@ -746,6 +524,14 @@ export default function HomePage() {
       appState,
       route,
       mapFocusTarget,
+      comparedPlaces,
+      itinerary,
+      areaInsight,
+      budgetData,
+      foodRecommendations,
+      activeWorkspaceTab,
+      activeMobileTab,
+      isWorkspaceExpanded,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }, [
@@ -759,6 +545,14 @@ export default function HomePage() {
     appState,
     route,
     mapFocusTarget,
+    comparedPlaces,
+    itinerary,
+    areaInsight,
+    budgetData,
+    foodRecommendations,
+    activeWorkspaceTab,
+    activeMobileTab,
+    isWorkspaceExpanded,
   ]);
 
   // Navbar redirection to Chat Widget message submission
@@ -966,11 +760,11 @@ export default function HomePage() {
           className="absolute left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-1.5 w-[min(88vw,26rem)] pointer-events-auto"
           style={{ top: '16px' }}
         >
-          {(error || streamingError) && (
+          {error && (
             <div className="w-full bg-white border border-rose-200 text-rose-700 px-3.5 py-2.5 rounded-2xl flex items-start gap-2 shadow-soft animate-soft-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs font-semibold">{error || streamingError}</p>
+                <p className="text-xs font-semibold">{error}</p>
               </div>
               <button
                 onClick={() => setError('')}
