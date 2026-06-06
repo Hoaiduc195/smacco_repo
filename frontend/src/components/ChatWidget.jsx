@@ -4,12 +4,12 @@ import { Loader2, MapPin, MessageCircle, Plus, RotateCcw, Send, Tag, Trash2, X }
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import TaggedPlacesBar from './TaggedPlacesBar';
-import TagPlaceModal from './TagPlaceModal';
 import { useConversation } from '../contexts/ConversationContext';
 import useWorkflowWizard from '../hooks/useWorkflowWizard';
 import WorkflowPromptCard from './chat/WorkflowPromptCard';
 import WizardStepCard from './chat/WizardStepCard';
 import WizardSummaryCard from './chat/WizardSummaryCard';
+import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
 const QUICK_REPLIES = [
   'Tìm homestay yên tĩnh ở Đà Lạt',
@@ -30,7 +30,6 @@ export default function ChatWidget() {
   ], []);
 
   const [isOpen, setIsOpen] = useState(true);
-  const [showTagModal, setShowTagModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isPlaceChatOpen, setIsPlaceChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -39,6 +38,9 @@ export default function ChatWidget() {
   const [quickReplies, setQuickReplies] = useState(QUICK_REPLIES);
   const awaitingConfirmedSearchActionRef = useRef(false);
   const latestSearchResultsRef = useRef([]);
+  const lastSubmittedUserMessageRef = useRef('');
+  const skipNextWorkflowPromptRef = useRef(false);
+  const declinedSearchFallbackRef = useRef('');
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
   const wizard = useWorkflowWizard();
@@ -57,6 +59,7 @@ export default function ChatWidget() {
     abortStreaming,
   } = useStreamingChat({
     initialMessages: defaultMessages,
+    hideSearchWorkflowTrigger: true,
     onSearchAction: (action) => {
       const hasResolvedResults = Array.isArray(action?.results);
       if (!awaitingConfirmedSearchActionRef.current && !hasResolvedResults) {
@@ -70,11 +73,21 @@ export default function ChatWidget() {
     onWorkflowAction: (action) => {
       if (wizard.wizardState !== 'idle') return;
       if (action.type === 'search') {
-        wizard.proposeWorkflow('SEARCH_PLACES', action.parameters || {}, action.parameters?.query || '');
+        if (skipNextWorkflowPromptRef.current) {
+          skipNextWorkflowPromptRef.current = false;
+          return;
+        }
+        wizard.proposeWorkflow(
+          'SEARCH_PLACES',
+          action.parameters || {},
+          action.parameters?.query || '',
+          lastSubmittedUserMessageRef.current
+        );
+        return { hideTriggerTurn: true };
       } else if (action.type === 'compare') {
-        wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '');
+        wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '', lastSubmittedUserMessageRef.current);
       } else if (action.type === 'analyze') {
-        wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '');
+        wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '', lastSubmittedUserMessageRef.current);
       }
     },
   });
@@ -114,6 +127,7 @@ export default function ChatWidget() {
   const sendTextMessage = async (text, options = {}) => {
     const userText = String(text || '').trim();
     if (!userText) return;
+    lastSubmittedUserMessageRef.current = userText;
     const { ids, payload } = getActivePlacesAndPayload();
     await sendMessage(userText, ids, payload, options);
   };
@@ -146,6 +160,36 @@ export default function ChatWidget() {
       : '';
     return `Phân tích chi tiết địa điểm tôi đã tag${criteria}.`;
   };
+
+  const handleDeclineWorkflow = async () => {
+    const workflow = wizard.activeWorkflow;
+    const fallbackMessage = String(workflow?.rawUserMessage || workflow?.detectedQuery || '').trim();
+
+    wizard.declineWorkflow();
+    resetQuickReplies();
+
+    if (workflow?.workflowId !== 'SEARCH_PLACES' || !fallbackMessage) return;
+
+    declinedSearchFallbackRef.current = fallbackMessage;
+    awaitingConfirmedSearchActionRef.current = false;
+    if (isStreaming) {
+      abortStreaming();
+      return;
+    }
+
+    declinedSearchFallbackRef.current = '';
+    skipNextWorkflowPromptRef.current = true;
+    await sendTextMessage(fallbackMessage);
+  };
+
+  useEffect(() => {
+    if (isStreaming || !declinedSearchFallbackRef.current) return;
+
+    const fallbackMessage = declinedSearchFallbackRef.current;
+    declinedSearchFallbackRef.current = '';
+    skipNextWorkflowPromptRef.current = true;
+    sendTextMessage(fallbackMessage);
+  }, [isStreaming, sendMessage, taggedPlaces]);
 
   const handleSend = async (e) => {
     e?.preventDefault();
@@ -501,14 +545,6 @@ export default function ChatWidget() {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setShowTagModal(true)}
-                  className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                  title="Tag địa điểm vào hội thoại"
-                >
-                  <Tag className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
                   onClick={handleNewConversation}
                   className="p-1.5 rounded-xl hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                   title="Tạo hội thoại mới"
@@ -532,67 +568,72 @@ export default function ChatWidget() {
             <TaggedPlacesBar />
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white">
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap' : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'}`}
-                  >
-                    {msg.role === 'user' ? msg.content : (!msg.content && isStreaming && idx === messages.length - 1 ? (
-                      <span className="inline-flex items-center gap-2 text-white/80">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
-                        Đang suy nghĩ...
-                      </span>
-                    ) : (
-                      <ReactMarkdown
-                        components={{
-                          a: ({ href, children, ...props }) => {
-                            let placeId = null;
-                            if (href) {
-                              const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
-                                || href.match(/\/places\/([^?#\s/]+)/)
-                                || href.match(/place:([^?#\s/]+)/);
-                              if (placeMatch) {
-                                placeId = placeMatch[1];
+              {messages.map((msg, idx) => {
+                if (msg.hidden) return null;
+                return (
+                  <div key={msg.id || idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap' : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'}`}
+                    >
+                      {msg.role === 'user' ? msg.content : (!msg.content && isStreaming && idx === messages.length - 1 ? (
+                        <span className="inline-flex items-center gap-2 text-white/80">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
+                          Đang suy nghĩ...
+                        </span>
+                      ) : (
+                        <ReactMarkdown
+                          components={{
+                            a: ({ href, children, ...props }) => {
+                              let placeId = null;
+                              if (href) {
+                                const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
+                                  || href.match(/\/places\/([^?#\s/]+)/)
+                                  || href.match(/place:([^?#\s/]+)/);
+                                if (placeMatch) {
+                                  placeId = placeMatch[1];
+                                }
                               }
-                            }
-                            if (placeId) {
-                              const placeName = String(children || '');
+                              if (placeId) {
+                                const placeName = String(children || '');
+                                return (
+                                  <span
+                                    className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData('placeId', placeId);
+                                      e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
+                                      e.dataTransfer.effectAllowed = 'copy';
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      navigateToPlaceDetail(navigate, placeId, {
+                                        place: { id: placeId, name: placeName },
+                                      });
+                                      window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
+                                    }}
+                                    title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
+                                  >
+                                    <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
+                                    {placeName}
+                                  </span>
+                                );
+                              }
                               return (
-                                <span
-                                  className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
-                                  draggable
-                                  onDragStart={(e) => {
-                                    e.dataTransfer.setData('placeId', placeId);
-                                    e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
-                                    e.dataTransfer.effectAllowed = 'copy';
-                                  }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    navigate(`/places/${placeId}`);
-                                    window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
-                                  }}
-                                  title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
-                                >
-                                  <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
-                                  {placeName}
-                                </span>
+                                <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
+                                  {children}
+                                </a>
                               );
                             }
-                            return (
-                              <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
-                                {children}
-                              </a>
-                            );
-                          }
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    ))}
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {wizard.wizardState === 'prompting' && wizard.activeWorkflow && (
                 <WorkflowPromptCard
@@ -601,10 +642,7 @@ export default function ChatWidget() {
                   query={wizard.activeWorkflow.detectedQuery}
                   taggedPlaces={taggedPlaces}
                   onAccept={wizard.acceptWorkflow}
-                  onDecline={() => {
-                    wizard.declineWorkflow();
-                    resetQuickReplies();
-                  }}
+                  onDecline={handleDeclineWorkflow}
                 />
               )}
 
@@ -735,8 +773,6 @@ export default function ChatWidget() {
                 </div>
               ) : null}
             </form>
-
-            <TagPlaceModal open={showTagModal} onClose={() => setShowTagModal(false)} />
           </div>
         </div>
       </div>

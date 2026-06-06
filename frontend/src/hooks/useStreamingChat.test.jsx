@@ -82,4 +82,68 @@ describe('useStreamingChat', () => {
     expect(result.current.error).toBe('stream failed');
     expect(result.current.isStreaming).toBe(false);
   });
+
+  it('hides the search workflow trigger turn when requested by the workflow handler', async () => {
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ workflowAction: { type: 'search', parameters: { query: 'Tìm homestay' } } });
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        initialMessages: [],
+        hideSearchWorkflowTrigger: true,
+        onWorkflowAction: () => ({ hideTriggerTurn: true }),
+      })
+    );
+
+    act(() => {
+      result.current.setInput('Tìm homestay');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.messages[0]).toMatchObject({
+      role: 'user',
+      content: 'Tìm homestay',
+      hidden: true,
+      intentTrigger: true,
+    });
+  });
+
+  it('keeps the user turn visible when workflow handler does not request hiding', async () => {
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ workflowAction: { type: 'search', parameters: { query: 'Tìm homestay' } } });
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        initialMessages: [],
+        hideSearchWorkflowTrigger: true,
+        onWorkflowAction: () => undefined,
+      })
+    );
+
+    act(() => {
+      result.current.setInput('Tìm homestay');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.messages[0]).toMatchObject({
+      role: 'user',
+      content: 'Tìm homestay',
+      hidden: false,
+      intentTrigger: false,
+    });
+  });
 });

@@ -159,7 +159,7 @@ export default function useWorkflowWizard() {
   // ── Actions ──────────────────────────────
 
   /** Propose a workflow — show confirmation prompt */
-  const proposeWorkflow = useCallback((workflowId, params = {}, query = '') => {
+  const proposeWorkflow = useCallback((workflowId, params = {}, query = '', rawUserMessage = '') => {
     const workflowSteps = WORKFLOW_STEPS_MAP[workflowId];
     if (!workflowSteps) return;
 
@@ -176,7 +176,12 @@ export default function useWorkflowWizard() {
       }
     }
 
-    setActiveWorkflow({ workflowId, initialParams: params, detectedQuery: query });
+    setActiveWorkflow({
+      workflowId,
+      initialParams: params,
+      detectedQuery: query,
+      rawUserMessage: rawUserMessage || query || params?.query || '',
+    });
     setCollectedData(prefilled);
     setCurrentStepIndex(0);
     setWizardState('prompting');

@@ -20,6 +20,7 @@ import { getMyOnsiteStatus, leaveOnsiteStatus } from '../services/presenceServic
 import { getSavedPlaces, unsavePlace } from '../services/savedPlacesService';
 import Navbar from '../components/Navbar';
 import PlaceCard from '../components/PlaceCard';
+import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
 export default function ProfilePage() {
   const { currentUser } = useAuth();
@@ -121,6 +122,10 @@ export default function ProfilePage() {
 
   const handleBackToMap = () => {
     navigate('/app');
+  };
+
+  const openPlaceDetail = (placeId, place) => {
+    navigateToPlaceDetail(navigate, placeId, { place });
   };
 
   const userInitial = currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || 'U';
@@ -259,8 +264,24 @@ export default function ProfilePage() {
                       lat: ci.lat,
                       lng: ci.lng,
                     }}
-                    onSelect={() => navigate(`/places/${ci.placeId}`)}
-                    onNavigate={() => window.open(`/places/${ci.placeId}`, '_blank')}
+                    onSelect={() => openPlaceDetail(ci.placeId, {
+                      id: ci.placeId,
+                      name: ci.name,
+                      address: ci.address,
+                      type: ci.type,
+                      rating: ci.rating,
+                      lat: ci.lat,
+                      lng: ci.lng,
+                    })}
+                    onNavigate={() => openPlaceDetail(ci.placeId, {
+                      id: ci.placeId,
+                      name: ci.name,
+                      address: ci.address,
+                      type: ci.type,
+                      rating: ci.rating,
+                      lat: ci.lat,
+                      lng: ci.lng,
+                    })}
                     onCheckIn={() => removeCheckIn(ci.id)}
                     isCheckedIn={true}
                     showActions={true}
@@ -300,8 +321,24 @@ export default function ProfilePage() {
                       lat: sp.lat,
                       lng: sp.lng,
                     }}
-                    onSelect={() => navigate(`/places/${sp.id}`)}
-                    onNavigate={() => window.open(`/places/${sp.id}`, '_blank')}
+                    onSelect={() => openPlaceDetail(sp.id, {
+                      id: sp.id,
+                      name: sp.placeName,
+                      address: sp.placeAddress,
+                      type: sp.categories?.[0] || 'hotel',
+                      rating: sp.rating || 4.5,
+                      lat: sp.lat,
+                      lng: sp.lng,
+                    })}
+                    onNavigate={() => openPlaceDetail(sp.id, {
+                      id: sp.id,
+                      name: sp.placeName,
+                      address: sp.placeAddress,
+                      type: sp.categories?.[0] || 'hotel',
+                      rating: sp.rating || 4.5,
+                      lat: sp.lat,
+                      lng: sp.lng,
+                    })}
                     onSave={() => handleUnsavePlace(sp.id)}
                     isSaved={true}
                     showActions={true}
@@ -340,16 +377,20 @@ export default function ProfilePage() {
                     className="surface-card-solid p-6 hover:border-primary-200 transition-all group"
                   >
                     <div className="flex justify-between items-start mb-4">
-                      <div 
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/places/${review.placeId}`)}
+                      <button
+                        type="button"
+                        className="cursor-pointer text-left"
+                        onClick={() => openPlaceDetail(review.placeId, {
+                          id: review.placeId,
+                          name: review.place?.placeName || 'Địa điểm',
+                        })}
                       >
                         <h3 className="font-bold text-ink-900 group-hover:text-primary-700 flex items-center gap-1 transition-colors">
                           {review.place?.placeName || 'Địa điểm'}
                           <ChevronRight className="w-4 h-4" />
                         </h3>
                         <p className="text-xs text-slate-500">{formatDate(review.createdAt)}</p>
-                      </div>
+                      </button>
                       <div className="flex items-center gap-1 px-2 py-1 bg-yellow-50 text-yellow-700 rounded-lg text-sm font-bold">
                         <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                         {review.rating}

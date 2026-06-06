@@ -10,6 +10,7 @@ export default function useStreamingChat({
   buildPrompt,
   onSearchAction,
   onWorkflowAction,
+  hideSearchWorkflowTrigger = false,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
@@ -18,6 +19,7 @@ export default function useStreamingChat({
   const [error, setError] = useState('');
   const abortRef = useRef(null);
   const receivedAssistantTextRef = useRef(false);
+  const messageIdRef = useRef(0);
 
   const canSend = useMemo(
     () => Boolean(input.trim()) && !isStreaming,
@@ -50,6 +52,29 @@ export default function useStreamingChat({
     });
   };
 
+  const hideCurrentWorkflowTriggerTurn = () => {
+    setMessages((prev) => {
+      if (prev.length === 0) return prev;
+
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last?.role === 'assistant' && !(last.content || '').trim()) {
+        next.pop();
+      }
+
+      const userIndex = [...next].reverse().findIndex((msg) => msg.role === 'user' && !msg.hidden);
+      if (userIndex === -1) return next;
+
+      const targetIndex = next.length - 1 - userIndex;
+      next[targetIndex] = {
+        ...next[targetIndex],
+        hidden: true,
+        intentTrigger: true,
+      };
+      return next;
+    });
+  };
+
   const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces, options = {}) => {
     const rawText = textOverride ?? input;
     const userText = rawText.trim();
@@ -61,7 +86,13 @@ export default function useStreamingChat({
       receivedAssistantTextRef.current = false;
       setInput('');
       setError('');
-      setMessages((prev) => [...prev, { role: 'user', content: userText }, { role: 'assistant', content: '' }]);
+      const userMessageId = `local-${messageIdRef.current++}`;
+      const assistantMessageId = `local-${messageIdRef.current++}`;
+      setMessages((prev) => [
+        ...prev,
+        { id: userMessageId, role: 'user', content: userText, hidden: false, intentTrigger: false },
+        { id: assistantMessageId, role: 'assistant', content: '' },
+      ]);
       setIsStreaming(true);
     });
 
@@ -88,7 +119,14 @@ export default function useStreamingChat({
             onSearchAction(chunk.searchAction);
           }
           if (chunk?.workflowAction && typeof onWorkflowAction === 'function') {
-            onWorkflowAction(chunk.workflowAction);
+            const workflowResult = onWorkflowAction(chunk.workflowAction);
+            if (
+              hideSearchWorkflowTrigger &&
+              chunk.workflowAction.type === 'search' &&
+              workflowResult?.hideTriggerTurn === true
+            ) {
+              hideCurrentWorkflowTriggerTurn();
+            }
           }
           if (chunk?.conversationId || chunk?.conversation_id) {
             setConversationId((prev) => prev || chunk.conversationId || chunk.conversation_id);

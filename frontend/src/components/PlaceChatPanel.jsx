@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Send, Loader2, RotateCcw, MapPin, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
+import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
 export default function PlaceChatPanel({ place, onClose }) {
   const navigate = useNavigate();
@@ -133,7 +134,9 @@ export default function PlaceChatPanel({ place, onClose }) {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              navigate(`/places/${placeId}`);
+                              navigateToPlaceDetail(navigate, placeId, {
+                                place: { id: placeId, name: placeName },
+                              });
                               window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
                             }}
                             title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"

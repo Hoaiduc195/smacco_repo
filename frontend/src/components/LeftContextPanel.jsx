@@ -3,9 +3,9 @@ import { ChevronLeft, Sparkles } from 'lucide-react';
 
 export default function LeftContextPanel({ activePanel, onCollapse, children }) {
   const titleByPanel = {
-    results: 'Search Results',
-    compare: 'Compare Places',
-    insight: 'Place Insight',
+    results: 'Kết quả tìm kiếm',
+    compare: 'So sánh địa điểm',
+    insight: 'Phân tích địa điểm',
   };
 
   return (
@@ -13,7 +13,7 @@ export default function LeftContextPanel({ activePanel, onCollapse, children }) 
       <div className="flex items-center justify-between border-b border-base-200 bg-ink-900 px-4 py-3 text-white">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary-400" />
-          <span className="text-xs font-black">{titleByPanel[activePanel] || 'AI Context Panel'}</span>
+          <span className="text-xs font-black">{titleByPanel[activePanel] || 'Bảng ngữ cảnh AI'}</span>
         </div>
         {onCollapse ? (
           <button

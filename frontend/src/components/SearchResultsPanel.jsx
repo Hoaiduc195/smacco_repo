@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlaceCard from './PlaceCard';
+import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
 export default function SearchResultsPanel({
   places = [],
@@ -43,7 +44,8 @@ export default function SearchResultsPanel({
               onSelect={() => onSelectPlace?.(place)}
               onSave={() => onPinPlace?.(place)}
               isSaved={isPinned}
-              onNavigate={() => navigate(`/places/${place.id}`)}
+              saveMode="tag"
+              onNavigate={() => navigateToPlaceDetail(navigate, place.id, { place })}
               onDirections={onDirections ? () => onDirections(place) : undefined}
             />
             {onComparePlace ? (

@@ -36,4 +36,28 @@ describe('PlaceCard drag preview', () => {
 
     vi.runAllTimers();
   });
+
+  it('labels the secondary action as tag when used for chat-tagged places', () => {
+    const place = {
+      id: 'place-1',
+      name: 'Moc House',
+      type: 'hotel',
+    };
+
+    render(<PlaceCard place={place} onSelect={() => {}} onSave={() => {}} saveMode="tag" />);
+
+    expect(screen.getByRole('button', { name: 'Tag' })).not.toBeNull();
+  });
+
+  it('labels a tagged place without implying it is saved', () => {
+    const place = {
+      id: 'place-1',
+      name: 'Moc House',
+      type: 'hotel',
+    };
+
+    render(<PlaceCard place={place} onSelect={() => {}} onSave={() => {}} isSaved saveMode="tag" />);
+
+    expect(screen.getByRole('button', { name: 'Đã tag' })).not.toBeNull();
+  });
 });

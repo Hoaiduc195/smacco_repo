@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigation, Star, BookmarkPlus, BookmarkCheck } from 'lucide-react';
+import { Navigation, Star, BookmarkPlus, BookmarkCheck, Tag, Check } from 'lucide-react';
 
 function createDragPreview(placeName) {
   const dragPreview = document.createElement('div');
@@ -55,6 +55,7 @@ export default function PlaceCard({
   onNavigate,
   onSave,
   isSaved,
+  saveMode = 'save',
 }) {
   const placeType = place.type?.toLowerCase();
   
@@ -104,6 +105,10 @@ export default function PlaceCard({
   const roundedRating = ratingValue ? Math.round(ratingValue) : null;
   const displayAddress = place.address || place.placeAddress || place.formattedAddress || '';
   const displayImg = imageUrl || place.imageUrl || place.photoUrl || place.image || place.coverImageUrl;
+  const SaveIcon = saveMode === 'tag' ? Tag : BookmarkPlus;
+  const SavedIcon = saveMode === 'tag' ? Check : BookmarkCheck;
+  const saveLabel = saveMode === 'tag' ? 'Tag' : 'Lưu';
+  const savedLabel = saveMode === 'tag' ? 'Đã tag' : 'Đã lưu';
 
   return (
     <div
@@ -112,6 +117,13 @@ export default function PlaceCard({
       }`}
       style={{ animationDelay: `${Math.min(itemIndex, 8) * 45}ms` }}
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (!onSelect) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
       role="button"
       tabIndex={0}
       draggable
@@ -170,8 +182,8 @@ export default function PlaceCard({
                 : 'border-base-200 text-ink-700 hover:bg-base-50'
             }`}
           >
-            {isSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
-            <span>{isSaved ? 'Đã lưu' : 'Lưu'}</span>
+            {isSaved ? <SavedIcon className="w-3.5 h-3.5" /> : <SaveIcon className="w-3.5 h-3.5" />}
+            <span>{isSaved ? savedLabel : saveLabel}</span>
           </button>
         )}
         {onDirections && (

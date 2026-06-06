@@ -15,7 +15,7 @@ export default function ComparePlacesPanel({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="border-b border-base-200 px-4 py-3">
-        <p className="text-[10px] font-black uppercase text-primary-700">Compare Places</p>
+        <p className="text-[10px] font-black uppercase text-primary-700">So sánh</p>
         <h2 className="mt-0.5 text-sm font-black text-ink-900">So sánh địa điểm</h2>
         <p className="mt-1 text-[11px] font-semibold text-slate-500">
           Dùng các địa điểm đã tag trong chat làm tập so sánh chính.
@@ -32,10 +32,8 @@ export default function ComparePlacesPanel({
             {taggedPlaces.map((place) => {
               const isSelected = place.id === selectedPlaceId;
               return (
-                <button
+                <article
                   key={place.id}
-                  type="button"
-                  onClick={() => onSelectPlace?.(place)}
                   className={`w-full rounded-2xl border p-3 text-left transition ${
                     isSelected
                       ? 'border-primary-300 bg-primary-50 shadow-soft'
@@ -43,38 +41,44 @@ export default function ComparePlacesPanel({
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
-                    <div className="min-w-0 flex-1">
-                      <div className="line-clamp-1 text-xs font-black text-ink-900">
-                        {place.name || place.placeName}
+                    <button
+                      type="button"
+                      onClick={() => onSelectPlace?.(place)}
+                      className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                    >
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
+                      <div className="min-w-0 flex-1">
+                        <div className="line-clamp-1 text-xs font-black text-ink-900">
+                          {place.name || place.placeName}
+                        </div>
+                        {place.address ? (
+                          <div className="mt-0.5 line-clamp-1 text-[11px] font-semibold text-slate-500">
+                            {place.address}
+                          </div>
+                        ) : null}
+                        {place.rating || place.averageRating ? (
+                          <div className="mt-1 text-[10px] font-bold text-amber-700">
+                            Rating: {place.rating || place.averageRating}/5
+                          </div>
+                        ) : null}
                       </div>
-                      {place.address ? (
-                        <div className="mt-0.5 line-clamp-1 text-[11px] font-semibold text-slate-500">
-                          {place.address}
-                        </div>
-                      ) : null}
-                      {place.rating || place.averageRating ? (
-                        <div className="mt-1 text-[10px] font-bold text-amber-700">
-                          Rating: {place.rating || place.averageRating}/5
-                        </div>
-                      ) : null}
-                    </div>
+                    </button>
                     {onRemoveTaggedPlace ? (
-                      <span
-                        role="button"
-                        tabIndex={0}
+                      <button
+                        type="button"
                         onClick={(event) => {
                           event.stopPropagation();
                           onRemoveTaggedPlace(place.id);
                         }}
                         className="rounded-lg p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                         title="Bỏ tag"
+                        aria-label={`Bỏ tag ${place.name || place.placeName || 'địa điểm'}`}
                       >
                         <X className="h-3.5 w-3.5" />
-                      </span>
+                      </button>
                     ) : null}
                   </div>
-                </button>
+                </article>
               );
             })}
           </div>
