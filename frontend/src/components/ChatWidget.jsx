@@ -58,11 +58,12 @@ export default function ChatWidget() {
   } = useStreamingChat({
     initialMessages: defaultMessages,
     onSearchAction: (action) => {
-      if (!awaitingConfirmedSearchActionRef.current) {
+      const hasResolvedResults = Array.isArray(action?.results);
+      if (!awaitingConfirmedSearchActionRef.current && !hasResolvedResults) {
         return;
       }
       awaitingConfirmedSearchActionRef.current = false;
-      latestSearchResultsRef.current = Array.isArray(action?.results) ? action.results : [];
+      latestSearchResultsRef.current = hasResolvedResults ? action.results : [];
       window.activeSearchResults = latestSearchResultsRef.current;
       window.dispatchEvent(new CustomEvent('app:ai-search', { detail: action }));
     },

@@ -47,6 +47,7 @@ export default function HomePage() {
   const {
     taggedPlaces,
     tagPlace,
+    untagPlace,
   } = useConversation();
 
   // Basic Page States
@@ -70,7 +71,6 @@ export default function HomePage() {
   const [budget, setBudget] = useState('');
 
   // AI-Agent-First States
-  const [comparedPlaces, setComparedPlaces] = useState([]);
   const [areaInsight, setAreaInsight] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
   const [isRadialMenuOpen, setRadialMenuOpen] = useState(false);
@@ -232,7 +232,6 @@ export default function HomePage() {
       if (typeof saved.appState === 'string') setAppState(saved.appState);
       if (Array.isArray(saved.route)) setRoute(saved.route);
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
-      if (Array.isArray(saved.comparedPlaces)) setComparedPlaces(saved.comparedPlaces);
       if (saved.areaInsight !== undefined) setAreaInsight(saved.areaInsight);
       if (saved.activePanel === null) {
         setActivePanel(null);
@@ -290,6 +289,35 @@ export default function HomePage() {
     loadPois(anchor);
   }, [loadPois, userLocation, places]);
 
+  const showSearchResults = useCallback((results = []) => {
+    const transformed = results.map(place => ({
+      id: place.locationId || place.id,
+      name: place.name,
+      address: place.address,
+      lat: place.location?.lat || place.lat,
+      lng: place.location?.lng || place.lng,
+      type: place.types?.[0] || place.type || 'default',
+      rating: place.rating,
+      priceLevel: place.priceLevel,
+      price: place.price,
+      amenities: place.amenities,
+      userRatingsTotal: place.userRatingsTotal,
+      imageUrl: place.imageUrl,
+      source: place.source,
+      sourcePlaceId: place.sourcePlaceId,
+      score: place.score || 95,
+      reasons: place.reasons || 'Không gian yên tĩnh, thiết kế vintage ấm cúng phù hợp để thư giãn.',
+      coverImageUrl: place.coverImageUrl,
+      photoUrl: place.photoUrl,
+    }));
+
+    setPlaces(transformed);
+    setSelectedPlaceId(null);
+    setRoute([]);
+    setActivePanel(PANEL_IDS.RESULTS);
+    if (isMobile) setActiveMobileTab('workspace');
+  }, [isMobile]);
+
   // Unified Search Logic (Phase 5 real backend connection)
   const performUnifiedSearch = useCallback(async (query, filters = {}) => {
     if (!query.trim() && !filters.type && !filters.locationInput && !filters.budget) {
@@ -310,16 +338,12 @@ export default function HomePage() {
         budget: filters.budget,
       });
 
-      setPlaces(results);
-      setSelectedPlaceId(null);
-      setRoute([]);
-      
-      setActivePanel(PANEL_IDS.RESULTS);
+      showSearchResults(results);
     } catch (err) {
       setError(err.message);
       console.error('Unified search error:', err);
     }
-  }, [transitionTo]);
+  }, [showSearchResults, transitionTo]);
 
   const handleAiSearch = useCallback((filters) => {
     const query = filters.query || '';
@@ -334,29 +358,8 @@ export default function HomePage() {
     if (filters.location) setLocationInput(filters.location);
     if (normalizedBudget) setBudget(normalizedBudget);
 
-    if (filters.results && filters.results.length > 0) {
-      const transformed = filters.results.map(place => ({
-        id: place.locationId || place.id,
-        name: place.name,
-        address: place.address,
-        lat: place.location?.lat || place.lat,
-        lng: place.location?.lng || place.lng,
-        type: place.types?.[0] || place.type || 'default',
-        rating: place.rating,
-        priceLevel: place.priceLevel,
-        price: place.price,
-        amenities: place.amenities,
-        userRatingsTotal: place.userRatingsTotal,
-        imageUrl: place.imageUrl,
-        source: place.source,
-        sourcePlaceId: place.sourcePlaceId,
-        score: place.score || 95,
-        reasons: place.reasons || 'Không gian yên tĩnh, thiết kế vintage ấm cúng phù hợp để thư giãn.',
-      }));
-      setPlaces(transformed);
-      setSelectedPlaceId(null);
-      setRoute([]);
-      setActivePanel(PANEL_IDS.RESULTS);
+    if (Array.isArray(filters.results)) {
+      showSearchResults(filters.results);
       return;
     }
 
@@ -365,7 +368,7 @@ export default function HomePage() {
       locationInput: filters.location || locationInput,
       budget: normalizedBudget || budget,
     });
-  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget]);
+  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget, showSearchResults]);
 
   useEffect(() => {
     const handleSelectPlaceEvent = (event) => {
@@ -421,14 +424,7 @@ export default function HomePage() {
 
   // Compare place action
   const handleComparePlace = (place) => {
-    const isAlreadyCompared = comparedPlaces.some(p => p.id === place.id);
-    let nextCompared = [];
-    if (isAlreadyCompared) {
-      nextCompared = comparedPlaces.filter(p => p.id !== place.id);
-    } else {
-      nextCompared = [...comparedPlaces, place];
-    }
-    setComparedPlaces(nextCompared);
+    tagPlace(place);
     setActivePanel(PANEL_IDS.COMPARE);
     if (isMobile) setActiveMobileTab('workspace');
   };
@@ -511,7 +507,6 @@ export default function HomePage() {
       appState,
       route,
       mapFocusTarget,
-      comparedPlaces,
       areaInsight,
       activePanel,
       activeMobileTab,
@@ -528,7 +523,6 @@ export default function HomePage() {
     appState,
     route,
     mapFocusTarget,
-    comparedPlaces,
     areaInsight,
     activePanel,
     activeMobileTab,
@@ -542,7 +536,6 @@ export default function HomePage() {
 
   const selectedContextPlace =
     places.find((place) => String(place.id) === String(selectedPlaceId)) ||
-    comparedPlaces.find((place) => String(place.id) === String(selectedPlaceId)) ||
     taggedPlaces.find((place) => String(place.id) === String(selectedPlaceId)) ||
     ownedPlaces.find((place) => String(place.id) === String(selectedPlaceId));
 
@@ -570,12 +563,13 @@ export default function HomePage() {
         )}
         {activePanel === PANEL_IDS.COMPARE && (
           <ComparePlacesPanel
-            comparedPlaces={comparedPlaces}
+            taggedPlaces={taggedPlaces}
             selectedPlaceId={selectedPlaceId}
             onSelectPlace={handleSelectPlaceFromWorkspace}
-            onRemoveFromComparison={(id) => setComparedPlaces((prev) => prev.filter((place) => place.id !== id))}
+            onRemoveTaggedPlace={(id) => untagPlace(id)}
             onDirections={handleDirections}
             onAskAIAboutPlace={handleAskAIAboutPlace}
+            onRequestAiCompare={() => handleSendMessage('So sánh các địa điểm tôi đã tag giúp tôi')}
           />
         )}
         {activePanel === PANEL_IDS.INSIGHT && (

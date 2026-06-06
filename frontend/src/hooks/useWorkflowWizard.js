@@ -60,13 +60,6 @@ const COMPARE_STEPS = [
     ],
     defaultValue: [],
   },
-  {
-    id: 'guests',
-    title: 'Mấy người ở?',
-    subtitle: 'Để AI đánh giá phù hợp',
-    type: 'stepper',
-    defaultValue: 2,
-  },
 ];
 
 const ANALYZE_STEPS = [
@@ -156,7 +149,9 @@ export default function useWorkflowWizard() {
       types: merged.types || (merged.type ? [merged.type] : []),
       guests: merged.guests ?? 2,
       budget: merged.budget || '',
-      criteria: merged.criteria || [],
+      criteria: Array.isArray(merged.criteria)
+        ? merged.criteria
+        : (merged.criteria && merged.criteria !== 'overall' ? [merged.criteria] : []),
       preferences: merged.preferences || [],
     };
   }, [activeWorkflow, collectedData, steps]);
@@ -171,7 +166,12 @@ export default function useWorkflowWizard() {
     // Pre-fill collected data from router params
     const prefilled = {};
     for (const step of workflowSteps) {
-      if (params[step.id] !== undefined && params[step.id] !== null && params[step.id] !== '') {
+      if (step.id === 'criteria') {
+        const criteria = Array.isArray(params.criteria)
+          ? params.criteria
+          : (typeof params.criteria === 'string' && params.criteria !== 'overall' ? [params.criteria] : []);
+        if (criteria.length > 0) prefilled.criteria = criteria;
+      } else if (params[step.id] !== undefined && params[step.id] !== null && params[step.id] !== '') {
         prefilled[step.id] = params[step.id];
       }
     }

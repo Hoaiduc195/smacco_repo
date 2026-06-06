@@ -97,4 +97,55 @@ describe('AiOrchestratorService history ordering', () => {
       expectedHistory,
     );
   });
+
+  it('returns compare workflow metadata without composing when compare is not confirmed', async () => {
+    const store = createStore();
+    const { service, router, composer } = createService(store);
+    router.route.mockResolvedValueOnce({
+      workflowId: 'COMPARE_PLACES',
+      parameters: { criteria: 'overall' },
+    } as any);
+
+    const response = await service.processQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi vừa tag',
+    });
+
+    expect(response.workflowAction).toEqual({
+      type: 'compare',
+      parameters: { criteria: 'overall' },
+    });
+    expect(response.answer).toBe('');
+    expect(composer.compose).not.toHaveBeenCalled();
+  });
+
+  it('streams compare workflow metadata without composing when compare is not confirmed', async () => {
+    const store = createStore();
+    const { service, router, composer } = createService(store);
+    router.route.mockResolvedValueOnce({
+      workflowId: 'COMPARE_PLACES',
+      parameters: { criteria: 'overall' },
+    } as any);
+
+    const chunks = [];
+    for await (const chunk of service.streamQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi vừa tag',
+    })) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks).toEqual([
+      {
+        conversationId: request.conversationId,
+        delta: '',
+        workflowAction: {
+          type: 'compare',
+          parameters: { criteria: 'overall' },
+        },
+      },
+      { conversationId: request.conversationId, delta: '', finishReason: 'stop' },
+    ]);
+    expect(composer.streamCompose).not.toHaveBeenCalled();
+  });
 });

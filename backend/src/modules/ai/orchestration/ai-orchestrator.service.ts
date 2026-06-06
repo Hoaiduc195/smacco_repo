@@ -71,7 +71,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
     const workflowAction = this.buildWorkflowAction(route.workflowId, route.parameters, shouldExecuteWorkflow);
 
-    if (route.workflowId === 'SEARCH_PLACES' && !shouldExecuteWorkflow) {
+    if (this.shouldWaitForWorkflowConfirmation(route.workflowId, shouldExecuteWorkflow)) {
       return {
         conversationId,
         answer: '',
@@ -169,7 +169,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       } as any;
     }
 
-    if (route.workflowId === 'SEARCH_PLACES' && !shouldExecuteWorkflow) {
+    if (this.shouldWaitForWorkflowConfirmation(route.workflowId, shouldExecuteWorkflow)) {
       yield { conversationId, delta: '', finishReason: 'stop' };
       return;
     }
@@ -223,6 +223,10 @@ export class AiOrchestratorService implements IAiOrchestrator {
       request.workflowExecution?.confirmed &&
       request.workflowExecution.workflowId === workflowId
     );
+  }
+
+  private shouldWaitForWorkflowConfirmation(workflowId: string, alreadyExecuting: boolean): boolean {
+    return !alreadyExecuting && (workflowId === 'SEARCH_PLACES' || workflowId === 'COMPARE_PLACES');
   }
 
   private buildWorkflowAction(
