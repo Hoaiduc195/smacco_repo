@@ -5,7 +5,7 @@ import {
   Star, Globe, Phone, Clock, Share2, Bookmark,
   ThumbsUp, ThumbsDown, MessageCircle, Navigation,
   Image as ImageIcon, Send, X, Edit3, Trash2,
-  ChevronLeft, ChevronRight, ExternalLink
+  ChevronLeft, ChevronRight, ExternalLink, Maximize2
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
@@ -38,6 +38,7 @@ export default function PlaceDetailPage() {
   const [routeError, setRouteError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [activePhotoIndex, setActivePhotoIndex] = useState(null);
+  const [galleryPreviewIndex, setGalleryPreviewIndex] = useState(0);
   const syncInProgress = useRef({});
   const { currentUser } = useAuth();
 
@@ -357,6 +358,24 @@ export default function PlaceDetailPage() {
         place.imageUrl,
       ].filter(Boolean)))
     : [];
+
+  useEffect(() => {
+    if (galleryPreviewIndex >= galleryPhotos.length) {
+      setGalleryPreviewIndex(0);
+    }
+  }, [galleryPhotos.length, galleryPreviewIndex]);
+
+  const showPreviousGalleryPhoto = (event) => {
+    event.stopPropagation();
+    if (galleryPhotos.length <= 1) return;
+    setGalleryPreviewIndex((prev) => (prev - 1 + galleryPhotos.length) % galleryPhotos.length);
+  };
+
+  const showNextGalleryPhoto = (event) => {
+    event.stopPropagation();
+    if (galleryPhotos.length <= 1) return;
+    setGalleryPreviewIndex((prev) => (prev + 1) % galleryPhotos.length);
+  };
 
   const nextPhoto = () => {
     if (activePhotoIndex === null || galleryPhotos.length === 0) return;
@@ -689,70 +708,79 @@ export default function PlaceDetailPage() {
 
               {/* Photo Gallery Grid */}
               <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-col gap-3 p-6 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Ảnh địa điểm</p>
-                    <h3 className="mt-2 text-2xl font-black text-slate-950">Góc nhìn thực tế</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {galleryPhotos.length
-                        ? `${galleryPhotos.length} ảnh được lấy từ dữ liệu địa điểm.`
-                        : 'Chưa có ảnh cho địa điểm này.'}
-                    </p>
-                  </div>
-                  {galleryPhotos.length ? (
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
-                      <ImageIcon className="h-4 w-4 text-primary-600" />
-                      {galleryPhotos.length} ảnh
-                    </span>
-                  ) : null}
-                </div>
-
                 {galleryPhotos.length ? (
-                  <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-4">
-                    <div
-                      onClick={() => setActivePhotoIndex(0)}
-                      className="group relative col-span-2 h-64 overflow-hidden rounded-2xl bg-slate-100 text-left sm:h-80 cursor-pointer"
-                    >
-                      <img
-                        src={galleryPhotos[0]}
-                        alt={`${displayName} - ảnh chính`}
-                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent opacity-80" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <p className="text-xs font-black uppercase tracking-[0.18em] text-white/70">Ảnh nổi bật</p>
-                        <p className="mt-1 text-lg font-black text-white">{displayName}</p>
-                      </div>
-                    </div>
-
-                    {galleryPhotos.slice(1, 5).map((photo, index) => (
-                      <div
-                        key={photo}
-                        onClick={() => setActivePhotoIndex(index + 1)}
-                        className="group relative h-32 overflow-hidden rounded-2xl bg-slate-100 sm:h-[9.75rem] cursor-pointer"
+                  <>
+                    <div className="relative p-2">
+                      <button
+                        type="button"
+                        onClick={() => setActivePhotoIndex(galleryPreviewIndex)}
+                        className="group relative aspect-[16/9] w-full overflow-hidden rounded-[1.35rem] bg-slate-100 text-left transition hover:brightness-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-200"
                       >
                         <img
-                          src={photo}
-                          alt={`${displayName} - ảnh ${index + 2}`}
-                          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-                          loading="lazy"
+                          src={galleryPhotos[galleryPreviewIndex] || galleryPhotos[0]}
+                          alt={`${displayName} - ảnh ${galleryPreviewIndex + 1}`}
+                          className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-slate-950/0 transition group-hover:bg-slate-950/15" />
-                        {index === 3 && galleryPhotos.length > 5 ? (
-                          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 text-lg font-black text-white">
-                            +{galleryPhotos.length - 5}
-                          </div>
-                        ) : null}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-950/5 to-transparent" />
+                        <div className="absolute bottom-5 left-5 right-28">
+                          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/75">Ảnh địa điểm</p>
+                          <p className="mt-1 line-clamp-1 text-lg font-black text-white sm:text-2xl">{displayName}</p>
+                        </div>
+                      </button>
+
+                      {galleryPhotos.length > 1 ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={showPreviousGalleryPhoto}
+                            className="absolute left-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-lg ring-1 ring-slate-200 transition hover:scale-105 hover:bg-white"
+                            aria-label="Xem ảnh trước"
+                          >
+                            <ChevronLeft className="h-6 w-6" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={showNextGalleryPhoto}
+                            className="absolute right-5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-lg ring-1 ring-slate-200 transition hover:scale-105 hover:bg-white"
+                            aria-label="Xem ảnh tiếp theo"
+                          >
+                            <ChevronRight className="h-6 w-6" />
+                          </button>
+                        </>
+                      ) : null}
+
+                      <div className="absolute right-5 top-5 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-black text-white backdrop-blur">
+                        {galleryPreviewIndex + 1} / {galleryPhotos.length}
                       </div>
-                    ))}
-                  </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActivePhotoIndex(galleryPreviewIndex)}
+                        className="absolute bottom-5 right-5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-900 shadow-lg ring-1 ring-slate-200 transition hover:scale-105 hover:bg-slate-50"
+                        aria-label="Xem ảnh toàn màn hình"
+                        title="Xem ảnh toàn màn hình"
+                      >
+                        <Maximize2 className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col gap-2 px-5 pb-5 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-primary-700">Ảnh địa điểm</p>
+                        <h3 className="mt-1 text-xl font-black text-slate-950">Góc nhìn thực tế</h3>
+                      </div>
+                      <p className="text-sm font-semibold text-slate-500">{galleryPhotos.length} ảnh được lấy từ dữ liệu địa điểm.</p>
+                    </div>
+                  </>
                 ) : (
-                  <div className="mx-6 mb-6 flex min-h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-                    <ImageIcon className="mb-3 h-12 w-12 text-slate-300" />
-                    <p className="font-bold text-slate-600">Chưa có ảnh để hiển thị</p>
-                    <p className="mt-1 max-w-md text-sm text-slate-400">
-                      Hình ảnh địa điểm sẽ tự động đồng bộ khi tính năng ảnh được bật trong cấu hình hệ thống.
-                    </p>
+                  <div className="p-6">
+                    <div className="flex min-h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+                      <ImageIcon className="mb-3 h-12 w-12 text-slate-300" />
+                      <p className="font-bold text-slate-600">Chưa có ảnh để hiển thị</p>
+                      <p className="mt-1 max-w-md text-sm text-slate-400">
+                        Hình ảnh địa điểm sẽ tự động đồng bộ khi tính năng ảnh được bật trong cấu hình hệ thống.
+                      </p>
+                    </div>
                   </div>
                 )}
               </section>

@@ -4,6 +4,12 @@ import { Search } from 'lucide-react';
 import PlaceCard from './PlaceCard';
 import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
+function getTaggablePlaceId(place) {
+  return place?.source === 'serpapi' && place?.sourcePlaceId
+    ? `serpapi-${place.sourcePlaceId}`
+    : place?.id;
+}
+
 export default function SearchResultsPanel({
   places = [],
   selectedPlaceId,
@@ -28,8 +34,9 @@ export default function SearchResultsPanel({
   return (
     <div className="h-full min-h-0 space-y-3 overflow-y-auto p-3 overscroll-contain">
       {places.map((place, index) => {
+        const taggablePlaceId = getTaggablePlaceId(place);
         const isSelected = selectedPlaceId === place.id;
-        const isPinned = pinnedPlaceIds.includes(place.id);
+        const isPinned = pinnedPlaceIds.includes(taggablePlaceId);
 
         return (
           <div

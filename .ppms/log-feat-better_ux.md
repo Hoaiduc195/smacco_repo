@@ -1,5 +1,270 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-09 23:17] Stacked Chat Bottom Actions Vertically
+- **Branch**: `feat/better_ux`
+- **Prompt**: The icons/actions below the chat frame were still not stacking on top of each other.
+- **Changes**:
+  - Reworked `ChatWidget` bottom layout so the chat panel is its own row and the tagged-place pill, copied-place prompt, and chat launcher live in a vertical action stack below it.
+  - Removed the prior horizontal wrapper that placed the tagged-place pill beside the open chat panel.
+  - Preserved pointer-event isolation so only the action pills/buttons are interactive while the fixed widget container remains click-through.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — visual layout/presentation fix only.
+
+---
+
+## [2026-06-09 23:03] Fixed Tag Timing And Result Card Tagged State
+- **Branch**: `feat/better_ux`
+- **Prompt**: The tag elements below broke after the drop animation changes.
+- **Changes**:
+  - Delayed ChatWidget `tagPlace` execution slightly after an accepted drop so the visible tag pill/action state appears after the absorb animation instead of interrupting it.
+  - Added cleanup for the delayed drop-tag timer.
+  - Added `getTaggablePlaceId` in `SearchResultsPanel` so result-card `Tag/Đã tag` state matches normalized SerpAPI tag IDs.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/SearchResultsPanel.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI state timing/identity fix only.
+
+---
+
+## [2026-06-09 22:57] Added Absorb Animation On Place Drop Into Chat
+- **Branch**: `feat/better_ux`
+- **Prompt**: Adjust drop behavior so when users drop a dragged place card into chat, the card is sucked into the chat, and then the source card respawns in the panel.
+- **Changes**:
+  - Added `app:place-drop-accepted` dispatch from `ChatWidget` with the accepted drop target center coordinates.
+  - Updated `PlaceCard` drag handling to enter an `absorbing` state when its drop is accepted instead of immediately clearing the overlay.
+  - Animated the drag overlay toward the chat target with scale-down and fade before resetting the source placeholder back into a normal card.
+  - Prevented normal `drop`/`dragend` cleanup from interrupting the absorb animation once the drop is accepted.
+  - Added CSS for the absorbing drag overlay transition.
+  - Added a PlaceCard test covering the accepted-drop absorption and delayed source-card respawn.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/components/PlaceCard.test.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction animation refinement only.
+
+---
+
+## [2026-06-09 22:42] Smoothed Place Drag Text Jitter
+- **Branch**: `feat/better_ux`
+- **Prompt**: The drag/drop text looked jittery while dragging; smooth it so it no longer jumps.
+- **Changes**:
+  - Stabilized ChatWidget drop copy by keeping the main label constant while using color/ring changes for drag-over feedback.
+  - Debounced drag-leave reset in ChatWidget so browser drag boundary noise does not rapidly toggle the drop state.
+  - Smoothed PlaceCard drag overlay movement by rounding coordinates, moving via a single `translate3d(...)` transform instead of updating `left/top`, and reducing tilt sensitivity.
+  - Reduced the drag overlay scale and transform transition duration to improve text stability while preserving the physical lift effect.
+  - Updated the PlaceCard drag overlay test expectation for the adjusted scale.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/components/PlaceCard.test.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction smoothing only.
+
+---
+
+## [2026-06-09 22:35] Improved Chat Drop Target Affordance For Place Dragging
+- **Branch**: `feat/better_ux`
+- **Prompt**: When dragging a place card, the chat area should show a clearer sign that users can tag/drop the place there.
+- **Changes**:
+  - Added `app:place-drag-start` and `app:place-drag-end` events from `PlaceCard` drag interactions so ChatWidget can react before the pointer reaches the chat panel.
+  - Added ChatWidget drag state for active place dragging and the dragged place name.
+  - When chat is open, rendered a large dashed drop overlay inside the chat panel with stronger copy and hover/drop state.
+  - When chat is closed, transformed the chat launcher area into an obvious `Thả để tag` drop target with a floating hint card.
+  - Preserved existing `placeData` drop handling and auto-open behavior after a successful tag.
+  - Added drop effect feedback with `copy` during drag-over.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction signaling refinement only.
+
+---
+
+## [2026-06-09 22:25] Portaled Place Card Drag Overlay To Body
+- **Branch**: `feat/better_ux`
+- **Prompt**: Fix a drag bug where the custom dragged place card could not visually leave its component/container.
+- **Changes**:
+  - Imported `createPortal` and rendered the custom place-card drag overlay into `document.body` instead of inside `PlaceCard`'s local DOM tree.
+  - Preserved the transparent native drag image and full-opacity custom overlay behavior.
+  - Added a test assertion that the custom drag overlay is parented to `document.body`, preventing panel overflow/stacking contexts from clipping it.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/components/PlaceCard.test.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI rendering containment fix only.
+
+---
+
+## [2026-06-09 22:18] Rebuilt Place Card Drag As Custom Overlay
+- **Branch**: `feat/better_ux`
+- **Prompt**: The previous drag effect was not visible; reread the code and implement the UI correctly so dragged place cards are not dimmed and have a physical effect.
+- **Changes**:
+  - Replaced the browser-rendered place-card drag ghost with a transparent native drag image plus a React-rendered fixed overlay that follows the cursor.
+  - Rendered the full place card as the custom drag overlay at full opacity, with strong lift shadow, scale, slight rotation, and movement-based tilt.
+  - Kept the source card as a gray dashed placeholder with a breathing animation while preserving the search result layout height.
+  - Added drag cleanup listeners for `dragover`, `drop`, and `dragend` to keep overlay state in sync.
+  - Added CSS keyframes/classes for the lifted overlay and source placeholder animation.
+  - Updated the PlaceCard drag test to assert the transparent native drag image and custom overlay behavior.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/components/PlaceCard.test.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction implementation refinement only.
+
+---
+
+## [2026-06-09 22:05] Added Physical Drag Feel To Place Cards
+- **Branch**: `feat/better_ux`
+- **Prompt**: Place cards should not become faded while dragged and should have a bit of physical motion/effect.
+- **Changes**:
+  - Kept the drag preview fully opaque while adding a subtle lifted transform with slight rotation and scale.
+  - Strengthened drag preview shadow and visual presence to make the card feel physically picked up.
+  - Added a small source-card compression and light placeholder pulse while dragging.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction refinement only.
+
+---
+
+## [2026-06-09 22:00] Added Drag Placeholder For Place Cards
+- **Branch**: `feat/better_ux`
+- **Prompt**: The tag drag interaction should not fade the dragged card; it should drag the full card and leave a gray empty area in the search results.
+- **Changes**:
+  - Added `isDragging` state to `PlaceCard` to render the source card as a gray dashed placeholder while dragging.
+  - Updated the drag image clone to keep full opacity with no rotation or extra tag badge.
+  - Preserved the original card dimensions in the result list by hiding card contents instead of removing the card.
+  - Kept existing drag payload behavior for ChatWidget tagging.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI interaction refinement only.
+
+---
+
+## [2026-06-09 21:55] Made Place Drag Tagging Feel Card-Based
+- **Branch**: `feat/better_ux`
+- **Prompt**: Make the tag interaction feel more interactive by letting users drag an entire place card instead of only a place name.
+- **Changes**:
+  - Reworked `PlaceCard` drag preview to clone the rendered card instead of creating a small text pill.
+  - Added drag preview styling, disabled preview animations/transitions, and appended a `Kéo để tag vào AI` hint badge.
+  - Added grab/grabbing cursor affordances to place cards.
+  - Preserved existing drag payloads (`placeId`, `placeData`) for ChatWidget drop tagging.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — interaction presentation refinement only.
+
+---
+
+## [2026-06-09 21:43] Replaced Gallery CTA With Fullscreen Icon
+- **Branch**: `feat/better_ux`
+- **Prompt**: Change the `Xem ảnh lớn` gallery button into a fullscreen icon.
+- **Changes**:
+  - Imported `Maximize2` from `lucide-react`.
+  - Replaced the text-based `Xem ảnh lớn` button with a compact circular fullscreen icon button.
+  - Preserved the existing behavior of opening the lightbox at the currently previewed photo.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI control refinement only.
+
+---
+
+## [2026-06-09 21:41] Changed Place Gallery To Single Photo Carousel
+- **Branch**: `feat/better_ux`
+- **Prompt**: The place detail gallery should only show one image at a time with controls for users to view the next photo.
+- **Changes**:
+  - Added a separate `galleryPreviewIndex` state for the overview gallery preview image.
+  - Replaced the multi-image collage with a single responsive preview image.
+  - Added previous/next overlay buttons and a current-photo counter.
+  - Updated the large-photo action to open the modal at the currently previewed image.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI presentation/layout refinement only.
+
+---
+
+## [2026-06-09 21:35] Reworked Place Detail Gallery Like Google Maps
+- **Branch**: `feat/better_ux`
+- **Prompt**: The revised place detail photo gallery still looked unattractive and should look closer to Google Maps.
+- **Changes**:
+  - Reworked the place detail overview gallery into a compact photo collage with a dominant featured image and a right-side thumbnail stack/grid.
+  - Removed the large separated header area above the photos and moved the all-photos action into an overlay button on the image collage.
+  - Added dynamic thumbnail grid classes so 2-3 photo galleries fill the right column vertically instead of leaving blank whitespace.
+  - Kept image click behavior, the `+N` overflow overlay, and the empty-photo state intact.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI presentation/layout refinement only.
+
+---
+
+## [2026-06-09 21:21] Improved Place Detail Gallery Responsiveness
+- **Branch**: `feat/better_ux`
+- **Prompt**: Read the place-detail image UI handoff and improve the `Thông tin chung` gallery because fixed image sizes made it look poor.
+- **Changes**:
+  - Read `tmp/handoffs/place-detail-image-ui-2026-06-09.md` for the requested place detail image UI fix.
+  - Replaced fixed gallery image heights in `PlaceDetailPage` with responsive aspect-ratio based containers.
+  - Changed the gallery layout to use a dominant featured image plus a responsive thumbnail grid when multiple photos exist.
+  - Preserved image click behavior, lazy-loaded thumbnails, and the remaining-photo `+N` overlay.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI presentation fix only.
+
+---
+
 ## [2026-06-09 21:08] Constrained Desktop Result Panel Height
 - **Branch**: `feat/better_ux`
 - **Prompt**: The search results panel still did not scroll and expanded downward when results were shown.

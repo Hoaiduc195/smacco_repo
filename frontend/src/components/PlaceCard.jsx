@@ -1,46 +1,21 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Navigation, Star, BookmarkPlus, BookmarkCheck, Tag, Check } from 'lucide-react';
 
-function createDragPreview(placeName) {
-  const dragPreview = document.createElement('div');
-  dragPreview.style.position = 'absolute';
-  dragPreview.style.top = '-1000px';
-  dragPreview.style.left = '-1000px';
-  dragPreview.style.padding = '8px 16px';
-  dragPreview.style.background = '#fff';
-  dragPreview.style.borderRadius = '9999px';
-  dragPreview.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
-  dragPreview.style.fontWeight = 'bold';
-  dragPreview.style.fontSize = '14px';
-  dragPreview.style.color = '#2563eb';
-  dragPreview.style.display = 'flex';
-  dragPreview.style.alignItems = 'center';
+let transparentDragImage = null;
 
-  const markerIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  markerIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  markerIcon.setAttribute('width', '20');
-  markerIcon.setAttribute('height', '20');
-  markerIcon.setAttribute('fill', 'none');
-  markerIcon.setAttribute('stroke', '#2563eb');
-  markerIcon.setAttribute('stroke-width', '2');
-  markerIcon.setAttribute('viewBox', '0 0 24 24');
+function getTransparentDragImage() {
+  if (transparentDragImage) return transparentDragImage;
 
-  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  circle.setAttribute('cx', '12');
-  circle.setAttribute('cy', '10');
-  circle.setAttribute('r', '3');
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  transparentDragImage = canvas;
+  return transparentDragImage;
+}
 
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z');
-
-  markerIcon.append(circle, path);
-
-  const label = document.createElement('span');
-  label.style.marginLeft = '8px';
-  label.textContent = placeName ?? '';
-
-  dragPreview.append(markerIcon, label);
-  return dragPreview;
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 export default function PlaceCard({
@@ -57,6 +32,10 @@ export default function PlaceCard({
   isSaved,
   saveMode = 'save',
 }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragGhost, setDragGhost] = useState(null);
+  const absorbDropRef = useRef(false);
+  const resetTimerRef = useRef(null);
   const placeType = place.type?.toLowerCase();
   
   const getIconAndColor = (type) => {
@@ -110,34 +89,116 @@ export default function PlaceCard({
   const saveLabel = saveMode === 'tag' ? 'Tag' : 'Lưu';
   const savedLabel = saveMode === 'tag' ? 'Đã tag' : 'Đã lưu';
 
-  return (
-    <div
-      className={`w-full text-left p-3 rounded-3xl border transition flex flex-col gap-3 bg-white/[0.92] animate-card-enter ${
-        isSelected ? 'border-primary-400 shadow-soft ring-4 ring-primary-100 bg-white' : 'border-base-200 hover:border-primary-200 hover:bg-base-50 hover:shadow-soft'
-      }`}
-      style={{ animationDelay: `${Math.min(itemIndex, 8) * 45}ms` }}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (!onSelect) return;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('placeId', place.id);
-        e.dataTransfer.setData('placeData', JSON.stringify(place));
-        e.dataTransfer.effectAllowed = 'copy';
-        const dragPreview = createDragPreview(place.name);
-        document.body.appendChild(dragPreview);
-        e.dataTransfer.setDragImage(dragPreview, 10, 18);
-        setTimeout(() => document.body.removeChild(dragPreview), 0);
-      }}
-    >
-      <div className="flex gap-3">
+  const resetDragState = (notify = true) => {
+    absorbDropRef.current = false;
+    window.clearTimeout(resetTimerRef.current);
+    setIsDragging(false);
+    setDragGhost(null);
+
+    if (notify) {
+      window.dispatchEvent(new CustomEvent('app:place-drag-end'));
+    }
+  };
+
+  useEffect(() => () => {
+    window.clearTimeout(resetTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return undefined;
+
+    const syncDragGhost = (event) => {
+      if (!event.clientX && !event.clientY) return;
+
+      setDragGhost((current) => {
+        if (!current) return current;
+        if (current.absorbing) return current;
+
+        const x = Math.round(event.clientX);
+        const y = Math.round(event.clientY);
+        const deltaX = x - current.x;
+        const tilt = clamp((current.tilt * 0.82) + (deltaX * 0.06), -3, 3);
+
+        return {
+          ...current,
+          x,
+          y,
+          tilt,
+        };
+      });
+    };
+
+    const stopDragging = () => {
+      if (absorbDropRef.current) return;
+      resetDragState();
+    };
+
+    const handleDropAccepted = (event) => {
+      if (String(event.detail?.placeId) !== String(place.id)) return;
+
+      const target = event.detail?.target;
+      if (!target) {
+        resetDragState();
+        return;
+      }
+
+      absorbDropRef.current = true;
+      window.clearTimeout(resetTimerRef.current);
+
+      setDragGhost((current) => {
+        if (!current) return current;
+
+        return {
+          ...current,
+          x: Math.round(target.x),
+          y: Math.round(target.y),
+          offsetX: current.width / 2,
+          offsetY: (current.height || 112) / 2,
+          tilt: 0,
+          absorbing: true,
+        };
+      });
+
+      resetTimerRef.current = window.setTimeout(() => {
+        resetDragState();
+      }, 320);
+    };
+
+    window.addEventListener('dragover', syncDragGhost);
+    window.addEventListener('drop', stopDragging);
+    window.addEventListener('dragend', stopDragging);
+    window.addEventListener('app:place-drop-accepted', handleDropAccepted);
+
+    return () => {
+      window.removeEventListener('dragover', syncDragGhost);
+      window.removeEventListener('drop', stopDragging);
+      window.removeEventListener('dragend', stopDragging);
+      window.removeEventListener('app:place-drop-accepted', handleDropAccepted);
+    };
+  }, [isDragging, place.id]);
+
+  const syncDragGhostFromEvent = (event) => {
+    if (!event.clientX && !event.clientY) return;
+
+    setDragGhost((current) => {
+      if (!current) return current;
+      if (current.absorbing) return current;
+
+      const x = Math.round(event.clientX);
+      const y = Math.round(event.clientY);
+      const deltaX = x - current.x;
+      return {
+        ...current,
+        x,
+        y,
+        tilt: clamp((current.tilt * 0.82) + (deltaX * 0.06), -3, 3),
+      };
+    });
+  };
+
+  const renderCardContent = ({ hidden = false } = {}) => (
+    <>
+      <div className={`flex gap-3 ${hidden ? 'pointer-events-none opacity-0' : ''}`}>
         <div className="relative w-20 h-20 rounded-2xl flex-shrink-0 overflow-hidden border border-white/70 shadow-inner bg-base-100">
           {displayImg ? (
             <img
@@ -168,7 +229,7 @@ export default function PlaceCard({
         </div>
       </div>
       
-      <div className="flex gap-2">
+      <div className={`flex gap-2 ${hidden ? 'pointer-events-none opacity-0' : ''}`}>
         {onSave && (
           <button
             type="button"
@@ -213,6 +274,86 @@ export default function PlaceCard({
           </button>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <>
+    <div
+      className={`relative w-full cursor-grab text-left p-3 rounded-3xl border transition flex flex-col gap-3 animate-card-enter active:cursor-grabbing ${
+        isDragging
+          ? 'scale-[0.985] border-dashed border-slate-300 bg-slate-100 shadow-inner ring-0'
+          : isSelected ? 'border-primary-400 bg-white shadow-soft ring-4 ring-primary-100' : 'border-base-200 bg-white/[0.92] hover:border-primary-200 hover:bg-base-50 hover:shadow-soft'
+      }`}
+      style={{ animationDelay: `${Math.min(itemIndex, 8) * 45}ms` }}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (!onSelect) return;
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      draggable
+      onDragStart={(e) => {
+        absorbDropRef.current = false;
+        window.clearTimeout(resetTimerRef.current);
+        e.dataTransfer.setData('placeId', place.id);
+        e.dataTransfer.setData('placeData', JSON.stringify(place));
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setDragImage(getTransparentDragImage(), 0, 0);
+        window.dispatchEvent(new CustomEvent('app:place-drag-start', { detail: { place } }));
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = Math.round(e.clientX || rect.left + 24);
+        const y = Math.round(e.clientY || rect.top + 24);
+        const offsetX = clamp(x - rect.left, 24, Math.max(rect.width - 24, 24));
+        const offsetY = clamp(y - rect.top, 20, Math.max(rect.height - 20, 20));
+
+        setDragGhost({
+          x,
+          y,
+          offsetX,
+          offsetY,
+          width: Math.min(rect.width || 320, 380),
+          height: rect.height || 112,
+          tilt: -1.2,
+          absorbing: false,
+        });
+        setIsDragging(true);
+      }}
+      onDrag={syncDragGhostFromEvent}
+      onDragEnd={() => {
+        if (absorbDropRef.current) return;
+        resetDragState();
+      }}
+    >
+      {isDragging ? (
+        <div className="place-card-source-placeholder absolute inset-3 flex items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-200/70 text-xs font-black uppercase tracking-wide text-slate-500">
+          Đang kéo địa điểm
+        </div>
+      ) : null}
+      {renderCardContent({ hidden: isDragging })}
     </div>
+    {isDragging && dragGhost ? createPortal(
+      <div
+        aria-hidden="true"
+        className={`place-card-drag-overlay fixed pointer-events-none select-none ${dragGhost.absorbing ? 'place-card-drag-overlay--absorbing' : ''}`}
+        style={{
+          left: 0,
+          top: 0,
+          width: `${dragGhost.width}px`,
+          transform: `translate3d(${Math.round(dragGhost.x - dragGhost.offsetX)}px, ${Math.round(dragGhost.y - dragGhost.offsetY - (dragGhost.absorbing ? 0 : 10))}px, 0) rotate(${dragGhost.tilt.toFixed(2)}deg) scale(${dragGhost.absorbing ? '0.18' : '1.035'})`,
+        }}
+      >
+        <div className="place-card-drag-overlay-inner flex w-full flex-col gap-3 rounded-3xl border border-primary-200 bg-white p-3 text-left">
+          {renderCardContent()}
+        </div>
+      </div>,
+      document.body,
+    ) : null}
+    </>
   );
 }

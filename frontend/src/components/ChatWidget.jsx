@@ -33,6 +33,8 @@ export default function ChatWidget() {
   const [isPlaceChatOpen, setIsPlaceChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isPlaceDragActive, setIsPlaceDragActive] = useState(false);
+  const [draggedPlaceName, setDraggedPlaceName] = useState('');
   const [copiedPlace, setCopiedPlace] = useState(null);
   const [quickReplies, setQuickReplies] = useState(QUICK_REPLIES);
   const awaitingConfirmedSearchActionRef = useRef(false);
@@ -40,6 +42,8 @@ export default function ChatWidget() {
   const lastSubmittedUserMessageRef = useRef('');
   const skipNextWorkflowPromptRef = useRef(false);
   const declinedSearchFallbackRef = useRef('');
+  const dragOverResetRef = useRef(null);
+  const dropTagTimerRef = useRef(null);
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
   const wizard = useWorkflowWizard();
@@ -382,17 +386,61 @@ export default function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [isOpen, messages, wizard.wizardState, quickReplies]);
 
+  useEffect(() => {
+    const handlePlaceDragStart = (event) => {
+      setIsPlaceDragActive(true);
+      setDraggedPlaceName(event.detail?.place?.name || 'địa điểm này');
+    };
+
+    const handlePlaceDragEnd = () => {
+      window.clearTimeout(dragOverResetRef.current);
+      setIsPlaceDragActive(false);
+      setIsDragOver(false);
+      setDraggedPlaceName('');
+    };
+
+    window.addEventListener('app:place-drag-start', handlePlaceDragStart);
+    window.addEventListener('app:place-drag-end', handlePlaceDragEnd);
+
+    return () => {
+      window.clearTimeout(dragOverResetRef.current);
+      window.clearTimeout(dropTagTimerRef.current);
+      window.removeEventListener('app:place-drag-start', handlePlaceDragStart);
+      window.removeEventListener('app:place-drag-end', handlePlaceDragEnd);
+    };
+  }, []);
+
   const handleDrop = (e) => {
     e.preventDefault();
-    setIsDragOver(false);
+    window.clearTimeout(dragOverResetRef.current);
     const placeData = e.dataTransfer.getData('placeData');
     if (!placeData) return;
 
     try {
-      tagPlace(JSON.parse(placeData));
+      const droppedPlace = JSON.parse(placeData);
+      const rect = e.currentTarget.getBoundingClientRect();
+
+      window.dispatchEvent(new CustomEvent('app:place-drop-accepted', {
+        detail: {
+          placeId: droppedPlace.id,
+          target: {
+            x: rect.left + (rect.width / 2),
+            y: rect.top + (rect.height / 2),
+          },
+        },
+      }));
+
+      window.clearTimeout(dropTagTimerRef.current);
+      dropTagTimerRef.current = window.setTimeout(() => {
+        tagPlace(droppedPlace);
+      }, 260);
     } catch (err) {
       console.error('Lỗi khi parse placeData', err);
     }
+
+    setIsDragOver(false);
+    setIsPlaceDragActive(false);
+    setDraggedPlaceName('');
 
     if (!isOpen) {
       setIsOpen(true);
@@ -401,13 +449,18 @@ export default function ChatWidget() {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    window.clearTimeout(dragOverResetRef.current);
     if (!isDragOver) {
       setIsDragOver(true);
     }
   };
 
   const handleDragLeave = () => {
-    setIsDragOver(false);
+    window.clearTimeout(dragOverResetRef.current);
+    dragOverResetRef.current = window.setTimeout(() => {
+      setIsDragOver(false);
+    }, 140);
   };
 
   const visibleTaggedPlace = taggedPlaces[taggedPlaces.length - 1];
@@ -421,39 +474,25 @@ export default function ChatWidget() {
       className="fixed bottom-3 sm:bottom-5 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
       style={{ right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '20px') }}
     >
-      <div className="flex flex-row items-end gap-3 pointer-events-none w-full justify-end">
-        {isOpen && visibleTaggedPlace && (
-          <div className="pointer-events-auto select-none shrink-0 pr-1 pb-1">
-              <div
-                key={visibleTaggedPlace.id}
-                className="flex items-center gap-1.5 bg-ink-900 text-white text-xs px-3 py-2 rounded-full shadow-soft border border-ink-900 hover:bg-ink-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('placeId', visibleTaggedPlace.id);
-                  e.dataTransfer.setData('placeData', JSON.stringify(visibleTaggedPlace));
-                  e.dataTransfer.effectAllowed = 'copy';
-                }}
-              >
-                <MapPin className="w-3.5 h-3.5 shrink-0 text-primary-200" />
-                <span className="font-semibold max-w-[8rem] truncate">{visibleTaggedPlace.name}</span>
-                <button
-                  type="button"
-                  onClick={() => untagPlace(visibleTaggedPlace.id)}
-                  className="p-0.5 rounded-full hover:bg-primary-700 text-white transition"
-                  title="Bỏ tag"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-          </div>
-        )}
-
         <div
-          className={`h-[min(620px,calc(100vh-7rem))] max-h-[calc(100vh-7rem)] bg-white/[0.96] border border-base-200/90 rounded-3xl shadow-card backdrop-blur-xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible animate-panel-in-right' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : ''} ${showHistory ? 'w-[min(44rem,calc(100vw-1.5rem))]' : 'w-[min(25rem,calc(100vw-1.5rem))]'}`}
+          className={`relative h-[min(620px,calc(100vh-7rem))] max-h-[calc(100vh-7rem)] bg-white/[0.96] border border-base-200/90 rounded-3xl shadow-card backdrop-blur-xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible animate-panel-in-right' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : isPlaceDragActive ? 'ring-2 ring-primary-300/50' : ''} ${showHistory ? 'w-[min(44rem,calc(100vw-1.5rem))]' : 'w-[min(25rem,calc(100vw-1.5rem))]'}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
+          {isOpen && isPlaceDragActive && (
+            <div className="pointer-events-none absolute inset-2 z-40 flex items-center justify-center rounded-[1.35rem] border-2 border-dashed border-primary-400 bg-primary-50/88 px-5 text-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.76)] backdrop-blur-sm">
+              <div className={`max-w-xs rounded-3xl border px-5 py-4 shadow-soft transition-colors duration-150 ${isDragOver ? 'border-primary-500 bg-primary-600 text-white' : 'border-primary-200 bg-white text-primary-900'}`}>
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-100 text-primary-700 shadow-inner">
+                  <Tag className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-black">Thả vào đây để tag AI</p>
+                <p className={`mt-1 text-xs font-semibold ${isDragOver ? 'text-white/80' : 'text-primary-700/75'}`}>
+                  {draggedPlaceName ? `Tag "${draggedPlaceName}" để AI phân tích và so sánh.` : 'AI sẽ ghi nhớ địa điểm này trong cuộc trò chuyện.'}
+                </p>
+              </div>
+            </div>
+          )}
           {showHistory && (
             <div className="w-56 border-r border-base-200 bg-white flex flex-col relative shrink-0">
               <div className="p-3 font-semibold text-ink-900 border-b border-base-200 flex justify-between items-center bg-base-50">
@@ -772,7 +811,37 @@ export default function ChatWidget() {
             </form>
           </div>
         </div>
-      </div>
+
+      <div className="flex flex-col items-end gap-2 pointer-events-none">
+        {isOpen && visibleTaggedPlace && (
+          <div className="pointer-events-auto select-none shrink-0">
+            <div
+              key={visibleTaggedPlace.id}
+              className="flex items-center gap-1.5 bg-ink-900 text-white text-xs px-3 py-2 rounded-full shadow-soft border border-ink-900 hover:bg-ink-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('placeId', visibleTaggedPlace.id);
+                e.dataTransfer.setData('placeData', JSON.stringify(visibleTaggedPlace));
+                e.dataTransfer.effectAllowed = 'copy';
+                window.dispatchEvent(new CustomEvent('app:place-drag-start', { detail: { place: visibleTaggedPlace } }));
+              }}
+              onDragEnd={() => {
+                window.dispatchEvent(new CustomEvent('app:place-drag-end'));
+              }}
+            >
+              <MapPin className="w-3.5 h-3.5 shrink-0 text-primary-200" />
+              <span className="font-semibold max-w-[8rem] truncate">{visibleTaggedPlace.name}</span>
+              <button
+                type="button"
+                onClick={() => untagPlace(visibleTaggedPlace.id)}
+                className="p-0.5 rounded-full hover:bg-primary-700 text-white transition"
+                title="Bỏ tag"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
       {!isOpen && copiedPlace && (
         <div
@@ -800,15 +869,38 @@ export default function ChatWidget() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setIsOpen((value) => !value)}
-        className={`h-14 rounded-2xl shadow-xl flex items-center justify-center gap-2 pointer-events-auto animate-floaty transition-colors duration-200 border px-4 ${isOpen ? 'w-14 bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
-        title={isOpen ? 'Đóng chat' : 'Mở chat'}
+      <div
+        className={`relative pointer-events-auto rounded-[1.35rem] transition ${!isOpen && isPlaceDragActive ? 'ring-4 ring-primary-300/55' : ''}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-        {!isOpen ? <span className="text-sm font-black">Mở AI Chat</span> : null}
-      </button>
+        {!isOpen && isPlaceDragActive && (
+          <div className="absolute bottom-full right-0 mb-3 w-[min(19rem,calc(100vw-1.5rem))] rounded-3xl border-2 border-dashed border-primary-400 bg-white/96 p-4 text-left shadow-card backdrop-blur-xl animate-chat-pop">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-primary-700 shadow-inner">
+                <Tag className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-black text-ink-900">Thả để tag vào AI</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-ink-500">
+                  {draggedPlaceName ? `Tag "${draggedPlaceName}" vào chat để AI tư vấn.` : 'AI sẽ dùng địa điểm này làm ngữ cảnh.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setIsOpen((value) => !value)}
+          className={`h-14 rounded-2xl shadow-xl flex items-center justify-center gap-2 animate-floaty transition-colors duration-200 border px-4 ${isOpen ? 'w-14 bg-white hover:bg-primary-50 border-base-200 text-slate-800' : isPlaceDragActive ? 'bg-primary-600 hover:bg-primary-700 border-primary-500 text-white shadow-glow' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
+          title={isOpen ? 'Đóng chat' : 'Mở chat'}
+        >
+          {isOpen ? <X className="w-6 h-6" /> : isPlaceDragActive ? <Tag className="w-5 h-5" /> : <MessageCircle className="w-6 h-6" />}
+          {!isOpen ? <span className="text-sm font-black">{isPlaceDragActive ? 'Thả để tag' : 'Mở AI Chat'}</span> : null}
+        </button>
+      </div>
+      </div>
     </div>
   );
 }
