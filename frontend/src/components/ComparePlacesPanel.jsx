@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, MessageCircle, Navigation, X } from 'lucide-react';
+import { MapPin, MessageCircle, Navigation, Tags, X } from 'lucide-react';
 
 export default function ComparePlacesPanel({
   taggedPlaces = [],
@@ -14,18 +14,12 @@ export default function ComparePlacesPanel({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="border-b border-base-200 px-4 py-3">
-        <p className="text-[10px] font-black uppercase text-primary-700">So sánh</p>
-        <h2 className="mt-0.5 text-sm font-black text-ink-900">So sánh địa điểm</h2>
-        <p className="mt-1 text-[11px] font-semibold text-slate-500">
-          Dùng các địa điểm đã tag trong chat làm tập so sánh chính.
-        </p>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-3">
         {taggedPlaces.length < 2 ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
-            Hãy tag ít nhất 2 địa điểm vào chat để AI có đủ dữ liệu so sánh.
+          <div className="workspace-empty-state">
+            <Tags className="h-5 w-5 text-primary-600" />
+            <h3>Cần ít nhất 2 địa điểm</h3>
+            <p>Tag các địa điểm từ kết quả tìm kiếm hoặc chat để AI có tập dữ liệu so sánh thật.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -37,7 +31,7 @@ export default function ComparePlacesPanel({
                   className={`w-full rounded-2xl border p-3 text-left transition ${
                     isSelected
                       ? 'border-primary-300 bg-primary-50 shadow-soft'
-                      : 'border-base-200 bg-white hover:border-primary-200 hover:bg-primary-50/40'
+                      : 'border-base-200 bg-white/90 hover:border-primary-200 hover:bg-primary-50/40'
                   }`}
                 >
                   <div className="flex items-start gap-2">
@@ -86,7 +80,7 @@ export default function ComparePlacesPanel({
       </div>
 
       {selectedPlace ? (
-        <div className="grid grid-cols-2 gap-2 border-t border-base-200 p-3">
+        <div className="grid grid-cols-2 gap-2 border-t border-base-200/80 bg-white/70 p-3">
           {onRequestAiCompare && taggedPlaces.length >= 2 ? (
             <button
               type="button"

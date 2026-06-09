@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, MapPin, MessageCircle, Plus, RotateCcw, Send, Tag, Trash2, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
-import TaggedPlacesBar from './TaggedPlacesBar';
 import { useConversation } from '../contexts/ConversationContext';
 import useWorkflowWizard from '../hooks/useWorkflowWizard';
 import WorkflowPromptCard from './chat/WorkflowPromptCard';
@@ -29,7 +28,7 @@ export default function ChatWidget() {
     },
   ], []);
 
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [isPlaceChatOpen, setIsPlaceChatOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -411,46 +410,46 @@ export default function ChatWidget() {
     setIsDragOver(false);
   };
 
+  const visibleTaggedPlace = taggedPlaces[taggedPlaces.length - 1];
+
   if (isPlaceChatOpen && isMobile) {
     return null;
   }
 
   return (
     <div
-      className="fixed bottom-3 sm:bottom-4 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
-      style={{ right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '16px') }}
+      className="fixed bottom-3 sm:bottom-5 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
+      style={{ right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '20px') }}
     >
       <div className="flex flex-row items-end gap-3 pointer-events-none w-full justify-end">
-        {isOpen && taggedPlaces.length > 0 && (
-          <div className="flex flex-col gap-2 max-h-[min(450px,calc(100vh-13rem))] overflow-y-auto pointer-events-auto select-none items-end shrink-0 pr-1 pb-1">
-            {taggedPlaces.map((place) => (
+        {isOpen && visibleTaggedPlace && (
+          <div className="pointer-events-auto select-none shrink-0 pr-1 pb-1">
               <div
-                key={place.id}
+                key={visibleTaggedPlace.id}
                 className="flex items-center gap-1.5 bg-ink-900 text-white text-xs px-3 py-2 rounded-full shadow-soft border border-ink-900 hover:bg-ink-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData('placeId', place.id);
-                  e.dataTransfer.setData('placeData', JSON.stringify(place));
+                  e.dataTransfer.setData('placeId', visibleTaggedPlace.id);
+                  e.dataTransfer.setData('placeData', JSON.stringify(visibleTaggedPlace));
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
               >
                 <MapPin className="w-3.5 h-3.5 shrink-0 text-primary-200" />
-                <span className="font-semibold max-w-[8rem] truncate">{place.name}</span>
+                <span className="font-semibold max-w-[8rem] truncate">{visibleTaggedPlace.name}</span>
                 <button
                   type="button"
-                  onClick={() => untagPlace(place.id)}
+                  onClick={() => untagPlace(visibleTaggedPlace.id)}
                   className="p-0.5 rounded-full hover:bg-primary-700 text-white transition"
                   title="Bỏ tag"
                 >
                   <X className="w-3 h-3" />
                 </button>
               </div>
-            ))}
           </div>
         )}
 
         <div
-          className={`h-[min(500px,calc(100vh-11rem))] max-h-[calc(100vh-11rem)] bg-white border border-base-200 rounded-3xl shadow-card flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : ''} ${showHistory ? 'w-[min(40rem,calc(100vw-1.5rem))]' : 'w-[min(24rem,calc(100vw-1.5rem))]'}`}
+          className={`h-[min(620px,calc(100vh-7rem))] max-h-[calc(100vh-7rem)] bg-white/[0.96] border border-base-200/90 rounded-3xl shadow-card backdrop-blur-xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible animate-panel-in-right' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : ''} ${showHistory ? 'w-[min(44rem,calc(100vw-1.5rem))]' : 'w-[min(25rem,calc(100vw-1.5rem))]'}`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -564,8 +563,6 @@ export default function ChatWidget() {
                 </button>
               </div>
             </div>
-
-            <TaggedPlacesBar />
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white">
               {messages.map((msg, idx) => {
@@ -806,10 +803,11 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
-        className={`w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center pointer-events-auto animate-floaty transition-colors duration-200 border ${isOpen ? 'bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
+        className={`h-14 rounded-2xl shadow-xl flex items-center justify-center gap-2 pointer-events-auto animate-floaty transition-colors duration-200 border px-4 ${isOpen ? 'w-14 bg-white hover:bg-primary-50 border-base-200 text-slate-800' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
         title={isOpen ? 'Đóng chat' : 'Mở chat'}
       >
         {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {!isOpen ? <span className="text-sm font-black">Mở AI Chat</span> : null}
       </button>
     </div>
   );

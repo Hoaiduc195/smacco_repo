@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lightbulb } from 'lucide-react';
 import AreaInsightPanel from './AreaInsightPanel';
 
 export default function PlaceInsightPanel({
@@ -9,8 +10,10 @@ export default function PlaceInsightPanel({
 }) {
   if (!selectedPlace && !insight) {
     return (
-      <div className="flex h-full items-center justify-center px-6 text-center text-xs font-semibold text-slate-400">
-        Chọn một địa điểm trên bản đồ hoặc trong kết quả tìm kiếm để xem insight.
+      <div className="workspace-empty-state">
+        <Lightbulb className="h-5 w-5 text-primary-600" />
+        <h3>Chưa chọn địa điểm</h3>
+        <p>Chọn một marker hoặc một card trong danh sách tìm kiếm để xem insight địa điểm.</p>
       </div>
     );
   }
@@ -19,11 +22,10 @@ export default function PlaceInsightPanel({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="border-b border-base-200 px-4 py-3">
-        <p className="text-[10px] font-black uppercase text-primary-700">Place Insight</p>
-        <h2 className="mt-0.5 line-clamp-1 text-sm font-black text-ink-900">
+      <div className="border-b border-base-200/80 bg-white/70 px-4 py-3">
+        <h3 className="line-clamp-1 text-sm font-black text-ink-900">
           {selectedPlace?.name || 'Insight địa điểm'}
-        </h2>
+        </h3>
         {selectedPlace?.address ? (
           <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-500">{selectedPlace.address}</p>
         ) : null}
@@ -32,7 +34,7 @@ export default function PlaceInsightPanel({
         <AreaInsightPanel location={location} insights={insight} />
       </div>
       {selectedPlace ? (
-        <div className="flex gap-2 border-t border-base-200 p-3">
+        <div className="flex gap-2 border-t border-base-200/80 bg-white/70 p-3">
           {onDirections ? (
             <button
               type="button"

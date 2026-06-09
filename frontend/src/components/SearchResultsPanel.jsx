@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import PlaceCard from './PlaceCard';
 import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
@@ -9,7 +10,6 @@ export default function SearchResultsPanel({
   pinnedPlaceIds = [],
   onSelectPlace,
   onPinPlace,
-  onComparePlace,
   onDirections,
   onHoverPlace,
 }) {
@@ -17,14 +17,16 @@ export default function SearchResultsPanel({
 
   if (!places || places.length === 0) {
     return (
-      <div className="p-4 text-center text-xs text-slate-400">
-        Chưa có kết quả tìm kiếm nào. Hãy bảo AI tìm kiếm chỗ ở ở phần chat.
+      <div className="workspace-empty-state">
+        <Search className="h-5 w-5 text-primary-600" />
+        <h3>Chưa có kết quả</h3>
+        <p>Nhập tìm kiếm ở thanh trên hoặc hỏi AI để danh sách địa điểm xuất hiện tại đây.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 p-1 max-h-[500px] overflow-y-auto pr-2">
+    <div className="h-full min-h-0 space-y-3 overflow-y-auto p-3 overscroll-contain">
       {places.map((place, index) => {
         const isSelected = selectedPlaceId === place.id;
         const isPinned = pinnedPlaceIds.includes(place.id);
@@ -48,15 +50,6 @@ export default function SearchResultsPanel({
               onNavigate={() => navigateToPlaceDetail(navigate, place.id, { place })}
               onDirections={onDirections ? () => onDirections(place) : undefined}
             />
-            {onComparePlace ? (
-              <button
-                type="button"
-                onClick={() => onComparePlace(place)}
-                className="mt-2 w-full rounded-xl border border-primary-200 bg-white px-3 py-2 text-xs font-bold text-primary-700 transition hover:bg-primary-50"
-              >
-                So sánh địa điểm này
-              </button>
-            ) : null}
           </div>
         );
       })}

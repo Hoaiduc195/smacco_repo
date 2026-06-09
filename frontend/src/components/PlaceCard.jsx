@@ -112,8 +112,8 @@ export default function PlaceCard({
 
   return (
     <div
-      className={`w-full text-left p-3 rounded-3xl border transition flex flex-col gap-3 bg-white animate-card-enter shadow-soft ${
-        isSelected ? 'border-primary-400 shadow-card ring-4 ring-primary-100 bg-white' : 'border-base-200 hover:border-primary-200 hover:bg-base-50 hover:shadow-card'
+      className={`w-full text-left p-3 rounded-3xl border transition flex flex-col gap-3 bg-white/[0.92] animate-card-enter ${
+        isSelected ? 'border-primary-400 shadow-soft ring-4 ring-primary-100 bg-white' : 'border-base-200 hover:border-primary-200 hover:bg-base-50 hover:shadow-soft'
       }`}
       style={{ animationDelay: `${Math.min(itemIndex, 8) * 45}ms` }}
       onClick={onSelect}

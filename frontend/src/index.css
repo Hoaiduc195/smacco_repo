@@ -18,6 +18,10 @@
     --radius-xl: 1.75rem;
     --shadow-soft: 0 18px 55px -32px rgba(34, 28, 23, 0.38);
     --shadow-card: 0 24px 70px -42px rgba(34, 28, 23, 0.48);
+    --workspace-left-inset: 20px;
+    --workspace-rail-width: 116px;
+    --workspace-panel-width: clamp(340px, 28vw, 420px);
+    --workspace-gap: 12px;
   }
 
   body, html, #root {
@@ -375,7 +379,76 @@
   }
 
   .workspace-panel-shell {
-    @apply h-full rounded-3xl border border-base-200/80 bg-white/[0.90] shadow-card backdrop-blur-xl;
+    @apply h-full max-h-full rounded-3xl border border-base-200/80 bg-white/[0.92] shadow-card backdrop-blur-xl;
+  }
+
+  .left-workspace-layout {
+    position: absolute;
+    top: var(--workspace-left-inset);
+    bottom: var(--workspace-left-inset);
+    left: var(--workspace-left-inset);
+    display: grid;
+    grid-template-columns: var(--workspace-rail-width);
+    align-items: stretch;
+    gap: 0;
+    min-height: 0;
+    font-family: inherit;
+    transition: grid-template-columns 0.24s ease, gap 0.24s ease;
+  }
+
+  .left-workspace-layout > * {
+    min-height: 0;
+  }
+
+  .left-workspace-layout.is-open {
+    grid-template-columns: var(--workspace-rail-width) var(--workspace-panel-width);
+    gap: var(--workspace-gap);
+  }
+
+  .workspace-rail {
+    @apply flex h-full flex-col rounded-3xl border border-base-200/80 bg-white/[0.92] px-2 py-3 shadow-card backdrop-blur-xl;
+  }
+
+  .workspace-rail-brand {
+    @apply flex h-10 w-full items-center justify-center rounded-2xl bg-ink-900 text-[11px] font-black tracking-tight shadow-soft;
+    color: #8ee7d4;
+  }
+
+  .workspace-rail-actions {
+    @apply mt-4 flex flex-1 flex-col gap-2;
+  }
+
+  .workspace-rail-button {
+    @apply flex w-full items-center justify-start gap-2 rounded-2xl border border-transparent px-2.5 py-2.5 text-left text-[11px] font-black text-ink-500 transition;
+  }
+
+  .workspace-rail-button:hover {
+    border-color: rgba(47, 183, 156, 0.18);
+    background: rgba(214, 244, 236, 0.55);
+    color: #187765;
+  }
+
+  .workspace-rail-button.is-active {
+    border-color: rgba(47, 183, 156, 0.48);
+    background: #2fb79c;
+    color: #ffffff;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .workspace-rail-close {
+    @apply mt-auto flex h-10 w-full items-center justify-center rounded-2xl border border-base-200 bg-white text-ink-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600;
+  }
+
+  .workspace-empty-state {
+    @apply m-3 flex h-[calc(100%-1.5rem)] min-h-48 flex-col items-center justify-center rounded-3xl border border-dashed border-base-200 bg-base-50/70 px-6 text-center;
+  }
+
+  .workspace-empty-state h3 {
+    @apply mt-3 text-sm font-black text-ink-900;
+  }
+
+  .workspace-empty-state p {
+    @apply mt-1 max-w-64 text-xs font-semibold leading-5 text-slate-500;
   }
 
   .hover-lift {

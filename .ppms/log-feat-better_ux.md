@@ -1,5 +1,80 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-09 21:08] Constrained Desktop Result Panel Height
+- **Branch**: `feat/better_ux`
+- **Prompt**: The search results panel still did not scroll and expanded downward when results were shown.
+- **Changes**:
+  - Added a fixed-height desktop wrapper around the active left context panel so the panel inherits the overlay viewport height instead of growing with results.
+  - Added stretch and `min-height: 0` constraints to the desktop workspace grid so child overflow can resolve to internal scrolling.
+  - Added `max-height: 100%` to the workspace panel shell to keep it bounded by the overlay.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — desktop layout constraint fix only.
+
+---
+
+## [2026-06-09 20:59] Fixed Workspace Result Scroll And Tag UI Duplication
+- **Branch**: `feat/better_ux`
+- **Prompt**: Read the `ui-fixes` handoff and fix the search result panel scroll, remove the compare button under place cards, and show only one tagged place near ChatWidget.
+- **Changes**:
+  - Updated the left context panel content wrapper to be a bounded flex column so child panels can scroll correctly.
+  - Added `min-h-0`, `overflow-y-auto`, and overscroll containment to the search results list region.
+  - Removed the per-result "So sánh địa điểm này" button from `SearchResultsPanel` while keeping compare workflows elsewhere intact.
+  - Removed the duplicate in-frame `TaggedPlacesBar` render from `ChatWidget`.
+  - Limited the external ChatWidget tagged-place pill to a single visible place, using the latest tagged place and preserving untag/drag behavior.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/components/LeftContextPanel.jsx`
+  - `frontend/src/components/SearchResultsPanel.jsx`
+  - `frontend/src/components/ChatWidget.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI layout and presentation fixes only.
+
+---
+
+## [2026-06-09 20:50] Fixed Geolocation Button Rail Overlap
+- **Branch**: `feat/better_ux`
+- **Prompt**: The return-to-current-location button was still hidden behind the workspace rail.
+- **Changes**:
+  - Updated the desktop left offset for the quick location controls when no workspace panel is open.
+  - The geolocation button now clears the workspace rail by using `--workspace-left-inset` and `--workspace-rail-width` instead of the bare 20px gutter.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/pages/HomePage.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — layout positioning fix only.
+
+---
+
+## [2026-06-09 20:48] Refined AI Workspace And Chat Shell UI
+- **Branch**: `feat/better_ux`
+- **Prompt**: Read the handoff and adjust the UI.
+- **Changes**:
+  - Read the branch PPMS handoff for the AI-agent-first travel workspace direction.
+  - Updated `ChatWidget` to start collapsed by default so the map remains the primary initial surface.
+  - Expanded the desktop chat panel toward the documented 400px right-side workspace width and aligned it to the 20px desktop gutter.
+  - Added a text CTA to the collapsed AI chat launcher for clearer discoverability.
+  - Made the left workspace rail more text-first by widening it and showing readable labels beside icons.
+  - Verified frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/index.css`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — UI shell refinement only; no routing, data flow, endpoint, or module changes.
+
+---
+
 ## [2026-06-04 15:52] ChatWidget Keeps Latest Search Results Locally
 - **Branch**: `feat/better_ux`
 - **Prompt**: The chatbot still wasn't reliably receiving the latest search result context in test mode.

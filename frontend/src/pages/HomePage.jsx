@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, Compass, MapPin, Route, Navigation } from 'lucide-react';
+import { AlertCircle, BarChart3, Compass, Lightbulb, MapPin, Route, Navigation, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import LeftContextPanel from '../components/LeftContextPanel';
-import RadialPanelMenu from '../components/RadialPanelMenu';
+import WorkspaceRail from '../components/WorkspaceRail';
 import SearchResultsPanel from '../components/SearchResultsPanel';
 import ComparePlacesPanel from '../components/ComparePlacesPanel';
 import PlaceInsightPanel from '../components/PlaceInsightPanel';
@@ -24,12 +24,16 @@ const APP_STATES = {
 };
 const NAVBAR_HEIGHT = 64;
 const DESKTOP_PANEL_GAP = 20;
-const DESKTOP_WORKSPACE_WIDTH = 380;
 const PANEL_IDS = {
   RESULTS: 'results',
   COMPARE: 'compare',
   INSIGHT: 'insight',
 };
+const PANEL_OPTIONS = [
+  { id: PANEL_IDS.RESULTS, label: 'Danh sách tìm kiếm', shortLabel: 'Kết quả', icon: Search },
+  { id: PANEL_IDS.COMPARE, label: 'So sánh địa điểm', shortLabel: 'So sánh', icon: BarChart3 },
+  { id: PANEL_IDS.INSIGHT, label: 'Insight địa điểm', shortLabel: 'Insight', icon: Lightbulb },
+];
 
 const normalizePanelId = (panelId) => {
   if (panelId === null) return null;
@@ -73,7 +77,6 @@ export default function HomePage() {
   // AI-Agent-First States
   const [areaInsight, setAreaInsight] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
-  const [isRadialMenuOpen, setRadialMenuOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
 
   const [pois, setPois] = useState([]);
@@ -539,16 +542,37 @@ export default function HomePage() {
     taggedPlaces.find((place) => String(place.id) === String(selectedPlaceId)) ||
     ownedPlaces.find((place) => String(place.id) === String(selectedPlaceId));
 
-  const handleSelectPanel = (panelId) => {
+  const closeSidebar = useCallback(() => {
+    setActivePanel(null);
+    if (isMobile) setActiveMobileTab('map');
+  }, [isMobile]);
+
+  const togglePanel = useCallback((panelId) => {
+    if (activePanel === panelId) {
+      closeSidebar();
+      return;
+    }
     setActivePanel(panelId);
     if (isMobile) setActiveMobileTab('workspace');
-  };
+  }, [activePanel, closeSidebar, isMobile]);
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && activePanel) {
+        closeSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [activePanel, closeSidebar]);
+
+  const activePanelMeta = PANEL_OPTIONS.find((panel) => panel.id === activePanel);
 
   const renderActiveContextPanel = () => {
     if (!activePanel) return null;
 
     return (
-      <LeftContextPanel activePanel={activePanel} onCollapse={() => setActivePanel(null)}>
+      <LeftContextPanel activePanel={activePanel} onCollapse={closeSidebar}>
         {activePanel === PANEL_IDS.RESULTS && (
             <SearchResultsPanel
               places={places}
@@ -630,34 +654,71 @@ export default function HomePage() {
 
         {/* Desktop Layout Overlay */}
         {!isMobile && (
-          <div className="absolute inset-0 flex justify-between p-5 pointer-events-none z-10 font-sans">
-            {/* Left AI Workspace Panel */}
+          <div className={`left-workspace-layout pointer-events-none z-40 ${activePanel ? 'is-open' : ''}`}>
+            <div className="pointer-events-auto">
+              <WorkspaceRail
+                activePanel={activePanel}
+                items={PANEL_OPTIONS}
+                onTogglePanel={togglePanel}
+                onClose={closeSidebar}
+              />
+            </div>
             {activePanel ? (
-              <div className="w-[380px] h-full flex flex-col pointer-events-auto animate-panel-in-left">
+              <div className="pointer-events-auto h-full min-h-0 overflow-hidden animate-panel-in-left">
                 {renderActiveContextPanel()}
               </div>
-            ) : (
-              <div />
-            )}
+            ) : null}
           </div>
         )}
-
-        <div className="absolute left-0 top-1/2 z-40 -translate-y-1/2 pointer-events-auto">
-          <RadialPanelMenu
-            activePanel={activePanel}
-            isOpen={isRadialMenuOpen}
-            onOpenChange={setRadialMenuOpen}
-            onSelectPanel={handleSelectPanel}
-          />
-        </div>
 
         {/* Mobile Layout Tab Contents */}
         {isMobile && (
           <div className="absolute inset-0 flex flex-col z-10 pointer-events-none p-3 pb-16">
             <div className="flex-1 w-full pointer-events-auto overflow-hidden">
               {activeMobileTab === 'workspace' && (
-                <div className="w-full h-full">
-                  {renderActiveContextPanel()}
+                <div className="flex h-full w-full flex-col gap-2">
+                  <div className="rounded-3xl border border-base-200 bg-white/95 p-2 shadow-soft backdrop-blur-xl">
+                    <div className="mb-2 flex items-center justify-between px-2">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wide text-primary-700">Bảng AI</p>
+                        <p className="text-sm font-black text-ink-900">
+                          {activePanelMeta?.label || 'Chọn bảng làm việc'}
+                        </p>
+                      </div>
+                      {activePanel ? (
+                        <button
+                          type="button"
+                          onClick={closeSidebar}
+                          className="rounded-xl border border-base-200 px-3 py-1.5 text-xs font-bold text-ink-600"
+                        >
+                          Đóng
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {PANEL_OPTIONS.map(({ id, shortLabel, icon: Icon }) => {
+                        const isActive = activePanel === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => togglePanel(id)}
+                            className={`flex items-center justify-center gap-1.5 rounded-2xl px-2 py-2 text-xs font-black transition ${
+                              isActive
+                                ? 'bg-ink-900 text-white shadow-soft'
+                                : 'bg-base-50 text-ink-600 hover:bg-primary-50 hover:text-primary-700'
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {shortLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="min-h-0 flex-1">
+                    {renderActiveContextPanel()}
+                  </div>
                 </div>
               )}
               {activeMobileTab === 'map' && (
@@ -675,8 +736,8 @@ export default function HomePage() {
             left: isMobile
               ? `${DESKTOP_PANEL_GAP}px`
               : (activePanel
-                ? `${DESKTOP_PANEL_GAP + DESKTOP_WORKSPACE_WIDTH + DESKTOP_PANEL_GAP}px`
-                : `${DESKTOP_PANEL_GAP}px`),
+                ? 'calc(var(--workspace-left-inset) + var(--workspace-rail-width) + var(--workspace-gap) + var(--workspace-panel-width) + 20px)'
+                : 'calc(var(--workspace-left-inset) + var(--workspace-rail-width) + 20px)'),
           }}
         >
           <button
@@ -732,7 +793,7 @@ export default function HomePage() {
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Workspace</span>
+            <span>Bảng AI</span>
           </button>
           <button
             onClick={() => setActiveMobileTab('map')}
