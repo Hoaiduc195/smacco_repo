@@ -307,6 +307,12 @@ export class LlmResponseComposerService implements IResponseComposer {
       latitude?: number;
       longitude?: number;
       rating?: number;
+      reviewCount?: number;
+      price?: string;
+      priceLevel?: number;
+      amenities?: string[];
+      source?: string;
+      sourcePlaceId?: string;
       categories?: string[];
       reviews?: Array<{ rating: number; reviewText: string; source?: string; date?: string }>;
     }> = [];
@@ -327,7 +333,28 @@ export class LlmResponseComposerService implements IResponseComposer {
       ...(context.taggedPlaces || []).map(p => p?.id).filter(Boolean)
     ]));
 
+    const fixturePlacesMap = new Map<string, any>();
+
     if (allIds.length > 0) {
+      await Promise.all(
+        allIds
+          .filter((id) => this.isLocalPlaceId(id))
+          .map(async (id) => {
+            try {
+              const [place, reviews] = await Promise.all([
+                this.placesService.findOne(id).catch(() => null),
+                this.placesService.findReviews(id).catch(() => []),
+              ]);
+
+              if (place || reviews.length > 0) {
+                fixturePlacesMap.set(id, { place, reviews });
+              }
+            } catch (err: any) {
+              this.logger.warn(`Unable to load local fixture review context for ${id}: ${err.message}`);
+            }
+          }),
+      );
+
       await Promise.all(
         allIds.map((id) =>
           this.placesService.ensureGoogleReviewsForAiContext(id).catch((err: any) => {
@@ -339,7 +366,7 @@ export class LlmResponseComposerService implements IResponseComposer {
 
       // 1. Separate UUID IDs from non-UUID IDs to prevent database exceptions
       const uuidIds = allIds.filter(id => UUID_REGEX.test(id));
-      const nonUuidIds = allIds.filter(id => !UUID_REGEX.test(id));
+      const nonUuidIds = allIds.filter(id => !UUID_REGEX.test(id) && !fixturePlacesMap.has(id));
 
       let dbPlaces: any[] = [];
       if (uuidIds.length > 0) {
@@ -399,10 +426,32 @@ export class LlmResponseComposerService implements IResponseComposer {
 
       // 2. Loop through all requested IDs and resolve details
       for (const id of allIds) {
+        const fixtureContext = fixturePlacesMap.get(id);
         const dbPlace = dbPlacesMap.get(id);
         const fePlace = frontendPlacesMap.get(id);
 
-        if (dbPlace) {
+        if (fixtureContext) {
+          const fixturePlace = fixtureContext.place || {};
+          const fixtureReviews = Array.isArray(fixtureContext.reviews) ? fixtureContext.reviews : [];
+          const sourcePlaceId = fixturePlace.sourcePlaceId || id.replace(/^local-/, '');
+
+          placesInfoList.push({
+            id: fixturePlace.id || id,
+            name: fixturePlace.placeName || fixturePlace.name || fePlace?.name || `Địa điểm #${sourcePlaceId}`,
+            address: fixturePlace.placeAddress || fixturePlace.address || fePlace?.address,
+            latitude: fixturePlace.lat || fixturePlace.latitude || fePlace?.latitude || fePlace?.lat,
+            longitude: fixturePlace.lng || fixturePlace.longitude || fePlace?.longitude || fePlace?.lng,
+            rating: fixturePlace.averageRating || fixturePlace.rating || fePlace?.rating,
+            reviewCount: fixturePlace.reviewCount || fixtureReviews.length || fePlace?.reviewCount,
+            price: fePlace?.price || fePlace?.priceRange,
+            priceLevel: fixturePlace.priceLevel || fePlace?.priceLevel,
+            amenities: this.extractAmenities(fixturePlace).length ? this.extractAmenities(fixturePlace) : this.extractAmenities(fePlace),
+            source: fixturePlace.source || 'local',
+            sourcePlaceId,
+            categories: Array.isArray(fixturePlace.categories) ? fixturePlace.categories : (fePlace?.type ? [fePlace.type] : []),
+            reviews: this.selectRelevantReviews(fixtureReviews, context.userQuery, 16),
+          });
+        } else if (dbPlace) {
           // Place exists in DB - use DB data and real reviews
           placesInfoList.push({
             id: (dbPlace.source && dbPlace.sourcePlaceId)
@@ -413,6 +462,11 @@ export class LlmResponseComposerService implements IResponseComposer {
             latitude: dbPlace.lat,
             longitude: dbPlace.lng,
             rating: dbPlace.averageRating ? parseFloat(dbPlace.averageRating.toString()) : undefined,
+            reviewCount: dbPlace.reviewCount,
+            priceLevel: dbPlace.priceLevel,
+            amenities: this.extractAmenities(dbPlace.rawSerpApiPropertyDetails),
+            source: dbPlace.source,
+            sourcePlaceId: dbPlace.sourcePlaceId,
             categories: dbPlace.categories,
             reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, 16),
           });
@@ -425,6 +479,11 @@ export class LlmResponseComposerService implements IResponseComposer {
             latitude: fePlace.latitude || fePlace.lat || fePlace.coordinates?.lat,
             longitude: fePlace.longitude || fePlace.lng || fePlace.coordinates?.lng,
             rating: fePlace.rating,
+            reviewCount: fePlace.reviewCount || fePlace.reviewsCount || fePlace.userRatingsTotal,
+            price: fePlace.price || fePlace.priceRange || fePlace.priceText || fePlace.ratePerNight,
+            amenities: this.extractAmenities(fePlace),
+            source: fePlace.source,
+            sourcePlaceId: fePlace.sourcePlaceId,
             categories: Array.isArray(fePlace.categories) ? fePlace.categories : (fePlace.type ? [fePlace.type] : []),
             reviews: [] // No reviews in DB yet
           });
@@ -444,7 +503,12 @@ export class LlmResponseComposerService implements IResponseComposer {
       for (const place of placesInfoList) {
         const coordsStr = (place.latitude && place.longitude) ? ` (Tọa độ: ${place.latitude}, ${place.longitude})` : '';
         const addressStr = place.address ? `, Địa chỉ: ${place.address}` : '';
-        taggedPlacesContext += `Địa điểm: ${place.name} (ID: ${place.id}, Loại: ${place.categories?.join(', ') || 'N/A'}, Đánh giá trung bình: ${place.rating || 'N/A'}${coordsStr}${addressStr})\n`;
+        const ratingStr = place.rating ? `${place.rating}/5` : 'N/A';
+        const reviewCountStr = typeof place.reviewCount === 'number' ? `, Số review: ${place.reviewCount}` : '';
+        const priceStr = place.price ? `, Giá/Tầm giá: ${place.price}` : (typeof place.priceLevel === 'number' ? `, Price level: ${place.priceLevel}` : '');
+        const sourceStr = place.source ? `, Nguồn: ${place.source}${place.sourcePlaceId ? `/${place.sourcePlaceId}` : ''}` : '';
+        const amenitiesStr = place.amenities?.length ? `\nTiện nghi/đặc điểm nổi bật: ${place.amenities.slice(0, 12).join(', ')}\n` : '';
+        taggedPlacesContext += `Địa điểm: ${place.name} (ID: ${place.id}, Loại: ${place.categories?.join(', ') || 'N/A'}, Đánh giá trung bình: ${ratingStr}${reviewCountStr}${priceStr}${sourceStr}${coordsStr}${addressStr})\n${amenitiesStr}`;
         
         if (place.reviews && place.reviews.length > 0) {
           taggedPlacesContext += `Các nhận xét dùng làm context AI (có thể gồm review Google đã cache, không hiển thị trực tiếp trên UI):\n`;
@@ -470,10 +534,12 @@ Workflow: ${context.workflowId}
 Extracted Parameters: ${JSON.stringify(context.parameters)}
 [END SYSTEM CONTEXT]
 ${taggedPlacesContext}
+${frontendSearchResultsContext}
 User Query: "${context.userQuery}"
 
 IMPORTANT REMINDERS:
 - Dùng dữ liệu từ [DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG] ở trên để phân tích/so sánh.
+- Nếu có [ACTIVE SEARCH RESULTS CONTEXT], dùng nó như metadata bổ sung cho các địa điểm chưa có review DB.
 - MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:place_id) với ID thực từ context.
 - Nếu data thiếu, nói rõ thay vì bịa.
 - Trả lời bằng tiếng Việt, giọng thân thiện.
@@ -619,6 +685,11 @@ If the tagged place context is weak or missing, say you do not have enough revie
         name: place.name || place.placeName || place.title,
         address: place.address || place.placeAddress || place.displayAddress || '',
         rating: place.rating || place.averageRating || null,
+        reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal || null,
+        price: place.price || place.priceRange || place.priceText || place.ratePerNight || '',
+        amenities: this.extractAmenities(place).slice(0, 12),
+        source: place.source || '',
+        sourcePlaceId: place.sourcePlaceId || '',
         type: place.type || place.categories?.[0] || '',
         lat: place.latitude || place.lat || place.coordinates?.lat || place.location?.lat || null,
         lng: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng || null,
@@ -634,6 +705,10 @@ If the tagged place context is weak or missing, say you do not have enough revie
         place.type ? `Loại: ${place.type}` : '',
         place.address ? `Địa chỉ: ${place.address}` : '',
         place.rating ? `Rating: ${Number(place.rating).toFixed(1)}/5` : '',
+        place.reviewCount ? `Số review: ${place.reviewCount}` : '',
+        place.price ? `Giá/Tầm giá: ${place.price}` : '',
+        place.amenities.length ? `Tiện nghi: ${place.amenities.join(', ')}` : '',
+        place.source ? `Nguồn: ${place.source}${place.sourcePlaceId ? `/${place.sourcePlaceId}` : ''}` : '',
         place.lat != null && place.lng != null ? `Tọa độ: ${place.lat}, ${place.lng}` : '',
       ].filter(Boolean);
 
@@ -641,6 +716,22 @@ If the tagged place context is weak or missing, say you do not have enough revie
     });
 
     return `[ACTIVE SEARCH RESULTS CONTEXT]\n${lines.join('\n')}\n[END ACTIVE SEARCH RESULTS CONTEXT]\n\nNếu user hỏi tiếp về "các kết quả vừa tìm", "kết quả trên", "trong số này", hãy coi danh sách trên là tập kết quả hiện tại để phân tích/sắp xếp. Khi thiếu review thực tế, chỉ nhận xét dựa trên metadata hiện có và nói rõ giới hạn dữ liệu.\n\n`;
+  }
+
+  private extractAmenities(placeOrDetails: any): string[] {
+    if (!placeOrDetails || typeof placeOrDetails !== 'object') return [];
+    const direct = Array.isArray(placeOrDetails.amenities) ? placeOrDetails.amenities : [];
+    const raw = placeOrDetails.rawSerpApiPropertyDetails;
+    const nested = raw && typeof raw === 'object' && Array.isArray(raw.amenities) ? raw.amenities : [];
+
+    return [...direct, ...nested]
+      .map((amenity) => String(amenity || '').trim())
+      .filter(Boolean)
+      .slice(0, 30);
+  }
+
+  private isLocalPlaceId(id: unknown): id is string {
+    return typeof id === 'string' && /^local-\d+$/i.test(id.trim());
   }
 
   private stripLegacyPlacePrompt(content: string): string {

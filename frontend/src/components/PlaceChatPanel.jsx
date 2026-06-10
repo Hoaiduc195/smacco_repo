@@ -37,7 +37,12 @@ export default function PlaceChatPanel({ place, onClose }) {
       latitude: place.latitude || place.lat || place.coordinates?.lat,
       longitude: place.longitude || place.lng || place.coordinates?.lng,
       rating: place.rating,
-      type: place.type || place.categories?.[0]
+      type: place.type || place.categories?.[0],
+      amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities,
+      price: place.price || place.priceRange || place.priceText || place.ratePerNight,
+      reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal,
+      source: place.source,
+      sourcePlaceId: place.sourcePlaceId,
     }];
     await sendMessage(undefined, [place.id], taggedPlacePayload);
   };

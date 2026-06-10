@@ -21,6 +21,7 @@ import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
 // Concrete Providers
 import { GroqLlmClientService } from './providers/groq-llm-client.service';
 import { CloudflareAiLlmClientService } from './providers/cloudflare-ai-llm-client.service';
+import { FreemodelLlmClientService } from './providers/freemodel-llm-client.service';
 import { LlmTaskRouterService } from './orchestration/router/llm-task-router.service';
 import { LlmResponseComposerService } from './orchestration/composer/llm-response-composer.service';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
@@ -46,6 +47,7 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
     // Concrete LLM Clients
     GroqLlmClientService,
     CloudflareAiLlmClientService,
+    FreemodelLlmClientService,
 
     // Interface providers
     {
@@ -54,8 +56,9 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
         runtimeConfigService: RuntimeConfigService,
         groq: GroqLlmClientService,
         cloudflare: CloudflareAiLlmClientService,
-      ) => selectLlmClientByProvider(runtimeConfigService.ai.provider, groq, cloudflare),
-      inject: [RuntimeConfigService, GroqLlmClientService, CloudflareAiLlmClientService],
+        freemodel: FreemodelLlmClientService,
+      ) => selectLlmClientByProvider(runtimeConfigService.ai.provider, groq, cloudflare, freemodel),
+      inject: [RuntimeConfigService, GroqLlmClientService, CloudflareAiLlmClientService, FreemodelLlmClientService],
     },
     {
       provide: ITaskRouter,

@@ -139,6 +139,35 @@ export class TaggedPlaceDto {
   @ArrayMaxSize(30)
   @IsString({ each: true })
   amenities?: string[];
+
+  @ApiPropertyOptional({ example: '800.000đ/đêm' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  price?: string;
+
+  @ApiPropertyOptional({ example: '800.000đ - 1.200.000đ' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  priceRange?: string;
+
+  @ApiPropertyOptional({ example: 128 })
+  @IsOptional()
+  @IsNumber()
+  reviewCount?: number;
+
+  @ApiPropertyOptional({ example: 'serpapi' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  source?: string;
+
+  @ApiPropertyOptional({ example: '12345' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  sourcePlaceId?: string;
 }
 
 export class WorkflowExecutionDto {

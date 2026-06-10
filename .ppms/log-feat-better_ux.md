@@ -1,5 +1,115 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-10 12:47] Loaded Fixture Reviews For AI Compare Context
+- **Branch**: `feat/better_ux`
+- **Prompt**: Adjust test-mode compare/analyze behavior so reviews come from the fixture dataset.
+- **Changes**:
+  - Updated `LlmResponseComposerService` to detect tagged `local-*` places and load their metadata/reviews via `PlacesService.findOne()` and `PlacesService.findReviews()` before DB lookup.
+  - Preserved enriched compare metadata while adding fixture review evidence for local test places.
+  - Added a focused composer test verifying fixture reviews appear in the LLM compare context and local IDs skip non-UUID DB lookup.
+  - Verified backend AI tests and backend production build.
+- **Modified files**:
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — AI compare/analyze context now uses fixture review evidence for local test places.
+
+---
+
+## [2026-06-10 12:36] Implemented Confirmed AI Compare Workflow Context
+- **Branch**: `feat/better_ux`
+- **Prompt**: Install the place comparison workflow and ensure the LLM receives enough context about added/tagged places.
+- **Changes**:
+  - Updated the chat widget so confirmed compare wizard execution sends `workflowExecution: { workflowId: 'COMPARE_PLACES', confirmed: true }` instead of re-triggering an unconfirmed compare prompt.
+  - Enriched frontend tagged-place payloads with amenities, price/tầm giá, review count, source, and source place ID so non-persisted SerpAPI/search results retain comparison evidence.
+  - Extended backend chat DTO and orchestrator sanitization to accept bounded compare metadata fields and preserve wizard criteria arrays.
+  - Expanded composer compare/analyze context with price, review count, amenities, source identifiers, DB review evidence, and active search-results metadata.
+  - Added focused backend tests for confirmed compare orchestration and enriched compare prompt context.
+  - Verified backend AI tests, backend build, frontend focused tests, and frontend build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/components/PlaceChatPanel.jsx`
+  - `backend/src/modules/ai/dto/chat-request.dto.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.spec.ts`
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**:
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — confirmed compare workflow now composes final AI output with enriched tagged/fallback place context.
+
+---
+
+## [2026-06-10 12:15] Hardened FreeModel Response Parsing
+- **Branch**: `feat/better_ux`
+- **Prompt**: Diagnose and fix runtime chat error from `FreemodelLlmClientService` when FreeModel returned a response without `choices[0]`.
+- **Changes**:
+  - Removed `response_format` from FreeModel SDK requests to keep the payload compatible with OpenAI-compatible endpoints that do not implement that option.
+  - Added defensive parsing for multiple completion response shapes instead of assuming `response.choices[0]` exists.
+  - Added upstream error extraction and clearer unsupported-response error messages.
+  - Added defensive streaming chunk parsing for non-standard chunk shapes.
+  - Verified backend AI tests and backend production build.
+- **Modified files**:
+  - `backend/src/modules/ai/providers/freemodel-llm-client.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — provider contract is unchanged; this hardens the new provider implementation.
+
+---
+
+## [2026-06-10 12:08] Switched Runtime AI Provider To FreeModel
+- **Branch**: `feat/better_ux`
+- **Prompt**: Confirm whether `features.json` was updated and switch it to use the new FreeModel provider.
+- **Changes**:
+  - Changed `backend/features.json` AI provider from `groq` to `freemodel`.
+  - Verified backend AI tests with the updated provider value accepted by runtime config.
+- **Modified files**:
+  - `backend/features.json`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — runtime feature config now selects FreeModel as the active LLM provider.
+
+---
+
+## [2026-06-10 12:03] Added FreeModel OpenAI SDK LLM Client
+- **Branch**: `feat/better_ux`
+- **Prompt**: Add an LLM client that uses the OpenAI SDK against the `freemodel.dev` endpoint and update `env.example`.
+- **Changes**:
+  - Added `openai` backend dependency.
+  - Added `FreemodelLlmClientService` implementing `ILlmClient` with non-streaming and streaming chat support through OpenAI-compatible chat completions.
+  - Added `freemodel` runtime provider selection via `AI_PROVIDER=freemodel`.
+  - Added `freemodel` Nest config namespace and loaded it in `AppModule`.
+  - Updated LLM provider selector and tests to route `freemodel` to the new client.
+  - Updated `backend/.env.example` with FreeModel API key, base URL, model, timeout, and provider documentation.
+  - Verified backend AI tests and backend production build.
+- **Modified files**:
+  - `backend/.env.example`
+  - `backend/package.json`
+  - `backend/package-lock.json`
+  - `backend/src/app.module.ts`
+  - `backend/src/config/index.ts`
+  - `backend/src/config/runtime-config.ts`
+  - `backend/src/modules/ai/ai.module.ts`
+  - `backend/src/modules/ai/llm-provider.selector.ts`
+  - `backend/src/modules/ai/llm-provider.selector.spec.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**:
+  - `backend/src/config/freemodel.config.ts`
+  - `backend/src/modules/ai/providers/freemodel-llm-client.service.ts`
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — added a third selectable LLM provider backed by the OpenAI SDK and FreeModel OpenAI-compatible endpoint.
+
+---
+
 ## [2026-06-10 10:56] Expanded AI Context Limits For Agentic Workflows
 - **Branch**: `feat/better_ux`
 - **Prompt**: Adjust the newly added payload limits because the project is intended to support agentic-like workflows with larger context.

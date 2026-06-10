@@ -124,6 +124,11 @@ export default function ChatWidget() {
         longitude: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng,
         rating: place.rating || place.averageRating,
         type: place.type || place.categories?.[0],
+        amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities,
+        price: place.price || place.priceRange || place.priceText || place.ratePerNight,
+        reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal,
+        source: place.source,
+        sourcePlaceId: place.sourcePlaceId,
       })),
     };
   };
@@ -367,7 +372,18 @@ export default function ChatWidget() {
             },
           });
         } else if (workflowId === 'COMPARE_PLACES') {
-          await sendTextMessage(buildComparePrompt(data));
+          await sendTextMessage(buildComparePrompt(data), {
+            workflowExecution: {
+              workflowId: 'COMPARE_PLACES',
+              confirmed: true,
+              parameters: data,
+            },
+            wizardPreferences: {
+              criteria: data.criteria,
+              budget: data.budget,
+              preferences: data.preferences,
+            },
+          });
         } else if (workflowId === 'ANALYZE_PLACE') {
           await sendTextMessage(buildAnalyzePrompt(data));
         }

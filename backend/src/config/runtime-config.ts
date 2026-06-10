@@ -3,7 +3,7 @@ import * as path from 'path';
 
 export type DataMode = 'test' | 'production';
 export type ExternalProviderPolicy = 'never' | 'fallback' | 'always';
-export type AiProvider = 'groq' | 'cloudflare';
+export type AiProvider = 'groq' | 'cloudflare' | 'freemodel';
 
 export interface RuntimeConfig {
   environment: DataMode;
@@ -91,7 +91,8 @@ function isProductionMode(raw: any): boolean {
 }
 
 function normalizeProvider(value: any): AiProvider {
-  return value === 'cloudflare' ? 'cloudflare' : 'groq';
+  if (value === 'cloudflare' || value === 'freemodel') return value;
+  return 'groq';
 }
 
 function normalizePolicy(value: any): ExternalProviderPolicy {

@@ -258,6 +258,11 @@ export class AiOrchestratorService implements IAiOrchestrator {
       rating: this.sanitizeNumber(place?.rating),
       averageRating: this.sanitizeNumber(place?.averageRating),
       amenities: this.sanitizeStringArray(place?.amenities, 30, 160),
+      price: this.truncateString(place?.price, 240),
+      priceRange: this.truncateString(place?.priceRange, 240),
+      reviewCount: this.sanitizeNumber(place?.reviewCount),
+      source: this.truncateString(place?.source, 80),
+      sourcePlaceId: this.truncateString(place?.sourcePlaceId, 240),
     })).filter((place) => place.id || place.name || place.placeName);
 
     return sanitized.length ? sanitized : undefined;
@@ -275,7 +280,9 @@ export class AiOrchestratorService implements IAiOrchestrator {
       type: this.truncateString(parameters.type, 240),
       types: this.sanitizeStringArray(parameters.types, 20, 120),
       placeNames: this.sanitizeStringArray(parameters.placeNames, 50, 400),
-      criteria: this.truncateString(parameters.criteria, 240),
+      criteria: Array.isArray(parameters.criteria)
+        ? this.sanitizeStringArray(parameters.criteria, 20, 120)
+        : this.truncateString(parameters.criteria, 240),
       placeName: this.truncateString(parameters.placeName, 400),
       preferences: this.sanitizeStringArray(parameters.preferences, 30, 160),
     };

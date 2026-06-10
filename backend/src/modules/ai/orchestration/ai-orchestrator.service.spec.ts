@@ -148,4 +148,39 @@ describe('AiOrchestratorService history ordering', () => {
     ]);
     expect(composer.streamCompose).not.toHaveBeenCalled();
   });
+
+  it('composes compare workflow when confirmed by the frontend', async () => {
+    const store = createStore();
+    const { service, router, composer } = createService(store);
+
+    const response = await service.processQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi đã tag theo giá và vị trí.',
+      taggedPlaceIds: ['serpapi-a', 'serpapi-b'],
+      taggedPlaces: [
+        { id: 'serpapi-a', name: 'Alpha Hotel', price: '800.000đ/đêm', reviewCount: 120, amenities: ['wifi'] },
+        { id: 'serpapi-b', name: 'Beta Homestay', price: '650.000đ/đêm', reviewCount: 80, amenities: ['parking'] },
+      ],
+      workflowExecution: {
+        workflowId: 'COMPARE_PLACES',
+        confirmed: true,
+        parameters: { criteria: ['price', 'location'] },
+      },
+    } as any);
+
+    expect(router.route).not.toHaveBeenCalled();
+    expect(response.workflowAction).toBeUndefined();
+    expect(response.answer).toBe('Composed answer');
+    expect(composer.compose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflowId: 'COMPARE_PLACES',
+        parameters: expect.objectContaining({ criteria: ['price', 'location'] }),
+        taggedPlaceIds: ['serpapi-a', 'serpapi-b'],
+        taggedPlaces: expect.arrayContaining([
+          expect.objectContaining({ id: 'serpapi-a', price: '800.000đ/đêm', reviewCount: 120, amenities: ['wifi'] }),
+        ]),
+      }),
+      expect.any(Array),
+    );
+  });
 });

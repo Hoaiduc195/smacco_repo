@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-10 10:56
+> Last updated: 2026-06-10 12:47
 > Branch: feat-better_ux
 
 ## Overview
@@ -20,7 +20,7 @@ The default workspace state now prioritizes the map: both side panels start coll
 | Backend     | NestJS (TypeScript)                 | 10.x      |
 | Database    | PostgreSQL + pgvector               | 16        |
 | ORM         | Prisma                              | 7.6.0     |
-| AI/LLM      | OpenRouter / Groq integrations      | —         |
+| AI/LLM      | Groq / Cloudflare Workers AI / FreeModel integrations | —         |
 | Auth        | Firebase Admin SDK + Firebase Client| 12.x / 10.7 |
 | Maps        | Mapbox GL + OSM/CARTO fallback      | 3.24      |
 | Search      | Goong + OSM + SerpAPI integrations  | —         |
@@ -57,10 +57,10 @@ The default workspace state now prioritizes the map: both side panels start coll
 - **Chat Result Cache**: `ChatWidget` now keeps the latest confirmed search results in a local ref and uses that as the primary context source for follow-up turns, only falling back to `window.activeSearchResults` when needed. This reduces context loss in test mode when follow-up questions are asked immediately after a search.
 
 ### Backend — AI Orchestration Pipeline
-- **Runtime Config**: `RuntimeConfigModule` exposes `RuntimeConfigService`, backed by `backend/features.json`. The schema separates `environment`, `search`, `chat`, `externalApis`, and `ai` settings.
+- **Runtime Config**: `RuntimeConfigModule` exposes `RuntimeConfigService`, backed by `backend/features.json`. The schema separates `environment`, `search`, `chat`, `externalApis`, and `ai` settings. The current branch config selects `ai.provider = "freemodel"`.
 - **AI Conversation Ownership**: Authenticated AI chat/conversation endpoints resolve the Firebase user into an app-user scope. Persisted conversations are filtered by `Conversation.userId`; memory/test-mode conversations are scoped by Firebase UID. The conversation store rejects writes to conversations owned by another user and can attach legacy unowned conversations to the current user.
 - **AI Payload Limits**: `ChatRequestDto` constrains chat text, tagged context arrays, tagged place fields, user context, and wizard preferences with agentic-style budgets: up to 8,000 characters of user text and up to 50 place context items. `AiOrchestratorService` also sanitizes/truncates incoming chat payloads before routing/composition so LLM context size remains large but bounded even when bypassing Nest validation.
-- **AI Context Budget**: Search result context summarizes up to 20 top places with expanded amenity evidence, active search-result context can include up to 50 places, and tagged persisted places can contribute up to 16 selected reviews each for compare/analyze workflows.
+- **AI Context Budget**: Search result context summarizes up to 20 top places with expanded amenity evidence, active search-result context can include up to 50 places, and tagged persisted places can contribute up to 16 selected reviews each for compare/analyze workflows. Compare/analyze context also carries frontend metadata for non-persisted places, including price/tầm giá, review count, amenities, source identifiers, address, rating, type, and coordinates. In fixture/test mode, tagged `local-*` places load metadata and reviews through `PlacesService.findOne()` / `findReviews()`, so AI comparison uses `backend/test/fixtures/data.json` evidence instead of falling back to empty DB review context.
 - **Runtime Profiles**:
   - `test`: uses only `backend/test/fixtures/data.json` fixture data and `backend/test/fixtures/images`; local database and external providers are disabled, and chat history persistence is forced off.
   - `production`: uses production database/cache, disables local fixture loading, and can call SerpAPI/Overpass according to `externalProviderPolicy` (`fallback`, `always`, or `never`). Chat history persistence is configurable with `chat.persistHistory`.
@@ -78,8 +78,8 @@ The default workspace state now prioritizes the map: both side panels start coll
   - `GENERAL_CHAT`: Zero-step (straight to composer)
 - **Composer** (`LlmResponseComposerService`): Generates final Markdown response with workflow-specific system prompts injected via `getWorkflowInstructions()`.
 - **Active Result Context Bridging**: For follow-up turns after a search, `LlmResponseComposerService` now also builds an `[ACTIVE SEARCH RESULTS CONTEXT]` block from frontend metadata (`taggedPlaces` / fallback active search results). This lets the LLM reason over the current result set even when those places have not been persisted in the database yet, which is especially important in fixture-only test mode.
-- **Orchestrator** (`AiOrchestratorService`): Coordinates the pipeline. For `SEARCH_PLACES`, the initial routed request yields `workflowAction: { type: 'search' }` for frontend intent confirmation, stops before running the response composer, and therefore emits no assistant prose on that first turn. Confirmed wizard requests carry `workflowExecution.confirmed`, execute `hybrid_search -> geocode_anchor -> recommend_places`, then yield `searchAction` with final results. Compare/analyze intents still use `workflowAction` metadata for their cards.
-- **LLM Providers**: `CloudflareAiLlmClientService` normalizes non-stream and stream content parts into plain strings before returning through `ILlmClient`, so orchestration/router code can treat provider output uniformly.
+- **Orchestrator** (`AiOrchestratorService`): Coordinates the pipeline. For `SEARCH_PLACES`, the initial routed request yields `workflowAction: { type: 'search' }` for frontend intent confirmation, stops before running the response composer, and therefore emits no assistant prose on that first turn. Confirmed wizard requests carry `workflowExecution.confirmed`, execute `hybrid_search -> geocode_anchor -> recommend_places`, then yield `searchAction` with final results. Compare intents use `workflowAction` metadata for confirmation, and confirmed `COMPARE_PLACES` turns now bypass rerouting, preserve wizard criteria arrays, and go directly to the composer with tagged/fallback place context.
+- **LLM Providers**: `ILlmClient` has selectable Groq, Cloudflare Workers AI, and FreeModel implementations. `AI_PROVIDER=groq|cloudflare|freemodel` controls provider selection. `FreemodelLlmClientService` uses the official OpenAI SDK against the OpenAI-compatible `FREEMODEL_BASE_URL` endpoint, while `CloudflareAiLlmClientService` normalizes non-stream and stream content parts into plain strings so orchestration/router code can treat provider output uniformly.
 - **Conversation Persistence**: `ConversationStoreService` now respects `chat.persistHistory`. When disabled, chat turns are kept only in the in-process memory cache and are never written back to Prisma. `ConversationsService` mirrors that behavior so list/create/read/delete conversation endpoints operate against memory-only conversations during test runs.
 - **Tools**: `hybrid_search`, `geocode_anchor`, `recommend_places`, `nearby_amenities` (registered via `ToolRegistryService`).
 
