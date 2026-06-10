@@ -5,10 +5,10 @@ export abstract class IAiOrchestrator {
   /**
    * Orchestrates the entire AI flow for a non-streaming request.
    */
-  abstract processQuery(request: ChatRequestDto): Promise<ChatResponseDto>;
+  abstract processQuery(request: ChatRequestDto, userId?: string): Promise<ChatResponseDto>;
 
   /**
    * Orchestrates the entire AI flow with a streaming response.
    */
-  abstract streamQuery(request: ChatRequestDto): AsyncGenerator<StreamChunkDto>;
+  abstract streamQuery(request: ChatRequestDto, userId?: string): AsyncGenerator<StreamChunkDto>;
 }

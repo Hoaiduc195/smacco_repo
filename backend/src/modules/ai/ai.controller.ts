@@ -1,5 +1,5 @@
 
-import { Controller, Post, Body, Res, HttpException, HttpStatus, Get, Param, Query, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, HttpException, HttpStatus, Get, Param, Query, Delete, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
 import { FirebaseAuthGuard } from '../../common/guards/firebase-auth.guard';
@@ -10,6 +10,8 @@ import { ParseResponseDto } from './dto/parse-response.dto';
 import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
 import { ChatRequestDto } from './dto/chat-request.dto';
 import { ConversationsService } from './conversations.service';
+import { UsersService } from '../users/users.service';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 @ApiTags('AI')
 @Controller('ai')
@@ -19,6 +21,8 @@ export class AiController {
     private readonly recommendationsService: RecommendationsService,
     private readonly orchestrator: IAiOrchestrator,
     private readonly conversationsService: ConversationsService,
+    private readonly usersService: UsersService,
+    private readonly runtimeConfig: RuntimeConfigService,
   ) {}
 
   @Post('parse')
@@ -52,10 +56,13 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Send a chat message to the AI assistant' })
-  async chat(@Body() request: ChatRequestDto) {
+  async chat(@Body() request: ChatRequestDto, @Req() req: any) {
     try {
-      return await this.orchestrator.processQuery(request);
+      const userId = await this.resolveConversationUserId(req.user);
+      return await this.orchestrator.processQuery(request, userId);
     } catch (error) {
+      if (error instanceof HttpException) throw error;
+
       throw new HttpException(
         `Orchestrator error: ${(error as Error).message}`,
         HttpStatus.BAD_GATEWAY,
@@ -67,14 +74,16 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Stream a chat response via SSE' })
-  async chatStream(@Body() request: ChatRequestDto, @Res() res: Response) {
+  async chatStream(@Body() request: ChatRequestDto, @Req() req: any, @Res() res: Response) {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
     try {
-      for await (const chunk of this.orchestrator.streamQuery(request)) {
+      const userId = await this.resolveConversationUserId(req.user);
+
+      for await (const chunk of this.orchestrator.streamQuery(request, userId)) {
         const payload = JSON.stringify(chunk);
         res.write(`data: ${payload}\n\n`);
       }
@@ -94,9 +103,9 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'List recent chat conversations' })
-  async listConversations(@Query('limit') limit?: string) {
-    const take = Number(limit) || 20;
-    const conversations = await this.conversationsService.listConversations(take);
+  async listConversations(@Req() req: any, @Query('limit') limit?: string) {
+    const take = this.parseBoundedLimit(limit, 20, 50);
+    const conversations = await this.conversationsService.listConversations(req.user, take);
     return { conversations };
   }
 
@@ -104,8 +113,8 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Create a new conversation' })
-  async createConversation() {
-    const conversation = await this.conversationsService.createConversation();
+  async createConversation(@Req() req: any) {
+    const conversation = await this.conversationsService.createConversation(req.user);
     return { conversation };
   }
 
@@ -113,9 +122,9 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'List messages for a conversation' })
-  async getConversationMessages(@Param('id') id: string, @Query('limit') limit?: string) {
-    const take = Number(limit) || 50;
-    const messages = await this.conversationsService.getMessages(id, take);
+  async getConversationMessages(@Req() req: any, @Param('id') id: string, @Query('limit') limit?: string) {
+    const take = this.parseBoundedLimit(limit, 50, 100);
+    const messages = await this.conversationsService.getMessages(req.user, id, take);
     return {
       messages: messages.map((msg) => ({
         role: msg.senderRole,
@@ -129,8 +138,23 @@ export class AiController {
   @ApiBearerAuth()
   @UseGuards(FirebaseAuthGuard)
   @ApiOperation({ summary: 'Delete a conversation' })
-  async deleteConversation(@Param('id') id: string) {
-    await this.conversationsService.deleteConversation(id);
+  async deleteConversation(@Req() req: any, @Param('id') id: string) {
+    await this.conversationsService.deleteConversation(req.user, id);
     return { deleted: true };
+  }
+
+  private parseBoundedLimit(value: string | undefined, defaultValue: number, maxValue: number): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return defaultValue;
+    return Math.min(Math.floor(parsed), maxValue);
+  }
+
+  private async resolveConversationUserId(firebaseUser: any): Promise<string> {
+    if (!this.runtimeConfig.chat.persistHistory) {
+      return firebaseUser.uid;
+    }
+
+    const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+    return user.id;
   }
 }

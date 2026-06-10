@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage } from './dto/chat-response.dto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -24,14 +24,15 @@ export class ConversationStoreService {
     private readonly runtimeConfig: RuntimeConfigService,
   ) {}
 
-  createId(): string {
+  createId(userId?: string): string {
     const id = uuidv4();
-    this.store.set(id, { createdAt: Date.now() / 1000, messages: [] });
+    this.store.set(this.scopeMemoryConversationId(id, userId), { createdAt: Date.now() / 1000, messages: [] });
     return id;
   }
 
-  async getHistory(conversationId: string): Promise<ChatMessage[]> {
-    const record = this.store.get(conversationId);
+  async getHistory(conversationId: string, userId?: string): Promise<ChatMessage[]> {
+    const storeId = this.shouldPersistHistory() ? conversationId : this.scopeMemoryConversationId(conversationId, userId);
+    const record = this.store.get(storeId);
 
     if (record) {
       const now = Date.now() / 1000;
@@ -39,27 +40,33 @@ export class ConversationStoreService {
         return record.messages.slice(-this.maxMessages);
       }
 
-      this.store.delete(conversationId);
+      this.store.delete(storeId);
     }
 
     if (!this.shouldPersistHistory()) {
       return [];
     }
 
-    const messages = await this.loadHistoryFromDb(conversationId);
+    const messages = await this.loadHistoryFromDb(conversationId, userId);
     if (messages.length) {
-      this.store.set(conversationId, { createdAt: Date.now() / 1000, messages });
+      this.store.set(storeId, { createdAt: Date.now() / 1000, messages });
     }
 
     return messages;
   }
 
-  async append(conversationId: string, message: ChatMessage): Promise<void> {
-    if (!this.store.has(conversationId)) {
-      this.store.set(conversationId, { createdAt: Date.now() / 1000, messages: [] });
+  async append(conversationId: string, message: ChatMessage, userId?: string): Promise<void> {
+    const shouldPersist = this.shouldPersistHistory();
+    if (shouldPersist) {
+      await this.persistMessage(conversationId, message, userId);
     }
 
-    const record = this.store.get(conversationId)!;
+    const storeId = shouldPersist ? conversationId : this.scopeMemoryConversationId(conversationId, userId);
+    if (!this.store.has(storeId)) {
+      this.store.set(storeId, { createdAt: Date.now() / 1000, messages: [] });
+    }
+
+    const record = this.store.get(storeId)!;
     record.messages.push(message);
 
     // Trim oldest to respect maxMessages
@@ -67,23 +74,22 @@ export class ConversationStoreService {
       record.messages = record.messages.slice(-this.maxMessages);
     }
 
-    if (this.shouldPersistHistory()) {
-      await this.persistMessage(conversationId, message);
-    }
   }
 
-  reset(conversationId: string): void {
-    this.store.delete(conversationId);
+  reset(conversationId: string, userId?: string): void {
+    this.store.delete(this.scopeMemoryConversationId(conversationId, userId));
   }
 
-  listMemoryConversations(limit: number = 20) {
+  listMemoryConversations(limit: number = 20, userId?: string) {
+    const prefix = userId ? `${userId}:` : '';
     return Array.from(this.store.entries())
+      .filter(([id]) => !prefix || id.startsWith(prefix))
       .sort((a, b) => b[1].createdAt - a[1].createdAt)
       .slice(0, limit)
       .map(([id, record]) => {
         const lastMessage = record.messages[record.messages.length - 1];
         return {
-          id,
+          id: prefix ? id.slice(prefix.length) : id,
           createdAt: new Date(record.createdAt * 1000),
           lastMessage: lastMessage?.content || null,
           lastRole: lastMessage?.role || null,
@@ -91,22 +97,36 @@ export class ConversationStoreService {
       });
   }
 
-  getMemoryMessages(conversationId: string, limit: number = 50): ChatMessage[] {
-    const record = this.store.get(conversationId);
+  getMemoryMessages(conversationId: string, limit: number = 50, userId?: string): ChatMessage[] {
+    const record = this.store.get(this.scopeMemoryConversationId(conversationId, userId));
     if (!record) return [];
     return record.messages.slice(-limit);
+  }
+
+  resolveMemoryConversationId(conversationId: string, userId?: string): string {
+    return this.scopeMemoryConversationId(conversationId, userId);
   }
 
   private shouldPersistHistory(): boolean {
     return this.runtimeConfig.chat.persistHistory;
   }
 
-  private async persistMessage(conversationId: string, message: ChatMessage): Promise<void> {
-    await this.prisma.conversation.upsert({
+  private async persistMessage(conversationId: string, message: ChatMessage, userId?: string): Promise<void> {
+    const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
-      create: { id: conversationId },
-      update: {},
+      select: { id: true, userId: true },
     });
+
+    if (!conversation) {
+      await this.prisma.conversation.create({ data: { id: conversationId, userId } });
+    } else if (userId && conversation.userId && conversation.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền truy cập cuộc trò chuyện này.');
+    } else if (userId && !conversation.userId) {
+      await this.prisma.conversation.update({
+        where: { id: conversationId },
+        data: { userId },
+      });
+    }
 
     await this.prisma.message.create({
       data: {
@@ -118,7 +138,16 @@ export class ConversationStoreService {
     });
   }
 
-  private async loadHistoryFromDb(conversationId: string): Promise<ChatMessage[]> {
+  private async loadHistoryFromDb(conversationId: string, userId?: string): Promise<ChatMessage[]> {
+    if (userId) {
+      const conversation = await this.prisma.conversation.findFirst({
+        where: { id: conversationId, userId },
+        select: { id: true },
+      });
+
+      if (!conversation) return [];
+    }
+
     const rows = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'desc' },
@@ -131,5 +160,11 @@ export class ConversationStoreService {
         role: row.senderRole as ChatMessage['role'],
         content: row.messageText,
       }));
+  }
+
+  private scopeMemoryConversationId(conversationId: string, userId?: string): string {
+    if (!userId) return conversationId;
+    const prefix = `${userId}:`;
+    return conversationId.startsWith(prefix) ? conversationId : `${prefix}${conversationId}`;
   }
 }

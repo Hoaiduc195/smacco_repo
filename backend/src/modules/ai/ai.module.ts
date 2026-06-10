@@ -10,6 +10,7 @@ import { ConversationStoreService } from './conversation-store.service';
 import { ConversationsService } from './conversations.service';
 import { SearchModule } from '../search/search.module';
 import { PlacesModule } from '../places/places.module';
+import { UsersModule } from '../users/users.module';
 
 // Interfaces
 import { ILlmClient } from './interfaces/llm-client.interface';
@@ -34,7 +35,7 @@ import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
 import { selectLlmClientByProvider } from './llm-provider.selector';
 
 @Module({
-  imports: [RecommendationsModule, SearchModule, PlacesModule, HttpModule],
+  imports: [RecommendationsModule, SearchModule, PlacesModule, UsersModule, HttpModule],
   controllers: [AiController],
   providers: [
     NlpService, 

@@ -414,7 +414,7 @@ export class LlmResponseComposerService implements IResponseComposer {
             longitude: dbPlace.lng,
             rating: dbPlace.averageRating ? parseFloat(dbPlace.averageRating.toString()) : undefined,
             categories: dbPlace.categories,
-            reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, 10),
+            reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, 16),
           });
         } else if (fePlace) {
           // Place does not exist in DB but has details in FE payload - use FE data as fallback
@@ -613,7 +613,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
 
     const normalizedPlaces = taggedPlaces
       .filter((place) => place && place.id && (place.name || place.placeName || place.title))
-      .slice(0, 12)
+      .slice(0, 50)
       .map((place) => ({
         id: place.id,
         name: place.name || place.placeName || place.title,

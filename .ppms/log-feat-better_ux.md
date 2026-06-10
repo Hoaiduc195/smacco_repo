@@ -1,5 +1,55 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-10 10:56] Expanded AI Context Limits For Agentic Workflows
+- **Branch**: `feat/better_ux`
+- **Prompt**: Adjust the newly added payload limits because the project is intended to support agentic-like workflows with larger context.
+- **Changes**:
+  - Increased AI chat text limit from 2,000 to 8,000 characters.
+  - Increased tagged context limits from 12 to 50 places and expanded per-place field length limits.
+  - Expanded wizard/workflow parameter limits for multi-location, multi-type, multi-place, and preference-heavy workflows.
+  - Increased search summary context from 5 to 20 top places and amenity evidence from 6 to 12 amenities per place.
+  - Increased active frontend search-results context passed to the composer from 12 to 50 places.
+  - Increased tagged-place review evidence selected for AI context from 10 to 16 reviews per persisted place.
+  - Verified backend AI unit tests and backend production build.
+- **Modified files**:
+  - `backend/src/modules/ai/dto/chat-request.dto.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `backend/src/modules/ai/orchestration/composer/search-result-context.builder.ts`
+  - `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — adjusted AI context budget for agentic-style workflows while keeping bounded backend validation/sanitization.
+
+---
+
+## [2026-06-10 10:43] Hardened AI Conversation Ownership And Payload Limits
+- **Branch**: `feat/better_ux`
+- **Prompt**: Fix the two highest-priority AI backend review findings: conversation user isolation and backend payload limits.
+- **Changes**:
+  - Updated AI chat and conversation endpoints to resolve the authenticated Firebase user and pass a user scope into chat orchestration.
+  - Enforced conversation ownership in `ConversationStoreService` so persisted conversations cannot be reassigned or appended by another user.
+  - Updated conversation listing, creation, message retrieval, and deletion to filter by the current user in persisted mode and by Firebase UID in memory/test mode.
+  - Added DTO validation limits for chat text, conversation IDs, tagged context arrays, tagged place fields, user context, and wizard preferences.
+  - Added orchestrator-side sanitization/truncation for chat payloads before routing/composition to cap LLM context size even outside Nest validation.
+  - Verified backend AI unit tests and backend production build.
+- **Modified files**:
+  - `backend/src/modules/ai/ai.controller.ts`
+  - `backend/src/modules/ai/ai.module.ts`
+  - `backend/src/modules/ai/conversation-store.service.ts`
+  - `backend/src/modules/ai/conversations.service.ts`
+  - `backend/src/modules/ai/dto/chat-request.dto.ts`
+  - `backend/src/modules/ai/interfaces/ai-orchestrator.interface.ts`
+  - `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`
+  - `.ppms/log-feat-better_ux.md`
+  - `.ppms/architecture-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — documented authenticated user-scoped AI conversations and backend chat payload limits.
+
+---
+
 ## [2026-06-10 10:30] Formatted Place Card Ratings To Two Decimals
 - **Branch**: `feat/better_ux`
 - **Prompt**: Round the rating shown on place cards to two decimal places.

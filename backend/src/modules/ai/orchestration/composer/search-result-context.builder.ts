@@ -9,7 +9,7 @@ interface SearchResultContextInput {
 export class SearchResultContextBuilder {
   build(input: SearchResultContextInput) {
     const places = Array.isArray(input.places) ? input.places : [];
-    const topPlaces = places.slice(0, 5).map((place) => this.summarizePlace(place));
+    const topPlaces = places.slice(0, 20).map((place) => this.summarizePlace(place));
     const placesWithRating = places.filter((place) => typeof place.rating === 'number');
     const placesWithReviewCount = places.filter((place) => typeof place.userRatingsTotal === 'number');
     const placesWithPrice = places.filter((place) => Boolean(place.price || place.priceLevel));
@@ -66,7 +66,7 @@ export class SearchResultContextBuilder {
       anchorLabel: place.anchorLabel,
       score: place.score,
       reasons: Array.isArray(place.reasons) ? place.reasons.slice(0, 4) : [],
-      amenities: Array.isArray(place.amenities) ? place.amenities.slice(0, 6) : [],
+      amenities: Array.isArray(place.amenities) ? place.amenities.slice(0, 12) : [],
       source: place.source,
       dataCompleteness: {
         hasRating: typeof place.rating === 'number',

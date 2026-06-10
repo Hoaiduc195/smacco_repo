@@ -13,6 +13,8 @@ import { SearchResultContextBuilder } from './composer/search-result-context.bui
 export class AiOrchestratorService implements IAiOrchestrator {
   private readonly logger = new Logger(AiOrchestratorService.name);
   private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private readonly maxContextPlaces = 50;
+  private readonly maxTextLength = 8000;
 
   constructor(
     private readonly router: ITaskRouter,
@@ -25,14 +27,15 @@ export class AiOrchestratorService implements IAiOrchestrator {
   /**
    * Orchestrates the entire AI flow for a non-streaming request.
    */
-  async processQuery(request: ChatRequestDto): Promise<ChatResponseDto> {
-    const conversationId = this.resolveConversationId(request.conversationId);
-    await this.store.append(conversationId, { role: 'user', content: request.text });
-    const history = await this.store.getHistory(conversationId);
+  async processQuery(request: ChatRequestDto, userId?: string): Promise<ChatResponseDto> {
+    const safeRequest = this.sanitizeRequest(request);
+    const conversationId = this.resolveConversationId(safeRequest.conversationId, userId);
+    await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    const history = await this.store.getHistory(conversationId, userId);
 
     // 1. Task Router: Classify intent and extract params
-    const route = await this.resolveRoute(request, history);
-    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(request, route.workflowId);
+    const route = await this.resolveRoute(safeRequest, history);
+    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(safeRequest, route.workflowId);
     
     let searchAction;
     let toolResults: Record<string, any> = {};
@@ -60,7 +63,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
       searchAction = {
         isSearch: true,
-        query: route.parameters.query || request.text,
+        query: route.parameters.query || safeRequest.text,
         location: route.parameters.location,
         type: route.parameters.type,
         types: route.parameters.types || (typeof route.parameters.type === 'string' ? route.parameters.type.split(/,/) .map((s:string)=>s.trim()).filter(Boolean) : undefined),
@@ -77,31 +80,31 @@ export class AiOrchestratorService implements IAiOrchestrator {
         answer: '',
         searchAction,
         workflowAction,
-        messages: await this.store.getHistory(conversationId),
+        messages: await this.store.getHistory(conversationId, userId),
         finishReason: 'stop'
       };
     }
 
     // 3. Response Composer: Generate final text
     const composerResult = await this.composer.compose({
-      userQuery: request.text,
+      userQuery: safeRequest.text,
       workflowId: route.workflowId,
       parameters: route.parameters,
       toolResults,
       searchResultContext,
-      taggedPlaceIds: request.taggedPlaceIds,
-      taggedPlaces: request.taggedPlaces,
-      userContext: request.userContext,
+      taggedPlaceIds: safeRequest.taggedPlaceIds,
+      taggedPlaces: safeRequest.taggedPlaces,
+      userContext: safeRequest.userContext,
     }, history);
 
-    await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer });
+    await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer }, userId);
 
     return {
       conversationId,
       answer: composerResult.answer,
       searchAction,
       workflowAction,
-      messages: await this.store.getHistory(conversationId),
+      messages: await this.store.getHistory(conversationId, userId),
       finishReason: 'stop'
     };
   }
@@ -109,14 +112,15 @@ export class AiOrchestratorService implements IAiOrchestrator {
   /**
    * Orchestrates the entire AI flow with a streaming response.
    */
-  async *streamQuery(request: ChatRequestDto): AsyncGenerator<StreamChunkDto> {
-    const conversationId = this.resolveConversationId(request.conversationId);
-    await this.store.append(conversationId, { role: 'user', content: request.text });
-    const history = await this.store.getHistory(conversationId);
+  async *streamQuery(request: ChatRequestDto, userId?: string): AsyncGenerator<StreamChunkDto> {
+    const safeRequest = this.sanitizeRequest(request);
+    const conversationId = this.resolveConversationId(safeRequest.conversationId, userId);
+    await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    const history = await this.store.getHistory(conversationId, userId);
 
     // 1. Task Router
-    const route = await this.resolveRoute(request, history);
-    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(request, route.workflowId);
+    const route = await this.resolveRoute(safeRequest, history);
+    const shouldExecuteWorkflow = this.shouldExecuteWorkflow(safeRequest, route.workflowId);
 
     let toolResults: Record<string, any> = {};
     let searchResultContext: Record<string, any> | undefined;
@@ -144,7 +148,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
       const searchAction = {
         isSearch: true,
-        query: route.parameters.query || request.text,
+        query: route.parameters.query || safeRequest.text,
         location: route.parameters.location,
         type: route.parameters.type,
         types: route.parameters.types || (typeof route.parameters.type === 'string' ? route.parameters.type.split(/,/).map((s:string)=>s.trim()).filter(Boolean) : undefined),
@@ -176,14 +180,14 @@ export class AiOrchestratorService implements IAiOrchestrator {
 
     // 3. Response Composer Stream
     const stream = this.composer.streamCompose({
-      userQuery: request.text,
+      userQuery: safeRequest.text,
       workflowId: route.workflowId,
       parameters: route.parameters,
       toolResults,
       searchResultContext,
-      taggedPlaceIds: request.taggedPlaceIds,
-      taggedPlaces: request.taggedPlaces,
-      userContext: request.userContext,
+      taggedPlaceIds: safeRequest.taggedPlaceIds,
+      taggedPlaces: safeRequest.taggedPlaces,
+      userContext: safeRequest.userContext,
     }, history);
 
     const assistantParts: string[] = [];
@@ -193,17 +197,109 @@ export class AiOrchestratorService implements IAiOrchestrator {
     }
 
     const fullAnswer = assistantParts.join('');
-    await this.store.append(conversationId, { role: 'assistant', content: fullAnswer });
+    await this.store.append(conversationId, { role: 'assistant', content: fullAnswer }, userId);
 
     yield { conversationId, delta: '', finishReason: 'stop' };
   }
 
-  private resolveConversationId(candidate?: string): string {
-    if (!candidate) return this.store.createId();
+  private resolveConversationId(candidate?: string, userId?: string): string {
+    if (!candidate) return this.store.createId(userId);
     if (this.uuidRegex.test(candidate)) return candidate;
 
     this.logger.warn(`Ignoring invalid conversationId "${candidate}" and creating a new conversation.`);
-    return this.store.createId();
+    return this.store.createId(userId);
+  }
+
+  private sanitizeRequest(request: ChatRequestDto): ChatRequestDto {
+    const text = this.truncateString(request.text || '', this.maxTextLength)?.trim() || '';
+
+    return {
+      ...request,
+      text,
+      conversationId: this.truncateString(request.conversationId, 120),
+      taggedPlaceIds: this.sanitizeStringArray(request.taggedPlaceIds, this.maxContextPlaces, 240),
+      taggedPlaces: this.sanitizeTaggedPlaces(request.taggedPlaces),
+      userContext: request.userContext ? {
+        displayName: this.truncateString(request.userContext.displayName, 240),
+        lat: request.userContext.lat,
+        lng: request.userContext.lng,
+        timezone: this.truncateString(request.userContext.timezone, 120),
+        locale: this.truncateString(request.userContext.locale, 20),
+      } : undefined,
+      wizardPreferences: request.wizardPreferences ? {
+        preferences: this.sanitizeStringArray(request.wizardPreferences.preferences, 30, 160),
+        guestCount: request.wizardPreferences.guestCount,
+        criteria: this.sanitizeStringArray(request.wizardPreferences.criteria, 20, 120),
+        budget: this.truncateString(request.wizardPreferences.budget, 120),
+        types: this.sanitizeStringArray(request.wizardPreferences.types, 20, 120),
+      } : undefined,
+      workflowExecution: request.workflowExecution ? {
+        confirmed: request.workflowExecution.confirmed,
+        workflowId: this.truncateString(request.workflowExecution.workflowId, 80),
+        parameters: this.sanitizeWorkflowParameters(request.workflowExecution.parameters),
+      } : undefined,
+    };
+  }
+
+  private sanitizeTaggedPlaces(places?: any[]): any[] | undefined {
+    if (!Array.isArray(places)) return undefined;
+
+    const sanitized = places.slice(0, this.maxContextPlaces).map((place) => ({
+      id: this.truncateString(place?.id, 240),
+      name: this.truncateString(place?.name, 400),
+      placeName: this.truncateString(place?.placeName, 400),
+      address: this.truncateString(place?.address, 800),
+      placeAddress: this.truncateString(place?.placeAddress, 800),
+      type: this.truncateString(place?.type, 160),
+      latitude: this.sanitizeNumber(place?.latitude),
+      longitude: this.sanitizeNumber(place?.longitude),
+      lat: this.sanitizeNumber(place?.lat),
+      lng: this.sanitizeNumber(place?.lng),
+      rating: this.sanitizeNumber(place?.rating),
+      averageRating: this.sanitizeNumber(place?.averageRating),
+      amenities: this.sanitizeStringArray(place?.amenities, 30, 160),
+    })).filter((place) => place.id || place.name || place.placeName);
+
+    return sanitized.length ? sanitized : undefined;
+  }
+
+  private sanitizeWorkflowParameters(parameters?: Record<string, any>): Record<string, any> | undefined {
+    if (!parameters || typeof parameters !== 'object' || Array.isArray(parameters)) return undefined;
+
+    return {
+      query: this.truncateString(parameters.query, 1000),
+      location: this.truncateString(parameters.location, 400),
+      locations: this.sanitizeStringArray(parameters.locations, 20, 400),
+      anchor: this.truncateString(parameters.anchor, 400),
+      budget: this.truncateString(parameters.budget, 120),
+      type: this.truncateString(parameters.type, 240),
+      types: this.sanitizeStringArray(parameters.types, 20, 120),
+      placeNames: this.sanitizeStringArray(parameters.placeNames, 50, 400),
+      criteria: this.truncateString(parameters.criteria, 240),
+      placeName: this.truncateString(parameters.placeName, 400),
+      preferences: this.sanitizeStringArray(parameters.preferences, 30, 160),
+    };
+  }
+
+  private sanitizeStringArray(values: unknown, maxItems: number, maxLength: number): string[] | undefined {
+    if (!Array.isArray(values)) return undefined;
+
+    const strings = values
+      .slice(0, maxItems)
+      .map((value) => this.truncateString(value, maxLength)?.trim())
+      .filter((value): value is string => Boolean(value));
+
+    return strings.length ? strings : undefined;
+  }
+
+  private truncateString(value: unknown, maxLength: number): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    return value.length > maxLength ? value.slice(0, maxLength) : value;
+  }
+
+  private sanitizeNumber(value: unknown): number | undefined {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : undefined;
   }
 
   private async resolveRoute(request: ChatRequestDto, history: any[]) {

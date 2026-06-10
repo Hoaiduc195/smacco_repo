@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-10 10:20
+> Last updated: 2026-06-10 10:56
 > Branch: feat-better_ux
 
 ## Overview
@@ -58,6 +58,9 @@ The default workspace state now prioritizes the map: both side panels start coll
 
 ### Backend — AI Orchestration Pipeline
 - **Runtime Config**: `RuntimeConfigModule` exposes `RuntimeConfigService`, backed by `backend/features.json`. The schema separates `environment`, `search`, `chat`, `externalApis`, and `ai` settings.
+- **AI Conversation Ownership**: Authenticated AI chat/conversation endpoints resolve the Firebase user into an app-user scope. Persisted conversations are filtered by `Conversation.userId`; memory/test-mode conversations are scoped by Firebase UID. The conversation store rejects writes to conversations owned by another user and can attach legacy unowned conversations to the current user.
+- **AI Payload Limits**: `ChatRequestDto` constrains chat text, tagged context arrays, tagged place fields, user context, and wizard preferences with agentic-style budgets: up to 8,000 characters of user text and up to 50 place context items. `AiOrchestratorService` also sanitizes/truncates incoming chat payloads before routing/composition so LLM context size remains large but bounded even when bypassing Nest validation.
+- **AI Context Budget**: Search result context summarizes up to 20 top places with expanded amenity evidence, active search-result context can include up to 50 places, and tagged persisted places can contribute up to 16 selected reviews each for compare/analyze workflows.
 - **Runtime Profiles**:
   - `test`: uses only `backend/test/fixtures/data.json` fixture data and `backend/test/fixtures/images`; local database and external providers are disabled, and chat history persistence is forced off.
   - `production`: uses production database/cache, disables local fixture loading, and can call SerpAPI/Overpass according to `externalProviderPolicy` (`fallback`, `always`, or `never`). Chat history persistence is configurable with `chat.persistHistory`.

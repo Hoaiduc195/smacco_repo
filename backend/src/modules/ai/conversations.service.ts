@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConversationStoreService } from './conversation-store.service';
 import { RuntimeConfigService } from '../../config/runtime-config.service';
+import { UsersService } from '../users/users.service';
+
+type FirebaseUser = { uid: string; email?: string | null; name?: string | null };
 
 @Injectable()
 export class ConversationsService {
@@ -9,14 +12,18 @@ export class ConversationsService {
     private readonly prisma: PrismaService,
     private readonly store: ConversationStoreService,
     private readonly runtimeConfig: RuntimeConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
-  async listConversations(limit: number = 20) {
+  async listConversations(firebaseUser: FirebaseUser, limit: number = 20) {
     if (!this.runtimeConfig.chat.persistHistory) {
-      return this.store.listMemoryConversations(limit);
+      return this.store.listMemoryConversations(limit, firebaseUser.uid);
     }
 
+    const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+
     const conversations = await this.prisma.conversation.findMany({
+      where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {
@@ -35,20 +42,23 @@ export class ConversationsService {
     }));
   }
 
-  async createConversation() {
+  async createConversation(firebaseUser: FirebaseUser) {
     if (!this.runtimeConfig.chat.persistHistory) {
+      const id = this.store.createId(firebaseUser.uid);
       return {
-        id: this.store.createId(),
+        id,
         createdAt: new Date(),
       };
     }
 
-    return this.prisma.conversation.create({ data: {} });
+    const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+
+    return this.prisma.conversation.create({ data: { userId: user.id } });
   }
 
-  async getMessages(conversationId: string, limit: number = 50) {
+  async getMessages(firebaseUser: FirebaseUser, conversationId: string, limit: number = 50) {
     if (!this.runtimeConfig.chat.persistHistory) {
-      return this.store.getMemoryMessages(conversationId, limit).map((message, index) => ({
+      return this.store.getMemoryMessages(conversationId, limit, firebaseUser.uid).map((message, index) => ({
         id: `${conversationId}-${index}`,
         conversationId,
         senderRole: message.role,
@@ -57,21 +67,28 @@ export class ConversationsService {
       }));
     }
 
+    const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+
     return this.prisma.message.findMany({
-      where: { conversationId },
+      where: {
+        conversationId,
+        conversation: { userId: user.id },
+      },
       orderBy: { createdAt: 'asc' },
       take: limit,
     });
   }
 
-  async deleteConversation(conversationId: string) {
+  async deleteConversation(firebaseUser: FirebaseUser, conversationId: string) {
     if (!this.runtimeConfig.chat.persistHistory) {
-      this.store.reset(conversationId);
+      this.store.reset(conversationId, firebaseUser.uid);
       return { id: conversationId };
     }
 
-    return this.prisma.conversation.delete({
-      where: { id: conversationId },
+    const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+
+    return this.prisma.conversation.deleteMany({
+      where: { id: conversationId, userId: user.id },
     });
   }
 }
