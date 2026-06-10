@@ -14,8 +14,10 @@ export default function SearchResultsPanel({
   places = [],
   selectedPlaceId,
   pinnedPlaceIds = [],
+  savedPlaceIds = [],
   onSelectPlace,
   onPinPlace,
+  onSavePlace,
   onDirections,
   onHoverPlace,
 }) {
@@ -37,6 +39,7 @@ export default function SearchResultsPanel({
         const taggablePlaceId = getTaggablePlaceId(place);
         const isSelected = selectedPlaceId === place.id;
         const isPinned = pinnedPlaceIds.includes(taggablePlaceId);
+        const isSaved = savedPlaceIds.includes(place.id) || savedPlaceIds.includes(taggablePlaceId);
 
         return (
           <div
@@ -54,6 +57,8 @@ export default function SearchResultsPanel({
               onSave={() => onPinPlace?.(place)}
               isSaved={isPinned}
               saveMode="tag"
+              onPersistSave={onSavePlace ? () => onSavePlace(place) : undefined}
+              isPersistSaved={isSaved}
               onNavigate={() => navigateToPlaceDetail(navigate, place.id, { place })}
               onDirections={onDirections ? () => onDirections(place) : undefined}
             />

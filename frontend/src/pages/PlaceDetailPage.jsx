@@ -127,6 +127,7 @@ export default function PlaceDetailPage() {
         await savePlace(id);
         setIsSaved(true);
       }
+      window.dispatchEvent(new CustomEvent('app:saved-places-changed'));
     } catch (err) {
       console.error('Failed to toggle save status:', err);
       alert('Không thể cập nhật trạng thái lưu địa điểm. Vui lòng thử lại sau.');

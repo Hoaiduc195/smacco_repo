@@ -473,6 +473,10 @@
     @apply mt-3 flex flex-1 flex-col gap-1.5;
   }
 
+  .workspace-rail-secondary {
+    @apply mt-2 flex flex-col gap-1.5;
+  }
+
   .workspace-rail-button {
     @apply flex h-9 w-full items-center justify-center rounded-2xl border border-transparent text-ink-500 transition;
   }
@@ -491,7 +495,7 @@
   }
 
   .workspace-rail-close {
-    @apply mt-auto flex h-9 w-full items-center justify-center rounded-2xl border border-base-200 bg-white text-ink-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600;
+    @apply mt-2 flex h-9 w-full items-center justify-center rounded-2xl border border-base-200 bg-white text-ink-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600;
   }
 
   .workspace-empty-state {

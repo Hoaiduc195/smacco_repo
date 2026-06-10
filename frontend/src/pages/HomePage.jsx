@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, BarChart3, Compass, Lightbulb, MapPin, Route, Navigation, Search } from 'lucide-react';
+import { AlertCircle, BarChart3, Bookmark, Compass, Lightbulb, MapPin, Route, Navigation, Search } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import LeftContextPanel from '../components/LeftContextPanel';
@@ -8,9 +8,11 @@ import WorkspaceRail from '../components/WorkspaceRail';
 import SearchResultsPanel from '../components/SearchResultsPanel';
 import ComparePlacesPanel from '../components/ComparePlacesPanel';
 import PlaceInsightPanel from '../components/PlaceInsightPanel';
-import { searchPlaces } from '../services/placeService';
+import SavedPlacesPanel from '../components/SavedPlacesPanel';
+import { createPlace, searchPlaces } from '../services/placeService';
 import { getRoute } from '../services/routingService';
 import { getComparisonResult } from '../services/aiService';
+import { getSavedPlaces, savePlace, unsavePlace } from '../services/savedPlacesService';
 import { useTravelData } from '../contexts/TravelDataContext';
 import { useConversation } from '../contexts/ConversationContext';
 
@@ -26,6 +28,7 @@ const NAVBAR_HEIGHT = 64;
 const DESKTOP_PANEL_GAP = 20;
 const PANEL_IDS = {
   RESULTS: 'results',
+  SAVED: 'saved',
   COMPARE: 'compare',
   INSIGHT: 'insight',
 };
@@ -34,14 +37,24 @@ const PANEL_OPTIONS = [
   { id: PANEL_IDS.COMPARE, label: 'So sánh địa điểm', shortLabel: 'So sánh', icon: BarChart3 },
   { id: PANEL_IDS.INSIGHT, label: 'Insight địa điểm', shortLabel: 'Insight', icon: Lightbulb },
 ];
+const SECONDARY_PANEL_OPTIONS = [
+  { id: PANEL_IDS.SAVED, label: 'Địa điểm đã lưu', shortLabel: 'Đã lưu', icon: Bookmark },
+];
+const ALL_PANEL_OPTIONS = [...PANEL_OPTIONS, ...SECONDARY_PANEL_OPTIONS];
 
 const normalizePanelId = (panelId) => {
   if (panelId === null) return null;
   if (panelId === 'search' || panelId === 'pinned') return PANEL_IDS.RESULTS;
   if (panelId === 'comparison') return PANEL_IDS.COMPARE;
-  if (panelId === 'results' || panelId === 'compare' || panelId === 'insight') return panelId;
+  if (panelId === 'results' || panelId === 'saved' || panelId === 'compare' || panelId === 'insight') return panelId;
   return null;
 };
+
+const getSavedIdentityIds = (place) => [
+  place?.id,
+  place?.locationId,
+  place?.source && place?.sourcePlaceId ? `${place.source}-${place.sourcePlaceId}` : null,
+].filter(Boolean);
 
 export default function HomePage() {
   const {
@@ -77,6 +90,9 @@ export default function HomePage() {
   // AI-Agent-First States
   const [areaInsight, setAreaInsight] = useState(null);
   const [comparisonResult, setComparisonResult] = useState(null);
+  const [savedPlaces, setSavedPlaces] = useState([]);
+  const [savedPlaceIds, setSavedPlaceIds] = useState([]);
+  const [isLoadingSavedPlaces, setIsLoadingSavedPlaces] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
 
@@ -326,15 +342,6 @@ export default function HomePage() {
   const handleAiSearch = useCallback((filters) => {
     const query = filters.query || '';
     const normalizedBudget = normalizeBudget(filters.budget);
-    
-    setSearchQuery(query);
-    if (Array.isArray(filters.types) && filters.types.length > 0) {
-      setPlaceType(filters.types.map(t => t.trim()).join(','));
-    } else if (filters.type) {
-      setPlaceType(filters.type.split(',').map(t => t.trim()).join(','));
-    }
-    if (filters.location) setLocationInput(filters.location);
-    if (normalizedBudget) setBudget(normalizedBudget);
 
     if (Array.isArray(filters.results)) {
       showSearchResults(filters.results);
@@ -342,11 +349,11 @@ export default function HomePage() {
     }
 
     performUnifiedSearch(query, {
-      type: filters.type || (Array.isArray(filters.types) ? filters.types.join(',') : placeType),
-      locationInput: filters.location || locationInput,
-      budget: normalizedBudget || budget,
+      type: filters.type || (Array.isArray(filters.types) ? filters.types.join(',') : undefined),
+      locationInput: filters.location,
+      budget: normalizedBudget,
     });
-  }, [performUnifiedSearch, placeType, locationInput, budget, normalizeBudget, showSearchResults]);
+  }, [performUnifiedSearch, normalizeBudget, showSearchResults]);
 
   useEffect(() => {
     const handleSelectPlaceEvent = (event) => {
@@ -456,6 +463,85 @@ export default function HomePage() {
         text: `Cho tôi hỏi thêm thông tin về ${place.name} (vị trí, tiện ích, và nó có thực sự yên tĩnh không?)`,
       },
     }));
+  };
+
+  const normalizeSavedPlace = useCallback((place) => ({
+    ...place,
+    id: place.id || place.locationId,
+    name: place.name || place.placeName || 'Địa điểm đã lưu',
+    address: place.address || place.placeAddress || '',
+    description: place.description || place.rawSerpApiPropertyDetails?.description,
+    lat: Number(place.lat ?? place.location?.lat),
+    lng: Number(place.lng ?? place.location?.lng),
+    rating: place.rating ?? place.averageRating,
+    imageUrl: place.imageUrl || place.coverImageUrl,
+  }), []);
+
+  const refreshSavedPlaces = useCallback(async () => {
+    try {
+      setIsLoadingSavedPlaces(true);
+      setError('');
+      const data = await getSavedPlaces();
+      const normalized = (Array.isArray(data) ? data : []).map(normalizeSavedPlace);
+      setSavedPlaces(normalized);
+      setSavedPlaceIds(Array.from(new Set(normalized.flatMap(getSavedIdentityIds))));
+    } catch (err) {
+      console.error('Không thể tải địa điểm đã lưu:', err);
+      setError(err?.message || 'Không thể tải địa điểm đã lưu.');
+    } finally {
+      setIsLoadingSavedPlaces(false);
+    }
+  }, [normalizeSavedPlace]);
+
+  const handleRemoveSavedPlace = async (placeId) => {
+    try {
+      await unsavePlace(placeId);
+      setSavedPlaces((current) => current.filter((place) => String(place.id) !== String(placeId)));
+      setSavedPlaceIds((current) => current.filter((id) => String(id) !== String(placeId)));
+      if (String(selectedPlaceId) === String(placeId)) setSelectedPlaceId(null);
+    } catch (err) {
+      setError(err?.message || 'Không thể xóa địa điểm đã lưu.');
+    }
+  };
+
+  const resolvePersistedPlaceId = async (place) => {
+    if (!place?.id) return null;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(place.id)) {
+      return place.id;
+    }
+    if (String(place.id).startsWith('local-')) return place.id;
+
+    const dashIndex = String(place.id).indexOf('-');
+    const source = dashIndex !== -1 ? String(place.id).substring(0, dashIndex) : (place.source || 'serpapi');
+    const locationId = dashIndex !== -1 ? String(place.id).substring(dashIndex + 1) : (place.sourcePlaceId || place.id);
+    const persisted = await createPlace({
+      source,
+      locationId,
+      nameCache: place.name || place.placeName,
+      addressCache: place.address || place.placeAddress,
+      type: place.type || place.types?.[0],
+      coordinates: place.lat && place.lng
+        ? { lat: place.lat, lng: place.lng }
+        : (place.location?.lat && place.location?.lng ? place.location : undefined),
+      imageUrl: place.imageUrl || place.coverImageUrl || place.photoUrl || undefined,
+      amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities || undefined,
+    });
+    return persisted?.id || place.id;
+  };
+
+  const handleSaveSearchResultPlace = async (place) => {
+    try {
+      setError('');
+      const persistedPlaceId = await resolvePersistedPlaceId(place);
+      if (!persistedPlaceId) return;
+      await savePlace(persistedPlaceId);
+      setSavedPlaceIds((current) => Array.from(new Set([...current, persistedPlaceId, place.id].filter(Boolean))));
+      if (activePanel === PANEL_IDS.SAVED) await refreshSavedPlaces();
+      window.dispatchEvent(new CustomEvent('app:saved-places-changed'));
+    } catch (err) {
+      console.error('Không thể lưu địa điểm:', err);
+      setError(err?.message || 'Không thể lưu địa điểm.');
+    }
   };
 
   const handleRequestPlaceInsight = (place) => {
@@ -585,6 +671,18 @@ export default function HomePage() {
   }, [activePanel, closeSidebar, isMobile]);
 
   useEffect(() => {
+    if (activePanel === PANEL_IDS.SAVED) {
+      refreshSavedPlaces();
+    }
+  }, [activePanel, refreshSavedPlaces]);
+
+  useEffect(() => {
+    const handleSavedPlacesChanged = () => refreshSavedPlaces();
+    window.addEventListener('app:saved-places-changed', handleSavedPlacesChanged);
+    return () => window.removeEventListener('app:saved-places-changed', handleSavedPlacesChanged);
+  }, [refreshSavedPlaces]);
+
+  useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === 'Escape' && activePanel) {
         closeSidebar();
@@ -594,7 +692,7 @@ export default function HomePage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [activePanel, closeSidebar]);
 
-  const activePanelMeta = PANEL_OPTIONS.find((panel) => panel.id === activePanel);
+  const activePanelMeta = ALL_PANEL_OPTIONS.find((panel) => panel.id === activePanel);
 
   const renderActiveContextPanel = () => {
     if (!activePanel) return null;
@@ -606,12 +704,24 @@ export default function HomePage() {
               places={places}
               selectedPlaceId={selectedPlaceId}
               pinnedPlaceIds={taggedPlaces.map((place) => place.id)}
+              savedPlaceIds={savedPlaceIds}
               onSelectPlace={handleSelectPlaceFromWorkspace}
               onPinPlace={handlePinPlace}
+              onSavePlace={handleSaveSearchResultPlace}
               onComparePlace={handleComparePlace}
               onDirections={handleDirections}
               onHoverPlace={(id) => setSelectedPlaceId(id)}
             />
+        )}
+        {activePanel === PANEL_IDS.SAVED && (
+          <SavedPlacesPanel
+            places={savedPlaces}
+            isLoading={isLoadingSavedPlaces}
+            selectedPlaceId={selectedPlaceId}
+            onSelectPlace={handleSelectPlaceFromWorkspace}
+            onDirections={handleDirections}
+            onRemovePlace={handleRemoveSavedPlace}
+          />
         )}
         {activePanel === PANEL_IDS.COMPARE && (
           <ComparePlacesPanel
@@ -674,6 +784,7 @@ export default function HomePage() {
               <WorkspaceRail
                 activePanel={activePanel}
                 items={PANEL_OPTIONS}
+                secondaryItems={SECONDARY_PANEL_OPTIONS}
                 onTogglePanel={togglePanel}
                 onClose={closeSidebar}
               />
@@ -695,7 +806,7 @@ export default function HomePage() {
                   <div className="rounded-3xl border border-base-200 bg-white/95 p-2 shadow-soft backdrop-blur-xl">
                     <div className="mb-2 flex items-center justify-between px-2">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-wide text-primary-700">Bảng AI</p>
+                        <p className="text-[10px] font-black uppercase tracking-wide text-primary-700">Địa điểm đã lưu</p>
                         <p className="text-sm font-black text-ink-900">
                           {activePanelMeta?.label || 'Chọn bảng làm việc'}
                         </p>
@@ -710,8 +821,8 @@ export default function HomePage() {
                         </button>
                       ) : null}
                     </div>
-                    <div className="grid grid-cols-3 gap-1">
-                      {PANEL_OPTIONS.map(({ id, label, icon: Icon }) => {
+                    <div className="grid grid-cols-4 gap-1">
+                      {ALL_PANEL_OPTIONS.map(({ id, label, icon: Icon }) => {
                         const isActive = activePanel === id;
                         return (
                           <button
@@ -809,7 +920,7 @@ export default function HomePage() {
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Bảng AI</span>
+            <span>Đã lưu</span>
           </button>
           <button
             onClick={() => setActiveMobileTab('map')}

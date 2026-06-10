@@ -146,4 +146,36 @@ describe('useStreamingChat', () => {
       intentTrigger: false,
     });
   });
+
+  it('notifies callers when assistant message metadata arrives', async () => {
+    const onAssistantMeta = vi.fn();
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ delta: 'Mình đã tạo bảng so sánh.' });
+      onChunk?.({ messageMeta: { comparisonResultId: 'comparison-1' } });
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        initialMessages: [],
+        onAssistantMeta,
+      })
+    );
+
+    act(() => {
+      result.current.setInput('So sánh các địa điểm đã tag');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(onAssistantMeta).toHaveBeenCalledWith({ comparisonResultId: 'comparison-1' });
+    expect(result.current.messages[1]).toMatchObject({
+      role: 'assistant',
+      content: 'Mình đã tạo bảng so sánh.',
+      comparisonResultId: 'comparison-1',
+    });
+  });
 });

@@ -32,6 +32,8 @@ export default function PlaceCard({
   onSave,
   isSaved,
   saveMode = 'save',
+  onPersistSave,
+  isPersistSaved = false,
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragGhost, setDragGhost] = useState(null);
@@ -257,6 +259,23 @@ export default function PlaceCard({
           >
             {isSaved ? <SavedIcon className="w-3.5 h-3.5" /> : <SaveIcon className="w-3.5 h-3.5" />}
             <span>{isSaved ? savedLabel : saveLabel}</span>
+          </button>
+        )}
+        {onPersistSave && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPersistSave();
+            }}
+            className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition ${
+              isPersistSaved
+                ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                : 'border-base-200 text-ink-700 hover:bg-base-50'
+            }`}
+          >
+            {isPersistSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+            <span>{isPersistSaved ? 'Đã lưu' : 'Lưu'}</span>
           </button>
         )}
         {onDirections && (

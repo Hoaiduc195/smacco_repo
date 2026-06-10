@@ -10,6 +10,7 @@ export default function useStreamingChat({
   buildPrompt,
   onSearchAction,
   onWorkflowAction,
+  onAssistantMeta,
   hideSearchWorkflowTrigger = false,
 }) {
   const [messages, setMessages] = useState(initialMessages);
@@ -146,6 +147,7 @@ export default function useStreamingChat({
           }
           if (chunk?.messageMeta) {
             applyAssistantMeta(chunk.messageMeta);
+            onAssistantMeta?.(chunk.messageMeta);
           }
           if (chunk?.delta) {
             appendAssistantDelta(chunk.delta);

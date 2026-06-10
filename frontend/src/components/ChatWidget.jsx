@@ -30,6 +30,7 @@ export default function ChatWidget() {
   const awaitingConfirmedSearchActionRef = useRef(false);
   const latestSearchResultsRef = useRef([]);
   const lastSubmittedUserMessageRef = useRef('');
+  const lastOpenedComparisonResultIdRef = useRef(null);
   const skipNextWorkflowPromptRef = useRef(false);
   const declinedSearchFallbackRef = useRef('');
   const dragOverResetRef = useRef(null);
@@ -83,6 +84,14 @@ export default function ChatWidget() {
       } else if (action.type === 'analyze') {
         wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '', lastSubmittedUserMessageRef.current);
       }
+    },
+    onAssistantMeta: (meta) => {
+      if (!meta?.comparisonResultId) return;
+      if (lastOpenedComparisonResultIdRef.current === meta.comparisonResultId) return;
+      lastOpenedComparisonResultIdRef.current = meta.comparisonResultId;
+      window.dispatchEvent(new CustomEvent('app:open-place-comparison', {
+        detail: { comparisonResultId: meta.comparisonResultId },
+      }));
     },
   });
 

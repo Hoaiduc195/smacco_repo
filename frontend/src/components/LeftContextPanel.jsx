@@ -2,11 +2,13 @@ import React from 'react';
 import { ChevronLeft, Sparkles } from 'lucide-react';
 
 export default function LeftContextPanel({ activePanel, onCollapse, children }) {
-  const titleByPanel = {
-    results: 'Danh sách tìm kiếm',
-    compare: 'So sánh địa điểm',
-    insight: 'Insight địa điểm',
+  const metaByPanel = {
+    results: { eyebrow: 'Kết quả AI', title: 'Danh sách tìm kiếm' },
+    compare: { eyebrow: 'Bảng làm việc', title: 'So sánh địa điểm' },
+    insight: { eyebrow: 'Phân tích AI', title: 'Insight địa điểm' },
+    saved: { eyebrow: 'Bộ sưu tập', title: 'Địa điểm đã lưu' },
   };
+  const meta = metaByPanel[activePanel] || { eyebrow: 'Bảng làm việc', title: 'Workspace' };
 
   return (
     <section id="left-context-panel" className="workspace-panel-shell flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -16,8 +18,8 @@ export default function LeftContextPanel({ activePanel, onCollapse, children }) 
             <Sparkles className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-wide text-primary-700">Bảng AI</p>
-            <h2 className="text-sm font-black leading-tight">{titleByPanel[activePanel] || 'Bảng ngữ cảnh AI'}</h2>
+            <p className="text-[10px] font-black uppercase tracking-wide text-primary-700">{meta.eyebrow}</p>
+            <h2 className="text-sm font-black leading-tight">{meta.title}</h2>
           </div>
         </div>
         {onCollapse ? (
