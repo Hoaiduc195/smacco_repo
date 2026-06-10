@@ -73,7 +73,7 @@ export class SearchService {
       }
 
       const randomPool = this.mapLocalFixturePlaces(filteredPool);
-      return this.takeRandomResults(randomPool, 12);
+      return this.takeRandomResults(randomPool, 6);
     }
 
     let externalResults: PlaceResult[] = [];

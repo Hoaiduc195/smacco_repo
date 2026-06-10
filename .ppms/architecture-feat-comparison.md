@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Mono
 
-> Last updated: 2026-06-10 17:21
+> Last updated: 2026-06-10 17:35
 > Branch: feat/comparison
 
 ## Overview
@@ -22,7 +22,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 
 ### Frontend
 - **Framework**: React SPA built with Vite.
-- **Module structure**: `src/pages` contains route pages such as `HomePage`, `PlaceDetailPage`, `ProfilePage`, and auth pages. `src/components` contains map/search panels, chat UI, workspace panels, comparison panels, itinerary/budget/food panels, and place cards. `src/services` wraps backend API calls and Firebase setup. `src/contexts` stores auth, travel data, and conversation/tagged-place state.
+- **Module structure**: `src/pages` contains route pages such as `HomePage`, `PlaceDetailPage`, `ProfilePage`, and auth pages. `src/components` contains map/search panels, a simplified top search navbar, chat UI, workspace panels, comparison panels, itinerary/budget/food panels, and place cards. `src/services` wraps backend API calls and Firebase setup. `src/contexts` stores auth, travel data, and conversation/tagged-place state.
 - **State management**: React hooks and Context API. Conversation state tracks tagged places, selected conversation, and chat history. `useStreamingChat` manages SSE chat state.
 - **Routing**: React Router.
 - **Chat UI**: `ChatWidget` is a floating map overlay with an icon-only launcher sized like the current-location control. The launcher is hidden while the chatbox is open; closing is handled from the chat header. The chatbox no longer renders suggested prompt chips.
@@ -40,6 +40,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 
 ### Frontend ↔ Backend Interaction
 - The frontend calls the backend through REST endpoints under `/api/v1` using Axios/fetch.
+- `/api/v1/search` uses SerpAPI-backed hotel search in production runtime. In fixture-only test mode, search avoids external calls and returns a small random sample of local fixture places.
 - Chat streaming uses `POST /api/v1/ai/chat/stream` with server-sent-event style chunks from `streamChat`.
 - Search and workflow actions are sent as structured chunks; regular assistant text is streamed as `delta` strings.
 - Comparison responses are parsed/persisted by the backend and streamed to the frontend as normal analysis text plus metadata. Insight responses stream as normal Markdown after workflow confirmation and tool context extraction.

@@ -2,6 +2,36 @@
 
 ---
 
+## [2026-06-10 17:35] — Clarify search runtime modes
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted normal search to use SerpAPI, while test mode should return a few random places.
+- **Changes**:
+  - Changed production search default `externalProviderPolicy` from `fallback` to `always`, so production searches query the configured SerpAPI provider instead of skipping external search when local results exist.
+  - Updated the runtime config helper script production profile to use `externalProviderPolicy: 'always'`.
+  - Kept test mode fixture-only and reduced random fixture search results to 6 places.
+- **Modified files**: `backend/src/config/runtime-config.ts`, `backend/scripts/config-features.js`, `backend/src/modules/search/search.service.ts`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — search now has explicit mode behavior: production uses SerpAPI, test mode returns random local fixtures without external API calls.
+
+---
+
+## [2026-06-10 17:28] — Remove search bar filters
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User asked to remove the filter controls from the search bar.
+- **Changes**:
+  - Simplified `Navbar` search UI to a plain text search field with the search icon only.
+  - Removed the filter dropdown, filter button, place-type chips, location input, budget slider, clear-filter action, and related local state/imports from `Navbar`.
+  - Stopped passing filter props from `HomePage` into `Navbar`; retained `HomePage` filter state for AI-driven search events.
+- **Modified files**: `frontend/src/components/Navbar.jsx`, `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — top search UX no longer exposes manual filters, while AI/search event filters remain internal to page logic.
+
+---
+
 ## [2026-06-10 17:21] — Make POI tool-only and remove Overpass gate
 
 - **Branch**: `feat/comparison`

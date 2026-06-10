@@ -34,7 +34,7 @@ const PRODUCTION_PROFILE = {
     localDatabase: true,
     localFixture: false,
     externalProviders: true,
-    externalProviderPolicy: 'fallback',
+    externalProviderPolicy: 'always',
   },
   chat: {
     persistHistory: true,

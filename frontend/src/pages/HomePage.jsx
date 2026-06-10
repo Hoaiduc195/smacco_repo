@@ -644,18 +644,6 @@ export default function HomePage() {
         setSearchQuery={setSearchQuery}
         onSearch={handleSearchSubmit}
         onSearchInputChange={() => {}}
-        locationInput={locationInput}
-        setLocationInput={setLocationInput}
-        placeType={placeType}
-        setPlaceType={setPlaceType}
-        budget={budget}
-        setBudget={setBudget}
-        onClearFilters={() => {
-          setSearchQuery('');
-          setPlaceType('');
-          setLocationInput('');
-          setBudget('');
-        }}
       />
 
       <div className="relative flex-1 w-full overflow-hidden mt-16">

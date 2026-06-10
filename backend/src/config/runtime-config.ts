@@ -59,7 +59,7 @@ const PRODUCTION_DEFAULTS: RuntimeConfig = {
     localDatabase: true,
     localFixture: false,
     externalProviders: true,
-    externalProviderPolicy: 'fallback',
+    externalProviderPolicy: 'always',
   },
   chat: {
     persistHistory: true,
