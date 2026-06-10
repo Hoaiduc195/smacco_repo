@@ -52,11 +52,38 @@ export class PlacesService {
     return searchConfig.localFixture && !searchConfig.localDatabase;
   }
 
+  private mergeAmenitiesIntoDetails(rawDetails: Prisma.JsonValue | null, amenities?: string[]): Prisma.InputJsonValue | undefined {
+    if (!amenities?.length) return undefined;
+    const details = rawDetails && typeof rawDetails === 'object' && !Array.isArray(rawDetails)
+      ? { ...(rawDetails as Record<string, unknown>) }
+      : {};
+    if (Array.isArray(details.amenities) && details.amenities.length > 0) return undefined;
+    return { ...details, amenities };
+  }
+
+  private async ensurePlaceAmenities(
+    tx: Prisma.TransactionClient,
+    place: Place,
+    amenities?: string[],
+  ): Promise<Place> {
+    const rawSerpApiPropertyDetails = this.mergeAmenitiesIntoDetails(place.rawSerpApiPropertyDetails, amenities);
+    if (!rawSerpApiPropertyDetails) return place;
+
+    return tx.place.update({
+      where: { id: place.id },
+      data: { rawSerpApiPropertyDetails },
+    });
+  }
+
   mapPlace(place: Place | null, req?: Request): any {
     if (!place) return null;
+    const details = place.rawSerpApiPropertyDetails && typeof place.rawSerpApiPropertyDetails === 'object'
+      ? place.rawSerpApiPropertyDetails as any
+      : null;
     return {
       ...place,
       coverImageUrl: this.formatCoverImageUrl(place.coverImageUrl, req),
+      amenities: Array.isArray(details?.amenities) ? details.amenities : undefined,
     };
   }
 
@@ -89,7 +116,7 @@ export class PlacesService {
 
         if (existingSource) {
           if (existingSource.place) {
-            return existingSource.place;
+            return this.ensurePlaceAmenities(tx, existingSource.place, createPlaceDto.amenities);
           }
           await tx.placeSource.delete({ where: { id: existingSource.id } });
         }
@@ -115,7 +142,7 @@ export class PlacesService {
               lng,
             },
           });
-          return matchedPlace;
+          return this.ensurePlaceAmenities(tx, matchedPlace, createPlaceDto.amenities);
         }
 
         const place = await tx.place.create({
@@ -128,6 +155,7 @@ export class PlacesService {
             lat: lat ?? 0,
             lng: lng ?? 0,
             coverImageUrl: createPlaceDto.imageUrl,
+            rawSerpApiPropertyDetails: this.mergeAmenitiesIntoDetails(null, createPlaceDto.amenities),
           },
         });
 

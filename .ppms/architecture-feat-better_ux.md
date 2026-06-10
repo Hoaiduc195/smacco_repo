@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-10 10:02
+> Last updated: 2026-06-10 10:20
 > Branch: feat-better_ux
 
 ## Overview
@@ -41,6 +41,7 @@ The default workspace state now prioritizes the map: both side panels start coll
   - `ChatWidget` — The single workflow-capable AI chat surface. Supports history toggle, close, workflow proposal cards, wizard step/summary cards, quick replies, streaming replies, and conversation actions. Tagged-place context supports up to 5 places and renders as a vertical pill stack to the left of the open chat frame. Dragged place cards absorb toward the message input area when dropped into the open chat.
   - `AIWorkspacePanel` — Multi-accordion left workspace displaying panels for search results, comparison, pinned places, itineraries, insights, budgets, and food recommendations. Has collapse controls.
   - `SearchResultsPanel` — Renders accommodation search results with match scores, AI reasoning, and sync.
+  - `AmenityBadge` — Shared amenity display component that normalizes fixture keys and SerpAPI-style amenity strings to consistent labels and Lucide icons.
   - `ComparisonPanel` — Displays comparisons of price, location, pros/cons, and conditional AI choices.
   - `PinnedPlacesPanel` — Lists saved accommodations with bulk options.
   - `ItineraryPanel` — Detail 3-day travel plan with schedule, route map triggers, and options.
@@ -63,6 +64,7 @@ The default workspace state now prioritizes the map: both side panels start coll
 - **Local Fixture Dataset**: `backend/test/fixtures/data.json` contains the merged team accommodation dataset with 160 places. Local fixture images live in `backend/test/fixtures/images/`, use global record-index filenames (`<recordIndex>-<imageIndex>.<ext>`), and are served through `GET /api/v1/places/test-data/images/:filename`.
 - **Search Provider Policy**: `SearchService` always respects `search.localDatabase`, `search.localFixture`, and `search.externalProviderPolicy`. `environment: test` is forcibly normalized to fixture-only mode (`localDatabase: false`, `localFixture: true`, external policy `never`) and skips Goong geocoding. In that mode, search filters matching places from the fixture dataset using progressive fallbacks (1: location + type + query, 2: location only, 3: type + query anywhere, 4: full dataset), then shuffle-selects up to 12 places. This keeps the UI results and the LLM context aligned. Production excludes DB rows with `source = local` from search results to avoid leaking test fixture data.
 - **Fixture-Only Place Reads**: `LocalFixturePlacesService` owns fixture JSON loading/caching, filtering, local place mapping, review mapping, and photo URL generation. In fixture-only mode, `PlacesService` delegates `findAll`, `findOne(local-*)`, `findReviews(local-*)`, `findPhotos(local-*)`, and guarded local `create()` calls to this provider without Prisma reads or writes.
+- **Amenity Persistence**: Fixture places expose amenities at the top level and in `rawSerpApiPropertyDetails`. External places can send optional `amenities` through `POST /api/v1/places`; `PlacesService` stores them in existing `rawSerpApiPropertyDetails.amenities` JSON and backfills that JSON when an existing source/fuzzy-matched place lacks amenities, avoiding a schema migration while preserving SerpAPI/fixture compatibility.
 - **Router** (`LlmTaskRouterService`): Classifies user intent via LLM into workflow IDs.
   - Supported intents: `SEARCH_PLACES`, `GENERAL_CHAT`, `COMPARE_PLACES`, `ANALYZE_PLACE`
   - Uses conversation history for multi-turn intent continuations (e.g., ANALYZE_PLACE preference follow-up).

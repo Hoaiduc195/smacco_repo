@@ -130,6 +130,7 @@ export class LocalFixturePlacesService {
       coverImageUrl,
       averageRating,
       reviewCount: reviews.length,
+      amenities: item.amenities,
       rawSerpApiPropertyDetails: {
         phone: item.phone,
         email: item.email,

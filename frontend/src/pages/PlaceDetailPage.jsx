@@ -10,6 +10,7 @@ import {
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import QASection from '../components/QASection';
+import AmenityBadge from '../components/AmenityBadge';
 import { getPlaceDetails, getPlaceMedia, createPlace, createReview, deleteReview } from '../services/placeService';
 import { checkInAtPlace, leaveOnsiteStatus, getMyOnsiteStatus } from '../services/presenceService';
 import { savePlace, unsavePlace, checkSavedStatus } from '../services/savedPlacesService';
@@ -76,6 +77,7 @@ export default function PlaceDetailPage() {
             type: place.type,
             coordinates: place.lat && place.lng ? { lat: place.lat, lng: place.lng } : undefined,
             imageUrl: place.imageUrl || place.coverImageUrl || undefined,
+            amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities || undefined,
           });
           setPlace(savedPlace);
           if (savedPlace.onsiteStatus) {
@@ -697,9 +699,7 @@ export default function PlaceDetailPage() {
                     <h3 className="text-sm font-black uppercase tracking-wide text-slate-600">Tiện ích được ghi nhận</h3>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {amenities.map((amenity, idx) => (
-                        <span key={idx} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700">
-                          {amenity}
-                        </span>
+                        <AmenityBadge key={`${amenity}-${idx}`} amenity={amenity} />
                       ))}
                     </div>
                   </div>
@@ -1039,21 +1039,15 @@ export default function PlaceDetailPage() {
                 </div>
               </div>
 
-              {place.amenities && place.amenities.length > 0 && (
+              {amenities.length > 0 && (
                 <div className="mt-8 pt-8 border-t border-slate-100">
                   <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
                     Tiện ích nổi bật
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {place.amenities.map((amenity, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-base-50 border border-slate-100 text-slate-700 text-xs sm:text-sm font-medium hover:bg-slate-100/70 hover:border-slate-200 transition-colors"
-                      >
-                        <span className="text-primary-600 select-none">✦</span>
-                        <span className="line-clamp-1">{amenity}</span>
-                      </div>
+                    {amenities.map((amenity, idx) => (
+                      <AmenityBadge key={`${amenity}-${idx}`} amenity={amenity} className="justify-start rounded-xl bg-base-50 px-3 py-2 text-xs sm:text-sm" />
                     ))}
                   </div>
                 </div>

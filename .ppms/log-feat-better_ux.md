@@ -1,5 +1,49 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-10 10:30] Formatted Place Card Ratings To Two Decimals
+- **Branch**: `feat/better_ux`
+- **Prompt**: Round the rating shown on place cards to two decimal places.
+- **Changes**:
+  - Changed `PlaceCard` rating display from integer rounding to fixed two-decimal formatting.
+  - Guarded rating rendering against non-numeric values to avoid displaying invalid `NaN` text.
+  - Added a targeted component test covering `4.567 -> 4.57 / 5`.
+  - Verified targeted PlaceCard tests.
+- **Modified files**:
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/components/PlaceCard.test.jsx`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: No — display formatting only.
+
+---
+
+## [2026-06-10 10:20] Added Amenity Icons And External Amenity Persistence
+- **Branch**: `feat/better_ux`
+- **Prompt**: Implement recommended amenity icon display while keeping fixture and future SerpAPI compatibility without changing database schema.
+- **Changes**:
+  - Added shared frontend `AmenityBadge` component with normalization/alias mapping from fixture amenity keys and SerpAPI-style amenity strings to consistent Lucide icons and Vietnamese labels.
+  - Rendered compact amenity icon badges on `PlaceCard` for search results and full amenity badges in `PlaceDetailPage` overview/details sections.
+  - Sent `amenities` when syncing external search-result places from `PlaceDetailPage` to the backend.
+  - Extended `CreatePlaceDto` with optional `amenities?: string[]`.
+  - Updated `PlacesService` to store incoming amenities inside existing `rawSerpApiPropertyDetails.amenities` JSON and backfill amenities for existing source/fuzzy-matched places that do not yet have them.
+  - Exposed fixture amenities at top level from `LocalFixturePlacesService` while preserving raw details.
+  - Verified targeted PlaceCard tests, frontend production build, and backend production build.
+- **Modified files**:
+  - `backend/src/modules/places/dto/create-place.dto.ts`
+  - `backend/src/modules/places/local-fixture-places.service.ts`
+  - `backend/src/modules/places/places.service.ts`
+  - `frontend/src/components/PlaceCard.jsx`
+  - `frontend/src/pages/PlaceDetailPage.jsx`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**:
+  - `frontend/src/components/AmenityBadge.jsx`
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — added shared amenity icon UI and documented optional amenity persistence through existing JSON instead of schema migration.
+
+---
+
 ## [2026-06-10 10:02] Retargeted Place Drop Absorb To Message Input
 - **Branch**: `feat/better_ux`
 - **Prompt**: When tagging by dragging a place image/card, the absorbed card should fly toward the bottom message input area.

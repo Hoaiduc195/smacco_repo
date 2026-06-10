@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Navigation, Star, BookmarkPlus, BookmarkCheck, Tag, Check } from 'lucide-react';
+import AmenityBadge from './AmenityBadge';
 
 let transparentDragImage = null;
 
@@ -81,13 +82,17 @@ export default function PlaceCard({
   };
   const iconConfig = getIconAndColor(placeType);
   const ratingValue = place.rating || place.averageRating;
-  const roundedRating = ratingValue ? Math.round(ratingValue) : null;
+  const numericRating = Number(ratingValue);
+  const formattedRating = Number.isFinite(numericRating) && numericRating > 0 ? numericRating.toFixed(2) : null;
   const displayAddress = place.address || place.placeAddress || place.formattedAddress || '';
   const displayImg = imageUrl || place.imageUrl || place.photoUrl || place.image || place.coverImageUrl;
   const SaveIcon = saveMode === 'tag' ? Tag : BookmarkPlus;
   const SavedIcon = saveMode === 'tag' ? Check : BookmarkCheck;
   const saveLabel = saveMode === 'tag' ? 'Tag' : 'Lưu';
   const savedLabel = saveMode === 'tag' ? 'Đã tag' : 'Đã lưu';
+  const amenities = Array.isArray(place.amenities)
+    ? place.amenities
+    : (Array.isArray(place.rawSerpApiPropertyDetails?.amenities) ? place.rawSerpApiPropertyDetails.amenities : []);
 
   const resetDragState = (notify = true) => {
     absorbDropRef.current = false;
@@ -220,10 +225,17 @@ export default function PlaceCard({
           {displayAddress && (
             <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{displayAddress}</div>
           )}
-          {roundedRating !== null && (
+          {formattedRating !== null && (
             <div className="flex items-center gap-1 text-xs text-ink-600 font-semibold mt-1">
               <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-              <span>{roundedRating} / 5</span>
+              <span>{formattedRating} / 5</span>
+            </div>
+          )}
+          {amenities.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {amenities.slice(0, 3).map((amenity, idx) => (
+                <AmenityBadge key={`${amenity}-${idx}`} amenity={amenity} compact />
+              ))}
             </div>
           )}
         </div>

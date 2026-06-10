@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsOptional, IsNumber, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -35,6 +35,12 @@ export class CreatePlaceDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @ApiPropertyOptional({ type: [String], example: ['Free Wi-Fi', 'Pool', 'Parking'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -106,4 +106,17 @@ describe('PlaceCard drag preview', () => {
 
     expect(screen.getByRole('button', { name: 'Đã tag' })).not.toBeNull();
   });
+
+  it('formats ratings with two decimal places', () => {
+    const place = {
+      id: 'place-1',
+      name: 'Moc House',
+      type: 'hotel',
+      rating: 4.567,
+    };
+
+    render(<PlaceCard place={place} onSelect={() => {}} />);
+
+    expect(screen.getByText('4.57 / 5')).not.toBeNull();
+  });
 });
