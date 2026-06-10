@@ -9,6 +9,10 @@ interface ConversationRecord {
   messages: ChatMessage[];
 }
 
+export interface StoredMessageResult {
+  id?: string;
+}
+
 /**
  * In-memory conversation history with simple trimming.
  * Ported from Python ConversationStore.
@@ -55,10 +59,11 @@ export class ConversationStoreService {
     return messages;
   }
 
-  async append(conversationId: string, message: ChatMessage, userId?: string): Promise<void> {
+  async append(conversationId: string, message: ChatMessage, userId?: string): Promise<StoredMessageResult> {
     const shouldPersist = this.shouldPersistHistory();
+    let persisted: StoredMessageResult = {};
     if (shouldPersist) {
-      await this.persistMessage(conversationId, message, userId);
+      persisted = await this.persistMessage(conversationId, message, userId);
     }
 
     const storeId = shouldPersist ? conversationId : this.scopeMemoryConversationId(conversationId, userId);
@@ -67,13 +72,13 @@ export class ConversationStoreService {
     }
 
     const record = this.store.get(storeId)!;
-    record.messages.push(message);
+    record.messages.push({ ...message, id: persisted.id });
 
     // Trim oldest to respect maxMessages
     if (record.messages.length > this.maxMessages) {
       record.messages = record.messages.slice(-this.maxMessages);
     }
-
+    return persisted;
   }
 
   reset(conversationId: string, userId?: string): void {
@@ -111,7 +116,7 @@ export class ConversationStoreService {
     return this.runtimeConfig.chat.persistHistory;
   }
 
-  private async persistMessage(conversationId: string, message: ChatMessage, userId?: string): Promise<void> {
+  private async persistMessage(conversationId: string, message: ChatMessage, userId?: string): Promise<StoredMessageResult> {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       select: { id: true, userId: true },
@@ -128,14 +133,17 @@ export class ConversationStoreService {
       });
     }
 
-    await this.prisma.message.create({
+    const created = await this.prisma.message.create({
       data: {
         conversationId,
         senderRole: message.role,
         messageText: message.content,
         retrievedChunkIds: [],
       },
+      select: { id: true },
     });
+
+    return created;
   }
 
   private async loadHistoryFromDb(conversationId: string, userId?: string): Promise<ChatMessage[]> {
@@ -157,6 +165,7 @@ export class ConversationStoreService {
     return rows
       .reverse()
       .map((row) => ({
+        id: row.id,
         role: row.senderRole as ChatMessage['role'],
         content: row.messageText,
       }));

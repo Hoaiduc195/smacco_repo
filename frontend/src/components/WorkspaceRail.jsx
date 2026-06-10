@@ -18,7 +18,7 @@ export default function WorkspaceRail({
       </div>
 
       <div className="workspace-rail-actions" role="toolbar" aria-label="Chọn bảng làm việc">
-        {items.map(({ id, label, shortLabel, icon: Icon }) => {
+        {items.map(({ id, label, icon: Icon }) => {
           const isActive = activePanel === id;
           return (
             <button
@@ -32,7 +32,6 @@ export default function WorkspaceRail({
               aria-expanded={isActive}
             >
               <Icon className="h-4 w-4" />
-              <span>{shortLabel}</span>
             </button>
           );
         })}

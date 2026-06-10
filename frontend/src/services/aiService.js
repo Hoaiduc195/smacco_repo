@@ -39,6 +39,11 @@ export const deleteConversation = async (conversationId) => {
   return response.data;
 };
 
+export const getComparisonResult = async (comparisonId) => {
+  const response = await apiClient.get(`/ai/comparisons/${comparisonId}`);
+  return response.data;
+};
+
 export const streamChat = async ({
   text,
   conversationId,
@@ -121,4 +126,4 @@ export const streamChat = async ({
   }
 };
 
-export default { chat, streamChat, listConversations, createConversation, getConversationMessages, deleteConversation };
+export default { chat, streamChat, listConversations, createConversation, getConversationMessages, deleteConversation, getComparisonResult };

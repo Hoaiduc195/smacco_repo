@@ -10,15 +10,6 @@ import WizardStepCard from './chat/WizardStepCard';
 import WizardSummaryCard from './chat/WizardSummaryCard';
 import { navigateToPlaceDetail } from '../utils/placeNavigation';
 
-const QUICK_REPLIES = [
-  'Tìm homestay yên tĩnh ở Đà Lạt',
-  'So sánh homestay Đà Lạt',
-  'Lên lịch trình 3 ngày 2 đêm',
-  'Đánh giá khu vực Phường 4',
-  'Dự trù ngân sách đi Đà Lạt',
-  'Quán ăn ngon gần Moc House',
-];
-
 export default function ChatWidget() {
   const navigate = useNavigate();
   const defaultMessages = useMemo(() => [
@@ -36,7 +27,6 @@ export default function ChatWidget() {
   const [isPlaceDragActive, setIsPlaceDragActive] = useState(false);
   const [draggedPlaceName, setDraggedPlaceName] = useState('');
   const [copiedPlace, setCopiedPlace] = useState(null);
-  const [quickReplies, setQuickReplies] = useState(QUICK_REPLIES);
   const awaitingConfirmedSearchActionRef = useRef(false);
   const latestSearchResultsRef = useRef([]);
   const lastSubmittedUserMessageRef = useRef('');
@@ -141,10 +131,6 @@ export default function ChatWidget() {
     await sendMessage(userText, ids, payload, options);
   };
 
-  const resetQuickReplies = () => {
-    setQuickReplies(QUICK_REPLIES);
-  };
-
   const buildSearchPrompt = (data) => {
     const parts = [
       data.query || 'Tìm giúp tôi chỗ ở phù hợp',
@@ -175,7 +161,6 @@ export default function ChatWidget() {
     const fallbackMessage = String(workflow?.rawUserMessage || workflow?.detectedQuery || '').trim();
 
     wizard.declineWorkflow();
-    resetQuickReplies();
 
     if (workflow?.workflowId !== 'SEARCH_PLACES' || !fallbackMessage) return;
 
@@ -203,17 +188,8 @@ export default function ChatWidget() {
   const handleSend = async (e) => {
     e?.preventDefault();
     if (wizard.wizardState !== 'idle') return;
-    setQuickReplies([]);
     awaitingConfirmedSearchActionRef.current = false;
     await sendTextMessage(input);
-  };
-
-  const handleQuickReplyClick = async (text) => {
-    setIsOpen(true);
-    setQuickReplies([]);
-    wizard.cancelWizard();
-    awaitingConfirmedSearchActionRef.current = false;
-    await sendTextMessage(text);
   };
 
   const handleNewConversation = async () => {
@@ -223,7 +199,6 @@ export default function ChatWidget() {
     setMessages(defaultMessages);
     setShowHistory(false);
     wizard.resetWizard();
-    resetQuickReplies();
   };
 
   useEffect(() => {
@@ -287,7 +262,6 @@ export default function ChatWidget() {
       const text = event?.detail?.text;
       if (!text) return;
       setIsOpen(true);
-      setQuickReplies([]);
       wizard.cancelWizard();
       awaitingConfirmedSearchActionRef.current = false;
       await sendTextMessage(text);
@@ -315,6 +289,10 @@ export default function ChatWidget() {
       refreshConversations?.();
     }
   }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('app:place-comparison', { detail: null }));
+  }, [selectedConversationId]);
 
   useEffect(() => {
     if (isStreaming) return;
@@ -401,7 +379,7 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!isOpen) return;
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [isOpen, messages, wizard.wizardState, quickReplies]);
+  }, [isOpen, messages, wizard.wizardState]);
 
   useEffect(() => {
     const handlePlaceDragStart = (event) => {
@@ -656,65 +634,82 @@ export default function ChatWidget() {
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-white">
               {messages.map((msg, idx) => {
                 if (msg.hidden) return null;
+                const isPendingComparison = msg.role === 'assistant'
+                  && !msg.content
+                  && isStreaming
+                  && idx === messages.length - 1;
                 return (
                   <div key={msg.id || idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm shadow-sm animate-chat-message ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap' : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'}`}
+                      className={`max-w-[80%] px-3 py-2 shadow-sm rounded-2xl text-sm animate-chat-message ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap' : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'}`}
                     >
-                      {msg.role === 'user' ? msg.content : (!msg.content && isStreaming && idx === messages.length - 1 ? (
+                      {msg.role === 'user' ? msg.content : (isPendingComparison ? (
                         <span className="inline-flex items-center gap-2 text-white/80">
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-300" />
                           Đang suy nghĩ...
                         </span>
                       ) : (
-                        <ReactMarkdown
-                          components={{
-                            a: ({ href, children, ...props }) => {
-                              let placeId = null;
-                              if (href) {
-                                const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
-                                  || href.match(/\/places\/([^?#\s/]+)/)
-                                  || href.match(/place:([^?#\s/]+)/);
-                                if (placeMatch) {
-                                  placeId = placeMatch[1];
+                        <>
+                          <ReactMarkdown
+                            components={{
+                              a: ({ href, children, ...props }) => {
+                                let placeId = null;
+                                if (href) {
+                                  const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
+                                    || href.match(/\/places\/([^?#\s/]+)/)
+                                    || href.match(/place:([^?#\s/]+)/);
+                                  if (placeMatch) {
+                                    placeId = placeMatch[1];
+                                  }
                                 }
-                              }
-                              if (placeId) {
-                                const placeName = String(children || '');
+                                if (placeId) {
+                                  const placeName = String(children || '');
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
+                                      draggable
+                                      onDragStart={(e) => {
+                                        e.dataTransfer.setData('placeId', placeId);
+                                        e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
+                                        e.dataTransfer.effectAllowed = 'copy';
+                                      }}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        navigateToPlaceDetail(navigate, placeId, {
+                                          place: { id: placeId, name: placeName },
+                                        });
+                                        window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
+                                      }}
+                                      title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
+                                    >
+                                      <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
+                                      {placeName}
+                                    </span>
+                                  );
+                                }
                                 return (
-                                  <span
-                                    className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData('placeId', placeId);
-                                      e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
-                                      e.dataTransfer.effectAllowed = 'copy';
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      navigateToPlaceDetail(navigate, placeId, {
-                                        place: { id: placeId, name: placeName },
-                                      });
-                                      window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
-                                    }}
-                                    title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
-                                  >
-                                    <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
-                                    {placeName}
-                                  </span>
+                                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
+                                    {children}
+                                  </a>
                                 );
                               }
-                              return (
-                                <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
-                                  {children}
-                                </a>
-                              );
-                            }
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                          {msg.comparisonResultId ? (
+                            <button
+                              type="button"
+                              onClick={() => window.dispatchEvent(new CustomEvent('app:open-place-comparison', {
+                                detail: { comparisonResultId: msg.comparisonResultId },
+                              }))}
+                              className="mt-2 inline-flex items-center rounded-full border border-primary-300 bg-primary-50 px-3 py-1 text-[11px] font-black text-primary-800 transition hover:bg-primary-100"
+                            >
+                              Xem chi tiết
+                            </button>
+                          ) : null}
+                        </>
                       ))}
                     </div>
                   </div>
@@ -744,7 +739,6 @@ export default function ChatWidget() {
                   onCancel={() => {
                     awaitingConfirmedSearchActionRef.current = false;
                     wizard.cancelWizard();
-                    resetQuickReplies();
                   }}
                 />
               )}
@@ -758,25 +752,9 @@ export default function ChatWidget() {
                   onCancel={() => {
                     awaitingConfirmedSearchActionRef.current = false;
                     wizard.cancelWizard();
-                    resetQuickReplies();
                   }}
                   onEditStep={wizard.editFromSummary}
                 />
-              )}
-
-              {wizard.wizardState === 'idle' && quickReplies.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {quickReplies.map((reply) => (
-                    <button
-                      key={reply}
-                      type="button"
-                      onClick={() => handleQuickReplyClick(reply)}
-                      className="rounded-full border border-base-200 bg-base-50 px-3 py-1.5 text-[11px] font-semibold text-ink-700 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
-                    >
-                      {reply}
-                    </button>
-                  ))}
-                </div>
               )}
 
               <div ref={bottomRef} />
@@ -911,15 +889,18 @@ export default function ChatWidget() {
             </div>
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => setIsOpen((value) => !value)}
-          className={`h-14 rounded-2xl shadow-xl flex items-center justify-center gap-2 animate-floaty transition-colors duration-200 border px-4 ${isOpen ? 'w-14 bg-white hover:bg-primary-50 border-base-200 text-slate-800' : isPlaceDragActive ? 'bg-primary-600 hover:bg-primary-700 border-primary-500 text-white shadow-glow' : 'bg-ink-900 hover:bg-ink-800 border-ink-900 text-white shadow-glow'}`}
-          title={isOpen ? 'Đóng chat' : 'Mở chat'}
-        >
-          {isOpen ? <X className="w-6 h-6" /> : isPlaceDragActive ? <Tag className="w-5 h-5" /> : <MessageCircle className="w-6 h-6" />}
-          {!isOpen ? <span className="text-sm font-black">{isPlaceDragActive ? 'Thả để tag' : 'Mở AI Chat'}</span> : null}
-        </button>
+        {!isOpen ? (
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className={`h-11 rounded-2xl shadow-soft flex items-center justify-center gap-2 animate-floaty transition-colors duration-200 ${isPlaceDragActive ? 'px-4 bg-primary-600 hover:bg-primary-700 text-white shadow-glow' : 'w-11 bg-ink-900 hover:bg-ink-700 text-white'}`}
+            title="Mở chat"
+            aria-label="Mở AI Chat"
+          >
+            {isPlaceDragActive ? <Tag className="w-4 h-4" /> : <MessageCircle className="w-5 h-5 text-primary-300" />}
+            {isPlaceDragActive ? <span className="text-sm font-black">Thả để tag</span> : null}
+          </button>
+        ) : null}
       </div>
       </div>
     </div>

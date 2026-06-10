@@ -67,12 +67,17 @@ export class GroqLlmClientService implements ILlmClient {
    */
   async *streamChat(
     messages: ChatMessage[],
+    options?: { response_format?: { type: string } }
   ): AsyncGenerator<{ delta: string; finishReason?: string }> {
-    const payload = {
+    const payload: any = {
       model: this.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       stream: true,
     };
+
+    if (options?.response_format) {
+      payload.response_format = options.response_format;
+    }
 
     const response = await axios.post(`${this.baseUrl}/chat/completions`, payload, {
       headers: this.headers(),

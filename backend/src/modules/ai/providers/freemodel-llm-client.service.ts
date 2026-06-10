@@ -113,6 +113,7 @@ export class FreemodelLlmClientService implements ILlmClient {
 
   async *streamChat(
     messages: ChatMessage[],
+    _options?: { response_format?: { type: string } },
   ): AsyncGenerator<{ delta: string; finishReason?: string }> {
     try {
       const stream = await this.client.chat.completions.create({

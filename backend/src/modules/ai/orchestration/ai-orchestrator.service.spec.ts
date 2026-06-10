@@ -13,7 +13,7 @@ describe('AiOrchestratorService history ordering', () => {
     return {
       createId: jest.fn(() => '11111111-1111-1111-1111-111111111111'),
       getHistory: jest.fn(async () => [...history]),
-      append: jest.fn(async (_conversationId: string, message: ChatMessage) => {
+      append: jest.fn(async (_conversationId: string, message: ChatMessage): Promise<any> => {
         history = [...history, message];
       }),
     };
@@ -41,6 +41,11 @@ describe('AiOrchestratorService history ordering', () => {
     const searchResultContextBuilder = {
       build: jest.fn(),
     };
+    const placeComparisonResultsService = {
+      parsePayload: jest.fn<any, any[]>(() => null),
+      toAssistantMessage: jest.fn(),
+      createForMessage: jest.fn(),
+    };
 
     const service = new AiOrchestratorService(
       router as any,
@@ -48,9 +53,10 @@ describe('AiOrchestratorService history ordering', () => {
       composer as any,
       store as any,
       searchResultContextBuilder as any,
+      placeComparisonResultsService as any,
     );
 
-    return { service, router, composer };
+    return { service, router, composer, placeComparisonResultsService };
   };
 
   const request: ChatRequestDto = {
@@ -147,6 +153,49 @@ describe('AiOrchestratorService history ordering', () => {
       { conversationId: request.conversationId, delta: '', finishReason: 'stop' },
     ]);
     expect(composer.streamCompose).not.toHaveBeenCalled();
+  });
+
+  it('stores compare payload separately and returns analysis text plus comparison id', async () => {
+    const store = createStore();
+    store.append.mockImplementation(async (_conversationId: string, message: ChatMessage) => {
+      (store.getHistory as jest.Mock).mockResolvedValue([...baseHistory, message]);
+      return { id: 'message-1' };
+    });
+    const { service, composer, placeComparisonResultsService } = createService(store);
+    const payload = {
+      type: 'place_comparison',
+      places: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+      comparisonRows: [],
+      overallAssessment: { summary: 'Alpha phù hợp hơn.' },
+    };
+
+    composer.compose.mockResolvedValueOnce({ answer: JSON.stringify(payload) });
+    placeComparisonResultsService.parsePayload.mockReturnValueOnce(payload);
+    placeComparisonResultsService.toAssistantMessage.mockReturnValueOnce('Alpha phù hợp hơn.');
+    placeComparisonResultsService.createForMessage.mockResolvedValueOnce({ id: 'comparison-1' });
+
+    const response = await service.processQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi đã tag theo giá và vị trí.',
+      workflowExecution: {
+        workflowId: 'COMPARE_PLACES',
+        confirmed: true,
+        parameters: {},
+      },
+    } as any);
+
+    expect(response.answer).toBe('Alpha phù hợp hơn.');
+    expect(response.comparisonResultId).toBe('comparison-1');
+    expect(store.append).toHaveBeenLastCalledWith(
+      request.conversationId,
+      { role: 'assistant', content: 'Alpha phù hợp hơn.' },
+      undefined,
+    );
+    expect(placeComparisonResultsService.createForMessage).toHaveBeenCalledWith({
+      conversationId: request.conversationId,
+      messageId: 'message-1',
+      payload,
+    });
   });
 
   it('composes compare workflow when confirmed by the frontend', async () => {

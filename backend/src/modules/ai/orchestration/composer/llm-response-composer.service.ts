@@ -8,14 +8,14 @@ import { PlacesService } from '../../../places/places.service';
 const COMPOSER_SYSTEM_PROMPT = `
 You are a response formatting engine for a chat UI system. Answer in Vietnamese.
 
-Your only job is to generate clean, properly structured GitHub-Flavored Markdown (GFM) that will be rendered by a frontend Markdown parser.
+Your default job is to generate clean, properly structured GitHub-Flavored Markdown (GFM) that will be rendered by a frontend Markdown parser.
+If a workflow-specific instruction explicitly requires JSON, that instruction overrides the Markdown rules and you must output valid raw JSON only.
 
 ---
 
 ## OUTPUT RULES (STRICT)
 
-1. Output MUST be valid Markdown only.
-   - No JSON
+1. Output MUST be valid Markdown only unless a workflow-specific instruction requires JSON.
    - No HTML
    - No metadata or explanations about your process
    - DO NOT write redundant headers like "# Answer", "## Summary", or "## Results". Just provide the natural answer directly.
@@ -91,60 +91,50 @@ const COMPARE_COMPOSER_PROMPT = `
 
 So sánh các địa điểm mà user đã tag. Dùng reviews, ratings, metadata từ context.
 
-PRE-CHECK:
-- Nếu context có ít hơn 2 địa điểm được tag, chỉ trả lời:
-  "Để so sánh, bạn hãy chọn (tag) ít nhất 2 địa điểm trên bản đồ nhé! 📍"
-  KHÔNG phân tích gì thêm.
-- Nếu Extracted Parameters không có tiêu chí cụ thể, hoặc tiêu chí chỉ là "overall"/"tổng quan"/rỗng, KHÔNG đưa ra so sánh cuối cùng.
-  Trước tiên hãy hỏi 1-3 câu ngắn để làm rõ tiêu chí như giá, vị trí, yên tĩnh, sạch sẽ, rating, tiện nghi, nhóm khách, ngân sách.
-  Ví dụ: "Bạn muốn mình ưu tiên so sánh theo giá, vị trí, độ yên tĩnh hay chất lượng review?"
-- Chỉ chuyển sang so sánh chi tiết khi tiêu chí đã rõ từ message hiện tại hoặc lịch sử gần đây.
-- Khi so sánh chi tiết, phải dùng tagged place metadata, review evidence, tiêu chí user vừa trả lời, và prior Q&A liên quan trong lịch sử hội thoại.
-- Nếu không có review/metadata đủ mạnh cho một tiêu chí, nói rõ thiếu dữ liệu; không bịa bằng chứng.
+OUTPUT BẮT BUỘC:
+- Trả về RAW JSON hợp lệ, parse được bằng JSON.parse.
+- Không Markdown, không code fence, không giải thích ngoài JSON.
+- Bỏ qua quy tắc Markdown place link của system prompt; trong JSON chỉ dùng plain text name và place_id field.
+- JSON phải theo đúng schema bên dưới để frontend render bảng bên trái và phần đánh giá tổng thể bên phải.
 
-ĐỊNH DẠNG OUTPUT:
+SCHEMA:
+{
+  "type": "place_comparison",
+  "status": "ok" | "insufficient_data",
+  "title": "string",
+  "places": [
+    { "id": "place_id", "name": "Tên địa điểm" }
+  ],
+  "comparisonRows": [
+    {
+      "key": "rating|price|location|amenities|reviews|quiet|cleanliness|other",
+      "label": "Tên tiêu chí tiếng Việt",
+      "values": { "place_id": "Giá trị ngắn gọn để hiện trong ô bảng" },
+      "notes": { "place_id": "Ghi chú ngắn hoặc bằng chứng, có thể rỗng" }
+    }
+  ],
+  "overallAssessment": {
+    "summary": "Nhận định tổng thể 2-4 câu bằng tiếng Việt",
+    "recommendedPlaceId": "place_id hoặc null",
+    "recommendedPlaceName": "Tên địa điểm hoặc null",
+    "reasons": ["Lý do chính, dựa trên data"],
+    "tradeoffs": ["Điểm cần cân nhắc hoặc thiếu dữ liệu"],
+    "bestFor": [
+      { "placeId": "place_id", "placeName": "Tên địa điểm", "scenario": "Phù hợp khi user ưu tiên ..." }
+    ]
+  },
+  "dataNotes": ["Ghi chú về dữ liệu thiếu/không chắc chắn"],
+  "followUpQuestion": "Câu hỏi tiếp theo ngắn gọn"
+}
 
-1. **Mở đầu** (2-3 câu): Đặt bối cảnh so sánh một cách tự nhiên, nhắc tên 2 nơi bằng link.
-   Ví dụ: "Cùng xem **[Khách sạn Mường Thanh](place:abc-123)** và **[Vinpearl Resort](place:def-456)** khác nhau thế nào nhé!"
-
-2. **Bảng so sánh nhanh** (Markdown table):
-
-   | | [Tên A](place:id_a) | [Tên B](place:id_b) |
-   |---|---|---|
-   | ⭐ Đánh giá | 4.2/5 (120 reviews) | 4.5/5 (85 reviews) |
-   | 💰 Tầm giá | ~500K/đêm | ~1.2tr/đêm |
-   | 📍 Vị trí | Cách trung tâm 2km | Ngay bãi biển |
-   | 🏊 Nổi bật | Hồ bơi, gym | Spa, view biển |
-
-   Lưu ý: Tên trong header bảng PHẢI là link place:id.
-   Chỉ điền thông tin có trong data. Nếu thiếu, ghi "Chưa rõ".
-
-3. **Phân tích từng nơi** — viết ngắn gọn, dẫn chứng review:
-
-   ### [Tên A](place:id_a)
-   ✅ Điểm mạnh: ... — _"review trích dẫn"_
-   ⚠️ Lưu ý: ... — _"review trích dẫn"_
-
-   ### [Tên B](place:id_b)
-   ✅ Điểm mạnh: ... — _"review trích dẫn"_
-   ⚠️ Lưu ý: ... — _"review trích dẫn"_
-
-4. **🎯 Nên chọn nơi nào?** — Gợi ý dựa trên tiêu chí user hỏi (nếu có), hoặc tổng quan.
-   Viết dạng: "Nếu bạn ưu tiên X → chọn A. Nếu quan tâm Y → chọn B."
-   KHÔNG tuyên bố winner tuyệt đối trừ khi data rõ ràng.
-
-5. **Câu hỏi follow-up** ngắn gọn.
-
-QUY TẮC LINK:
-- MỌI lần nhắc tên địa điểm đều PHẢI là link: [Tên](place:place_id)
-- Trong bảng, trong heading, trong bullet — không ngoại lệ.
-- Dùng ID thực từ context (UUID hoặc serpapi-xxx).
-
-GIỌNG VĂN:
-- Thân thiện, tự nhiên như đang tư vấn cho bạn bè.
-- Dùng emoji vừa phải để dễ đọc.
-- Tránh liệt kê khô khan — mỗi bullet nên có 1 insight cụ thể.
-- Nếu data thiếu, nói thẳng "Chưa có đủ thông tin về X" thay vì bỏ qua.
+QUY TẮC NỘI DUNG:
+- Nếu context có ít hơn 2 địa điểm được tag, trả JSON với status "insufficient_data", places là danh sách hiện có, comparisonRows rỗng, overallAssessment.summary nhắc user tag ít nhất 2 địa điểm.
+- Luôn so sánh tổng quan được, kể cả khi user không nêu tiêu chí cụ thể. Khi thiếu tiêu chí, dùng các hàng mặc định: Đánh giá, Giá/Tầm giá, Vị trí, Loại hình, Tiện nghi nổi bật, Review/dữ liệu khách.
+- Chỉ điền thông tin có trong data. Nếu thiếu, ghi "Chưa rõ" trong values và giải thích ngắn trong dataNotes/tradeoffs.
+- Không bịa room quality, service, cleanliness, safety hoặc pricing nếu context không có bằng chứng.
+- recommendedPlaceId có thể null nếu dữ liệu không đủ để khuyến nghị rõ ràng.
+- values và notes phải là object keyed bởi đúng place.id từ places.
+- Giữ mỗi ô bảng ngắn gọn để frontend không bị vỡ layout.
 `;
 
 const ANALYZE_COMPOSER_PROMPT = `
@@ -575,7 +565,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
   async compose(context: ComposerContext, conversationHistory: any[] = []): Promise<ComposerResult> {
     try {
       const messages = await this.buildMessages(context, conversationHistory);
-      const response = await this.llmClient.chat(messages);
+      const response = await this.llmClient.chat(messages, this.getLlmOptions(context));
       
       return {
         answer: response.content,
@@ -592,7 +582,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
     try {
       const messages = await this.buildMessages(context, conversationHistory);
       
-      for await (const chunk of this.llmClient.streamChat(messages)) {
+      for await (const chunk of this.llmClient.streamChat(messages, this.getLlmOptions(context))) {
         if (chunk.delta) {
           yield chunk.delta;
         }
@@ -623,6 +613,14 @@ If the tagged place context is weak or missing, say you do not have enough revie
       .sort((a, b) => b.retrievalScore - a.retrievalScore)
       .slice(0, limit)
       .map(({ retrievalScore, ...review }) => review);
+  }
+
+  private getLlmOptions(context: ComposerContext): { response_format?: { type: string } } | undefined {
+    if (context.workflowId === 'COMPARE_PLACES') {
+      return { response_format: { type: 'json_object' } };
+    }
+
+    return undefined;
   }
 
   private parseReview(review: any) {

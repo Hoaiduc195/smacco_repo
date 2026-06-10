@@ -8,6 +8,7 @@ import { ChatRequestDto } from '../dto/chat-request.dto';
 import { ConversationStoreService } from '../conversation-store.service';
 import { ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
 import { SearchResultContextBuilder } from './composer/search-result-context.builder';
+import { PlaceComparisonResultsService } from '../place-comparison-results.service';
 
 @Injectable()
 export class AiOrchestratorService implements IAiOrchestrator {
@@ -22,6 +23,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     private readonly composer: IResponseComposer,
     private readonly store: ConversationStoreService,
     private readonly searchResultContextBuilder: SearchResultContextBuilder,
+    private readonly placeComparisonResultsService: PlaceComparisonResultsService,
   ) {}
 
   /**
@@ -97,11 +99,17 @@ export class AiOrchestratorService implements IAiOrchestrator {
       userContext: safeRequest.userContext,
     }, history);
 
-    await this.store.append(conversationId, { role: 'assistant', content: composerResult.answer }, userId);
+    const persistedAnswer = await this.persistAssistantAnswer(
+      conversationId,
+      composerResult.answer,
+      route.workflowId,
+      userId,
+    );
 
     return {
       conversationId,
-      answer: composerResult.answer,
+      answer: persistedAnswer.content,
+      comparisonResultId: persistedAnswer.comparisonResultId,
       searchAction,
       workflowAction,
       messages: await this.store.getHistory(conversationId, userId),
@@ -193,13 +201,65 @@ export class AiOrchestratorService implements IAiOrchestrator {
     const assistantParts: string[] = [];
     for await (const chunk of stream) {
       assistantParts.push(chunk);
-      yield { conversationId, delta: chunk };
+      if (route.workflowId !== 'COMPARE_PLACES') {
+        yield { conversationId, delta: chunk };
+      }
     }
 
     const fullAnswer = assistantParts.join('');
-    await this.store.append(conversationId, { role: 'assistant', content: fullAnswer }, userId);
+    const persistedAnswer = await this.persistAssistantAnswer(
+      conversationId,
+      fullAnswer,
+      route.workflowId,
+      userId,
+    );
 
-    yield { conversationId, delta: '', finishReason: 'stop' };
+    if (route.workflowId === 'COMPARE_PLACES' && persistedAnswer.content) {
+      yield {
+        conversationId,
+        delta: persistedAnswer.content,
+        messageMeta: {
+          comparisonResultId: persistedAnswer.comparisonResultId,
+        },
+      };
+    }
+
+    yield {
+      conversationId,
+      delta: '',
+      finishReason: 'stop',
+      messageMeta: {
+        comparisonResultId: persistedAnswer.comparisonResultId,
+      },
+    };
+  }
+
+  private async persistAssistantAnswer(
+    conversationId: string,
+    rawAnswer: string,
+    workflowId: string,
+    userId?: string,
+  ): Promise<{ content: string; comparisonResultId?: string | null }> {
+    const comparisonPayload = workflowId === 'COMPARE_PLACES'
+      ? this.placeComparisonResultsService.parsePayload(rawAnswer)
+      : null;
+    const content = comparisonPayload
+      ? this.placeComparisonResultsService.toAssistantMessage(comparisonPayload)
+      : rawAnswer;
+
+    const message = await this.store.append(conversationId, { role: 'assistant', content }, userId);
+    const comparisonResult = comparisonPayload
+      ? await this.placeComparisonResultsService.createForMessage({
+        conversationId,
+        messageId: message.id,
+        payload: comparisonPayload,
+      })
+      : null;
+
+    return {
+      content,
+      comparisonResultId: comparisonResult?.id || null,
+    };
   }
 
   private resolveConversationId(candidate?: string, userId?: string): string {

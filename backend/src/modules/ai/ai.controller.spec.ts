@@ -13,6 +13,7 @@ describe('AiController auth guards', () => {
     'listConversations',
     'createConversation',
     'getConversationMessages',
+    'getComparisonResult',
     'deleteConversation',
   ] as const)('protects %s with FirebaseAuthGuard', (methodName) => {
     expect(getGuards(methodName)).toContain(FirebaseAuthGuard);

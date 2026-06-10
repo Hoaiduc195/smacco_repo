@@ -10,6 +10,7 @@ import ComparePlacesPanel from '../components/ComparePlacesPanel';
 import PlaceInsightPanel from '../components/PlaceInsightPanel';
 import { searchPlaces, fetchNearbyPois } from '../services/placeService';
 import { getRoute } from '../services/routingService';
+import { getComparisonResult } from '../services/aiService';
 import { useTravelData } from '../contexts/TravelDataContext';
 import { useConversation } from '../contexts/ConversationContext';
 
@@ -76,6 +77,7 @@ export default function HomePage() {
 
   // AI-Agent-First States
   const [areaInsight, setAreaInsight] = useState(null);
+  const [comparisonResult, setComparisonResult] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
 
@@ -236,6 +238,7 @@ export default function HomePage() {
       if (Array.isArray(saved.route)) setRoute(saved.route);
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
       if (saved.areaInsight !== undefined) setAreaInsight(saved.areaInsight);
+      if (saved.comparisonResult !== undefined) setComparisonResult(saved.comparisonResult);
       if (saved.activePanel === null) {
         setActivePanel(null);
       } else if (typeof saved.activePanel === 'string' || typeof saved.activeWorkspaceTab === 'string') {
@@ -402,6 +405,44 @@ export default function HomePage() {
     window.activeSearchResults = places;
   }, [places]);
 
+  useEffect(() => {
+    const handlePlaceComparisonEvent = (event) => {
+      if (!event?.detail) {
+        setComparisonResult(null);
+        return;
+      }
+      setComparisonResult(event.detail);
+      setActivePanel(PANEL_IDS.COMPARE);
+      if (isMobile) setActiveMobileTab('workspace');
+    };
+
+    window.addEventListener('app:place-comparison', handlePlaceComparisonEvent);
+    return () => window.removeEventListener('app:place-comparison', handlePlaceComparisonEvent);
+  }, [isMobile]);
+
+  useEffect(() => {
+    const handleOpenPlaceComparison = async (event) => {
+      const comparisonResultId = event?.detail?.comparisonResultId;
+      if (!comparisonResultId) return;
+
+      try {
+        const data = await getComparisonResult(comparisonResultId);
+        const payload = data?.comparison?.payload;
+        if (!payload) return;
+
+        setComparisonResult(payload);
+        setActivePanel(PANEL_IDS.COMPARE);
+        if (isMobile) setActiveMobileTab('workspace');
+      } catch (err) {
+        console.error('Không thể tải bảng so sánh:', err);
+        setError(err?.message || 'Không thể tải bảng so sánh.');
+      }
+    };
+
+    window.addEventListener('app:open-place-comparison', handleOpenPlaceComparison);
+    return () => window.removeEventListener('app:open-place-comparison', handleOpenPlaceComparison);
+  }, [isMobile]);
+
   // Listen for search actions dispatched by the ChatWidget
   useEffect(() => {
     const handleAiSearchEvent = (event) => {
@@ -511,6 +552,7 @@ export default function HomePage() {
       route,
       mapFocusTarget,
       areaInsight,
+      comparisonResult,
       activePanel,
       activeMobileTab,
     };
@@ -527,6 +569,7 @@ export default function HomePage() {
     route,
     mapFocusTarget,
     areaInsight,
+    comparisonResult,
     activePanel,
     activeMobileTab,
   ]);
@@ -591,9 +634,7 @@ export default function HomePage() {
             selectedPlaceId={selectedPlaceId}
             onSelectPlace={handleSelectPlaceFromWorkspace}
             onRemoveTaggedPlace={(id) => untagPlace(id)}
-            onDirections={handleDirections}
-            onAskAIAboutPlace={handleAskAIAboutPlace}
-            onRequestAiCompare={() => handleSendMessage('So sánh các địa điểm tôi đã tag giúp tôi')}
+            comparisonResult={comparisonResult}
           />
         )}
         {activePanel === PANEL_IDS.INSIGHT && (
@@ -696,21 +737,22 @@ export default function HomePage() {
                       ) : null}
                     </div>
                     <div className="grid grid-cols-3 gap-1">
-                      {PANEL_OPTIONS.map(({ id, shortLabel, icon: Icon }) => {
+                      {PANEL_OPTIONS.map(({ id, label, icon: Icon }) => {
                         const isActive = activePanel === id;
                         return (
                           <button
                             key={id}
                             type="button"
                             onClick={() => togglePanel(id)}
-                            className={`flex items-center justify-center gap-1.5 rounded-2xl px-2 py-2 text-xs font-black transition ${
+                            className={`flex h-10 items-center justify-center rounded-2xl px-2 py-2 text-xs font-black transition ${
                               isActive
                                 ? 'bg-ink-900 text-white shadow-soft'
                                 : 'bg-base-50 text-ink-600 hover:bg-primary-50 hover:text-primary-700'
                             }`}
+                            title={label}
+                            aria-label={label}
                           >
                             <Icon className="h-3.5 w-3.5" />
-                            {shortLabel}
                           </button>
                         );
                       })}

@@ -8,5 +8,6 @@ export abstract class ILlmClient {
 
   abstract streamChat(
     messages: ChatMessage[],
+    options?: { response_format?: { type: string } }
   ): AsyncGenerator<{ delta: string; finishReason?: string }>;
 }

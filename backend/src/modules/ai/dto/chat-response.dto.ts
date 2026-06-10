@@ -1,6 +1,8 @@
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  id?: string;
+  comparisonResultId?: string | null;
 }
 
 export interface ChatResponseDto {
@@ -11,6 +13,7 @@ export interface ChatResponseDto {
   usageCompletionTokens?: number;
   messages?: ChatMessage[];
   searchAction?: any;
+  comparisonResultId?: string | null;
   workflowAction?: {
     type: string;
     parameters?: Record<string, any>;
@@ -22,6 +25,9 @@ export interface StreamChunkDto {
   delta: string;
   finishReason?: string;
   searchAction?: any;
+  messageMeta?: {
+    comparisonResultId?: string | null;
+  };
   workflowAction?: {
     type: string;
     parameters?: Record<string, any>;

@@ -59,10 +59,11 @@ export class ConversationsService {
   async getMessages(firebaseUser: FirebaseUser, conversationId: string, limit: number = 50) {
     if (!this.runtimeConfig.chat.persistHistory) {
       return this.store.getMemoryMessages(conversationId, limit, firebaseUser.uid).map((message, index) => ({
-        id: `${conversationId}-${index}`,
+        id: message.id || `${conversationId}-${index}`,
         conversationId,
         senderRole: message.role,
         messageText: message.content,
+        comparisonResult: message.comparisonResultId ? { id: message.comparisonResultId } : null,
         createdAt: new Date(),
       }));
     }
@@ -76,6 +77,11 @@ export class ConversationsService {
       },
       orderBy: { createdAt: 'asc' },
       take: limit,
+      include: {
+        comparisonResult: {
+          select: { id: true },
+        },
+      },
     });
   }
 

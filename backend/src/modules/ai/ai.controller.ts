@@ -10,6 +10,7 @@ import { ParseResponseDto } from './dto/parse-response.dto';
 import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
 import { ChatRequestDto } from './dto/chat-request.dto';
 import { ConversationsService } from './conversations.service';
+import { PlaceComparisonResultsService } from './place-comparison-results.service';
 import { UsersService } from '../users/users.service';
 import { RuntimeConfigService } from '../../config/runtime-config.service';
 
@@ -21,6 +22,7 @@ export class AiController {
     private readonly recommendationsService: RecommendationsService,
     private readonly orchestrator: IAiOrchestrator,
     private readonly conversationsService: ConversationsService,
+    private readonly placeComparisonResultsService: PlaceComparisonResultsService,
     private readonly usersService: UsersService,
     private readonly runtimeConfig: RuntimeConfigService,
   ) {}
@@ -129,9 +131,20 @@ export class AiController {
       messages: messages.map((msg) => ({
         role: msg.senderRole,
         content: msg.messageText,
+        id: msg.id,
+        comparisonResultId: msg.comparisonResult?.id || null,
         createdAt: msg.createdAt,
       })),
     };
+  }
+
+  @Get('comparisons/:id')
+  @ApiBearerAuth()
+  @UseGuards(FirebaseAuthGuard)
+  @ApiOperation({ summary: 'Get a stored place comparison result' })
+  async getComparisonResult(@Req() req: any, @Param('id') id: string) {
+    const result = await this.placeComparisonResultsService.getForUser(req.user, id);
+    return { comparison: result };
   }
 
   @Delete('conversations/:id')

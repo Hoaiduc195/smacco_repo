@@ -41,6 +41,18 @@ export default function useStreamingChat({
     });
   };
 
+  const applyAssistantMeta = (meta = {}) => {
+    if (!meta || typeof meta !== 'object') return;
+    setMessages((prev) => {
+      const updated = [...prev];
+      const idx = [...updated].reverse().findIndex((msg) => msg.role === 'assistant');
+      const targetIndex = idx === -1 ? -1 : updated.length - 1 - idx;
+      if (targetIndex === -1) return prev;
+      updated[targetIndex] = { ...updated[targetIndex], ...meta };
+      return updated;
+    });
+  };
+
   const pruneTrailingEmptyAssistant = () => {
     setMessages((prev) => {
       if (prev.length === 0) return prev;
@@ -130,6 +142,9 @@ export default function useStreamingChat({
           }
           if (chunk?.conversationId || chunk?.conversation_id) {
             setConversationId((prev) => prev || chunk.conversationId || chunk.conversation_id);
+          }
+          if (chunk?.messageMeta) {
+            applyAssistantMeta(chunk.messageMeta);
           }
           if (chunk?.delta) {
             appendAssistantDelta(chunk.delta);
