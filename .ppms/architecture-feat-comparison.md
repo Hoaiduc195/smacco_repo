@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Mono
 
-> Last updated: 2026-06-10 17:35
+> Last updated: 2026-06-10 18:23
 > Branch: feat/comparison
 
 ## Overview
@@ -22,11 +22,14 @@ The project is a smart accommodation discovery platform. It combines a React map
 
 ### Frontend
 - **Framework**: React SPA built with Vite.
-- **Module structure**: `src/pages` contains route pages such as `HomePage`, `PlaceDetailPage`, `ProfilePage`, and auth pages. `src/components` contains map/search panels, a simplified top search navbar, chat UI, workspace panels, comparison panels, itinerary/budget/food panels, and place cards. `src/services` wraps backend API calls and Firebase setup. `src/contexts` stores auth, travel data, and conversation/tagged-place state.
+- **Module structure**: `src/pages` contains route pages such as `HomePage`, `PlaceDetailPage`, `ProfilePage`, and auth pages. `src/components` contains map/search panels, a simplified top search navbar, chat UI, workspace panels, saved-place panels, comparison panels, itinerary/budget/food panels, and place cards. `src/services` wraps backend API calls and Firebase setup. `src/contexts` stores auth, travel data, and conversation/tagged-place state.
 - **State management**: React hooks and Context API. Conversation state tracks tagged places, selected conversation, and chat history. `useStreamingChat` manages SSE chat state.
 - **Routing**: React Router.
 - **Chat UI**: `ChatWidget` is a floating map overlay with an icon-only launcher sized like the current-location control. The launcher is hidden while the chatbox is open; closing is handled from the chat header. The chatbox no longer renders suggested prompt chips.
 - **AI comparison rendering**: For new `COMPARE_PLACES` responses, the backend parses the LLM `place_comparison` JSON, stores the criteria table payload in `place_comparison_results`, and stores only the human-readable overall assessment in `messages`. Chat messages with a stored comparison include `comparisonResultId` and render a `Xem chi tiết` button. Clicking it fetches `GET /api/v1/ai/comparisons/:id`, opens the narrow left rail comparison panel, and renders a light themed `PlaceComparisonTable` headed `Đánh giá chi tiết`. Test mode keeps `chat.persistHistory=false`, so comparison persistence and fetches do not touch the database.
+- **Workspace rail**: Left rail contains icon-only primary panels for search results, comparison, and place insight, plus a lower secondary saved-places shortcut. The saved places panel fetches the authenticated user's saved places from the backend `saved-places` API and renders them with the same `PlaceCard` component as search results for consistent card UI.
+- **Search cards**: Search result cards use `PlaceCard` with separate actions for temporary tagging (`Tag`) and persistent saving (`Lưu`) through backend `saved-places` APIs. External search results are synced through `/places` before saving when needed.
+- **Workflow search UI isolation**: AI workflow search events update the result list/panel only; they no longer write into navbar search/filter state. The top searchbar is controlled only by direct user input and restored session state.
 - **AI place insight workflow**: `ANALYZE_PLACE`/Insight requires exactly one tagged place. The Insight rail shows a CTA that triggers the chat workflow. The wizard collects optional start location, priority criteria, and trip purposes; the frontend sends current user location as `userContext` by default. The normal map UI does not auto-fetch/render nearby POIs; nearby POI data is tool-only context for backend workflows.
 
 ### Backend
@@ -41,6 +44,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 ### Frontend ↔ Backend Interaction
 - The frontend calls the backend through REST endpoints under `/api/v1` using Axios/fetch.
 - `/api/v1/search` uses SerpAPI-backed hotel search in production runtime. In fixture-only test mode, search avoids external calls and returns a small random sample of local fixture places.
+- Search/recommendation ranking does not fetch nearby POIs by default. `NearbyAmenitiesTool` is now opt-in through `includeNearbyAmenities=true`, while Insight still uses dedicated POI context through `nearby_poi_context`.
 - Chat streaming uses `POST /api/v1/ai/chat/stream` with server-sent-event style chunks from `streamChat`.
 - Search and workflow actions are sent as structured chunks; regular assistant text is streamed as `delta` strings.
 - Comparison responses are parsed/persisted by the backend and streamed to the frontend as normal analysis text plus metadata. Insight responses stream as normal Markdown after workflow confirmation and tool context extraction.

@@ -2,6 +2,111 @@
 
 ---
 
+## [2026-06-10 18:23] — Keep workflow search out of searchbar state
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted workflow search to avoid activating or updating the searchbar.
+- **Changes**:
+  - Removed `setSearchQuery`, `setPlaceType`, `setLocationInput`, and `setBudget` side effects from `HomePage.handleAiSearch()`.
+  - Changed workflow search fallback execution to use only workflow-provided filters instead of reading navbar filter state.
+  - Search workflow still updates results/panel/map through `showSearchResults()` / `performUnifiedSearch()`.
+- **Modified files**: `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — AI workflow search and navbar input state are now isolated.
+
+---
+
+## [2026-06-10 18:18] — Add persistent save button to search result cards
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted search result `PlaceCard`s to include an additional save button.
+- **Changes**:
+  - Extended `PlaceCard` with a separate persistent save action (`onPersistSave`) alongside the existing tag/save action.
+  - Updated `SearchResultsPanel` to pass saved-place state and render the additional `Lưu` / `Đã lưu` button for search results.
+  - Wired `HomePage` to sync external search results via `/places` when needed, call `savePlace()`, update saved IDs, and refresh the saved places panel.
+- **Modified files**: `frontend/src/components/PlaceCard.jsx`, `frontend/src/components/SearchResultsPanel.jsx`, `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — search result cards now support both temporary AI tagging and persistent saved-place state.
+
+---
+
+## [2026-06-10 18:09] — Reuse PlaceCard in saved places panel
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted saved-place cards to use the same place card UI as search results.
+- **Changes**:
+  - Replaced the custom saved-place card markup in `SavedPlacesPanel` with the shared `PlaceCard` component used by `SearchResultsPanel`.
+  - Kept saved panel loading/empty/header states, while card actions now use `PlaceCard`'s saved and directions buttons.
+  - Removed the now-unused AI/question action prop from the saved places panel callsite.
+- **Modified files**: `frontend/src/components/SavedPlacesPanel.jsx`, `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — UI component reuse only.
+
+---
+
+## [2026-06-10 18:03] — Stop search workflow from using POI lookup
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User asked why the search workflow was using POI search.
+- **Changes**:
+  - Traced the cause to `SEARCH_PLACES -> recommend_places -> RecommendationsService.rankPlaces()`, where `NearbyAmenitiesTool` was always executed for ranking.
+  - Added `includeNearbyAmenities?: boolean` to `RankPlacesParams` and made `NearbyAmenitiesTool` opt-in only.
+  - Left existing search workflow and REST search calls without the flag, so search/recommendation no longer calls Overpass/POI by default.
+- **Modified files**: `backend/src/modules/recommendations/recommendations.service.ts`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — POI lookup is now explicitly scoped to tools/workflows that request it instead of being implicit in generic search ranking.
+
+---
+
+## [2026-06-10 17:55] — Rename workspace label to saved places
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User asked to rename the AI context board label to `Địa điểm đã lưu`.
+- **Changes**:
+  - Replaced visible `Bảng AI` / `Bảng ngữ cảnh AI` labels in the left context panel and mobile workspace UI with `Địa điểm đã lưu` / `Đã lưu`.
+  - Updated rail accessibility labels and close button title to match the saved-places naming.
+- **Modified files**: `frontend/src/components/LeftContextPanel.jsx`, `frontend/src/pages/HomePage.jsx`, `frontend/src/components/WorkspaceRail.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — UI copy only.
+
+---
+
+## [2026-06-10 17:51] — Move saved rail shortcut and sync with backend saved places
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User clarified that the saved icon should sit lower in the rail and must sync with places the user actually saved.
+- **Changes**:
+  - Extended `WorkspaceRail` with `secondaryItems` so the saved shortcut can render near the bottom separately from primary AI panels.
+  - Moved `Địa điểm đã lưu` out of the primary rail item group and into the secondary lower rail group.
+  - Changed `HomePage` saved panel data source from Firestore `ownedPlaces` to backend `getSavedPlaces()` / `unsavePlace()` from `savedPlacesService`.
+  - Added loading state for the saved places panel and a global `app:saved-places-changed` refresh event after save toggles in `PlaceDetailPage`.
+- **Modified files**: `frontend/src/components/WorkspaceRail.jsx`, `frontend/src/index.css`, `frontend/src/pages/HomePage.jsx`, `frontend/src/components/SavedPlacesPanel.jsx`, `frontend/src/pages/PlaceDetailPage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — saved-place rail panel now uses the backend saved-place source of truth instead of the separate Firestore owned-place list.
+
+---
+
+## [2026-06-10 17:43] — Add saved places rail panel
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted another rail panel that shows saved places.
+- **Changes**:
+  - Added `SavedPlacesPanel` for `ownedPlaces` with empty state, saved-place cards, map focus, directions, AI prefill, and remove-saved actions.
+  - Added a new icon-only `Địa điểm đã lưu` rail item using the `Bookmark` icon.
+  - Rendered the saved places panel in `HomePage` and adjusted the mobile panel selector to four columns.
+- **Modified files**: `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: `frontend/src/components/SavedPlacesPanel.jsx`
+- **Deleted files**: None
+- **Architecture impact**: Yes — workspace rail now includes saved-place management backed by `TravelDataContext.ownedPlaces`.
+
+---
+
 ## [2026-06-10 17:35] — Clarify search runtime modes
 
 - **Branch**: `feat/comparison`

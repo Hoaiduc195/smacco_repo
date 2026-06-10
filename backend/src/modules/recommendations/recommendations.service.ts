@@ -12,6 +12,7 @@ export interface RankPlacesParams {
   maxResults?: number;
   anchorLocation?: { lat: number; lng: number } | null;
   anchorLabel?: string;
+  includeNearbyAmenities?: boolean;
 }
 
 export interface RankedPlace {
@@ -94,6 +95,7 @@ export class RecommendationsService {
     const budget = params.budget;
     const anchorLocation = params.anchorLocation;
     const anchorLabel = params.anchorLabel;
+    const includeNearbyAmenities = params.includeNearbyAmenities === true;
 
     // Step 1: Filter only Vietnam places
     const vietnamPlaces = filterVietnam(places || []);
@@ -105,11 +107,13 @@ export class RecommendationsService {
     const toolResults: Record<string, Record<string, { score: number; details?: any }>> = {};
     const toolTasks: Promise<void>[] = [];
 
-    toolTasks.push(
-      this.nearbyAmenitiesTool.execute({ places: vietnamPlaces })
-        .then(r => { toolResults.nearby_amenities = r.scoringMap || {}; })
-        .catch((err: any) => this.logger.error(`Amenities tool failed: ${err.message}`)),
-    );
+    if (includeNearbyAmenities) {
+      toolTasks.push(
+        this.nearbyAmenitiesTool.execute({ places: vietnamPlaces })
+          .then(r => { toolResults.nearby_amenities = r.scoringMap || {}; })
+          .catch((err: any) => this.logger.error(`Amenities tool failed: ${err.message}`)),
+      );
+    }
 
     if (anchorLocation) {
       toolTasks.push(
@@ -128,7 +132,7 @@ export class RecommendationsService {
       const budgetScore = this.scoreBudget(place.priceLevel, budget);
       const distanceScore = this.scoreDistance(place.location, anchorLocation);
 
-      const amenityScore = toolResults.nearby_amenities?.[placeId]?.score ?? 0;
+      const amenityScore = includeNearbyAmenities ? (toolResults.nearby_amenities?.[placeId]?.score ?? 0) : 0;
       const proximityScore = toolResults.proximity_checker?.[placeId]?.score ?? 0;
       const proximityDetails = toolResults.proximity_checker?.[placeId]?.details;
       const hasProximity = toolResults.proximity_checker != null;
@@ -136,10 +140,10 @@ export class RecommendationsService {
       const ratingW = 0.30;
       const budgetW = 0.20;
       const distanceW = 0.20;
-      const amenityW = 0.15;
+      const amenityW = includeNearbyAmenities ? 0.15 : 0;
       const proximityW = hasProximity ? 0.15 : 0;
 
-      const baseW = ratingW + budgetW + (hasProximity ? 0 : proximityW);
+      const baseW = ratingW + budgetW + (hasProximity ? 0 : 0.15) + (includeNearbyAmenities ? 0 : 0.15);
 
       const score = this.roundScore(
         baseW * (ratingW / baseW * ratingScore + budgetW / baseW * budgetScore) +
