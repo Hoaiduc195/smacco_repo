@@ -1,5 +1,43 @@
 # Persistent Project Memory System - Changelog (Branch: feat-better_ux)
 
+## [2026-06-10 10:02] Retargeted Place Drop Absorb To Message Input
+- **Branch**: `feat/better_ux`
+- **Prompt**: When tagging by dragging a place image/card, the absorbed card should fly toward the bottom message input area.
+- **Changes**:
+  - Added an input form ref in `ChatWidget`.
+  - Changed accepted drop target coordinates to use the message input form center whenever the chat is open.
+  - Kept the previous drop target rectangle as a fallback for closed-chat drops or missing form geometry.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — documented the updated drag/drop animation target for tagged places.
+
+---
+
+## [2026-06-10 09:58] Moved Chat Tags To Left Stack And Raised Limit
+- **Branch**: `feat/better_ux`
+- **Prompt**: Put the small tagged-place pills on the left side of the chat frame, stack them when multiple places are tagged, and allow up to 5 tagged places.
+- **Changes**:
+  - Changed `ChatWidget` to render all `taggedPlaces` as a vertical pill stack to the left of the open chat panel instead of showing only the latest tagged place below the chat.
+  - Kept each tagged-place pill draggable and removable with the existing untag button.
+  - Added a mobile fallback that places the tag stack above the chat panel to avoid horizontal overflow on small screens.
+  - Increased `ConversationContext` `MAX_TAGGED_PLACES` from 4 to 5.
+  - Verified targeted PlaceCard tests and frontend production build.
+- **Modified files**:
+  - `frontend/src/components/ChatWidget.jsx`
+  - `frontend/src/contexts/ConversationContext.jsx`
+  - `.ppms/architecture-feat-better_ux.md`
+  - `.ppms/log-feat-better_ux.md`
+- **Created files**: (none)
+- **Deleted files**: (none)
+- **Architecture impact**: Yes — documented the updated tagged-place context limit and ChatWidget tag-stack placement.
+
+---
+
 ## [2026-06-09 23:17] Stacked Chat Bottom Actions Vertically
 - **Branch**: `feat/better_ux`
 - **Prompt**: The icons/actions below the chat frame were still not stacking on top of each other.

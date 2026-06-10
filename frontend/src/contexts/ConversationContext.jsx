@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext';
 
 const ConversationContext = createContext();
 const STORAGE_KEY = 'chat_selected_conversation';
-export const MAX_TAGGED_PLACES = 4;
+export const MAX_TAGGED_PLACES = 5;
 
 export function ConversationProvider({ children }) {
   const { currentUser, loading: authLoading } = useAuth();

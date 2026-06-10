@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform (Branch: feat-better_ux)
 
-> Last updated: 2026-06-04 15:52
+> Last updated: 2026-06-10 10:02
 > Branch: feat-better_ux
 
 ## Overview
@@ -38,7 +38,7 @@ The default workspace state now prioritizes the map: both side panels start coll
 - **Workflow Wizard**: `useWorkflowWizard` coordinates detected AI intents through confirmation, slot collection, summary review, and execution. The visible `ChatWidget` now owns the workflow proposal cards and wizard flow directly from backend `workflowAction` metadata, then sends confirmed workflow payloads back through `workflowExecution`.
 - **Search Context Fallback**: If no accommodations are explicitly tagged/pinned (`taggedPlaces` is empty), `HomePage` maps and forwards the currently loaded search results (`places`) as fallback context (`taggedPlaceIds` and `taggedPlaces` payloads) in SSE chat requests. This ensures the AI always has the latest search context in follow-up chat turns.
 - **Components**:
-  - `ChatWidget` — The single workflow-capable AI chat surface. Supports history toggle, close, workflow proposal cards, wizard step/summary cards, quick replies, tagged-place context, streaming replies, and conversation actions.
+  - `ChatWidget` — The single workflow-capable AI chat surface. Supports history toggle, close, workflow proposal cards, wizard step/summary cards, quick replies, streaming replies, and conversation actions. Tagged-place context supports up to 5 places and renders as a vertical pill stack to the left of the open chat frame. Dragged place cards absorb toward the message input area when dropped into the open chat.
   - `AIWorkspacePanel` — Multi-accordion left workspace displaying panels for search results, comparison, pinned places, itineraries, insights, budgets, and food recommendations. Has collapse controls.
   - `SearchResultsPanel` — Renders accommodation search results with match scores, AI reasoning, and sync.
   - `ComparisonPanel` — Displays comparisons of price, location, pros/cons, and conditional AI choices.

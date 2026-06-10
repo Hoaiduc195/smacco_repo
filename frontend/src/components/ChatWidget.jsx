@@ -46,6 +46,7 @@ export default function ChatWidget() {
   const dropTagTimerRef = useRef(null);
   const scrollRef = useRef(null);
   const bottomRef = useRef(null);
+  const inputFormRef = useRef(null);
   const wizard = useWorkflowWizard();
 
   const {
@@ -418,14 +419,16 @@ export default function ChatWidget() {
 
     try {
       const droppedPlace = JSON.parse(placeData);
-      const rect = e.currentTarget.getBoundingClientRect();
+      const fallbackRect = e.currentTarget.getBoundingClientRect();
+      const inputRect = isOpen ? inputFormRef.current?.getBoundingClientRect() : null;
+      const targetRect = inputRect?.width && inputRect?.height ? inputRect : fallbackRect;
 
       window.dispatchEvent(new CustomEvent('app:place-drop-accepted', {
         detail: {
           placeId: droppedPlace.id,
           target: {
-            x: rect.left + (rect.width / 2),
-            y: rect.top + (rect.height / 2),
+            x: targetRect.left + (targetRect.width / 2),
+            y: targetRect.top + (targetRect.height / 2),
           },
         },
       }));
@@ -463,8 +466,6 @@ export default function ChatWidget() {
     }, 140);
   };
 
-  const visibleTaggedPlace = taggedPlaces[taggedPlaces.length - 1];
-
   if (isPlaceChatOpen && isMobile) {
     return null;
   }
@@ -474,6 +475,39 @@ export default function ChatWidget() {
       className="fixed bottom-3 sm:bottom-5 z-[1200] flex flex-col items-end gap-2 pointer-events-none transition-all duration-300 ease-in-out"
       style={{ right: isPlaceChatOpen && !isMobile ? '416px' : (isMobile ? '12px' : '20px') }}
     >
+      <div className="relative pointer-events-none">
+        {isOpen && taggedPlaces.length > 0 && (
+          <div className="absolute bottom-0 right-[calc(100%+0.5rem)] z-10 flex max-h-[min(620px,calc(100vh-7rem))] max-w-[min(13rem,calc(100vw-2rem))] flex-col items-end gap-2 overflow-y-auto pr-1 max-sm:bottom-full max-sm:right-0 max-sm:mb-2">
+            {taggedPlaces.map((place) => (
+              <div
+                key={place.id}
+                className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-ink-900 bg-ink-900 px-3 py-2 text-xs text-white shadow-soft transition duration-200 hover:-translate-y-0.5 hover:bg-ink-700"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('placeId', place.id);
+                  e.dataTransfer.setData('placeData', JSON.stringify(place));
+                  e.dataTransfer.effectAllowed = 'copy';
+                  window.dispatchEvent(new CustomEvent('app:place-drag-start', { detail: { place } }));
+                }}
+                onDragEnd={() => {
+                  window.dispatchEvent(new CustomEvent('app:place-drag-end'));
+                }}
+              >
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary-200" />
+                <span className="max-w-[8rem] truncate font-semibold">{place.name}</span>
+                <button
+                  type="button"
+                  onClick={() => untagPlace(place.id)}
+                  className="rounded-full p-0.5 text-white transition hover:bg-primary-700"
+                  title="Bỏ tag"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div
           className={`relative h-[min(620px,calc(100vh-7rem))] max-h-[calc(100vh-7rem)] bg-white/[0.96] border border-base-200/90 rounded-3xl shadow-card backdrop-blur-xl flex flex-row overflow-hidden origin-bottom-right transition-all duration-300 ${isOpen ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto visible animate-panel-in-right' : 'opacity-0 scale-95 translate-y-4 pointer-events-none invisible'} ${isDragOver ? 'ring-4 ring-primary-400/50' : isPlaceDragActive ? 'ring-2 ring-primary-300/50' : ''} ${showHistory ? 'w-[min(44rem,calc(100vw-1.5rem))]' : 'w-[min(25rem,calc(100vw-1.5rem))]'}`}
           onDrop={handleDrop}
@@ -765,7 +799,7 @@ export default function ChatWidget() {
               </div>
             )}
 
-            <form onSubmit={handleSend} className="p-3 border-t border-base-200 bg-white shrink-0">
+            <form ref={inputFormRef} onSubmit={handleSend} className="p-3 border-t border-base-200 bg-white shrink-0">
               <div className="flex items-end gap-2">
                 <textarea
                   rows={2}
@@ -811,38 +845,9 @@ export default function ChatWidget() {
             </form>
           </div>
         </div>
+      </div>
 
       <div className="flex flex-col items-end gap-2 pointer-events-none">
-        {isOpen && visibleTaggedPlace && (
-          <div className="pointer-events-auto select-none shrink-0">
-            <div
-              key={visibleTaggedPlace.id}
-              className="flex items-center gap-1.5 bg-ink-900 text-white text-xs px-3 py-2 rounded-full shadow-soft border border-ink-900 hover:bg-ink-700 transition duration-200 transform hover:-translate-y-0.5 shrink-0"
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('placeId', visibleTaggedPlace.id);
-                e.dataTransfer.setData('placeData', JSON.stringify(visibleTaggedPlace));
-                e.dataTransfer.effectAllowed = 'copy';
-                window.dispatchEvent(new CustomEvent('app:place-drag-start', { detail: { place: visibleTaggedPlace } }));
-              }}
-              onDragEnd={() => {
-                window.dispatchEvent(new CustomEvent('app:place-drag-end'));
-              }}
-            >
-              <MapPin className="w-3.5 h-3.5 shrink-0 text-primary-200" />
-              <span className="font-semibold max-w-[8rem] truncate">{visibleTaggedPlace.name}</span>
-              <button
-                type="button"
-                onClick={() => untagPlace(visibleTaggedPlace.id)}
-                className="p-0.5 rounded-full hover:bg-primary-700 text-white transition"
-                title="Bỏ tag"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        )}
-
       {!isOpen && copiedPlace && (
         <div
           onClick={() => {
