@@ -406,6 +406,10 @@ export default function HomePage() {
   }, [places]);
 
   useEffect(() => {
+    window.appUserLocation = userLocation;
+  }, [userLocation]);
+
+  useEffect(() => {
     const handlePlaceComparisonEvent = (event) => {
       if (!event?.detail) {
         setComparisonResult(null);
@@ -478,6 +482,15 @@ export default function HomePage() {
     window.dispatchEvent(new CustomEvent('app:chat-prefill', {
       detail: {
         text: `Cho tôi hỏi thêm thông tin về ${place.name} (vị trí, tiện ích, và nó có thực sự yên tĩnh không?)`,
+      },
+    }));
+  };
+
+  const handleRequestPlaceInsight = (place) => {
+    if (!place) return;
+    window.dispatchEvent(new CustomEvent('app:chat-send', {
+      detail: {
+        text: `Tạo insight cực chi tiết cho ${place.name || 'địa điểm này'}`,
       },
     }));
   };
@@ -639,8 +652,10 @@ export default function HomePage() {
         )}
         {activePanel === PANEL_IDS.INSIGHT && (
           <PlaceInsightPanel
-            selectedPlace={selectedContextPlace}
+            selectedPlace={taggedPlaces.length === 1 ? taggedPlaces[0] : selectedContextPlace}
+            taggedPlaces={taggedPlaces}
             insight={areaInsight}
+            onRequestInsight={handleRequestPlaceInsight}
             onAskAIAboutPlace={handleAskAIAboutPlace}
             onDirections={handleDirections}
           />

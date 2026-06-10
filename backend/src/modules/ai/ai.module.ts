@@ -34,6 +34,7 @@ import { ToolRegistryService } from '../../common/tools/tool-registry.service';
 import { SearchPlacesTool } from '../../common/tools/search-places.tool';
 import { GeocodeAnchorTool } from '../../common/tools/geocode-anchor.tool';
 import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
+import { PlaceInsightContextTool } from '../../common/tools/place-insight-context.tool';
 import { selectLlmClientByProvider } from './llm-provider.selector';
 
 @Module({
@@ -80,6 +81,7 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
     SearchPlacesTool,
     GeocodeAnchorTool,
     RecommendPlacesTool,
+    PlaceInsightContextTool,
     WorkflowEngineService,
     SearchResultContextBuilder,
   ],
@@ -91,10 +93,12 @@ export class AiModule {
     private readonly searchPlacesTool: SearchPlacesTool,
     private readonly geocodeAnchorTool: GeocodeAnchorTool,
     private readonly recommendPlacesTool: RecommendPlacesTool,
+    private readonly placeInsightContextTool: PlaceInsightContextTool,
   ) {
     // Register tools on app start
     this.toolRegistry.registerTool(this.searchPlacesTool);
     this.toolRegistry.registerTool(this.geocodeAnchorTool);
     this.toolRegistry.registerTool(this.recommendPlacesTool);
+    this.toolRegistry.registerTool(this.placeInsightContextTool);
   }
 }

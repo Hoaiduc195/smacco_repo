@@ -64,18 +64,42 @@ const COMPARE_STEPS = [
 
 const ANALYZE_STEPS = [
   {
+    id: 'startLocation',
+    title: 'Xuất phát từ đâu?',
+    subtitle: 'Bỏ trống hoặc chọn vị trí hiện tại nếu muốn dùng vị trí hiện tại',
+    type: 'location',
+    suggestions: ['Vị trí hiện tại', 'Trung tâm thành phố', 'Sân bay', 'Bến xe'],
+    defaultValue: '',
+  },
+  {
     id: 'criteria',
-    title: 'Đánh giá theo tiêu chí nào?',
-    subtitle: 'Chọn các tiêu chí bạn quan tâm',
+    title: 'Muốn đào sâu phần nào?',
+    subtitle: 'Insight vẫn bao quát đầy đủ, các mục này sẽ được ưu tiên hơn',
     type: 'checklist',
     options: [
+      { value: 'travel_time', label: 'Thời gian di chuyển' },
+      { value: 'strengths_weaknesses', label: 'Điểm mạnh/yếu' },
+      { value: 'trip_purpose', label: 'Theo mục đích chuyến đi' },
+      { value: 'nearby_landmarks', label: 'Địa danh xung quanh' },
+      { value: 'time_of_day', label: 'Khung giờ phù hợp trong ngày' },
+      { value: 'reviews', label: 'Phân tích reviews' },
       { value: 'price', label: 'Giá cả hợp lý' },
-      { value: 'location', label: 'Vị trí thuận tiện' },
-      { value: 'cleanliness', label: 'Sạch sẽ/chất lượng phòng' },
-      { value: 'view', label: 'View đẹp' },
-      { value: 'amenities', label: 'Tiện ích (hồ bơi, gym, spa)' },
-      { value: 'quiet', label: 'Yên tĩnh' },
-      { value: 'parking', label: 'Bãi đỗ xe' },
+      { value: 'amenities', label: 'Tiện ích' },
+    ],
+    defaultValue: [],
+  },
+  {
+    id: 'tripPurposes',
+    title: 'Mục đích chuyến đi?',
+    subtitle: 'Chọn bối cảnh để AI đánh giá độ phù hợp',
+    type: 'checklist',
+    options: [
+      { value: 'nghi_duong', label: 'Nghỉ dưỡng' },
+      { value: 'cap_doi', label: 'Đi cặp đôi' },
+      { value: 'gia_dinh', label: 'Gia đình có trẻ nhỏ' },
+      { value: 'cong_tac', label: 'Công tác/làm việc' },
+      { value: 'kham_pha', label: 'Khám phá địa phương' },
+      { value: 'tiet_kiem', label: 'Tiết kiệm ngân sách' },
     ],
     defaultValue: [],
   },
@@ -153,6 +177,8 @@ export default function useWorkflowWizard() {
         ? merged.criteria
         : (merged.criteria && merged.criteria !== 'overall' ? [merged.criteria] : []),
       preferences: merged.preferences || [],
+      startLocation: merged.startLocation || '',
+      tripPurposes: Array.isArray(merged.tripPurposes) ? merged.tripPurposes : [],
     };
   }, [activeWorkflow, collectedData, steps]);
 

@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Mono
 
-> Last updated: 2026-06-10 16:29
+> Last updated: 2026-06-10 16:53
 > Branch: feat/comparison
 
 ## Overview
@@ -27,12 +27,14 @@ The project is a smart accommodation discovery platform. It combines a React map
 - **Routing**: React Router.
 - **Chat UI**: `ChatWidget` is a floating map overlay with an icon-only launcher sized like the current-location control. The launcher is hidden while the chatbox is open; closing is handled from the chat header. The chatbox no longer renders suggested prompt chips.
 - **AI comparison rendering**: For new `COMPARE_PLACES` responses, the backend parses the LLM `place_comparison` JSON, stores the criteria table payload in `place_comparison_results`, and stores only the human-readable overall assessment in `messages`. Chat messages with a stored comparison include `comparisonResultId` and render a `Xem chi tiết` button. Clicking it fetches `GET /api/v1/ai/comparisons/:id`, opens the narrow left rail comparison panel, and renders a light themed `PlaceComparisonTable` headed `Đánh giá chi tiết`. Test mode keeps `chat.persistHistory=false`, so comparison persistence and fetches do not touch the database.
+- **AI place insight workflow**: `ANALYZE_PLACE`/Insight requires exactly one tagged place. The Insight rail shows a CTA that triggers the chat workflow. The wizard collects optional start location, priority criteria, and trip purposes; the frontend sends current user location as `userContext` by default.
 
 ### Backend
 - **Framework**: NestJS modular monolith under `backend/src`.
 - **Module structure**: `UsersModule`, `PlacesModule`, `ReviewsModule`, `SearchModule`, `AiModule`, `RecommendationsModule`, `RagModule`, `PresenceModule`, `ContributionsModule`, `HealthModule`.
 - **AI orchestration**: `AiOrchestratorService` routes intent, optionally executes workflow tools, builds context, and composes final responses. `LlmResponseComposerService` enriches tagged place context with database reviews and frontend metadata.
 - **Comparison workflow**: `COMPARE_PLACES` uses tagged place context and forces LLM JSON output via `response_format: { type: 'json_object' }`. The JSON schema includes `places`, `comparisonRows`, `overallAssessment`, `dataNotes`, and `followUpQuestion`.
+- **Insight workflow**: `ANALYZE_PLACE` runs `geocode_anchor` for an optional custom start point, then `place_insight_context` for deterministic travel-time estimates and nearby POI/landmark context. LLM composition uses that tool output plus tagged-place reviews and metadata to produce detailed Markdown sections for travel time, strengths/weaknesses, trip purposes, nearby landmarks, best time of day, and review analysis.
 - **Authentication**: Firebase token validation integrated with backend auth/user modules.
 - **Persistence**: Prisma maps PostgreSQL tables for users, places, reviews, files, chunks, conversations, messages, Q&A, presence, and saved places.
 
@@ -40,7 +42,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 - The frontend calls the backend through REST endpoints under `/api/v1` using Axios/fetch.
 - Chat streaming uses `POST /api/v1/ai/chat/stream` with server-sent-event style chunks from `streamChat`.
 - Search and workflow actions are sent as structured chunks; regular assistant text is streamed as `delta` strings.
-- Comparison responses are streamed as raw JSON text and parsed by the frontend when the full JSON is available.
+- Comparison responses are parsed/persisted by the backend and streamed to the frontend as normal analysis text plus metadata. Insight responses stream as normal Markdown after workflow confirmation and tool context extraction.
 
 ## API Endpoints
 
@@ -79,6 +81,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 - [x] React map/search experience with workspace panels and place tagging.
 - [x] Streaming AI chat with workflow confirmation cards.
 - [x] AI place comparison persisted as separate structured comparison result records, with chat messages showing analysis plus a `Xem chi tiết` button that loads the table on demand.
+- [x] Tool-backed single-place insight workflow with travel-time estimates, nearby POI context, trip-purpose analysis, and review-informed LLM synthesis.
 
 ## In-Progress Features
 - [ ] Bundle size/code splitting improvements for frontend build warnings.
@@ -92,6 +95,7 @@ mono/
 │   ├── prisma/                 # Prisma schema and migrations
 │   └── src/
 │       ├── modules/ai/         # AI orchestration, router, composer, LLM providers
+│       ├── common/tools/       # Workflow tool registry and deterministic AI context tools
 │       ├── modules/places/     # Place APIs and services
 │       ├── modules/search/     # Search providers and orchestration
 │       └── app.module.ts       # Nest root module

@@ -117,6 +117,7 @@ export default function useStreamingChat({
         conversationId,
         taggedPlaceIds,
         taggedPlaces,
+        userContext: options.userContext,
         workflowExecution: options.workflowExecution,
         wizardPreferences: options.wizardPreferences,
         signal: controller.signal,

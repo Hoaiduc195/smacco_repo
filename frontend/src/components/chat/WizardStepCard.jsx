@@ -38,6 +38,7 @@ export default function WizardStepCard({
   };
 
   if (step.options) inputProps.options = step.options;
+  if (step.suggestions) inputProps.suggestions = step.suggestions;
   if (step.type === 'checklist') inputProps.maxSelect = 5;
 
   const InputComponent = INPUT_MAP[step.type];

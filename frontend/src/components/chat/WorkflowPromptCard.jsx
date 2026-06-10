@@ -19,12 +19,12 @@ export default function WorkflowPromptCard({
 
   const hasTagWarning =
     (workflowId === 'COMPARE_PLACES' && taggedPlaces.length < 2) ||
-    (workflowId === 'ANALYZE_PLACE' && taggedPlaces.length < 1);
+    (workflowId === 'ANALYZE_PLACE' && taggedPlaces.length !== 1);
 
   const tagWarningText =
     workflowId === 'COMPARE_PLACES'
       ? 'Hãy tag ít nhất 2 địa điểm để so sánh'
-      : 'Hãy tag 1 địa điểm để phân tích';
+      : 'Insight chỉ áp dụng khi bạn tag đúng 1 địa điểm';
 
   return (
     <div className="border border-primary-200 bg-white rounded-2xl p-4 shadow-soft space-y-3 animate-soft-in">

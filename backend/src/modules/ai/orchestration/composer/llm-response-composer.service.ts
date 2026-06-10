@@ -140,79 +140,66 @@ QUY TẮC NỘI DUNG:
 const ANALYZE_COMPOSER_PROMPT = `
 ## ANALYZE_PLACE — CHUYÊN BIỆT
 
-Phân tích chi tiết 1 địa điểm user tag, dựa trên preferences của họ.
+Tạo insight cực chi tiết cho đúng 1 địa điểm user tag. Dùng context từ tool place_insight_context, metadata địa điểm, reviews đã cache, user context và preferences đã thu thập.
 
 PRE-CHECK:
-- Nếu context không có địa điểm nào được tag, chỉ trả lời:
-  "Bạn hãy chọn (tag) một địa điểm trên bản đồ để tôi phân tích nhé! 📍"
+- Nếu context không có đúng 1 địa điểm được tag, chỉ trả lời:
+  "Insight địa điểm chỉ hoạt động khi bạn tag đúng 1 địa điểm. Hãy giữ lại 1 địa điểm rồi thử lại nhé."
   KHÔNG phân tích gì thêm.
 
 ---
 
-### PHASE 1 — HỎI PREFERENCES
+### OUTPUT BẮT BUỘC
 
-Khi user CHƯA nêu preferences (kiểm tra cả message hiện tại VÀ lịch sử hội thoại gần nhất):
+Trả lời bằng Markdown tiếng Việt, có cấu trúc rõ, không JSON.
 
-Trả lời tự nhiên, thân thiện. Ví dụ:
+1. Mở đầu bằng verdict 2-3 câu:
+   - Nhắc tên địa điểm bằng link [Tên](place:id).
+   - Nêu địa điểm này hợp nhất với kiểu chuyến đi nào.
+   - Nêu 1 điểm cần cân nhắc lớn nhất nếu có bằng chứng.
 
-"Tôi sẽ phân tích **[Tên địa điểm](place:id)** cho bạn! Nhưng trước tiên, cho tôi biết bạn đang tìm kiếm gì nhé:
+2. ### Di chuyển từ điểm xuất phát
+   - Dùng tool place_insight_context.travel nếu có.
+   - Nêu khoảng cách ước tính, thời gian đi bộ/xe máy/taxi nếu có.
+   - Nói rõ đây là ước tính, không phải route giao thông thật.
+   - Nếu user chọn startLocation khác vị trí hiện tại, phân tích theo điểm đó. Nếu không, mặc định vị trí hiện tại.
 
-💰 Giá cả hợp lý?
-📍 Vị trí thuận tiện?
-🧹 Phòng sạch sẽ, chất lượng?
-🌊 View đẹp, không gian thoáng?
-🏊 Tiện ích (hồ bơi, gym, spa)?
-🔇 Yên tĩnh, phù hợp nghỉ ngơi?
-🍽️ Gần quán ăn, nhà hàng?
+3. ### Điểm mạnh
+   - Bullet 3-6 mục.
+   - Mỗi mục phải dựa trên metadata, tool, hoặc review.
+   - Nếu có review phù hợp, trích dẫn ngắn.
 
-Cứ liệt kê hoặc mô tả theo cách của bạn!"
+4. ### Điểm yếu / cần cân nhắc
+   - Bullet 2-5 mục.
+   - Không bịa nhược điểm. Nếu thiếu review/metadata, nói rõ thiếu dữ liệu.
 
-Lưu ý:
-- PHẢI dùng link place:id cho tên địa điểm.
-- KHÔNG phân tích trong phase này. Chỉ hỏi.
-- Điền tên thật từ context, không dùng placeholder.
+5. ### Phù hợp theo mục đích chuyến đi
+   - Dựa vào tripPurposes nếu user chọn; nếu không, đánh giá các bối cảnh phổ biến: nghỉ dưỡng, gia đình, cặp đôi, công tác/làm việc, khám phá địa phương.
+   - Mỗi bối cảnh ghi: Phù hợp / Cần cân nhắc / Thiếu dữ liệu.
 
----
+6. ### Xung quanh có gì đáng chú ý
+   - Dùng tool place_insight_context.nearby.items nếu có.
+   - Nhóm theo địa danh/tham quan, ăn uống/cafe, công viên/không gian mở nếu dữ liệu có.
+   - Nếu Overpass bị tắt/lỗi/không có POI, nói rõ giới hạn thay vì bịa địa danh.
 
-### PHASE 2 — PHÂN TÍCH
+7. ### Nên đi/ở vào thời điểm nào trong ngày
+   - Gợi ý sáng/trưa/chiều/tối dựa trên loại địa điểm, POI xung quanh, mục đích chuyến đi, thời gian hiện tại trong user context.
+   - Không khẳng định thời tiết/đông đúc nếu không có dữ liệu.
 
-Khi user ĐÃ nêu preferences (trong message hiện tại hoặc lịch sử gần):
+8. ### Review nói gì
+   - Tóm tắt sentiment từ reviews trong context.
+   - Nêu các pattern lặp lại nếu có.
+   - Nếu không có review thực tế, nói rõ chưa có đủ review để kết luận.
 
-ĐỊNH DẠNG OUTPUT:
-
-1. **Verdict** — 1-2 câu nhận định tổng quát:
-   "**[Tên](place:id)** khá phù hợp với nhu cầu của bạn về X và Y, nhưng có vài điểm cần lưu ý về Z."
-
-2. **✅ Điểm mạnh** — liệt kê theo từng preference user quan tâm:
-
-   ✅ **Vị trí**: Ngay trung tâm, cách bãi biển 200m — _"Đi bộ ra biển chỉ 3 phút, rất tiện"_ (⭐4/5)
-
-   ✅ **Giá cả**: Tầm 450K/đêm, hợp lý cho khu vực này — _"Giá phải chăng so với chất lượng"_ (⭐5/5)
-
-   Format: ✅ **[Tiêu chí]**: [Nhận định cụ thể] — _"trích dẫn review"_ (⭐rating)
-
-3. **⚠️ Điểm yếu** — chỉ liệt kê những điểm LIÊN QUAN tới preferences:
-
-   ⚠️ **Yên tĩnh**: Một số khách phản ánh ồn vào buổi tối — _"Phòng gần đường nên khá ồn ban đêm"_ (⭐2/5)
-
-   Format: ⚠️ **[Tiêu chí]**: [Nhận định] — _"trích dẫn review"_ (⭐rating)
-
-4. **📊 Tổng kết nhanh** — bảng mini hoặc bullet:
-
-   | Tiêu chí | Mức phù hợp |
-   |----------|-------------|
-   | 📍 Vị trí | ✅ Phù hợp |
-   | 💰 Giá cả | ✅ Phù hợp |
-   | 🔇 Yên tĩnh | ⚠️ Cần cân nhắc |
-
-5. **Câu hỏi follow-up**: "Bạn muốn tôi tìm thêm lựa chọn khác hay so sánh **[Tên](place:id)** với nơi khác?"
+9. ### Kết luận hành động
+   - 2-4 bullet: nên chọn nếu..., nên cân nhắc nếu..., nên hỏi/kiểm tra thêm gì.
 
 QUY TẮC:
-- MỌI nhận định PHẢI có dẫn chứng từ reviews hoặc metadata. Không bịa.
-- Nếu không có data cho 1 preference → ghi rõ: "📋 **[Tiêu chí]**: Chưa có đủ dữ liệu từ đánh giá khách hàng để nhận xét."
+- MỌI nhận định chất lượng, sạch sẽ, yên tĩnh, dịch vụ, an toàn PHẢI có dẫn chứng từ reviews hoặc metadata. Không bịa.
+- Nếu không có data cho 1 mục, ghi rõ thiếu dữ liệu.
 - MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:id).
-- Phân tích ĐÚNG theo preferences user nêu, không generic.
-- Giọng tự nhiên, tư vấn như bạn bè, tránh ngôn ngữ robot.
+- Ưu tiên các criteria/tripPurposes user chọn, nhưng vẫn bao phủ đủ các mục bắt buộc.
+- Giọng tư vấn thực tế, không dùng emoji quá nhiều.
 `;
 
 @Injectable()
@@ -516,6 +503,13 @@ export class LlmResponseComposerService implements IResponseComposer {
     }
 
     const frontendSearchResultsContext = this.buildFrontendSearchResultsContext(context.taggedPlaces || []);
+    const insightToolContext = context.workflowId === 'ANALYZE_PLACE'
+      ? `
+[PLACE INSIGHT TOOL CONTEXT]
+${JSON.stringify(context.toolResults, null, 2)}
+[END PLACE INSIGHT TOOL CONTEXT]
+`
+      : '';
 
     const contextPrompt = context.workflowId === 'COMPARE_PLACES' || context.workflowId === 'ANALYZE_PLACE'
       ? `
@@ -524,6 +518,7 @@ Workflow: ${context.workflowId}
 Extracted Parameters: ${JSON.stringify(context.parameters)}
 [END SYSTEM CONTEXT]
 ${taggedPlacesContext}
+${insightToolContext}
 ${frontendSearchResultsContext}
 User Query: "${context.userQuery}"
 

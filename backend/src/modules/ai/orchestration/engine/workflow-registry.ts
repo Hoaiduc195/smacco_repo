@@ -49,7 +49,28 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
   },
   ANALYZE_PLACE: {
     id: 'ANALYZE_PLACE',
-    description: 'Analyzes a single tagged place against user preferences. Two-phase: first asks preferences, then provides strengths/weaknesses. No tool steps.',
-    steps: []
+    description: 'Builds a detailed insight for exactly one tagged place using deterministic travel/nearby context plus review and metadata context.',
+    steps: [
+      {
+        id: 'geocode_start_location',
+        tool: 'geocode_anchor',
+        inputs: {
+          query: '{{params.startLocation}}',
+          location: '{{params.location}}'
+        }
+      },
+      {
+        id: 'place_insight_context',
+        tool: 'place_insight_context',
+        inputs: {
+          taggedPlaces: '{{params.taggedPlaces}}',
+          userLocation: '{{params.userContext}}',
+          startLocation: '{{geocode_start_location.data.location}}',
+          startLocationLabel: '{{params.startLocation}}',
+          criteria: '{{params.criteria}}',
+          tripPurposes: '{{params.tripPurposes}}'
+        }
+      }
+    ]
   }
 };

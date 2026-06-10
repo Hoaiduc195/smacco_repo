@@ -2,6 +2,25 @@
 
 ---
 
+## [2026-06-10 16:53] — Tool-backed single-place insight workflow
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted to install a detailed place insight workflow that only applies when exactly one place is tagged, covering travel time from current/custom start location, strengths/weaknesses, trip purpose fit, nearby landmarks, reasonable time of day, and review analysis. User also asked whether this should be done by AI alone or with registered workflow tools.
+- **Changes**:
+  - Converted `ANALYZE_PLACE` into a confirmation-gated workflow like search/compare, requiring exactly one tagged place in the frontend prompt card and Insight rail.
+  - Added `PlaceInsightContextTool` registered in the AI tool registry to build deterministic context for travel-time estimates and nearby POIs/landmarks via Overpass when enabled.
+  - Updated the workflow registry so `ANALYZE_PLACE` runs optional start-location geocoding followed by `place_insight_context` before LLM composition.
+  - Rewrote the analyze composer prompt to generate detailed Markdown sections for travel, strengths/weaknesses, trip purposes, surrounding landmarks, time-of-day guidance, reviews, and action conclusions using tool/review evidence only.
+  - Extended chat request/user context plumbing so the frontend sends current user coordinates/timezone/locale and the wizard collects optional start location, priority criteria, and trip purposes.
+  - Updated the Insight rail panel with a single-tag gate and a CTA to create detailed AI insight for the tagged place.
+  - Verified backend build, frontend build, and targeted backend AI tests. Frontend Vite still reports the existing large chunk warning.
+- **Modified files**: `backend/src/modules/ai/ai.module.ts`, `backend/src/modules/ai/dto/chat-request.dto.ts`, `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`, `backend/src/modules/ai/orchestration/engine/workflow-registry.ts`, `backend/src/modules/ai/orchestration/router/llm-task-router.service.ts`, `frontend/src/components/ChatWidget.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `frontend/src/components/chat/WorkflowPromptCard.jsx`, `frontend/src/components/chat/WizardStepCard.jsx`, `frontend/src/hooks/useStreamingChat.js`, `frontend/src/hooks/useWorkflowWizard.js`, `frontend/src/pages/HomePage.jsx`, `frontend/src/services/aiService.js`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: `backend/src/common/tools/place-insight-context.tool.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — `ANALYZE_PLACE` now has deterministic workflow tools and frontend user-context plumbing instead of relying on prompt-only place analysis.
+
+---
+
 ## [2026-06-10 16:29] — Match chat launcher to location control
 
 - **Branch**: `feat/comparison`

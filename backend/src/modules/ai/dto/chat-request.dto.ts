@@ -64,6 +64,19 @@ export class WizardPreferencesDto {
   @ArrayMaxSize(20)
   @IsString({ each: true })
   types?: string[];
+
+  @ApiPropertyOptional({ example: 'Vị trí hiện tại' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(400)
+  startLocation?: string;
+
+  @ApiPropertyOptional({ type: [String], example: ['nghỉ dưỡng', 'gia đình'] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  tripPurposes?: string[];
 }
 
 export class TaggedPlaceDto {

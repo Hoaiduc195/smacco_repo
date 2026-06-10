@@ -3,12 +3,13 @@ import { auth } from './firebase';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api/v1';
 
-export const chat = async ({ text, conversationId, taggedPlaceIds, taggedPlaces, workflowExecution, wizardPreferences } = {}) => {
+export const chat = async ({ text, conversationId, taggedPlaceIds, taggedPlaces, userContext, workflowExecution, wizardPreferences } = {}) => {
   const response = await apiClient.post('/ai/chat', {
     text,
     conversationId,
     taggedPlaceIds,
     taggedPlaces,
+    userContext,
     workflowExecution,
     wizardPreferences,
   });
@@ -49,6 +50,7 @@ export const streamChat = async ({
   conversationId,
   taggedPlaceIds,
   taggedPlaces,
+  userContext,
   workflowExecution,
   wizardPreferences,
   signal,
@@ -69,7 +71,7 @@ export const streamChat = async ({
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ text, conversationId, taggedPlaceIds, taggedPlaces, workflowExecution, wizardPreferences }),
+    body: JSON.stringify({ text, conversationId, taggedPlaceIds, taggedPlaces, userContext, workflowExecution, wizardPreferences }),
     signal,
   });
 

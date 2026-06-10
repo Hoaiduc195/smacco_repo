@@ -292,6 +292,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
         criteria: this.sanitizeStringArray(request.wizardPreferences.criteria, 20, 120),
         budget: this.truncateString(request.wizardPreferences.budget, 120),
         types: this.sanitizeStringArray(request.wizardPreferences.types, 20, 120),
+        startLocation: this.truncateString(request.wizardPreferences.startLocation, 400),
+        tripPurposes: this.sanitizeStringArray(request.wizardPreferences.tripPurposes, 20, 120),
       } : undefined,
       workflowExecution: request.workflowExecution ? {
         confirmed: request.workflowExecution.confirmed,
@@ -345,6 +347,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
         : this.truncateString(parameters.criteria, 240),
       placeName: this.truncateString(parameters.placeName, 400),
       preferences: this.sanitizeStringArray(parameters.preferences, 30, 160),
+      startLocation: this.truncateString(parameters.startLocation, 400),
+      tripPurposes: this.sanitizeStringArray(parameters.tripPurposes, 20, 120),
     };
   }
 
@@ -389,7 +393,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
   }
 
   private shouldWaitForWorkflowConfirmation(workflowId: string, alreadyExecuting: boolean): boolean {
-    return !alreadyExecuting && (workflowId === 'SEARCH_PLACES' || workflowId === 'COMPARE_PLACES');
+    return !alreadyExecuting && (workflowId === 'SEARCH_PLACES' || workflowId === 'COMPARE_PLACES' || workflowId === 'ANALYZE_PLACE');
   }
 
   private buildWorkflowAction(
@@ -428,6 +432,9 @@ export class AiOrchestratorService implements IAiOrchestrator {
       query: parameters.query || request.text,
       type: types.length ? types.join(', ') : parameters.type,
       types: types.length ? types : parameters.types,
+      taggedPlaces: request.taggedPlaces || [],
+      taggedPlaceIds: request.taggedPlaceIds || [],
+      userContext: request.userContext,
     };
   }
 }

@@ -42,7 +42,7 @@ Available Workflows:
 
 4. "ANALYZE_PLACE"
    - User wants in-depth analysis/evaluation of a specific tagged place.
-   - Keywords: "phân tích", "đánh giá", "review", "ưu nhược điểm", "điểm mạnh", "điểm yếu", "thế nào", "tốt không", "có nên", "hợp với tôi không"
+   - Keywords: "insight", "phân tích", "đánh giá", "review", "ưu nhược điểm", "điểm mạnh", "điểm yếu", "thế nào", "tốt không", "có nên", "hợp với tôi không", "xung quanh có gì", "đi lúc nào", "di chuyển bao lâu"
    - If user mentions preferences/priorities (giá, vị trí, yên tĩnh, tiện nghi...), extract into "preferences" array.
 
 Output Schema:

@@ -123,12 +123,26 @@ export default function ChatWidget() {
     };
   };
 
+  const getUserContext = () => {
+    const location = window.appUserLocation;
+    const lat = Number(location?.lat);
+    const lng = Number(location?.lng);
+    return {
+      ...(Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : {}),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Ho_Chi_Minh',
+      locale: navigator.language || 'vi-VN',
+    };
+  };
+
   const sendTextMessage = async (text, options = {}) => {
     const userText = String(text || '').trim();
     if (!userText) return;
     lastSubmittedUserMessageRef.current = userText;
     const { ids, payload } = getActivePlacesAndPayload();
-    await sendMessage(userText, ids, payload, options);
+    await sendMessage(userText, ids, payload, {
+      ...options,
+      userContext: getUserContext(),
+    });
   };
 
   const buildSearchPrompt = (data) => {
@@ -153,7 +167,11 @@ export default function ChatWidget() {
     const criteria = Array.isArray(data.criteria) && data.criteria.length
       ? ` theo các tiêu chí ${data.criteria.join(', ')}`
       : '';
-    return `Phân tích chi tiết địa điểm tôi đã tag${criteria}.`;
+    const purposes = Array.isArray(data.tripPurposes) && data.tripPurposes.length
+      ? ` cho mục đích ${data.tripPurposes.join(', ')}`
+      : '';
+    const startLocation = data.startLocation ? ` Xuất phát từ ${data.startLocation}.` : ' Mặc định xuất phát từ vị trí hiện tại.';
+    return `Tạo insight cực chi tiết cho địa điểm tôi đã tag${criteria}${purposes}.${startLocation}`;
   };
 
   const handleDeclineWorkflow = async () => {
@@ -363,7 +381,19 @@ export default function ChatWidget() {
             },
           });
         } else if (workflowId === 'ANALYZE_PLACE') {
-          await sendTextMessage(buildAnalyzePrompt(data));
+          await sendTextMessage(buildAnalyzePrompt(data), {
+            workflowExecution: {
+              workflowId: 'ANALYZE_PLACE',
+              confirmed: true,
+              parameters: data,
+            },
+            wizardPreferences: {
+              criteria: data.criteria,
+              preferences: data.criteria,
+              startLocation: data.startLocation,
+              tripPurposes: data.tripPurposes,
+            },
+          });
         }
       } catch (err) {
         awaitingConfirmedSearchActionRef.current = false;
