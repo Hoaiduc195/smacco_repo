@@ -8,13 +8,12 @@ import WorkspaceRail from '../components/WorkspaceRail';
 import SearchResultsPanel from '../components/SearchResultsPanel';
 import ComparePlacesPanel from '../components/ComparePlacesPanel';
 import PlaceInsightPanel from '../components/PlaceInsightPanel';
-import { searchPlaces, fetchNearbyPois } from '../services/placeService';
+import { searchPlaces } from '../services/placeService';
 import { getRoute } from '../services/routingService';
 import { getComparisonResult } from '../services/aiService';
 import { useTravelData } from '../contexts/TravelDataContext';
 import { useConversation } from '../contexts/ConversationContext';
 
-const FALLBACK_CENTER = { lat: 21.0285, lng: 105.8542 };
 const CURRENT_LOCATION_ZOOM = 18;
 const STORAGE_KEY = 'home_search_state';
 const APP_STATES = {
@@ -81,8 +80,6 @@ export default function HomePage() {
   const [activePanel, setActivePanel] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
 
-  const [pois, setPois] = useState([]);
-  const lastPoiKeyRef = useRef('');
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
 
@@ -269,31 +266,6 @@ export default function HomePage() {
       rehydratedRef.current = true;
     }
   }, [location.state]);
-
-  // Load POIs
-  const loadPois = useCallback(
-    async (centerPoint) => {
-      if (!centerPoint?.lat || !centerPoint?.lng) return;
-      const key = `${centerPoint.lat.toFixed(3)}:${centerPoint.lng.toFixed(3)}`;
-      if (key === lastPoiKeyRef.current && pois.length) return;
-      try {
-        const fetchedPois = await fetchNearbyPois(centerPoint.lat, centerPoint.lng, 1700);
-        setPois(fetchedPois);
-        lastPoiKeyRef.current = key;
-      } catch (err) {
-        console.error('POI fetch error:', err);
-      }
-    },
-    [pois.length]
-  );
-
-  useEffect(() => {
-    const anchor =
-      userLocation ||
-      places.find((p) => p.lat && p.lng) ||
-      FALLBACK_CENTER;
-    loadPois(anchor);
-  }, [loadPois, userLocation, places]);
 
   const showSearchResults = useCallback((results = []) => {
     const transformed = results.map(place => ({
@@ -701,7 +673,6 @@ export default function HomePage() {
             selectedPlaceId={selectedPlaceId}
             route={route}
             mapStyle="standard"
-            pois={pois}
             focusTarget={mapFocusTarget}
             disableAutoFit={disableAutoFit}
             invalidateKey={0}

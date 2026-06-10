@@ -23,10 +23,6 @@ export class RuntimeConfigService {
     return this.config.chat;
   }
 
-  get overpass() {
-    return this.config.externalApis.overpass;
-  }
-
   get ai() {
     return this.config.ai;
   }

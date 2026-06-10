@@ -23,9 +23,6 @@ export interface RuntimeConfig {
       photos: boolean;
       reviews: boolean;
     };
-    overpass: {
-      nearbyAmenities: boolean;
-    };
   };
   ai: {
     provider: AiProvider;
@@ -50,9 +47,6 @@ const TEST_DEFAULTS: RuntimeConfig = {
       photos: false,
       reviews: false,
     },
-    overpass: {
-      nearbyAmenities: false,
-    },
   },
   ai: {
     provider: 'groq',
@@ -76,9 +70,6 @@ const PRODUCTION_DEFAULTS: RuntimeConfig = {
       propertyDetails: true,
       photos: true,
       reviews: true,
-    },
-    overpass: {
-      nearbyAmenities: true,
     },
   },
   ai: {
@@ -142,10 +133,6 @@ export function readRuntimeConfig(): RuntimeConfig {
         ...legacySerpApi,
         ...(raw.externalApis?.serpapi || {}),
       },
-      overpass: {
-        ...defaults.externalApis.overpass,
-        nearbyAmenities: raw.nearbyAmenities ?? raw.externalApis?.overpass?.nearbyAmenities ?? defaults.externalApis.overpass.nearbyAmenities,
-      },
     },
     ai: {
       ...defaults.ai,
@@ -175,9 +162,6 @@ export function readRuntimeConfig(): RuntimeConfig {
         propertyDetails: false,
         photos: false,
         reviews: false,
-      },
-      overpass: {
-        nearbyAmenities: false,
       },
     };
   }

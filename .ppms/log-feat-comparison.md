@@ -2,6 +2,53 @@
 
 ---
 
+## [2026-06-10 17:21] — Make POI tool-only and remove Overpass gate
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User clarified that POI should be removed from runtime config and always allowed, but only used by tools rather than the normal map UI.
+- **Changes**:
+  - Removed frontend map's automatic POI fetch/render path from `HomePage`; map POI remains absent unless explicitly provided.
+  - Removed `externalApis.overpass.nearbyAmenities` from backend runtime config defaults, `features.json`, and the config helper script.
+  - Removed the Overpass disabled branch from `nearby_poi_context` and `nearby_amenities` tools so tool execution can call Overpass directly.
+  - Updated `tmp/tool-explain.md` to remove stale disabled-state documentation.
+- **Modified files**: `frontend/src/pages/HomePage.jsx`, `backend/src/config/runtime-config.ts`, `backend/src/config/runtime-config.service.ts`, `backend/scripts/config-features.js`, `backend/features.json`, `backend/src/common/tools/nearby-poi-context.tool.ts`, `backend/src/common/tools/nearby-amenities.tool.ts`, `tmp/tool-explain.md`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — POI fetching is now tool-scoped and always allowed for backend tools, while the default map UI no longer initiates POI loading.
+
+---
+
+## [2026-06-10 17:13] — Document insight tools in tmp
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User asked for a `tmp/tool-explain.md` document explaining how each tool in the Insight workflow works.
+- **Changes**:
+  - Added `tmp/tool-explain.md` documenting the `ANALYZE_PLACE` workflow order, each tool's responsibility, main input/output shape, and end-to-end data flow.
+  - Included explanations for the shared helpers in `place-insight-utils.ts` and why the split-tool architecture is easier to evolve.
+- **Modified files**: `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: `tmp/tool-explain.md`
+- **Deleted files**: None
+- **Architecture impact**: Yes — project documentation now explicitly describes the split insight-tool pipeline and records `tmp/` as a temporary documentation area.
+
+---
+
+## [2026-06-10 17:09] — Split insight workflow into small context tools
+
+- **Branch**: `feat/comparison`
+- **Prompt**: User wanted the Insight workflow skills/tools split into multiple smaller pieces before a larger function/tool aggregates the context.
+- **Changes**:
+  - Split the monolithic `PlaceInsightContextTool` responsibilities into smaller tools for place metadata normalization, start-location resolution, travel-time estimation, and nearby POI lookup.
+  - Kept `place_insight_context` as the final aggregate tool so the composer continues reading one stable insight context block.
+  - Updated `ANALYZE_PLACE` workflow steps to run `place_metadata_context`, `geocode_anchor`, `resolve_start_location_context`, `travel_estimate_context`, `nearby_poi_context`, then final `place_insight_context`.
+  - Registered the new tools in `AiModule` and shared coordinate/normalization helpers through `place-insight-utils.ts`.
+  - Verified backend build and targeted backend AI tests.
+- **Modified files**: `backend/src/common/tools/place-insight-context.tool.ts`, `backend/src/modules/ai/ai.module.ts`, `backend/src/modules/ai/orchestration/engine/workflow-registry.ts`, `.ppms/architecture-feat-comparison.md`, `.ppms/log-feat-comparison.md`
+- **Created files**: `backend/src/common/tools/place-insight-utils.ts`, `backend/src/common/tools/place-metadata-context.tool.ts`, `backend/src/common/tools/resolve-start-location-context.tool.ts`, `backend/src/common/tools/travel-estimate-context.tool.ts`, `backend/src/common/tools/nearby-poi-context.tool.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — `ANALYZE_PLACE` now uses a composable multi-tool context pipeline with a final aggregate context tool instead of one monolithic insight context tool.
+
+---
+
 ## [2026-06-10 16:53] — Tool-backed single-place insight workflow
 
 - **Branch**: `feat/comparison`

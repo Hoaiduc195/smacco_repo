@@ -15,9 +15,6 @@
       "propertyDetails": false,
       "photos": false,
       "reviews": false
-    },
-    "overpass": {
-      "nearbyAmenities": false
     }
   },
   "ai": {

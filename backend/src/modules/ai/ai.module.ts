@@ -34,7 +34,11 @@ import { ToolRegistryService } from '../../common/tools/tool-registry.service';
 import { SearchPlacesTool } from '../../common/tools/search-places.tool';
 import { GeocodeAnchorTool } from '../../common/tools/geocode-anchor.tool';
 import { RecommendPlacesTool } from '../../common/tools/recommend-places.tool';
+import { NearbyPoiContextTool } from '../../common/tools/nearby-poi-context.tool';
+import { PlaceMetadataContextTool } from '../../common/tools/place-metadata-context.tool';
 import { PlaceInsightContextTool } from '../../common/tools/place-insight-context.tool';
+import { ResolveStartLocationContextTool } from '../../common/tools/resolve-start-location-context.tool';
+import { TravelEstimateContextTool } from '../../common/tools/travel-estimate-context.tool';
 import { selectLlmClientByProvider } from './llm-provider.selector';
 
 @Module({
@@ -81,6 +85,10 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
     SearchPlacesTool,
     GeocodeAnchorTool,
     RecommendPlacesTool,
+    PlaceMetadataContextTool,
+    ResolveStartLocationContextTool,
+    TravelEstimateContextTool,
+    NearbyPoiContextTool,
     PlaceInsightContextTool,
     WorkflowEngineService,
     SearchResultContextBuilder,
@@ -93,12 +101,20 @@ export class AiModule {
     private readonly searchPlacesTool: SearchPlacesTool,
     private readonly geocodeAnchorTool: GeocodeAnchorTool,
     private readonly recommendPlacesTool: RecommendPlacesTool,
+    private readonly placeMetadataContextTool: PlaceMetadataContextTool,
+    private readonly resolveStartLocationContextTool: ResolveStartLocationContextTool,
+    private readonly travelEstimateContextTool: TravelEstimateContextTool,
+    private readonly nearbyPoiContextTool: NearbyPoiContextTool,
     private readonly placeInsightContextTool: PlaceInsightContextTool,
   ) {
     // Register tools on app start
     this.toolRegistry.registerTool(this.searchPlacesTool);
     this.toolRegistry.registerTool(this.geocodeAnchorTool);
     this.toolRegistry.registerTool(this.recommendPlacesTool);
+    this.toolRegistry.registerTool(this.placeMetadataContextTool);
+    this.toolRegistry.registerTool(this.resolveStartLocationContextTool);
+    this.toolRegistry.registerTool(this.travelEstimateContextTool);
+    this.toolRegistry.registerTool(this.nearbyPoiContextTool);
     this.toolRegistry.registerTool(this.placeInsightContextTool);
   }
 }

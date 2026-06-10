@@ -22,9 +22,6 @@ const TEST_PROFILE = {
       photos: false,
       reviews: false,
     },
-    overpass: {
-      nearbyAmenities: false,
-    },
   },
   ai: {
     provider: 'groq',
@@ -48,9 +45,6 @@ const PRODUCTION_PROFILE = {
       propertyDetails: true,
       photos: true,
       reviews: true,
-    },
-    overpass: {
-      nearbyAmenities: true,
     },
   },
   ai: {

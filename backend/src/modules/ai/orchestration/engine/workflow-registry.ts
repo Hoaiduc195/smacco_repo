@@ -49,8 +49,15 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
   },
   ANALYZE_PLACE: {
     id: 'ANALYZE_PLACE',
-    description: 'Builds a detailed insight for exactly one tagged place using deterministic travel/nearby context plus review and metadata context.',
+    description: 'Builds a detailed insight for exactly one tagged place using small deterministic context tools and a final aggregate context.',
     steps: [
+      {
+        id: 'place_metadata_context',
+        tool: 'place_metadata_context',
+        inputs: {
+          taggedPlaces: '{{params.taggedPlaces}}'
+        }
+      },
       {
         id: 'geocode_start_location',
         tool: 'geocode_anchor',
@@ -60,13 +67,37 @@ export const WORKFLOW_REGISTRY: Record<string, WorkflowDefinition> = {
         }
       },
       {
+        id: 'resolve_start_location_context',
+        tool: 'resolve_start_location_context',
+        inputs: {
+          userLocation: '{{params.userContext}}',
+          startLocation: '{{geocode_start_location.data.location}}',
+          startLocationLabel: '{{params.startLocation}}'
+        }
+      },
+      {
+        id: 'travel_estimate_context',
+        tool: 'travel_estimate_context',
+        inputs: {
+          place: '{{place_metadata_context.data.place}}',
+          startLocation: '{{resolve_start_location_context.data}}'
+        }
+      },
+      {
+        id: 'nearby_poi_context',
+        tool: 'nearby_poi_context',
+        inputs: {
+          place: '{{place_metadata_context.data.place}}'
+        }
+      },
+      {
         id: 'place_insight_context',
         tool: 'place_insight_context',
         inputs: {
-          taggedPlaces: '{{params.taggedPlaces}}',
-          userLocation: '{{params.userContext}}',
-          startLocation: '{{geocode_start_location.data.location}}',
-          startLocationLabel: '{{params.startLocation}}',
+          metadata: '{{place_metadata_context.data}}',
+          startLocation: '{{resolve_start_location_context.data}}',
+          travel: '{{travel_estimate_context.data}}',
+          nearby: '{{nearby_poi_context.data}}',
           criteria: '{{params.criteria}}',
           tripPurposes: '{{params.tripPurposes}}'
         }
