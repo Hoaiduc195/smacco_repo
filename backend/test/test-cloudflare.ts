@@ -69,13 +69,19 @@ async function testWorkersAI() {
   const accountId = process.env.CLOUDFLARE_AI_ACCOUNT_ID;
   const apiToken = process.env.CLOUDFLARE_AI_API_TOKEN;
   const model = process.env.CLOUDFLARE_AI_MODEL || '@cf/meta/llama-3.1-8b-instruct';
-  const baseUrl = process.env.CLOUDFLARE_AI_BASE_URL || `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/`;
+  const useProxy = process.env.CLOUDFLARE_AI_USE_PROXY === 'true';
+  const officialBaseUrl = process.env.CLOUDFLARE_AI_OFFICIAL_BASE_URL || 'https://api.cloudflare.com/client/v4/accounts';
+  const proxyBaseUrl = process.env.CLOUDFLARE_AI_PROXY_BASE_URL || process.env.CLOUDFLARE_AI_BASE_URL || '';
+  const baseUrl = useProxy && proxyBaseUrl
+    ? proxyBaseUrl
+    : `${officialBaseUrl.replace(/\/$/, '')}/${accountId}/ai/v1`;
 
   if (!accountId || !apiToken) {
     console.error('❌ Workers AI Credentials missing in .env');
     return false;
   }
 
+  console.log(`Mode: ${useProxy ? 'proxy' : 'official'}`);
   console.log(`Base URL: ${baseUrl}`);
   console.log(`Model: ${model}`);
 
@@ -89,7 +95,6 @@ async function testWorkersAI() {
         messages: [
           { role: 'user', content: 'Say hello in 5 words.' }
         ],
-        max_tokens: 20,
       },
       {
         headers: {
@@ -101,8 +106,13 @@ async function testWorkersAI() {
     );
 
     console.log('✅ Workers AI Connection Successful!');
-    const content = response.data?.choices?.[0]?.message?.content || response.data?.result?.response;
-    console.log(`AI Response: "${content?.trim()}"`);
+    const message = response.data?.choices?.[0]?.message;
+    const content = message?.content || response.data?.result?.response;
+    const reasoning = message?.reasoning_content || message?.reasoning;
+    console.log(`AI Response: "${content?.trim() || '(empty content)'}"`);
+    if (!content && reasoning) {
+      console.log('Note: model returned reasoning content but no final message content.');
+    }
     return true;
   } catch (error: any) {
     console.error('❌ Workers AI Connection Failed:', error.response?.data || error.message);

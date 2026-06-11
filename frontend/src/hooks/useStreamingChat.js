@@ -11,7 +11,6 @@ export default function useStreamingChat({
   onSearchAction,
   onWorkflowAction,
   onAssistantMeta,
-  hideSearchWorkflowTrigger = false,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
@@ -65,33 +64,11 @@ export default function useStreamingChat({
     });
   };
 
-  const hideCurrentWorkflowTriggerTurn = () => {
-    setMessages((prev) => {
-      if (prev.length === 0) return prev;
-
-      const next = [...prev];
-      const last = next[next.length - 1];
-      if (last?.role === 'assistant' && !(last.content || '').trim()) {
-        next.pop();
-      }
-
-      const userIndex = [...next].reverse().findIndex((msg) => msg.role === 'user' && !msg.hidden);
-      if (userIndex === -1) return next;
-
-      const targetIndex = next.length - 1 - userIndex;
-      next[targetIndex] = {
-        ...next[targetIndex],
-        hidden: true,
-        intentTrigger: true,
-      };
-      return next;
-    });
-  };
-
   const sendMessage = async (textOverride, taggedPlaceIds, taggedPlaces, options = {}) => {
     const rawText = textOverride ?? input;
     const userText = rawText.trim();
     if (!userText || isStreaming) return;
+    const hideUserMessage = options.hideUserMessage === true;
 
     const promptText = typeof buildPrompt === 'function' ? buildPrompt(userText) : userText;
 
@@ -103,7 +80,7 @@ export default function useStreamingChat({
       const assistantMessageId = `local-${messageIdRef.current++}`;
       setMessages((prev) => [
         ...prev,
-        { id: userMessageId, role: 'user', content: userText, hidden: false, intentTrigger: false },
+        { id: userMessageId, role: 'user', content: userText, hidden: hideUserMessage, intentTrigger: hideUserMessage },
         { id: assistantMessageId, role: 'assistant', content: '' },
       ]);
       setIsStreaming(true);
@@ -121,6 +98,7 @@ export default function useStreamingChat({
         userContext: options.userContext,
         workflowExecution: options.workflowExecution,
         wizardPreferences: options.wizardPreferences,
+        hideUserMessage,
         signal: controller.signal,
         onChunk: (chunk) => {
           if (chunk?.error) {
@@ -133,14 +111,7 @@ export default function useStreamingChat({
             onSearchAction(chunk.searchAction);
           }
           if (chunk?.workflowAction && typeof onWorkflowAction === 'function') {
-            const workflowResult = onWorkflowAction(chunk.workflowAction);
-            if (
-              hideSearchWorkflowTrigger &&
-              chunk.workflowAction.type === 'search' &&
-              workflowResult?.hideTriggerTurn === true
-            ) {
-              hideCurrentWorkflowTriggerTurn();
-            }
+            onWorkflowAction(chunk.workflowAction);
           }
           if (chunk?.conversationId || chunk?.conversation_id) {
             setConversationId((prev) => prev || chunk.conversationId || chunk.conversation_id);
@@ -167,7 +138,9 @@ export default function useStreamingChat({
         },
         onError: (err) => {
           setError(err?.message || 'Có lỗi khi gọi AI');
-          appendAssistantDelta(defaultAssistantError);
+          if (!receivedAssistantTextRef.current) {
+            appendAssistantDelta(defaultAssistantError);
+          }
           setIsStreaming(false);
         },
       });

@@ -268,14 +268,81 @@ export class LlmTaskRouterService implements ITaskRouter {
 
       // Default fallback if parsing fails or returns invalid workflowId
       if (!result.workflowId) {
-         return { workflowId: 'GENERAL_CHAT', parameters: {} };
+         return this.buildDeterministicFallbackRoute(userQuery);
       }
       
       return result;
     } catch (error: any) {
-      this.logger.error(`Task Routing Failed: ${error.message}. Clean content was: "${cleanContent}". Falling back to GENERAL_CHAT.`);
-      return { workflowId: 'GENERAL_CHAT', parameters: {} };
+      const fallback = this.buildDeterministicFallbackRoute(userQuery);
+      this.logger.error(`Task Routing Failed: ${error.message}. Clean content was: "${cleanContent}". Falling back to ${fallback.workflowId}.`);
+      return fallback;
     }
+  }
+
+  private buildDeterministicFallbackRoute(userQuery: string): TaskRouteResult {
+    const query = String(userQuery || '').trim();
+    const normalized = this.canonicalizeText(query);
+
+    if (/(^|\s)(so sanh|compare|versus|vs)(\s|$)|cai nao tot hon|nen chon cai nao|khac nhau/.test(normalized)) {
+      const criteria = this.extractComparisonCriteria(normalized);
+      return {
+        workflowId: 'COMPARE_PLACES',
+        parameters: {
+          placeNames: [],
+          criteria: criteria.length ? criteria : 'overall',
+        },
+      };
+    }
+
+    if (/phan tich|danh gia|review|uu nhuoc diem|diem manh|diem yeu|tot khong|co nen|insight|xung quanh co gi|di chuyen bao lau/.test(normalized)) {
+      return {
+        workflowId: 'ANALYZE_PLACE',
+        parameters: {
+          placeName: '',
+          preferences: this.extractAnalysisPreferences(normalized),
+        },
+      };
+    }
+
+    if (/khach san|nha nghi|homestay|resort|villa|can ho|nha khach|motel|camping|noi luu tru|cho o|tim|gan|o dau/.test(normalized)) {
+      return {
+        workflowId: 'SEARCH_PLACES',
+        parameters: this.normalizeParameters({ query }, query),
+      };
+    }
+
+    return { workflowId: 'GENERAL_CHAT', parameters: {} };
+  }
+
+  private extractComparisonCriteria(normalizedQuery: string): string[] {
+    const criteria: string[] = [];
+    const add = (value: string) => {
+      if (!criteria.includes(value)) criteria.push(value);
+    };
+
+    if (/rating|danh gia|diem|sao/.test(normalizedQuery)) add('rating');
+    if (/location|vi tri|dia diem|gan|khu vuc/.test(normalizedQuery)) add('location');
+    if (/amenities|tien nghi|co so vat chat|wifi|ho boi|bai do xe/.test(normalizedQuery)) add('amenities');
+    if (/quiet|yen tinh|on ao|cach am/.test(normalizedQuery)) add('quiet');
+    if (/cleanliness|sach|sach se|ve sinh/.test(normalizedQuery)) add('cleanliness');
+    if (/price|gia|re|dat|ngan sach/.test(normalizedQuery)) add('price');
+
+    return criteria;
+  }
+
+  private extractAnalysisPreferences(normalizedQuery: string): string[] {
+    const preferences: string[] = [];
+    const add = (value: string) => {
+      if (!preferences.includes(value)) preferences.push(value);
+    };
+
+    if (/gia|re|dat|ngan sach/.test(normalizedQuery)) add('giá cả');
+    if (/vi tri|location|gan|khu vuc/.test(normalizedQuery)) add('vị trí');
+    if (/yen tinh|quiet|on ao/.test(normalizedQuery)) add('yên tĩnh');
+    if (/sach|cleanliness|ve sinh/.test(normalizedQuery)) add('sạch sẽ');
+    if (/tien nghi|amenities|wifi|ho boi|bai do xe/.test(normalizedQuery)) add('tiện nghi');
+
+    return preferences;
   }
 
   private normalizeParameters(params: Record<string, any>, userQuery: string): Record<string, any> {

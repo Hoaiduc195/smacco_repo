@@ -18,6 +18,6 @@
     }
   },
   "ai": {
-    "provider": "groq"
+    "provider": "cloudflare"
   }
 }

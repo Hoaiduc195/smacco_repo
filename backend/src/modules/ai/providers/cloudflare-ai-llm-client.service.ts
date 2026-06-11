@@ -18,9 +18,12 @@ export class CloudflareAiLlmClientService implements ILlmClient {
 
   constructor(private readonly configService: ConfigService) {
     const accountId = this.configService.get<string>('cloudflareAi.accountId') || '';
-    const rawBaseUrl = this.configService.get<string>('cloudflareAi.baseUrl') || 'https://api.cloudflare.com/client/v4/accounts';
+    const useProxy = this.configService.get<boolean>('cloudflareAi.useProxy') === true;
+    const proxyBaseUrl = this.configService.get<string>('cloudflareAi.proxyBaseUrl') || '';
+    const rawBaseUrl = useProxy && proxyBaseUrl
+      ? proxyBaseUrl
+      : (this.configService.get<string>('cloudflareAi.baseUrl') || 'https://api.cloudflare.com/client/v4/accounts');
     
-    // Construct standard OpenAI-compatible base URL for Cloudflare Workers AI
     if (rawBaseUrl.includes('api.cloudflare.com')) {
       this.baseUrl = `${rawBaseUrl.replace(/\/$/, '')}/${accountId}/ai/v1`;
     } else {
@@ -57,6 +60,68 @@ export class CloudflareAiLlmClientService implements ILlmClient {
     return '';
   }
 
+  private summarizeResponseShape(response: any): string {
+    if (!response || typeof response !== 'object') return typeof response;
+    const keys = Object.keys(response).slice(0, 8).join(', ') || 'empty object';
+    const choice = Array.isArray(response.choices) ? response.choices[0] : undefined;
+    const choiceKeys = choice && typeof choice === 'object'
+      ? `; choice: ${Object.keys(choice).slice(0, 8).join(', ')}`
+      : '';
+    const messageKeys = choice?.message && typeof choice.message === 'object'
+      ? `; message: ${Object.keys(choice.message).slice(0, 8).join(', ')}`
+      : '';
+    const resultKeys = response.result && typeof response.result === 'object'
+      ? `; result: ${Object.keys(response.result).slice(0, 8).join(', ')}`
+      : '';
+    return `${keys}${choiceKeys}${messageKeys}${resultKeys}`;
+  }
+
+  private extractErrorMessage(response: any): string | undefined {
+    const error = response?.error || response?.errors?.[0];
+    if (!error) return undefined;
+    if (typeof error === 'string') return error;
+    if (typeof error.message === 'string') return error.message;
+    return JSON.stringify(error).slice(0, 500);
+  }
+
+  private extractChatCompletion(data: any) {
+    const upstreamError = this.extractErrorMessage(data);
+    if (upstreamError) {
+      throw new Error(`Cloudflare AI upstream error: ${upstreamError}`);
+    }
+
+    const choice = Array.isArray(data?.choices) ? data.choices[0] : undefined;
+    const content = this.extractTextContent(
+      choice?.message?.content
+        ?? choice?.message?.response
+        ?? choice?.message?.text
+        ?? choice?.text
+        ?? choice?.content
+        ?? choice?.response
+        ?? data?.message?.content
+        ?? data?.message?.response
+        ?? data?.message?.text
+        ?? data?.content
+        ?? data?.output_text
+        ?? data?.text
+        ?? data?.answer
+        ?? data?.response
+        ?? data?.result?.response
+        ?? data?.result?.content
+        ?? data?.result?.text,
+    );
+
+    if (!content) {
+      throw new Error(`Cloudflare AI returned empty/unsupported chat completion response shape: ${this.summarizeResponseShape(data)}`);
+    }
+
+    return {
+      content,
+      finishReason: choice?.finish_reason || choice?.finishReason || data?.finish_reason || data?.finishReason || undefined,
+      usage: data?.usage,
+    };
+  }
+
   /**
    * Non-streaming chat completion.
    * Returns [content, finishReason, usage].
@@ -65,28 +130,42 @@ export class CloudflareAiLlmClientService implements ILlmClient {
     messages: ChatMessage[],
     options?: { response_format?: { type: string } }
   ): Promise<{ content: string; finishReason?: string; usage?: Record<string, number> }> {
-    const payload: any = {
+    const basePayload: any = {
       model: this.model,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       stream: false,
     };
 
-    if (options?.response_format) {
-      payload.response_format = options.response_format;
-    }
-
     try {
+      const payload = {
+        ...basePayload,
+        ...(options?.response_format ? { response_format: options.response_format } : {}),
+      };
       const response = await axios.post(`${this.baseUrl}/chat/completions`, payload, {
         headers: this.headers(),
         timeout: this.timeout,
+      }).catch(async (requestError: any) => {
+        if (!options?.response_format) throw requestError;
+
+        this.logger.warn(`Cloudflare AI rejected response_format; retrying without response_format. ${requestError.message}`);
+        return axios.post(`${this.baseUrl}/chat/completions`, basePayload, {
+          headers: this.headers(),
+          timeout: this.timeout,
+        });
       });
 
-      const data = response.data;
-      const content = this.extractTextContent(data?.choices?.[0]?.message?.content);
-      const finishReason = data.choices[0].finish_reason;
-      const usage = data.usage;
+      try {
+        return this.extractChatCompletion(response.data);
+      } catch (extractError: any) {
+        if (!options?.response_format) throw extractError;
 
-      return { content, finishReason, usage };
+        this.logger.warn(`Cloudflare AI returned no usable content with response_format; retrying without response_format. ${extractError.message}`);
+        const retryResponse = await axios.post(`${this.baseUrl}/chat/completions`, basePayload, {
+          headers: this.headers(),
+          timeout: this.timeout,
+        });
+        return this.extractChatCompletion(retryResponse.data);
+      }
     } catch (error: any) {
       this.logger.error(`Cloudflare AI chat completion error: ${error.message}`, error.stack);
       throw error;

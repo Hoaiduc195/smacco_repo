@@ -83,41 +83,34 @@ describe('useStreamingChat', () => {
     expect(result.current.isStreaming).toBe(false);
   });
 
-  it('hides the search workflow trigger turn when requested by the workflow handler', async () => {
-    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
-      onChunk?.({ workflowAction: { type: 'search', parameters: { query: 'Tìm homestay' } } });
-      onChunk?.({ finish_reason: 'stop' });
-      onDone?.();
+  it('keeps partial assistant text clean when stream fails after deltas', async () => {
+    streamChatMock.mockImplementation(async ({ onChunk, onError }) => {
+      onChunk?.({ delta: 'Một phần câu trả lời' });
+      onError?.(new Error('stream timeout'));
     });
 
-    const { result } = renderHook(() =>
-      useStreamingChat({
-        initialMessages: [],
-        hideSearchWorkflowTrigger: true,
-        onWorkflowAction: () => ({ hideTriggerTurn: true }),
-      })
-    );
+    const { result } = renderHook(() => useStreamingChat({ initialMessages: [] }));
 
     act(() => {
-      result.current.setInput('Tìm homestay');
+      result.current.setInput('test');
     });
 
     await act(async () => {
       await result.current.sendMessage();
     });
 
-    expect(result.current.messages).toHaveLength(1);
-    expect(result.current.messages[0]).toMatchObject({
-      role: 'user',
-      content: 'Tìm homestay',
-      hidden: true,
-      intentTrigger: true,
+    expect(result.current.error).toBe('stream timeout');
+    expect(result.current.messages[1]).toMatchObject({
+      role: 'assistant',
+      content: 'Một phần câu trả lời',
     });
+    expect(result.current.messages[1].content).not.toContain('đã gặp lỗi');
+    expect(result.current.isStreaming).toBe(false);
   });
 
-  it('keeps the user turn visible when workflow handler does not request hiding', async () => {
+  it('keeps workflow trigger turns visible by default', async () => {
     streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
-      onChunk?.({ workflowAction: { type: 'search', parameters: { query: 'Tìm homestay' } } });
+      onChunk?.({ workflowAction: { type: 'compare', parameters: { criteria: 'overall' } } });
       onChunk?.({ finish_reason: 'stop' });
       onDone?.();
     });
@@ -125,13 +118,12 @@ describe('useStreamingChat', () => {
     const { result } = renderHook(() =>
       useStreamingChat({
         initialMessages: [],
-        hideSearchWorkflowTrigger: true,
         onWorkflowAction: () => undefined,
       })
     );
 
     act(() => {
-      result.current.setInput('Tìm homestay');
+      result.current.setInput('So sánh các địa điểm đã tag');
     });
 
     await act(async () => {
@@ -141,17 +133,45 @@ describe('useStreamingChat', () => {
     expect(result.current.messages).toHaveLength(1);
     expect(result.current.messages[0]).toMatchObject({
       role: 'user',
-      content: 'Tìm homestay',
+      content: 'So sánh các địa điểm đã tag',
       hidden: false,
       intentTrigger: false,
     });
+  });
+
+  it('can hide explicitly generated workflow execution prompts', async () => {
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() => useStreamingChat({ initialMessages: [] }));
+
+    act(() => {
+      result.current.setInput('Tìm homestay yên tĩnh, ở Đà Lạt, loại homestay');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage(undefined, [], [], { hideUserMessage: true });
+    });
+
+    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.messages[0]).toMatchObject({
+      role: 'user',
+      content: 'Tìm homestay yên tĩnh, ở Đà Lạt, loại homestay',
+      hidden: true,
+      intentTrigger: true,
+    });
+    expect(streamChatMock).toHaveBeenCalledWith(expect.objectContaining({
+      hideUserMessage: true,
+    }));
   });
 
   it('notifies callers when assistant message metadata arrives', async () => {
     const onAssistantMeta = vi.fn();
     streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
       onChunk?.({ delta: 'Mình đã tạo bảng so sánh.' });
-      onChunk?.({ messageMeta: { comparisonResultId: 'comparison-1' } });
+      onChunk?.({ messageMeta: { comparisonResultId: 'comparison-1', comparisonPayload: { type: 'place_comparison' } } });
       onChunk?.({ finish_reason: 'stop' });
       onDone?.();
     });
@@ -171,11 +191,50 @@ describe('useStreamingChat', () => {
       await result.current.sendMessage();
     });
 
-    expect(onAssistantMeta).toHaveBeenCalledWith({ comparisonResultId: 'comparison-1' });
+    expect(onAssistantMeta).toHaveBeenCalledWith({ comparisonResultId: 'comparison-1', comparisonPayload: { type: 'place_comparison' } });
     expect(result.current.messages[1]).toMatchObject({
       role: 'assistant',
       content: 'Mình đã tạo bảng so sánh.',
       comparisonResultId: 'comparison-1',
+      comparisonPayload: { type: 'place_comparison' },
+    });
+  });
+
+  it('applies comparison payload metadata when no persisted comparison id exists', async () => {
+    const onAssistantMeta = vi.fn();
+    const comparisonPayload = {
+      type: 'place_comparison',
+      places: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+      comparisonRows: [],
+    };
+
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ delta: 'Mình đã tạo bảng so sánh.' });
+      onChunk?.({ messageMeta: { comparisonPayload } });
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        initialMessages: [],
+        onAssistantMeta,
+      })
+    );
+
+    act(() => {
+      result.current.setInput('So sánh các địa điểm đã tag');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(onAssistantMeta).toHaveBeenCalledWith({ comparisonPayload });
+    expect(result.current.messages[1]).toMatchObject({
+      role: 'assistant',
+      content: 'Mình đã tạo bảng so sánh.',
+      comparisonPayload,
     });
   });
 });

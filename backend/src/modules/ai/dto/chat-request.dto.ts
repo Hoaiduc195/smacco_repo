@@ -218,6 +218,11 @@ export class ChatRequestDto {
   @IsBoolean()
   stream?: boolean;
 
+  @ApiPropertyOptional({ default: false, description: 'Do not store/display this user turn in conversation history.' })
+  @IsOptional()
+  @IsBoolean()
+  hideUserMessage?: boolean;
+
   @ApiPropertyOptional({ type: [String], example: ['place-uuid-1', 'place-uuid-2'] })
   @IsOptional()
   @IsArray()

@@ -43,6 +43,7 @@ describe('AiOrchestratorService history ordering', () => {
     };
     const placeComparisonResultsService = {
       parsePayload: jest.fn<any, any[]>(() => null),
+      buildFallbackPayload: jest.fn<any, any[]>(() => null),
       toAssistantMessage: jest.fn(),
       createForMessage: jest.fn(),
     };
@@ -101,6 +102,38 @@ describe('AiOrchestratorService history ordering', () => {
     expect(composer.streamCompose).toHaveBeenCalledWith(
       expect.any(Object),
       expectedHistory,
+    );
+  });
+
+  it('does not store hidden generated workflow prompts in stream history', async () => {
+    const store = createStore();
+    const { service, router, composer } = createService(store);
+
+    const chunks: string[] = [];
+    for await (const chunk of service.streamQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi đã tag theo các tiêu chí rating, location, amenities.',
+      hideUserMessage: true,
+      workflowExecution: {
+        workflowId: 'COMPARE_PLACES',
+        confirmed: true,
+        parameters: { criteria: ['rating', 'location', 'amenities'] },
+      },
+    } as any)) {
+      chunks.push(chunk.delta);
+    }
+
+    expect(chunks).toContain('streamed answer');
+    expect(router.route).not.toHaveBeenCalled();
+    expect(composer.streamCompose).toHaveBeenCalledWith(
+      expect.objectContaining({ workflowId: 'COMPARE_PLACES' }),
+      baseHistory,
+    );
+    expect(store.append).toHaveBeenCalledTimes(1);
+    expect(store.append).toHaveBeenCalledWith(
+      request.conversationId,
+      { role: 'assistant', content: 'streamed answer' },
+      undefined,
     );
   });
 
@@ -195,6 +228,53 @@ describe('AiOrchestratorService history ordering', () => {
       conversationId: request.conversationId,
       messageId: 'message-1',
       payload,
+    });
+  });
+
+  it('streams compare payload metadata even when no comparison id is persisted', async () => {
+    const store = createStore();
+    const { service, composer, placeComparisonResultsService } = createService(store);
+    const payload = {
+      type: 'place_comparison',
+      places: [{ id: 'a', name: 'Alpha' }, { id: 'b', name: 'Beta' }],
+      comparisonRows: [],
+      overallAssessment: { summary: 'Alpha phù hợp hơn.' },
+    };
+
+    composer.streamCompose.mockImplementationOnce(async function* () {
+      yield JSON.stringify(payload);
+    });
+    placeComparisonResultsService.parsePayload.mockReturnValueOnce(payload);
+    placeComparisonResultsService.toAssistantMessage.mockReturnValueOnce('Alpha phù hợp hơn.');
+    placeComparisonResultsService.createForMessage.mockResolvedValueOnce(null);
+
+    const chunks = [];
+    for await (const chunk of service.streamQuery({
+      ...request,
+      text: 'So sánh các địa điểm tôi đã tag theo giá và vị trí.',
+      workflowExecution: {
+        workflowId: 'COMPARE_PLACES',
+        confirmed: true,
+        parameters: {},
+      },
+    } as any)) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks).toContainEqual({
+      conversationId: request.conversationId,
+      delta: 'Alpha phù hợp hơn.',
+      messageMeta: {
+        comparisonResultId: null,
+        comparisonPayload: payload,
+      },
+    });
+    expect(chunks[chunks.length - 1]).toMatchObject({
+      finishReason: 'stop',
+      messageMeta: {
+        comparisonResultId: null,
+        comparisonPayload: payload,
+      },
     });
   });
 

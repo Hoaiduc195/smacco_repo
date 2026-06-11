@@ -30,7 +30,7 @@ export default function ChatWidget() {
   const awaitingConfirmedSearchActionRef = useRef(false);
   const latestSearchResultsRef = useRef([]);
   const lastSubmittedUserMessageRef = useRef('');
-  const lastOpenedComparisonResultIdRef = useRef(null);
+  const lastOpenedComparisonKeyRef = useRef(null);
   const skipNextWorkflowPromptRef = useRef(false);
   const declinedSearchFallbackRef = useRef('');
   const dragOverResetRef = useRef(null);
@@ -54,7 +54,6 @@ export default function ChatWidget() {
     abortStreaming,
   } = useStreamingChat({
     initialMessages: defaultMessages,
-    hideSearchWorkflowTrigger: true,
     onSearchAction: (action) => {
       const hasResolvedResults = Array.isArray(action?.results);
       if (!awaitingConfirmedSearchActionRef.current && !hasResolvedResults) {
@@ -78,19 +77,25 @@ export default function ChatWidget() {
           action.parameters?.query || '',
           lastSubmittedUserMessageRef.current
         );
-        return { hideTriggerTurn: true };
+        return;
       } else if (action.type === 'compare') {
         wizard.proposeWorkflow('COMPARE_PLACES', action.parameters || {}, '', lastSubmittedUserMessageRef.current);
+        return;
       } else if (action.type === 'analyze') {
         wizard.proposeWorkflow('ANALYZE_PLACE', action.parameters || {}, '', lastSubmittedUserMessageRef.current);
+        return;
       }
     },
     onAssistantMeta: (meta) => {
-      if (!meta?.comparisonResultId) return;
-      if (lastOpenedComparisonResultIdRef.current === meta.comparisonResultId) return;
-      lastOpenedComparisonResultIdRef.current = meta.comparisonResultId;
+      if (!meta?.comparisonResultId && !meta?.comparisonPayload) return;
+      const comparisonKey = meta.comparisonResultId || JSON.stringify(meta.comparisonPayload);
+      if (lastOpenedComparisonKeyRef.current === comparisonKey) return;
+      lastOpenedComparisonKeyRef.current = comparisonKey;
       window.dispatchEvent(new CustomEvent('app:open-place-comparison', {
-        detail: { comparisonResultId: meta.comparisonResultId },
+        detail: {
+          comparisonResultId: meta.comparisonResultId,
+          comparisonPayload: meta.comparisonPayload,
+        },
       }));
     },
   });
@@ -112,7 +117,12 @@ export default function ChatWidget() {
     const fallbackSearchResults = latestSearchResultsRef.current.length > 0
       ? latestSearchResultsRef.current
       : (window.activeSearchResults || []);
-    const activePlaces = taggedPlaces.length > 0 ? taggedPlaces : fallbackSearchResults;
+    const activePlaces = (taggedPlaces.length > 0 ? taggedPlaces : fallbackSearchResults).slice(0, 12);
+    const compactAmenities = (place) => {
+      const amenities = place.amenities || place.rawSerpApiPropertyDetails?.amenities;
+      return Array.isArray(amenities) ? amenities.slice(0, 8) : undefined;
+    };
+
     return {
       ids: activePlaces.map((place) => place.id),
       payload: activePlaces.map((place) => ({
@@ -123,7 +133,7 @@ export default function ChatWidget() {
         longitude: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng,
         rating: place.rating || place.averageRating,
         type: place.type || place.categories?.[0],
-        amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities,
+        amenities: compactAmenities(place),
         price: place.price || place.priceRange || place.priceText || place.ratePerNight,
         reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal,
         source: place.source,
@@ -364,6 +374,7 @@ export default function ChatWidget() {
         if (workflowId === 'SEARCH_PLACES') {
           awaitingConfirmedSearchActionRef.current = true;
           await sendTextMessage(buildSearchPrompt(data), {
+            hideUserMessage: true,
             workflowExecution: {
               workflowId: 'SEARCH_PLACES',
               confirmed: true,
@@ -378,6 +389,7 @@ export default function ChatWidget() {
           });
         } else if (workflowId === 'COMPARE_PLACES') {
           await sendTextMessage(buildComparePrompt(data), {
+            hideUserMessage: true,
             workflowExecution: {
               workflowId: 'COMPARE_PLACES',
               confirmed: true,
@@ -391,6 +403,7 @@ export default function ChatWidget() {
           });
         } else if (workflowId === 'ANALYZE_PLACE') {
           await sendTextMessage(buildAnalyzePrompt(data), {
+            hideUserMessage: true,
             workflowExecution: {
               workflowId: 'ANALYZE_PLACE',
               confirmed: true,
@@ -737,11 +750,14 @@ export default function ChatWidget() {
                           >
                             {msg.content}
                           </ReactMarkdown>
-                          {msg.comparisonResultId ? (
+                          {msg.comparisonResultId || msg.comparisonPayload ? (
                             <button
                               type="button"
                               onClick={() => window.dispatchEvent(new CustomEvent('app:open-place-comparison', {
-                                detail: { comparisonResultId: msg.comparisonResultId },
+                                detail: {
+                                  comparisonResultId: msg.comparisonResultId,
+                                  comparisonPayload: msg.comparisonPayload,
+                                },
                               }))}
                               className="mt-2 inline-flex items-center rounded-full border border-primary-300 bg-primary-50 px-3 py-1 text-[11px] font-black text-primary-800 transition hover:bg-primary-100"
                             >

@@ -406,6 +406,15 @@ export default function HomePage() {
   useEffect(() => {
     const handleOpenPlaceComparison = async (event) => {
       const comparisonResultId = event?.detail?.comparisonResultId;
+      const comparisonPayload = event?.detail?.comparisonPayload;
+
+      if (comparisonPayload) {
+        setComparisonResult(comparisonPayload);
+        setActivePanel(PANEL_IDS.COMPARE);
+        if (isMobile) setActiveMobileTab('workspace');
+        return;
+      }
+
       if (!comparisonResultId) return;
 
       try {

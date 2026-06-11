@@ -14,7 +14,7 @@ import { PlaceComparisonResultsService } from '../place-comparison-results.servi
 export class AiOrchestratorService implements IAiOrchestrator {
   private readonly logger = new Logger(AiOrchestratorService.name);
   private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  private readonly maxContextPlaces = 50;
+  private readonly maxContextPlaces = 12;
   private readonly maxTextLength = 8000;
 
   constructor(
@@ -32,7 +32,9 @@ export class AiOrchestratorService implements IAiOrchestrator {
   async processQuery(request: ChatRequestDto, userId?: string): Promise<ChatResponseDto> {
     const safeRequest = this.sanitizeRequest(request);
     const conversationId = this.resolveConversationId(safeRequest.conversationId, userId);
-    await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    if (!safeRequest.hideUserMessage) {
+      await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    }
     const history = await this.store.getHistory(conversationId, userId);
 
     // 1. Task Router: Classify intent and extract params
@@ -103,6 +105,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
       conversationId,
       composerResult.answer,
       route.workflowId,
+      route.parameters,
+      safeRequest.taggedPlaces,
       userId,
     );
 
@@ -110,6 +114,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       conversationId,
       answer: persistedAnswer.content,
       comparisonResultId: persistedAnswer.comparisonResultId,
+      comparisonPayload: persistedAnswer.comparisonPayload,
       searchAction,
       workflowAction,
       messages: await this.store.getHistory(conversationId, userId),
@@ -123,7 +128,9 @@ export class AiOrchestratorService implements IAiOrchestrator {
   async *streamQuery(request: ChatRequestDto, userId?: string): AsyncGenerator<StreamChunkDto> {
     const safeRequest = this.sanitizeRequest(request);
     const conversationId = this.resolveConversationId(safeRequest.conversationId, userId);
-    await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    if (!safeRequest.hideUserMessage) {
+      await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
+    }
     const history = await this.store.getHistory(conversationId, userId);
 
     // 1. Task Router
@@ -211,6 +218,8 @@ export class AiOrchestratorService implements IAiOrchestrator {
       conversationId,
       fullAnswer,
       route.workflowId,
+      route.parameters,
+      safeRequest.taggedPlaces,
       userId,
     );
 
@@ -220,6 +229,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
         delta: persistedAnswer.content,
         messageMeta: {
           comparisonResultId: persistedAnswer.comparisonResultId,
+          comparisonPayload: persistedAnswer.comparisonPayload,
         },
       };
     }
@@ -230,6 +240,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       finishReason: 'stop',
       messageMeta: {
         comparisonResultId: persistedAnswer.comparisonResultId,
+        comparisonPayload: persistedAnswer.comparisonPayload,
       },
     };
   }
@@ -238,10 +249,12 @@ export class AiOrchestratorService implements IAiOrchestrator {
     conversationId: string,
     rawAnswer: string,
     workflowId: string,
+    parameters: Record<string, any> = {},
+    taggedPlaces: any[] = [],
     userId?: string,
-  ): Promise<{ content: string; comparisonResultId?: string | null }> {
+  ): Promise<{ content: string; comparisonResultId?: string | null; comparisonPayload?: any }> {
     const comparisonPayload = workflowId === 'COMPARE_PLACES'
-      ? this.placeComparisonResultsService.parsePayload(rawAnswer)
+      ? this.placeComparisonResultsService.parsePayload(rawAnswer) || this.placeComparisonResultsService.buildFallbackPayload(rawAnswer, taggedPlaces, parameters)
       : null;
     const content = comparisonPayload
       ? this.placeComparisonResultsService.toAssistantMessage(comparisonPayload)
@@ -251,7 +264,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     const comparisonResult = comparisonPayload
       ? await this.placeComparisonResultsService.createForMessage({
         conversationId,
-        messageId: message.id,
+        messageId: message?.id,
         payload: comparisonPayload,
       })
       : null;
@@ -259,6 +272,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     return {
       content,
       comparisonResultId: comparisonResult?.id || null,
+      comparisonPayload: comparisonPayload || undefined,
     };
   }
 
@@ -276,6 +290,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     return {
       ...request,
       text,
+      hideUserMessage: request.hideUserMessage === true,
       conversationId: this.truncateString(request.conversationId, 120),
       taggedPlaceIds: this.sanitizeStringArray(request.taggedPlaceIds, this.maxContextPlaces, 240),
       taggedPlaces: this.sanitizeTaggedPlaces(request.taggedPlaces),
@@ -319,7 +334,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       lng: this.sanitizeNumber(place?.lng),
       rating: this.sanitizeNumber(place?.rating),
       averageRating: this.sanitizeNumber(place?.averageRating),
-      amenities: this.sanitizeStringArray(place?.amenities, 30, 160),
+      amenities: this.sanitizeStringArray(place?.amenities, 8, 160),
       price: this.truncateString(place?.price, 240),
       priceRange: this.truncateString(place?.priceRange, 240),
       reviewCount: this.sanitizeNumber(place?.reviewCount),

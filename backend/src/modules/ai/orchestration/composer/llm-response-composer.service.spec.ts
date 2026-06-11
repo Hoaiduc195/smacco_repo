@@ -67,7 +67,7 @@ describe('LlmResponseComposerService compare context', () => {
     expect(userContext).toContain('Giá/Tầm giá: 900.000đ/đêm');
     expect(userContext).toContain('Số review: 128');
     expect(userContext).toContain('Tiện nghi/đặc điểm nổi bật: wifi, pool');
-    expect(userContext).toContain('[ACTIVE SEARCH RESULTS CONTEXT]');
+    expect(userContext).not.toContain('[ACTIVE SEARCH RESULTS CONTEXT]');
     expect(userContext).toContain('Beta Homestay');
     expect(userContext).toContain('Nguồn: serpapi/beta');
   });

@@ -89,13 +89,14 @@ Return exactly:
 const COMPARE_COMPOSER_PROMPT = `
 ## COMPARE_PLACES — CHUYÊN BIỆT
 
-So sánh các địa điểm mà user đã tag. Dùng reviews, ratings, metadata từ context.
+So sánh các địa điểm user đã tag. Dùng reviews, ratings, metadata từ context. Giữ output thật ngắn để tránh bị cắt.
 
 OUTPUT BẮT BUỘC:
 - Trả về RAW JSON hợp lệ, parse được bằng JSON.parse.
 - Không Markdown, không code fence, không giải thích ngoài JSON.
-- Bỏ qua quy tắc Markdown place link của system prompt; trong JSON chỉ dùng plain text name và place_id field.
-- JSON phải theo đúng schema bên dưới để frontend render bảng bên trái và phần đánh giá tổng thể bên phải.
+- Trong JSON chỉ dùng plain text name và place_id field, tuyệt đối không dùng [name](place:id).
+- Tối đa 4 comparisonRows. Mỗi value/note tối đa 12 từ.
+- summary tối đa 3 câu. reasons/tradeoffs/bestFor tối đa 3 item mỗi loại.
 
 SCHEMA:
 {
@@ -105,23 +106,14 @@ SCHEMA:
   "places": [
     { "id": "place_id", "name": "Tên địa điểm" }
   ],
-  "comparisonRows": [
-    {
-      "key": "rating|price|location|amenities|reviews|quiet|cleanliness|other",
-      "label": "Tên tiêu chí tiếng Việt",
-      "values": { "place_id": "Giá trị ngắn gọn để hiện trong ô bảng" },
-      "notes": { "place_id": "Ghi chú ngắn hoặc bằng chứng, có thể rỗng" }
-    }
-  ],
+  "comparisonRows": [{ "key": "rating|price|location|amenities|reviews|quiet|cleanliness|other", "label": "Tên tiêu chí tiếng Việt", "values": { "place_id": "Giá trị ngắn" }, "notes": { "place_id": "Bằng chứng ngắn" } }],
   "overallAssessment": {
-    "summary": "Nhận định tổng thể 2-4 câu bằng tiếng Việt",
+    "summary": "Nhận định tổng thể 2-3 câu bằng tiếng Việt",
     "recommendedPlaceId": "place_id hoặc null",
     "recommendedPlaceName": "Tên địa điểm hoặc null",
-    "reasons": ["Lý do chính, dựa trên data"],
-    "tradeoffs": ["Điểm cần cân nhắc hoặc thiếu dữ liệu"],
-    "bestFor": [
-      { "placeId": "place_id", "placeName": "Tên địa điểm", "scenario": "Phù hợp khi user ưu tiên ..." }
-    ]
+    "reasons": ["Lý do chính"],
+    "tradeoffs": ["Điểm cần cân nhắc"],
+    "bestFor": [{ "placeId": "place_id", "placeName": "Tên địa điểm", "scenario": "Phù hợp khi..." }]
   },
   "dataNotes": ["Ghi chú về dữ liệu thiếu/không chắc chắn"],
   "followUpQuestion": "Câu hỏi tiếp theo ngắn gọn"
@@ -129,12 +121,11 @@ SCHEMA:
 
 QUY TẮC NỘI DUNG:
 - Nếu context có ít hơn 2 địa điểm được tag, trả JSON với status "insufficient_data", places là danh sách hiện có, comparisonRows rỗng, overallAssessment.summary nhắc user tag ít nhất 2 địa điểm.
-- Luôn so sánh tổng quan được, kể cả khi user không nêu tiêu chí cụ thể. Khi thiếu tiêu chí, dùng các hàng mặc định: Đánh giá, Giá/Tầm giá, Vị trí, Loại hình, Tiện nghi nổi bật, Review/dữ liệu khách.
+- Khi thiếu tiêu chí, dùng tối đa 4 hàng mặc định: Đánh giá, Giá/Tầm giá, Vị trí, Tiện nghi.
 - Chỉ điền thông tin có trong data. Nếu thiếu, ghi "Chưa rõ" trong values và giải thích ngắn trong dataNotes/tradeoffs.
 - Không bịa room quality, service, cleanliness, safety hoặc pricing nếu context không có bằng chứng.
 - recommendedPlaceId có thể null nếu dữ liệu không đủ để khuyến nghị rõ ràng.
 - values và notes phải là object keyed bởi đúng place.id từ places.
-- Giữ mỗi ô bảng ngắn gọn để frontend không bị vỡ layout.
 `;
 
 const ANALYZE_COMPOSER_PROMPT = `
@@ -205,6 +196,11 @@ QUY TẮC:
 @Injectable()
 export class LlmResponseComposerService implements IResponseComposer {
   private readonly logger = new Logger(LlmResponseComposerService.name);
+  private readonly maxComposerHistoryMessages = 6;
+  private readonly maxComposerHistoryChars = 700;
+  private readonly maxTaggedPlaces = 12;
+  private readonly maxTaggedPlaceReviews = 6;
+  private readonly maxReviewChars = 420;
 
   constructor(
     private readonly llmClient: ILlmClient,
@@ -266,11 +262,11 @@ export class LlmResponseComposerService implements IResponseComposer {
 
   private async buildMessages(context: ComposerContext, history: any[] = []): Promise<ChatMessage[]> {
     const searchResultSummary = context.searchResultContext
-      ? JSON.stringify(context.searchResultContext, null, 2)
+      ? JSON.stringify(context.searchResultContext)
       : 'N/A';
     const shouldIncludeRawToolResults = context.workflowId !== 'SEARCH_PLACES' || !context.searchResultContext;
     const rawDataDump = shouldIncludeRawToolResults
-      ? JSON.stringify(context.toolResults, null, 2)
+      ? JSON.stringify(context.toolResults)
       : '[Omitted for SEARCH_PLACES because Search Result Summary Context already contains the compact result evidence.]';
     
     // Check if there are tagged places and perform RAG from database reviews or frontend metadata fallbacks
@@ -308,7 +304,7 @@ export class LlmResponseComposerService implements IResponseComposer {
     const allIds = Array.from(new Set([
       ...(context.taggedPlaceIds || []),
       ...(context.taggedPlaces || []).map(p => p?.id).filter(Boolean)
-    ]));
+    ])).slice(0, this.maxTaggedPlaces);
 
     const fixturePlacesMap = new Map<string, any>();
 
@@ -355,7 +351,7 @@ export class LlmResponseComposerService implements IResponseComposer {
             include: {
               reviews: {
                 orderBy: { createdAt: 'desc' },
-                take: 40,
+                take: 12,
               },
             },
           });
@@ -379,7 +375,7 @@ export class LlmResponseComposerService implements IResponseComposer {
             include: {
               reviews: {
                 orderBy: { createdAt: 'desc' },
-                take: 40,
+                take: 12,
               },
             },
           });
@@ -426,7 +422,7 @@ export class LlmResponseComposerService implements IResponseComposer {
             source: fixturePlace.source || 'local',
             sourcePlaceId,
             categories: Array.isArray(fixturePlace.categories) ? fixturePlace.categories : (fePlace?.type ? [fePlace.type] : []),
-            reviews: this.selectRelevantReviews(fixtureReviews, context.userQuery, 16),
+            reviews: this.selectRelevantReviews(fixtureReviews, context.userQuery, this.maxTaggedPlaceReviews),
           });
         } else if (dbPlace) {
           // Place exists in DB - use DB data and real reviews
@@ -445,7 +441,7 @@ export class LlmResponseComposerService implements IResponseComposer {
             source: dbPlace.source,
             sourcePlaceId: dbPlace.sourcePlaceId,
             categories: dbPlace.categories,
-            reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, 16),
+            reviews: this.selectRelevantReviews(dbPlace.reviews, context.userQuery, this.maxTaggedPlaceReviews),
           });
         } else if (fePlace) {
           // Place does not exist in DB but has details in FE payload - use FE data as fallback
@@ -478,13 +474,13 @@ export class LlmResponseComposerService implements IResponseComposer {
     if (placesInfoList.length > 0) {
       taggedPlacesContext += `\n[DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG VÀ NHẬN XÉT THỰC TẾ]\n`;
       for (const place of placesInfoList) {
-        const coordsStr = (place.latitude && place.longitude) ? ` (Tọa độ: ${place.latitude}, ${place.longitude})` : '';
+        const coordsStr = (place.latitude && place.longitude) ? ` (Tọa độ: ${Number(place.latitude).toFixed(4)}, ${Number(place.longitude).toFixed(4)})` : '';
         const addressStr = place.address ? `, Địa chỉ: ${place.address}` : '';
         const ratingStr = place.rating ? `${place.rating}/5` : 'N/A';
         const reviewCountStr = typeof place.reviewCount === 'number' ? `, Số review: ${place.reviewCount}` : '';
         const priceStr = place.price ? `, Giá/Tầm giá: ${place.price}` : (typeof place.priceLevel === 'number' ? `, Price level: ${place.priceLevel}` : '');
         const sourceStr = place.source ? `, Nguồn: ${place.source}${place.sourcePlaceId ? `/${place.sourcePlaceId}` : ''}` : '';
-        const amenitiesStr = place.amenities?.length ? `\nTiện nghi/đặc điểm nổi bật: ${place.amenities.slice(0, 12).join(', ')}\n` : '';
+        const amenitiesStr = place.amenities?.length ? `\nTiện nghi/đặc điểm nổi bật: ${place.amenities.slice(0, 8).join(', ')}\n` : '';
         taggedPlacesContext += `Địa điểm: ${place.name} (ID: ${place.id}, Loại: ${place.categories?.join(', ') || 'N/A'}, Đánh giá trung bình: ${ratingStr}${reviewCountStr}${priceStr}${sourceStr}${coordsStr}${addressStr})\n${amenitiesStr}`;
         
         if (place.reviews && place.reviews.length > 0) {
@@ -506,7 +502,7 @@ export class LlmResponseComposerService implements IResponseComposer {
     const insightToolContext = context.workflowId === 'ANALYZE_PLACE'
       ? `
 [PLACE INSIGHT TOOL CONTEXT]
-${JSON.stringify(context.toolResults, null, 2)}
+${JSON.stringify(context.toolResults)}
 [END PLACE INSIGHT TOOL CONTEXT]
 `
       : '';
@@ -519,12 +515,10 @@ Extracted Parameters: ${JSON.stringify(context.parameters)}
 [END SYSTEM CONTEXT]
 ${taggedPlacesContext}
 ${insightToolContext}
-${frontendSearchResultsContext}
 User Query: "${context.userQuery}"
 
 IMPORTANT REMINDERS:
 - Dùng dữ liệu từ [DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG] ở trên để phân tích/so sánh.
-- Nếu có [ACTIVE SEARCH RESULTS CONTEXT], dùng nó như metadata bổ sung cho các địa điểm chưa có review DB.
 - MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:place_id) với ID thực từ context.
 - Nếu data thiếu, nói rõ thay vì bịa.
 - Trả lời bằng tiếng Việt, giọng thân thiện.
@@ -574,17 +568,21 @@ If the tagged place context is weak or missing, say you do not have enough revie
   }
 
   async *streamCompose(context: ComposerContext, conversationHistory: any[] = []): AsyncGenerator<string> {
+    let yieldedAny = false;
     try {
       const messages = await this.buildMessages(context, conversationHistory);
       
       for await (const chunk of this.llmClient.streamChat(messages, this.getLlmOptions(context))) {
         if (chunk.delta) {
+          yieldedAny = true;
           yield chunk.delta;
         }
       }
     } catch (error: any) {
       this.logger.error(`Stream composition failed: ${error.message}`);
-      yield '\n\n(Lỗi: Không thể kết nối với dịch vụ tạo câu trả lời.)';
+      if (!yieldedAny) {
+        yield '\n\n(Lỗi: Không thể kết nối với dịch vụ tạo câu trả lời.)';
+      }
     }
   }
 
@@ -635,7 +633,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
       source: review.source,
       author,
       date,
-      reviewText: text,
+      reviewText: this.truncateCompactText(text, this.maxReviewChars),
     };
   }
 
@@ -657,7 +655,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
   private formatConversationHistory(history: any[] = []): ChatMessage[] {
     return history
       .filter((message) => message?.role === 'user' || message?.role === 'assistant')
-      .slice(-10)
+      .slice(-this.maxComposerHistoryMessages)
       .map((message) => ({
         role: message.role,
         content: this.truncateHistoryMessage(this.stripLegacyPlacePrompt(String(message.content || ''))),
@@ -672,7 +670,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
 
     const normalizedPlaces = taggedPlaces
       .filter((place) => place && place.id && (place.name || place.placeName || place.title))
-      .slice(0, 50)
+      .slice(0, 12)
       .map((place) => ({
         id: place.id,
         name: place.name || place.placeName || place.title,
@@ -680,7 +678,7 @@ If the tagged place context is weak or missing, say you do not have enough revie
         rating: place.rating || place.averageRating || null,
         reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal || null,
         price: place.price || place.priceRange || place.priceText || place.ratePerNight || '',
-        amenities: this.extractAmenities(place).slice(0, 12),
+        amenities: this.extractAmenities(place).slice(0, 6),
         source: place.source || '',
         sourcePlaceId: place.sourcePlaceId || '',
         type: place.type || place.categories?.[0] || '',
@@ -738,6 +736,11 @@ If the tagged place context is weak or missing, say you do not have enough revie
 
   private truncateHistoryMessage(content: string): string {
     const normalized = content.replace(/\s+/g, ' ').trim();
-    return normalized.length > 1200 ? `${normalized.slice(0, 1200)}...` : normalized;
+    return this.truncateCompactText(normalized, this.maxComposerHistoryChars);
+  }
+
+  private truncateCompactText(content: string, maxLength: number): string {
+    const normalized = String(content || '').replace(/\s+/g, ' ').trim();
+    return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized;
   }
 }

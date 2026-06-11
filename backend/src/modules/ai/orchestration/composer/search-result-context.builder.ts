@@ -9,7 +9,7 @@ interface SearchResultContextInput {
 export class SearchResultContextBuilder {
   build(input: SearchResultContextInput) {
     const places = Array.isArray(input.places) ? input.places : [];
-    const topPlaces = places.slice(0, 20).map((place) => this.summarizePlace(place));
+    const topPlaces = places.slice(0, 10).map((place) => this.summarizePlace(place));
     const placesWithRating = places.filter((place) => typeof place.rating === 'number');
     const placesWithReviewCount = places.filter((place) => typeof place.userRatingsTotal === 'number');
     const placesWithPrice = places.filter((place) => Boolean(place.price || place.priceLevel));
@@ -41,14 +41,7 @@ export class SearchResultContextBuilder {
         }),
       },
       topPlaces,
-      guidance: [
-        'Trước khi trả lời, suy ra các tiêu chí user quan tâm từ query gốc và userIntent, ví dụ: gần trung tâm, giá rẻ, loại chỗ ở, rating, tiện ích, khu vực.',
-        'Đánh giá topPlaces theo các tiêu chí user quan tâm, không theo một tiêu chí phụ chỉ vì nó có nhiều dữ liệu hơn.',
-        'Nhận xét tổng quan phải dựa trên dữ liệu trong context, không bịa giá, khoảng cách, tiện ích hoặc đánh giá.',
-        'Ưu tiên đúng tiêu chí user đã nói: nếu user hỏi gần một khu vực/địa điểm, nhận xét chính phải dựa trên khoảng cách hoặc vị trí, không dựa vào tiện ích lân cận.',
-        'Chỉ nhắc tiện ích lân cận như yếu tố phụ khi user không hỏi trực tiếp về tiện ích.',
-        'Nếu dữ liệu thiếu, nói rõ hạn chế thay vì khẳng định chắc chắn.',
-      ],
+      guidance: 'Ưu tiên đúng tiêu chí user, dựa trên evidence trong topPlaces, nói rõ dữ liệu thiếu và không bịa.',
     };
   }
 
@@ -65,8 +58,8 @@ export class SearchResultContextBuilder {
       distanceKm: place.distanceKm,
       anchorLabel: place.anchorLabel,
       score: place.score,
-      reasons: Array.isArray(place.reasons) ? place.reasons.slice(0, 4) : [],
-      amenities: Array.isArray(place.amenities) ? place.amenities.slice(0, 12) : [],
+      reasons: Array.isArray(place.reasons) ? place.reasons.slice(0, 3) : [],
+      amenities: Array.isArray(place.amenities) ? place.amenities.slice(0, 6) : [],
       source: place.source,
       dataCompleteness: {
         hasRating: typeof place.rating === 'number',

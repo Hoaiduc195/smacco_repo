@@ -3,6 +3,7 @@ export interface ChatMessage {
   content: string;
   id?: string;
   comparisonResultId?: string | null;
+  comparisonPayload?: any;
 }
 
 export interface ChatResponseDto {
@@ -14,6 +15,7 @@ export interface ChatResponseDto {
   messages?: ChatMessage[];
   searchAction?: any;
   comparisonResultId?: string | null;
+  comparisonPayload?: any;
   workflowAction?: {
     type: string;
     parameters?: Record<string, any>;
@@ -27,6 +29,7 @@ export interface StreamChunkDto {
   searchAction?: any;
   messageMeta?: {
     comparisonResultId?: string | null;
+    comparisonPayload?: any;
   };
   workflowAction?: {
     type: string;
