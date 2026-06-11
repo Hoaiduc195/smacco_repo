@@ -137,36 +137,48 @@ const ANALYZE_COMPOSER_PROMPT = `
 Tạo insight cho đúng 1 địa điểm user tag như một trợ lý du lịch đang tư vấn thật. Dùng context từ tool place_insight_context, metadata, reviews, user context và preferences, nhưng không được bê nguyên dữ liệu ra thành danh sách khô cứng.
 
 PRE-CHECK:
-- Nếu context không có đúng 1 địa điểm được tag, chỉ trả lời:
-  "Insight địa điểm chỉ hoạt động khi bạn tag đúng 1 địa điểm. Hãy giữ lại 1 địa điểm rồi thử lại nhé."
-  KHÔNG phân tích gì thêm.
+- Nếu context không có đúng 1 địa điểm được tag, trả JSON theo schema bên dưới với status "insufficient_data", place null, pros/cons rỗng hoặc ghi chú ngắn, overallAssessment.summary nhắc user tag đúng 1 địa điểm. KHÔNG phân tích gì thêm.
 
 ---
 
 ### OUTPUT BẮT BUỘC
 
-Trả lời bằng Markdown tiếng Việt, không JSON. Viết tự nhiên, có nhận định và chuyển ý như người tư vấn.
+Trả về RAW JSON hợp lệ, parse được bằng JSON.parse. Không Markdown, không code fence, không giải thích ngoài JSON.
+Trong JSON chỉ dùng plain text cho name/title/summary; không dùng [name](place:id).
 
-1. Mở đầu bằng verdict 2-3 câu:
-   - Nhắc tên địa điểm bằng link [Tên](place:id).
-   - Nói thẳng nơi này hợp với ai/chuyến đi nào và vì sao.
-   - Nêu 1 tradeoff lớn nhất nếu có bằng chứng.
+SCHEMA:
+{
+  "type": "place_insight",
+  "status": "ok" | "insufficient_data",
+  "title": "string",
+  "location": "string",
+  "place": { "id": "place_id", "name": "Tên địa điểm", "address": "string", "rating": "number hoặc null", "reviewCount": "number hoặc null", "price": "string hoặc null", "amenities": ["string"] } | null,
+  "summary": "Tóm tắt insight 2-3 câu, dùng cho panel bên trái",
+  "pros": ["Ưu điểm ngắn, có bằng chứng"],
+  "cons": ["Điểm cần cân nhắc ngắn, có bằng chứng"],
+  "safety": "Nhận định an toàn/an ninh, hoặc nói thiếu dữ liệu",
+  "transportation": "Nhận định di chuyển từ startLocation/current location",
+  "food": "Ẩm thực/cafe lân cận hoặc nói thiếu dữ liệu",
+  "attractions": "Điểm tham quan/POI lân cận hoặc nói thiếu dữ liệu",
+  "suitableFor": "Nhóm khách/chuyến đi phù hợp nhất",
+  "overallAssessment": {
+    "summary": "Phân tích tổng quát 2-4 câu để hiện trong chat panel bên phải",
+    "verdict": "Kết luận nhanh nên chọn nếu...",
+    "reasons": ["Lý do chính"],
+    "tradeoffs": ["Điểm đánh đổi"],
+    "nextSteps": ["Việc nên kiểm tra tiếp trước khi đặt"]
+  },
+  "dataNotes": ["Ghi chú dữ liệu thiếu/không chắc chắn"],
+  "followUpQuestion": "Câu hỏi tiếp theo ngắn gọn"
+}
 
-2. Sau đó dùng 3-5 mục ngắn, mỗi mục là một nhận định có phân tích:
-   - **Vị trí/di chuyển**: nêu ý nghĩa thực tế của khoảng cách/thời gian, không chỉ đọc số.
-   - **Trải nghiệm lưu trú**: tổng hợp tiện nghi + review thành cảm nhận, không liệt kê toàn bộ amenities.
-   - **Điểm đáng thích**: chọn 2-4 điểm có bằng chứng rõ nhất.
-   - **Điểm cần cân nhắc**: chọn 1-3 điểm thực sự ảnh hưởng quyết định.
-   - **Phù hợp nhất khi**: gắn với tripPurposes/preferences của user.
-
+1. Phần panel bên trái nằm ở các field summary/pros/cons/safety/transportation/food/attractions/suitableFor.
+2. Phần phân tích tổng quát bên phải nằm ở overallAssessment và phải tự nhiên như trợ lý tư vấn.
 3. Nếu có địa danh xung quanh, chỉ nhắc 2-4 nơi đáng chú ý và giải thích chúng giúp ích gì cho lịch trình. Nếu dữ liệu POI lỗi/thiếu, nói gọn trong một câu.
-
-4. Kết luận bằng 2-3 câu hành động: nên chọn nếu..., nên cân nhắc nếu..., và nên kiểm tra thêm gì trước khi đặt.
 
 QUY TẮC:
 - MỌI nhận định chất lượng, sạch sẽ, yên tĩnh, dịch vụ, an toàn PHẢI có dẫn chứng từ reviews hoặc metadata. Không bịa.
 - Nếu không có data cho 1 mục, ghi rõ thiếu dữ liệu.
-- MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:id).
 - Ưu tiên các criteria/tripPurposes user chọn, nhưng vẫn bao phủ đủ các mục bắt buộc.
 - Giọng tư vấn thực tế, mạch lạc, không dùng emoji quá nhiều.
 - Không mở các mục kiểu "Tiện nghi/đặc điểm nổi bật" rồi liệt kê raw amenities; hãy diễn giải tiện nghi đó tạo ra trải nghiệm gì.
@@ -499,7 +511,7 @@ User Query: "${context.userQuery}"
 
 IMPORTANT REMINDERS:
 - Dùng dữ liệu từ [DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG] ở trên để phân tích/so sánh.
-- MỌI lần nhắc tên địa điểm PHẢI dùng link [Tên](place:place_id) với ID thực từ context.
+- Với COMPARE_PLACES/ANALYZE_PLACE, nếu workflow instruction yêu cầu JSON thì dùng plain text name và place_id/id field, không dùng Markdown link trong JSON.
 - Nếu data thiếu, nói rõ thay vì bịa.
 - Trả lời bằng tiếng Việt, giọng trợ lý tư vấn thân thiện, câu đầy đủ, có nhận định thay vì chép lại context.
 `
@@ -567,7 +579,7 @@ If evidence is weak or missing, say so briefly instead of guessing.
         yield '\n\n(Lỗi: Không thể kết nối với dịch vụ tạo câu trả lời.)';
         return;
       }
-      if (context.workflowId !== 'COMPARE_PLACES') {
+      if (context.workflowId !== 'COMPARE_PLACES' && context.workflowId !== 'ANALYZE_PLACE') {
         throw error;
       }
     }
@@ -596,7 +608,7 @@ If evidence is weak or missing, say so briefly instead of guessing.
   }
 
   private getLlmOptions(context: ComposerContext): { response_format?: { type: string } } | undefined {
-    if (context.workflowId === 'COMPARE_PLACES') {
+    if (context.workflowId === 'COMPARE_PLACES' || context.workflowId === 'ANALYZE_PLACE') {
       return { response_format: { type: 'json_object' } };
     }
 

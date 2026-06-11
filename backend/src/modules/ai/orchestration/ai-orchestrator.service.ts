@@ -9,6 +9,7 @@ import { ConversationStoreService } from '../conversation-store.service';
 import { ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
 import { SearchResultContextBuilder } from './composer/search-result-context.builder';
 import { PlaceComparisonResultsService } from '../place-comparison-results.service';
+import { PlaceInsightResultsService } from '../place-insight-results.service';
 
 @Injectable()
 export class AiOrchestratorService implements IAiOrchestrator {
@@ -24,6 +25,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     private readonly store: ConversationStoreService,
     private readonly searchResultContextBuilder: SearchResultContextBuilder,
     private readonly placeComparisonResultsService: PlaceComparisonResultsService,
+    private readonly placeInsightResultsService: PlaceInsightResultsService,
   ) {}
 
   /**
@@ -107,6 +109,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       route.workflowId,
       route.parameters,
       safeRequest.taggedPlaces,
+      toolResults,
       userId,
     );
 
@@ -115,6 +118,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       answer: persistedAnswer.content,
       comparisonResultId: persistedAnswer.comparisonResultId,
       comparisonPayload: persistedAnswer.comparisonPayload,
+      insightPayload: persistedAnswer.insightPayload,
       searchAction,
       workflowAction,
       messages: await this.store.getHistory(conversationId, userId),
@@ -208,7 +212,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
     const assistantParts: string[] = [];
     for await (const chunk of stream) {
       assistantParts.push(chunk);
-      if (route.workflowId !== 'COMPARE_PLACES') {
+      if (route.workflowId !== 'COMPARE_PLACES' && route.workflowId !== 'ANALYZE_PLACE') {
         yield { conversationId, delta: chunk };
       }
     }
@@ -220,16 +224,18 @@ export class AiOrchestratorService implements IAiOrchestrator {
       route.workflowId,
       route.parameters,
       safeRequest.taggedPlaces,
+      toolResults,
       userId,
     );
 
-    if (route.workflowId === 'COMPARE_PLACES' && persistedAnswer.content) {
+    if ((route.workflowId === 'COMPARE_PLACES' || route.workflowId === 'ANALYZE_PLACE') && persistedAnswer.content) {
       yield {
         conversationId,
         delta: persistedAnswer.content,
         messageMeta: {
           comparisonResultId: persistedAnswer.comparisonResultId,
           comparisonPayload: persistedAnswer.comparisonPayload,
+          insightPayload: persistedAnswer.insightPayload,
         },
       };
     }
@@ -241,6 +247,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       messageMeta: {
         comparisonResultId: persistedAnswer.comparisonResultId,
         comparisonPayload: persistedAnswer.comparisonPayload,
+        insightPayload: persistedAnswer.insightPayload,
       },
     };
   }
@@ -251,14 +258,21 @@ export class AiOrchestratorService implements IAiOrchestrator {
     workflowId: string,
     parameters: Record<string, any> = {},
     taggedPlaces: any[] = [],
+    toolResults: Record<string, any> = {},
     userId?: string,
-  ): Promise<{ content: string; comparisonResultId?: string | null; comparisonPayload?: any }> {
+  ): Promise<{ content: string; comparisonResultId?: string | null; comparisonPayload?: any; insightPayload?: any }> {
     const comparisonPayload = workflowId === 'COMPARE_PLACES'
       ? this.placeComparisonResultsService.parsePayload(rawAnswer) || this.placeComparisonResultsService.buildFallbackPayload(rawAnswer, taggedPlaces, parameters)
       : null;
-    const content = comparisonPayload
-      ? this.placeComparisonResultsService.toAssistantMessage(comparisonPayload)
-      : rawAnswer;
+    const insightPayload = workflowId === 'ANALYZE_PLACE'
+      ? this.placeInsightResultsService.parsePayload(rawAnswer) || this.placeInsightResultsService.buildFallbackPayload(rawAnswer, taggedPlaces, parameters, toolResults)
+      : null;
+    let content = rawAnswer;
+    if (comparisonPayload) {
+      content = this.placeComparisonResultsService.toAssistantMessage(comparisonPayload);
+    } else if (insightPayload) {
+      content = this.placeInsightResultsService.toAssistantMessage(insightPayload);
+    }
 
     const message = await this.store.append(conversationId, { role: 'assistant', content }, userId);
     const comparisonResult = comparisonPayload
@@ -273,6 +287,7 @@ export class AiOrchestratorService implements IAiOrchestrator {
       content,
       comparisonResultId: comparisonResult?.id || null,
       comparisonPayload: comparisonPayload || undefined,
+      insightPayload: insightPayload || undefined,
     };
   }
 

@@ -435,6 +435,28 @@ export default function HomePage() {
     return () => window.removeEventListener('app:open-place-comparison', handleOpenPlaceComparison);
   }, [isMobile]);
 
+  useEffect(() => {
+    const handleOpenPlaceInsight = (event) => {
+      if (!event?.detail) {
+        setAreaInsight(null);
+        return;
+      }
+
+      const insightPayload = event.detail.insightPayload || event.detail;
+      if (!insightPayload) return;
+
+      setAreaInsight(insightPayload);
+      if (insightPayload.place?.id) {
+        setSelectedPlaceId(insightPayload.place.id);
+      }
+      setActivePanel(PANEL_IDS.INSIGHT);
+      if (isMobile) setActiveMobileTab('workspace');
+    };
+
+    window.addEventListener('app:open-place-insight', handleOpenPlaceInsight);
+    return () => window.removeEventListener('app:open-place-insight', handleOpenPlaceInsight);
+  }, [isMobile]);
+
   // Listen for search actions dispatched by the ChatWidget
   useEffect(() => {
     const handleAiSearchEvent = (event) => {

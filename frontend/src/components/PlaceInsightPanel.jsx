@@ -10,7 +10,7 @@ export default function PlaceInsightPanel({
   onAskAIAboutPlace,
   onDirections,
 }) {
-  const insightPlace = taggedPlaces.length === 1 ? taggedPlaces[0] : selectedPlace;
+  const insightPlace = insight?.place || (taggedPlaces.length === 1 ? taggedPlaces[0] : selectedPlace);
 
   if (taggedPlaces.length !== 1 && !insight) {
     return (
@@ -28,7 +28,7 @@ export default function PlaceInsightPanel({
     <div className="flex h-full flex-col overflow-hidden">
       <div className="border-b border-base-200/80 bg-white/70 px-4 py-3">
         <h3 className="line-clamp-1 text-sm font-black text-ink-900">
-          {insightPlace?.name || 'Insight địa điểm'}
+          {insight?.title || insightPlace?.name || 'Insight địa điểm'}
         </h3>
         {insightPlace?.address ? (
           <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-500">{insightPlace.address}</p>

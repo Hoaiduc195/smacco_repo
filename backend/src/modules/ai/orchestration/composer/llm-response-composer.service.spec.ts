@@ -1,6 +1,25 @@
 import { LlmResponseComposerService } from './llm-response-composer.service';
+import { Logger } from '@nestjs/common';
 
 describe('LlmResponseComposerService compare context', () => {
+  let loggerErrorSpy: jest.SpyInstance;
+
+  beforeAll(() => {
+    Logger.overrideLogger(false);
+  });
+
+  afterAll(() => {
+    Logger.overrideLogger(['log', 'error', 'warn', 'debug', 'verbose']);
+  });
+
+  beforeEach(() => {
+    loggerErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    loggerErrorSpy.mockRestore();
+  });
+
   const createPrismaMock = () => ({
     place: {
       findMany: jest.fn(async () => []),
@@ -153,7 +172,7 @@ describe('LlmResponseComposerService compare context', () => {
     expect(userContext).toContain('Vị trí thuận tiện, gần trung tâm');
   });
 
-  it('propagates stream failures after partial text for non-compare workflows', async () => {
+  it('propagates stream failures after partial text for non-structured workflows', async () => {
     const llmClient = {
       chat: jest.fn(),
       streamChat: jest.fn(async function* () {
@@ -170,8 +189,8 @@ describe('LlmResponseComposerService compare context', () => {
     const chunks: string[] = [];
     await expect(async () => {
       for await (const chunk of service.streamCompose({
-        userQuery: 'Phân tích địa điểm này',
-        workflowId: 'ANALYZE_PLACE',
+        userQuery: 'Tư vấn thêm về địa điểm này',
+        workflowId: 'GENERAL_CHAT',
         parameters: {},
         toolResults: {},
       })) {
@@ -182,7 +201,7 @@ describe('LlmResponseComposerService compare context', () => {
     expect(chunks).toEqual(['Phần đầu câu trả lời']);
   });
 
-  it('propagates non-stop stream finish reasons after partial text for non-compare workflows', async () => {
+  it('propagates non-stop stream finish reasons after partial text for non-structured workflows', async () => {
     const llmClient = {
       chat: jest.fn(),
       streamChat: jest.fn(async function* () {
@@ -199,8 +218,8 @@ describe('LlmResponseComposerService compare context', () => {
     const chunks: string[] = [];
     await expect(async () => {
       for await (const chunk of service.streamCompose({
-        userQuery: 'Phân tích địa điểm này',
-        workflowId: 'ANALYZE_PLACE',
+        userQuery: 'Tư vấn thêm về địa điểm này',
+        workflowId: 'GENERAL_CHAT',
         parameters: {},
         toolResults: {},
       })) {
@@ -209,5 +228,31 @@ describe('LlmResponseComposerService compare context', () => {
     }).rejects.toThrow('finishReason: length');
 
     expect(chunks).toEqual(['Phần đầu câu trả lời']);
+  });
+
+  it('requests JSON mode for analyze workflows', async () => {
+    const chat = jest.fn(async () => ({ content: '{"type":"place_insight"}' }));
+    const llmClient = {
+      chat,
+      streamChat: jest.fn(),
+    };
+    const service = new LlmResponseComposerService(
+      llmClient as any,
+      createPrismaMock() as any,
+      createPlacesServiceMock() as any,
+    );
+
+    await service.compose({
+      userQuery: 'Tạo insight cho địa điểm tôi đã tag.',
+      workflowId: 'ANALYZE_PLACE',
+      parameters: {},
+      toolResults: {},
+      taggedPlaces: [{ id: 'serpapi-alpha', name: 'Alpha Hotel' }],
+    });
+
+    expect(chat).toHaveBeenCalledWith(
+      expect.any(Array),
+      { response_format: { type: 'json_object' } },
+    );
   });
 });

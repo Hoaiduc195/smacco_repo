@@ -9,6 +9,7 @@ import { ChatService } from './chat.service';
 import { ConversationStoreService } from './conversation-store.service';
 import { ConversationsService } from './conversations.service';
 import { PlaceComparisonResultsService } from './place-comparison-results.service';
+import { PlaceInsightResultsService } from './place-insight-results.service';
 import { SearchModule } from '../search/search.module';
 import { PlacesModule } from '../places/places.module';
 import { UsersModule } from '../users/users.module';
@@ -51,6 +52,7 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
     ConversationStoreService,
     ConversationsService,
     PlaceComparisonResultsService,
+    PlaceInsightResultsService,
 
     // Concrete LLM Clients
     GroqLlmClientService,

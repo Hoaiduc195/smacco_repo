@@ -262,4 +262,42 @@ describe('useStreamingChat', () => {
       comparisonPayload,
     });
   });
+
+  it('applies insight payload metadata to the assistant message', async () => {
+    const onAssistantMeta = vi.fn();
+    const insightPayload = {
+      type: 'place_insight',
+      place: { id: 'a', name: 'Alpha' },
+      summary: 'Insight chi tiết.',
+    };
+
+    streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
+      onChunk?.({ delta: 'Mình đã tạo insight tổng quát.' });
+      onChunk?.({ messageMeta: { insightPayload } });
+      onChunk?.({ finish_reason: 'stop' });
+      onDone?.();
+    });
+
+    const { result } = renderHook(() =>
+      useStreamingChat({
+        initialMessages: [],
+        onAssistantMeta,
+      })
+    );
+
+    act(() => {
+      result.current.setInput('Tạo insight địa điểm');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(onAssistantMeta).toHaveBeenCalledWith({ insightPayload });
+    expect(result.current.messages[1]).toMatchObject({
+      role: 'assistant',
+      content: 'Mình đã tạo insight tổng quát.',
+      insightPayload,
+    });
+  });
 });

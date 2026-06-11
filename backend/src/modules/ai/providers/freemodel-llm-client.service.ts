@@ -9,14 +9,23 @@ export class FreemodelLlmClientService implements ILlmClient {
   private readonly logger = new Logger(FreemodelLlmClientService.name);
   private readonly client: OpenAI;
   private readonly model: string;
+  private readonly baseURL: string;
+  private readonly apiKeyConfigured: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    const baseURL = (this.configService.get<string>('freemodel.baseUrl') || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
+    this.baseURL = (this.configService.get<string>('freemodel.baseUrl') || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
     const apiKey = this.configService.get<string>('freemodel.apiKey') || '';
     const timeout = (this.configService.get<number>('freemodel.timeout') || 20) * 1000;
+    this.apiKeyConfigured = apiKey.trim().length > 0;
 
     this.model = this.configService.get<string>('freemodel.model') || 'gpt-4o-mini';
-    this.client = new OpenAI({ apiKey, baseURL, timeout });
+    this.client = new OpenAI({ apiKey: apiKey || 'missing-freemodel-api-key', baseURL: this.baseURL, timeout });
+  }
+
+  private assertConfigured() {
+    if (!this.apiKeyConfigured) {
+      throw new Error('Freemodel API key is not configured. Set FREEMODEL_API_KEY or switch AI_PROVIDER.');
+    }
   }
 
   private toOpenAiMessages(messages: ChatMessage[]) {
@@ -53,6 +62,74 @@ export class FreemodelLlmClientService implements ILlmClient {
     if (typeof error === 'string') return error;
     if (typeof error.message === 'string') return error.message;
     return JSON.stringify(error).slice(0, 500);
+  }
+
+  private normalizeRequestError(error: any): Error {
+    const normalized = new Error(this.formatRequestError(error));
+    normalized.stack = error?.stack;
+    return normalized;
+  }
+
+  private formatRequestError(error: any): string {
+    const parts: string[] = [];
+    const status = error?.status || error?.response?.status;
+    if (status) parts.push(`HTTP ${status}`);
+
+    const providerError = error?.error || error?.response?.data?.error || error?.body?.error || error?.body;
+    const providerMessage = this.extractProviderErrorMessage(providerError) || this.cleanSdkErrorMessage(error?.message);
+    if (providerMessage) parts.push(providerMessage);
+
+    const retryAfter = this.getHeader(error, 'retry-after');
+    if (retryAfter) parts.push(`retry-after=${retryAfter}`);
+
+    const requestId = error?.request_id || this.getHeader(error, 'x-request-id') || this.getHeader(error, 'cf-ray');
+    if (requestId) parts.push(`request-id=${requestId}`);
+
+    parts.push(`model=${this.model}`);
+    parts.push(`baseURL=${this.baseURL}`);
+
+    return `Freemodel API request failed (${parts.join('; ')})`;
+  }
+
+  private extractProviderErrorMessage(error: any): string | undefined {
+    if (!error) return undefined;
+    if (typeof error === 'string') return error;
+
+    const message = typeof error.message === 'string' ? error.message : undefined;
+    const status = typeof error.status === 'string' ? error.status : undefined;
+    const type = typeof error.type === 'string' ? error.type : undefined;
+    const code = typeof error.code === 'string' ? error.code : undefined;
+    const param = typeof error.param === 'string' ? error.param : undefined;
+    const prefix = status || type;
+    const details = [
+      code ? `code=${code}` : '',
+      param ? `param=${param}` : '',
+    ].filter(Boolean);
+
+    if (!message && !prefix && !details.length) {
+      return JSON.stringify(error).slice(0, 500);
+    }
+
+    return [
+      prefix && message ? `${prefix}: ${message}` : (message || prefix || ''),
+      ...details,
+    ].filter(Boolean).join('; ');
+  }
+
+  private cleanSdkErrorMessage(message: any): string | undefined {
+    if (typeof message !== 'string' || !message.trim()) return undefined;
+    return message.replace(/^\d{3}\s+/, '').trim();
+  }
+
+  private getHeader(error: any, name: string): string | undefined {
+    const headers = error?.headers || error?.response?.headers;
+    if (!headers) return undefined;
+    if (typeof headers.get === 'function') return headers.get(name) || headers.get(name.toLowerCase()) || undefined;
+
+    const lowerName = name.toLowerCase();
+    const entry = Object.entries(headers).find(([key]) => key.toLowerCase() === lowerName);
+    const value = entry?.[1];
+    return Array.isArray(value) ? String(value[0]) : (value != null ? String(value) : undefined);
   }
 
   private extractChatCompletion(response: any) {
@@ -95,6 +172,8 @@ export class FreemodelLlmClientService implements ILlmClient {
     messages: ChatMessage[],
     options?: { response_format?: { type: string } },
   ): Promise<{ content: string; finishReason?: string; usage?: Record<string, number> }> {
+    this.assertConfigured();
+
     try {
       const response = await this.client.chat.completions.create({
         model: this.model,
@@ -106,8 +185,9 @@ export class FreemodelLlmClientService implements ILlmClient {
 
       return this.extractChatCompletion(response);
     } catch (error: any) {
-      this.logger.error(`Freemodel chat completion error: ${error.message}`, error.stack);
-      throw error;
+      const normalizedError = this.normalizeRequestError(error);
+      this.logger.error(`Freemodel chat completion error: ${normalizedError.message}`, normalizedError.stack);
+      throw normalizedError;
     }
   }
 
@@ -115,6 +195,8 @@ export class FreemodelLlmClientService implements ILlmClient {
     messages: ChatMessage[],
     _options?: { response_format?: { type: string } },
   ): AsyncGenerator<{ delta: string; finishReason?: string }> {
+    this.assertConfigured();
+
     try {
       const stream = await this.client.chat.completions.create({
         model: this.model,
@@ -144,8 +226,9 @@ export class FreemodelLlmClientService implements ILlmClient {
         }
       }
     } catch (error: any) {
-      this.logger.error(`Freemodel streamChat error: ${error.message}`, error.stack);
-      throw error;
+      const normalizedError = this.normalizeRequestError(error);
+      this.logger.error(`Freemodel streamChat error: ${normalizedError.message}`, normalizedError.stack);
+      throw normalizedError;
     }
   }
 }

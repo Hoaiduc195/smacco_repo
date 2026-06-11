@@ -2,6 +2,76 @@
 
 ---
 
+## [2026-06-11 22:07] — Add Freemodel direct diagnostic script
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to write and run a direct Freemodel script because app calls were failing.
+- **Changes**:
+  - Added `backend/test/test-freemodel.ts`, a standalone diagnostic script that loads `.env`, masks the API key in output, checks `/models`, tests raw REST non-streaming `/chat/completions`, tests raw REST streaming, and tests the OpenAI SDK path used by the app.
+  - Added `npm run test:freemodel` for repeatable Freemodel diagnostics.
+  - Added CLI overrides for `--model=` and `--base-url=` while preserving shell env overrides over `.env` values.
+- **Observed results**:
+  - Real key: `/v1/models` returned `200 OK` with `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.3-codex`.
+  - Real key: `/v1/chat/completions` returned `503 Service Unavailable` with body `ChatGPT Service Unavailable` for non-streaming, streaming, and OpenAI SDK calls.
+  - Invalid key override: `/v1/chat/completions` returned `401 Unauthorized - Invalid token`, confirming the real key passes auth and the current failure is Freemodel chat/upstream availability or account-side chat access rather than the Nest wrapper.
+- **Verification**:
+  - `npm run test:freemodel -- --model=gpt-5.5` in `backend`
+  - `npm run test:freemodel -- --model=gpt-4o-mini` in `backend`
+  - `npm run test:freemodel -- --model=gpt-5.4-mini` in `backend`
+  - `npm run test:freemodel -- --model=gpt-5.3-codex` in `backend`
+- **Modified files**: `backend/package.json`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/test/test-freemodel.ts`
+- **Deleted files**: None
+- **Architecture impact**: No — diagnostic tooling only.
+
+---
+
+## [2026-06-11 21:39] — Improve Freemodel 401 diagnostics
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User shared runtime logs showing Freemodel `streamChat` failing with `401 "Internal server error"`.
+- **Findings**:
+  - `backend/features.json` selects `ai.provider = "freemodel"`, so the stack trace is using the Freemodel OpenAI-compatible client.
+  - The 401 is an upstream Freemodel authentication/authorization response, most likely API key, account access, base URL, or unsupported model access rather than a routing/composer issue.
+- **Changes**:
+  - Added Freemodel request error normalization so chat and stream errors include HTTP status, provider error type/status/message/code/param, request id, retry-after, model, and base URL.
+  - Added an explicit missing-key configuration error before requests.
+  - Avoided OpenAI SDK constructor failure for missing Freemodel key by using an internal placeholder and blocking requests with the clearer config error.
+  - Added focused tests for missing API key, formatted upstream 401 errors, and normalized runtime config.
+- **Verification**:
+  - `npm test -- --runInBand --silent src/modules/ai/providers/freemodel-llm-client.service.spec.ts src/modules/ai/providers/gemini-llm-client.service.spec.ts src/modules/ai/llm-provider.selector.spec.ts` in `backend`
+  - `npm test -- --runInBand --silent src/modules/ai/place-insight-results.service.spec.ts src/modules/ai/orchestration/ai-orchestrator.service.spec.ts src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/providers/freemodel-llm-client.service.ts`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/src/modules/ai/providers/freemodel-llm-client.service.spec.ts`
+- **Deleted files**: None
+- **Architecture impact**: No — Freemodel provider behavior is unchanged except for clearer upstream/config error reporting.
+
+---
+
+## [2026-06-11 21:13] — Render insight workflow like compare workflow
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to adjust the insight feature so AI must output structured content in the left panel and a general analysis in the right panel, similar to the compare workflow.
+- **Changes**:
+  - Changed `ANALYZE_PLACE` composer instructions to request raw `place_insight` JSON instead of Markdown.
+  - Added `PlaceInsightResultsService` to parse/fallback-build structured insight payloads and convert `overallAssessment` into chat-friendly analysis text.
+  - Updated the orchestrator to suppress raw insight JSON streaming, persist/send only the right-panel analysis, and stream `messageMeta.insightPayload` for the left panel.
+  - Added frontend handling for `insightPayload` metadata: `ChatWidget` dispatches `app:open-place-insight`, `HomePage` opens the insight rail panel, and messages expose a manual `Xem insight` button.
+  - Updated `PlaceInsightPanel` to render AI-provided insight payloads even when the currently tagged-place state changes.
+  - Added focused backend/frontend tests for insight payload parsing, streaming metadata, JSON mode, and hook metadata application.
+- **Verification**:
+  - `npm test -- --runInBand --silent src/modules/ai/place-insight-results.service.spec.ts src/modules/ai/orchestration/ai-orchestrator.service.spec.ts src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts` in `backend`
+  - `npm test -- src/hooks/useStreamingChat.test.jsx` in `frontend`
+  - `npm run build` in `backend`
+  - `npm run build` in `frontend` (existing large chunk warning remains)
+- **Modified files**: `backend/src/modules/ai/ai.module.ts`, `backend/src/modules/ai/dto/chat-response.dto.ts`, `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`, `backend/src/modules/ai/orchestration/ai-orchestrator.service.spec.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`, `frontend/src/components/ChatWidget.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `frontend/src/hooks/useStreamingChat.test.jsx`, `frontend/src/pages/HomePage.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/src/modules/ai/place-insight-results.service.ts`, `backend/src/modules/ai/place-insight-results.service.spec.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — insight workflow now mirrors compare workflow with structured left-panel metadata and separate right-panel summary text.
+
+---
+
 ## [2026-06-11 20:38] — Improve Gemini quota error diagnostics
 
 - **Branch**: `feat/insight_wf`

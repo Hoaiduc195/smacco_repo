@@ -35,7 +35,7 @@ describe('AiOrchestratorService history ordering', () => {
     };
 
     const engine = {
-      executeWorkflow: jest.fn(),
+      executeWorkflow: jest.fn(async () => ({ stepResults: {} })),
     };
 
     const searchResultContextBuilder = {
@@ -47,6 +47,11 @@ describe('AiOrchestratorService history ordering', () => {
       toAssistantMessage: jest.fn(),
       createForMessage: jest.fn(),
     };
+    const placeInsightResultsService = {
+      parsePayload: jest.fn<any, any[]>(() => null),
+      buildFallbackPayload: jest.fn<any, any[]>(() => null),
+      toAssistantMessage: jest.fn(),
+    };
 
     const service = new AiOrchestratorService(
       router as any,
@@ -55,9 +60,10 @@ describe('AiOrchestratorService history ordering', () => {
       store as any,
       searchResultContextBuilder as any,
       placeComparisonResultsService as any,
+      placeInsightResultsService as any,
     );
 
-    return { service, router, composer, placeComparisonResultsService };
+    return { service, router, composer, placeComparisonResultsService, placeInsightResultsService };
   };
 
   const request: ChatRequestDto = {
@@ -310,6 +316,63 @@ describe('AiOrchestratorService history ordering', () => {
         ]),
       }),
       expect.any(Array),
+    );
+  });
+
+  it('streams analyze payload metadata and sends only overall analysis text', async () => {
+    const store = createStore();
+    const { service, composer, placeInsightResultsService } = createService(store);
+    const payload = {
+      type: 'place_insight',
+      status: 'ok',
+      place: { id: 'serpapi-alpha', name: 'Alpha Hotel' },
+      summary: 'Insight chi tiết cho panel trái.',
+      pros: ['Vị trí thuận tiện'],
+      cons: ['Thiếu dữ liệu review'],
+      overallAssessment: { summary: 'Alpha Hotel phù hợp nếu ưu tiên vị trí.' },
+    };
+
+    composer.streamCompose.mockImplementationOnce(async function* () {
+      yield JSON.stringify(payload);
+    });
+    placeInsightResultsService.parsePayload.mockReturnValueOnce(payload);
+    placeInsightResultsService.toAssistantMessage.mockReturnValueOnce('Alpha Hotel phù hợp nếu ưu tiên vị trí.');
+
+    const chunks = [];
+    for await (const chunk of service.streamQuery({
+      ...request,
+      text: 'Tạo insight cho địa điểm tôi đã tag.',
+      taggedPlaceIds: ['serpapi-alpha'],
+      taggedPlaces: [{ id: 'serpapi-alpha', name: 'Alpha Hotel' }],
+      workflowExecution: {
+        workflowId: 'ANALYZE_PLACE',
+        confirmed: true,
+        parameters: {},
+      },
+    } as any)) {
+      chunks.push(chunk);
+    }
+
+    expect(chunks).toContainEqual({
+      conversationId: request.conversationId,
+      delta: 'Alpha Hotel phù hợp nếu ưu tiên vị trí.',
+      messageMeta: {
+        comparisonResultId: null,
+        comparisonPayload: undefined,
+        insightPayload: payload,
+      },
+    });
+    expect(chunks.map((chunk) => chunk.delta).join('')).not.toContain('place_insight');
+    expect(chunks[chunks.length - 1]).toMatchObject({
+      finishReason: 'stop',
+      messageMeta: {
+        insightPayload: payload,
+      },
+    });
+    expect(store.append).toHaveBeenLastCalledWith(
+      request.conversationId,
+      { role: 'assistant', content: 'Alpha Hotel phù hợp nếu ưu tiên vị trí.' },
+      undefined,
     );
   });
 });
