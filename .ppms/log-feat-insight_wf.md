@@ -2,6 +2,60 @@
 
 ---
 
+## [2026-06-11 20:38] — Improve Gemini quota error diagnostics
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User shared Gemini runtime logs showing HTTP 429 failures from router and streaming composer calls.
+- **Changes**:
+  - Diagnosed the failure as Gemini API quota/rate limiting rather than a missing provider setup.
+  - Normalized Gemini Axios errors so chat and streaming failures include HTTP status, provider error status/message/details, and `retry-after` when present.
+  - Updated JSON-mode retry warning logs to include normalized Gemini request error details.
+  - Added test coverage for formatting Gemini `RESOURCE_EXHAUSTED` quota errors.
+- **Verification**:
+  - `npm test -- --runInBand src/modules/ai/providers/gemini-llm-client.service.spec.ts src/modules/ai/llm-provider.selector.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/providers/gemini-llm-client.service.ts`, `backend/src/modules/ai/providers/gemini-llm-client.service.spec.ts`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — Gemini provider behavior is unchanged except for clearer upstream error reporting.
+
+---
+
+## [2026-06-11 20:16] — Reorganize backend env example LLM settings
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to adjust the env example after adding Gemini.
+- **Changes**:
+  - Moved `AI_PROVIDER` and supported provider values before individual LLM credential blocks.
+  - Grouped Groq, Cloudflare, FreeModel, and Gemini configuration together for easier setup.
+  - Added a Gemini note that `GEMINI_API_KEY` is preferred and `GOOGLE_GENERATIVE_AI_API_KEY` is supported as a fallback.
+- **Modified files**: `backend/.env.example`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — documentation/config example only.
+
+---
+
+## [2026-06-11 20:04] — Add Gemini LLM provider
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to add an LLM client for the Gemini API.
+- **Changes**:
+  - Added `GeminiLlmClientService` implementing `ILlmClient` with Gemini `generateContent` and SSE `streamGenerateContent` support.
+  - Added Gemini config namespace and environment variables, including `GEMINI_API_KEY`, `GEMINI_BASE_URL`, `GEMINI_MODEL`, and `GEMINI_TIMEOUT`.
+  - Extended runtime provider normalization, NestJS AI module injection, and provider selector support for `AI_PROVIDER=gemini`.
+  - Updated the runtime feature configuration script to allow `groq`, `cloudflare`, `freemodel`, and `gemini`.
+  - Added focused tests for Gemini payload conversion, JSON response MIME handling, retry behavior, and provider selection.
+- **Verification**:
+  - `npm test -- --runInBand src/modules/ai/llm-provider.selector.spec.ts src/modules/ai/providers/gemini-llm-client.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/config/runtime-config.ts`, `backend/src/config/index.ts`, `backend/src/app.module.ts`, `backend/src/modules/ai/ai.module.ts`, `backend/src/modules/ai/llm-provider.selector.ts`, `backend/src/modules/ai/llm-provider.selector.spec.ts`, `backend/scripts/config-features.js`, `backend/.env.example`, `.ppms/log-feat-insight_wf.md`, `.ppms/architecture-feat-insight_wf.md`
+- **Created files**: `backend/src/config/gemini.config.ts`, `backend/src/modules/ai/providers/gemini-llm-client.service.ts`, `backend/src/modules/ai/providers/gemini-llm-client.service.spec.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — AI provider selection now includes Gemini as a first-class runtime-selectable LLM client.
+
+---
+
 ## [2026-06-11 19:45] — Fix truncated chatbox responses
 
 - **Branch**: `feat/insight_wf`

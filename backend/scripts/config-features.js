@@ -3,6 +3,7 @@ const path = require('path');
 const readline = require('readline');
 
 const configPath = path.join(__dirname, '../features.json');
+const AI_PROVIDERS = ['groq', 'cloudflare', 'freemodel', 'gemini'];
 
 const TEST_PROFILE = {
   environment: 'test',
@@ -99,8 +100,8 @@ async function main() {
     next = mergeAiProvider(PRODUCTION_PROFILE, current);
   }
 
-  const providerAnswer = (await askQuestion(rl, `AI provider (${next.ai?.provider || 'groq'})? (groq/cloudflare, press Enter to keep current): `)).trim().toLowerCase();
-  if (providerAnswer === 'groq' || providerAnswer === 'cloudflare') {
+  const providerAnswer = (await askQuestion(rl, `AI provider (${next.ai?.provider || 'groq'})? (${AI_PROVIDERS.join('/')}, press Enter to keep current): `)).trim().toLowerCase();
+  if (AI_PROVIDERS.includes(providerAnswer)) {
     next.ai = { ...(next.ai || {}), provider: providerAnswer };
   }
 

@@ -18,6 +18,6 @@
     }
   },
   "ai": {
-    "provider": "cloudflare"
+    "provider": "freemodel"
   }
 }

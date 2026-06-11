@@ -23,6 +23,7 @@ import { IAiOrchestrator } from './interfaces/ai-orchestrator.interface';
 import { GroqLlmClientService } from './providers/groq-llm-client.service';
 import { CloudflareAiLlmClientService } from './providers/cloudflare-ai-llm-client.service';
 import { FreemodelLlmClientService } from './providers/freemodel-llm-client.service';
+import { GeminiLlmClientService } from './providers/gemini-llm-client.service';
 import { LlmTaskRouterService } from './orchestration/router/llm-task-router.service';
 import { LlmResponseComposerService } from './orchestration/composer/llm-response-composer.service';
 import { AiOrchestratorService } from './orchestration/ai-orchestrator.service';
@@ -55,6 +56,7 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
     GroqLlmClientService,
     CloudflareAiLlmClientService,
     FreemodelLlmClientService,
+    GeminiLlmClientService,
 
     // Interface providers
     {
@@ -64,8 +66,9 @@ import { selectLlmClientByProvider } from './llm-provider.selector';
         groq: GroqLlmClientService,
         cloudflare: CloudflareAiLlmClientService,
         freemodel: FreemodelLlmClientService,
-      ) => selectLlmClientByProvider(runtimeConfigService.ai.provider, groq, cloudflare, freemodel),
-      inject: [RuntimeConfigService, GroqLlmClientService, CloudflareAiLlmClientService, FreemodelLlmClientService],
+        gemini: GeminiLlmClientService,
+      ) => selectLlmClientByProvider(runtimeConfigService.ai.provider, groq, cloudflare, freemodel, gemini),
+      inject: [RuntimeConfigService, GroqLlmClientService, CloudflareAiLlmClientService, FreemodelLlmClientService, GeminiLlmClientService],
     },
     {
       provide: ITaskRouter,

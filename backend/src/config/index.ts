@@ -7,3 +7,4 @@ export { default as groqConfig } from './groq.config';
 export { default as r2Config } from './r2.config';
 export { default as cloudflareAiConfig } from './cloudflare-ai.config';
 export { default as freemodelConfig } from './freemodel.config';
+export { default as geminiConfig } from './gemini.config';
