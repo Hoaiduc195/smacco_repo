@@ -1,6 +1,17 @@
 import { LlmResponseComposerService } from './llm-response-composer.service';
 
 describe('LlmResponseComposerService compare context', () => {
+  const createPrismaMock = () => ({
+    place: {
+      findMany: jest.fn(async () => []),
+      findFirst: jest.fn(async () => null),
+    },
+  });
+
+  const createPlacesServiceMock = () => ({
+    ensureGoogleReviewsForAiContext: jest.fn(async () => []),
+  });
+
   it('passes enriched tagged place metadata to the LLM for compare workflows', async () => {
     const chat = jest.fn(async (_messages: any[]) => ({ content: 'comparison answer' }));
     const llmClient = {
@@ -140,5 +151,63 @@ describe('LlmResponseComposerService compare context', () => {
     expect(userContext).toContain('Nguồn: local/0');
     expect(userContext).toContain('Phòng nghỉ rộng rãi, sạch sẽ');
     expect(userContext).toContain('Vị trí thuận tiện, gần trung tâm');
+  });
+
+  it('propagates stream failures after partial text for non-compare workflows', async () => {
+    const llmClient = {
+      chat: jest.fn(),
+      streamChat: jest.fn(async function* () {
+        yield { delta: 'Phần đầu câu trả lời' };
+        throw new Error('stream timeout');
+      }),
+    };
+    const service = new LlmResponseComposerService(
+      llmClient as any,
+      createPrismaMock() as any,
+      createPlacesServiceMock() as any,
+    );
+
+    const chunks: string[] = [];
+    await expect(async () => {
+      for await (const chunk of service.streamCompose({
+        userQuery: 'Phân tích địa điểm này',
+        workflowId: 'ANALYZE_PLACE',
+        parameters: {},
+        toolResults: {},
+      })) {
+        chunks.push(chunk);
+      }
+    }).rejects.toThrow('stream timeout');
+
+    expect(chunks).toEqual(['Phần đầu câu trả lời']);
+  });
+
+  it('propagates non-stop stream finish reasons after partial text for non-compare workflows', async () => {
+    const llmClient = {
+      chat: jest.fn(),
+      streamChat: jest.fn(async function* () {
+        yield { delta: 'Phần đầu câu trả lời' };
+        yield { delta: '', finishReason: 'length' };
+      }),
+    };
+    const service = new LlmResponseComposerService(
+      llmClient as any,
+      createPrismaMock() as any,
+      createPlacesServiceMock() as any,
+    );
+
+    const chunks: string[] = [];
+    await expect(async () => {
+      for await (const chunk of service.streamCompose({
+        userQuery: 'Phân tích địa điểm này',
+        workflowId: 'ANALYZE_PLACE',
+        parameters: {},
+        toolResults: {},
+      })) {
+        chunks.push(chunk);
+      }
+    }).rejects.toThrow('finishReason: length');
+
+    expect(chunks).toEqual(['Phần đầu câu trả lời']);
   });
 });

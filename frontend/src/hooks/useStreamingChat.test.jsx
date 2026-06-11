@@ -108,6 +108,31 @@ describe('useStreamingChat', () => {
     expect(result.current.isStreaming).toBe(false);
   });
 
+  it('keeps partial assistant text clean when an error chunk arrives after deltas', async () => {
+    streamChatMock.mockImplementation(async ({ onChunk }) => {
+      onChunk?.({ delta: 'Một phần câu trả lời' });
+      onChunk?.({ error: 'stream timeout', finishReason: 'error' });
+    });
+
+    const { result } = renderHook(() => useStreamingChat({ initialMessages: [] }));
+
+    act(() => {
+      result.current.setInput('test');
+    });
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(result.current.error).toBe('stream timeout');
+    expect(result.current.messages[1]).toMatchObject({
+      role: 'assistant',
+      content: 'Một phần câu trả lời',
+    });
+    expect(result.current.messages[1].content).not.toContain('đã gặp lỗi');
+    expect(result.current.isStreaming).toBe(false);
+  });
+
   it('keeps workflow trigger turns visible by default', async () => {
     streamChatMock.mockImplementation(async ({ onChunk, onDone }) => {
       onChunk?.({ workflowAction: { type: 'compare', parameters: { criteria: 'overall' } } });

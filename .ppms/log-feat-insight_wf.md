@@ -2,6 +2,50 @@
 
 ---
 
+## [2026-06-11 19:45] — Fix truncated chatbox responses
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to check why text in the chatbox was being cut off.
+- **Findings**:
+  - `useStreamingChat` still appended the generic error marker when an SSE error chunk arrived after partial assistant deltas, even though the earlier `onError` path had already been cleaned up.
+  - `LlmResponseComposerService.streamCompose` swallowed upstream stream failures after partial output and allowed the orchestrator to send a normal `finishReason: stop`, making incomplete text look like a completed answer.
+  - Chat markdown bubbles kept typography classes directly on the constrained bubble element, so long markdown/link content had weak wrapping safeguards.
+- **Changes**:
+  - Kept partial assistant text clean for both `onError` failures and SSE error chunks by only appending the generic error marker when no assistant text has been received.
+  - Propagated partial-stream failures and non-`stop` finish reasons for non-compare workflows so the stream reports an error instead of persisting/sending a fake successful completion.
+  - Added `min-w-0`/`break-words` to chat bubbles and moved Markdown typography styling into an inner wrapper in `ChatWidget` and `PlaceChatPanel`.
+  - Added tests covering frontend SSE error chunks after deltas and backend partial-stream failure/length handling.
+- **Verification**:
+  - `npm test -- src/hooks/useStreamingChat.test.jsx` in `frontend`
+  - `npm test -- --runInBand src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts` in `backend` (`EXIT=0`)
+  - `npm run build` in `frontend` (existing large chunk warning remains)
+  - `npm run build` in `backend`
+- **Modified files**: `frontend/src/hooks/useStreamingChat.js`, `frontend/src/hooks/useStreamingChat.test.jsx`, `frontend/src/components/ChatWidget.jsx`, `frontend/src/components/PlaceChatPanel.jsx`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`, `.ppms/log-feat-insight_wf.md`, `.ppms/architecture-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — streaming error/finish handling now preserves visible partial text but reports incomplete streams as errors instead of successful completion, and chat bubble rendering has stronger wrapping behavior.
+
+---
+
+## [2026-06-11 13:52] — Make AI responses more advisory and less context-dumpy
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User said responses were fast but sentence flow was choppy, and asked to make AI answer like an assistant and analyze more humanly instead of merely repeating provided context.
+- **Changes**:
+  - Reframed the global composer prompt from a “response formatting engine” to a Vietnamese travel/accommodation assistant that synthesizes evidence into practical advice.
+  - Added style rules requiring complete Vietnamese sentences, natural transitions, tradeoff analysis, and clean endings instead of terse labels or raw context dumps.
+  - Reworked `ANALYZE_PLACE` instructions to favor verdict, practical interpretation, grouped human analysis, and action-oriented conclusion instead of a long checklist of metadata sections.
+  - Added explicit reminders in workflow context prompts to use context as evidence and convert it into advice rather than copying context line by line.
+- **Verification**:
+  - `npm test -- --runInBand src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`, `.ppms/log-feat-insight_wf.md`, `.ppms/architecture-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — prompt/behavior tuning only.
+
+---
+
 ## [2026-06-11 13:47] — Avoid mid-stream error text and raise Cloudflare timeout
 
 - **Branch**: `feat/insight_wf`

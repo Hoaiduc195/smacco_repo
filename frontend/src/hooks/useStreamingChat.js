@@ -103,7 +103,9 @@ export default function useStreamingChat({
         onChunk: (chunk) => {
           if (chunk?.error) {
             setError(chunk.error);
-            appendAssistantDelta(defaultAssistantError);
+            if (!receivedAssistantTextRef.current) {
+              appendAssistantDelta(defaultAssistantError);
+            }
             setIsStreaming(false);
             return;
           }

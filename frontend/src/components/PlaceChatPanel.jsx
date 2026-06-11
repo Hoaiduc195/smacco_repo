@@ -99,10 +99,10 @@ export default function PlaceChatPanel({ place, onClose }) {
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] px-3 py-2 rounded-2xl shadow-sm animate-chat-message ${
+              className={`min-w-0 max-w-[85%] break-words px-3 py-2 rounded-2xl shadow-sm animate-chat-message ${
                 msg.role === 'user'
                   ? 'bg-primary-600 text-white rounded-br-sm whitespace-pre-wrap'
-                  : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm prose prose-sm prose-invert max-w-none'
+                  : 'bg-ink-900 text-white border border-ink-900 rounded-bl-sm'
               }`}
             >
               {msg.role === 'user' ? (
@@ -113,54 +113,56 @@ export default function PlaceChatPanel({ place, onClose }) {
                   Đang suy nghĩ...
                 </span>
               ) : (
-                <ReactMarkdown
-                  components={{
-                    a: ({ href, children, ...props }) => {
-                      let placeId = null;
-                      if (href) {
-                        const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
-                          || href.match(/\/places\/([^?#\s/]+)/)
-                          || href.match(/place:([^?#\s/]+)/);
-                        if (placeMatch) {
-                          placeId = placeMatch[1];
+                <div className="prose prose-sm prose-invert max-w-none break-words">
+                  <ReactMarkdown
+                    components={{
+                      a: ({ href, children, ...props }) => {
+                        let placeId = null;
+                        if (href) {
+                          const placeMatch = href.match(/(?:place:|places\/|\/places\/)([^?#\s/]+)/)
+                            || href.match(/\/places\/([^?#\s/]+)/)
+                            || href.match(/place:([^?#\s/]+)/);
+                          if (placeMatch) {
+                            placeId = placeMatch[1];
+                          }
                         }
-                      }
-                      if (placeId) {
-                        const placeName = String(children || '');
+                        if (placeId) {
+                          const placeName = String(children || '');
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('placeId', placeId);
+                                e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
+                                e.dataTransfer.effectAllowed = 'copy';
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigateToPlaceDetail(navigate, placeId, {
+                                  place: { id: placeId, name: placeName },
+                                });
+                                window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
+                              }}
+                              title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
+                            >
+                              <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
+                              {placeName}
+                            </span>
+                          );
+                        }
                         return (
-                          <span
-                            className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full text-xs font-semibold border border-primary-200 cursor-pointer hover:bg-primary-100 hover:border-primary-300 transition duration-150 transform hover:-translate-y-0.5 select-none my-0.5 mx-0.5 shadow-sm"
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('placeId', placeId);
-                              e.dataTransfer.setData('placeData', JSON.stringify({ id: placeId, name: placeName }));
-                              e.dataTransfer.effectAllowed = 'copy';
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigateToPlaceDetail(navigate, placeId, {
-                                place: { id: placeId, name: placeName },
-                              });
-                              window.dispatchEvent(new CustomEvent('app:select-place', { detail: { id: placeId } }));
-                            }}
-                            title="Kéo thả vào Chat để tag, hoặc click để xem chi tiết"
-                          >
-                            <MapPin className="w-3 h-3 text-primary-500 shrink-0" />
-                            {placeName}
-                          </span>
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
+                            {children}
+                          </a>
                         );
                       }
-                      return (
-                        <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary-400 hover:underline font-semibold" {...props}>
-                          {children}
-                        </a>
-                      );
-                    }
-                  }}
-                >
-                  {msg.content}
-                </ReactMarkdown>
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
           </div>
