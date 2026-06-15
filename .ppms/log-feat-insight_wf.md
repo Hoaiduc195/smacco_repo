@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-06-15 18:23] — Remove sticky chat context hardcodes
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported the LLM always remembered a Dalat trip context and asked to adjust the app and remove hardcoded context.
+- **Changes**:
+  - Removed the hardcoded Dalat/two-person example from the default chat greeting.
+  - Stopped restoring `chat_selected_conversation` from `localStorage` and now remove the legacy key on provider mount.
+  - Removed automatic selection of the most recent conversation when no conversation is explicitly selected.
+  - Replaced workspace/insight Dalat fallback copy with neutral labels so the UI does not imply a default destination.
+- **Verification**:
+  - Not run per prior user instruction to skip tests/build.
+- **Modified files**: `frontend/src/components/AIWorkspacePanel.jsx`, `frontend/src/components/AreaInsightPanel.jsx`, `frontend/src/components/ChatWidget.jsx`, `frontend/src/contexts/ConversationContext.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — chat no longer auto-resumes the most recent conversation or persists selected conversation in browser storage.
+
+---
+
 ## [2026-06-15 18:05] — Refine panel PNG button visibility
 
 - **Branch**: `feat/insight_wf`

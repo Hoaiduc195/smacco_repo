@@ -9,12 +9,14 @@ export const MAX_TAGGED_PLACES = 5;
 export function ConversationProvider({ children }) {
   const { currentUser, loading: authLoading } = useAuth();
   const [conversations, setConversations] = useState([]);
-  const [selectedConversationId, setSelectedConversationId] = useState(() =>
-    window.localStorage.getItem(STORAGE_KEY)
-  );
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [taggedPlaces, setTaggedPlaces] = useState([]);
+
+  useEffect(() => {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }, []);
 
   const refreshConversations = async () => {
     setLoading(true);
@@ -44,14 +46,6 @@ export function ConversationProvider({ children }) {
 
     refreshConversations();
   }, [authLoading, currentUser]);
-
-  useEffect(() => {
-    if (selectedConversationId) {
-      window.localStorage.setItem(STORAGE_KEY, selectedConversationId);
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [selectedConversationId]);
 
   const selectConversation = async (conversationId) => {
     setSelectedConversationId(conversationId);

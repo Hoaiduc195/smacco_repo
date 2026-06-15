@@ -16,7 +16,7 @@ export default function ChatWidget() {
   const defaultMessages = useMemo(() => [
     {
       role: 'assistant',
-      content: 'Xin chào! Tôi là trợ lý du lịch AI Smacco. Tôi có thể hỗ trợ bạn tìm kiếm phòng nghỉ, so sánh các chỗ ở, lên lịch trình, dự trù ngân sách và tìm quán ăn ngon xung quanh.\n\nBạn muốn tìm chỗ ở như thế nào? Ví dụ: *"Tìm homestay yên tĩnh ở Đà Lạt dưới 1 triệu cho 2 người"*'
+      content: 'Xin chào! Tôi là trợ lý du lịch AI Smacco. Tôi có thể hỗ trợ bạn tìm kiếm phòng nghỉ, so sánh các chỗ ở, phân tích chi tiết một địa điểm, lên lịch trình, dự trù ngân sách và tìm quán ăn xung quanh.\n\nBạn muốn mình hỗ trợ gì trước?'
     },
   ], []);
 
@@ -347,16 +347,6 @@ export default function ChatWidget() {
       active = false;
     };
   }, [defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
-
-  useEffect(() => {
-    if (isStreaming) return;
-    if (selectedConversationId || !conversations?.length) return;
-
-    selectConversation(conversations[0].id).then((history) => {
-      setConversationId(conversations[0].id);
-      setMessages(history?.length ? history : defaultMessages);
-    });
-  }, [conversations, defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
 
   useEffect(() => {
     if (wizard.wizardState !== 'executing') return;

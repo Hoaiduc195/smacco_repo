@@ -2,7 +2,7 @@ import React from 'react';
 import { Car, Coffee, Compass, Shield, ThumbsDown, ThumbsUp, Users } from 'lucide-react';
 
 export default function AreaInsightPanel({
-  location = 'Đà Lạt',
+  location = 'Khu vực',
   insights,
 }) {
   const defaultInsights = {

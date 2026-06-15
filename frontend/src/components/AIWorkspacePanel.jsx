@@ -177,7 +177,7 @@ export default function AIWorkspacePanel({
       icon: <Compass className="w-4 h-4" />,
       component: (
         <AreaInsightPanel
-          location={areaInsight.location || 'Đà Lạt'}
+          location={areaInsight.location || 'Khu vực'}
           insights={areaInsight}
         />
       )
@@ -276,7 +276,7 @@ export default function AIWorkspacePanel({
           <div className="mt-6 border-t border-slate-100 pt-4 w-full">
             <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Gợi ý bắt đầu</p>
             <p className="mt-1 text-[11px] font-semibold text-slate-700 italic">
-              "Tìm homestay yên tĩnh ở Đà Lạt cho 2 người dưới 1 triệu VNĐ"
+              "Tìm chỗ ở phù hợp theo điểm đến, số khách và ngân sách của tôi"
             </p>
           </div>
         </div>
