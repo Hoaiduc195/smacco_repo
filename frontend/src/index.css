@@ -451,7 +451,7 @@
   }
 
   .workspace-panel-resize-handle {
-    @apply absolute top-1/2 -right-3 z-20 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-2xl border border-base-200 bg-white/95 text-ink-500 shadow-soft backdrop-blur transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700;
+    @apply absolute top-1/2 right-0 z-20 flex h-14 w-7 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl border border-base-200 bg-white/95 text-ink-500 shadow-soft backdrop-blur transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700;
     cursor: ew-resize;
     touch-action: none;
   }
@@ -465,6 +465,10 @@
   .is-resizing-workspace-panel * {
     cursor: ew-resize !important;
     user-select: none !important;
+  }
+
+  .is-resizing-workspace-panel .left-workspace-layout {
+    transition: none !important;
   }
 
   .left-workspace-layout {

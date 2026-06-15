@@ -104,6 +104,8 @@ export default function HomePage() {
 
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
+  const leftWorkspaceLayoutRef = useRef(null);
+  const resizeFrameRef = useRef(null);
 
   const clampWorkspacePanelWidth = useCallback((width) => {
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
@@ -748,10 +750,25 @@ export default function HomePage() {
     event.preventDefault();
 
     const panelLeft = DESKTOP_PANEL_GAP + WORKSPACE_RAIL_WIDTH + WORKSPACE_PANEL_GAP;
+    let nextWidth = workspacePanelWidth;
+
     const handlePointerMove = (moveEvent) => {
-      setWorkspacePanelWidth(clampWorkspacePanelWidth(moveEvent.clientX - panelLeft));
+      nextWidth = clampWorkspacePanelWidth(moveEvent.clientX - panelLeft);
+      if (resizeFrameRef.current) return;
+
+      resizeFrameRef.current = window.requestAnimationFrame(() => {
+        leftWorkspaceLayoutRef.current?.style.setProperty('--workspace-panel-width', `${nextWidth}px`);
+        resizeFrameRef.current = null;
+      });
     };
+
     const handlePointerUp = () => {
+      if (resizeFrameRef.current) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = null;
+      }
+      leftWorkspaceLayoutRef.current?.style.setProperty('--workspace-panel-width', `${nextWidth}px`);
+      setWorkspacePanelWidth(nextWidth);
       document.body.classList.remove('is-resizing-workspace-panel');
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
@@ -762,7 +779,7 @@ export default function HomePage() {
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
-  }, [clampWorkspacePanelWidth, isMobile]);
+  }, [clampWorkspacePanelWidth, isMobile, workspacePanelWidth]);
 
   const renderActiveContextPanel = () => {
     if (!activePanel) return null;
@@ -854,6 +871,7 @@ export default function HomePage() {
         {/* Desktop Layout Overlay */}
         {!isMobile && (
           <div
+            ref={leftWorkspaceLayoutRef}
             className={`left-workspace-layout pointer-events-none z-40 ${activePanel ? 'is-open' : ''}`}
             style={{ '--workspace-panel-width': `${workspacePanelWidth}px` }}
           >

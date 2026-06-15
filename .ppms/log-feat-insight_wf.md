@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-06-15 18:42] — Smooth workspace panel resizing
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported the resize button was half hidden and the resize effect felt laggy instead of following the pointer smoothly.
+- **Changes**:
+  - Changed the workspace panel shell to allow resize handle overflow so the handle is fully visible.
+  - Repositioned and slightly enlarged the resize handle on the panel edge.
+  - Disabled workspace layout transition while resizing.
+  - Updated resize handling to write `--workspace-panel-width` directly via `requestAnimationFrame` during pointer movement and commit React state only on pointer release.
+- **Verification**:
+  - Not run per prior user instruction to skip tests/build.
+- **Modified files**: `frontend/src/components/LeftContextPanel.jsx`, `frontend/src/pages/HomePage.jsx`, `frontend/src/index.css`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — interaction refinement only.
+
+---
+
 ## [2026-06-15 18:39] — Prevent stale conversation reuse in new chat
 
 - **Branch**: `feat/insight_wf`

@@ -11,7 +11,7 @@ export default function LeftContextPanel({ activePanel, onCollapse, onResizeStar
   const meta = metaByPanel[activePanel] || { eyebrow: 'Bảng làm việc', title: 'Workspace' };
 
   return (
-    <section id="left-context-panel" className="workspace-panel-shell flex min-h-0 flex-1 flex-col overflow-hidden">
+    <section id="left-context-panel" className="workspace-panel-shell flex min-h-0 flex-1 flex-col overflow-visible">
       <div className="flex items-center justify-between border-b border-base-200/80 bg-white/80 px-4 py-3 text-ink-900 backdrop-blur">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-primary-50 text-primary-700">
