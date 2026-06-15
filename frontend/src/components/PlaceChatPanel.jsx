@@ -4,6 +4,7 @@ import { X, Send, Loader2, RotateCcw, MapPin, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import useStreamingChat from '../hooks/useStreamingChat';
 import { navigateToPlaceDetail } from '../utils/placeNavigation';
+import { buildChatPlacesPayload } from '../utils/chatPlacePayload';
 
 export default function PlaceChatPanel({ place, onClose }) {
   const navigate = useNavigate();
@@ -30,21 +31,8 @@ export default function PlaceChatPanel({ place, onClose }) {
   const scrollRef = useRef(null);
 
   const send = async () => {
-    const taggedPlacePayload = [{
-      id: place.id,
-      name: place.name || place.placeName,
-      address: place.address,
-      latitude: place.latitude || place.lat || place.coordinates?.lat,
-      longitude: place.longitude || place.lng || place.coordinates?.lng,
-      rating: place.rating,
-      type: place.type || place.categories?.[0],
-      amenities: place.amenities || place.rawSerpApiPropertyDetails?.amenities,
-      price: place.price || place.priceRange || place.priceText || place.ratePerNight,
-      reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal,
-      source: place.source,
-      sourcePlaceId: place.sourcePlaceId,
-    }];
-    await sendMessage(undefined, [place.id], taggedPlacePayload);
+    const { ids, payload } = buildChatPlacesPayload([place], 1);
+    await sendMessage(undefined, ids, payload);
   };
 
   useEffect(() => {

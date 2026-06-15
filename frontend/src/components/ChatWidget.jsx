@@ -9,6 +9,7 @@ import WorkflowPromptCard from './chat/WorkflowPromptCard';
 import WizardStepCard from './chat/WizardStepCard';
 import WizardSummaryCard from './chat/WizardSummaryCard';
 import { navigateToPlaceDetail } from '../utils/placeNavigation';
+import { buildChatPlacesPayload } from '../utils/chatPlacePayload';
 
 export default function ChatWidget() {
   const navigate = useNavigate();
@@ -132,29 +133,7 @@ export default function ChatWidget() {
     const fallbackSearchResults = latestSearchResultsRef.current.length > 0
       ? latestSearchResultsRef.current
       : (window.activeSearchResults || []);
-    const activePlaces = (taggedPlaces.length > 0 ? taggedPlaces : fallbackSearchResults).slice(0, 12);
-    const compactAmenities = (place) => {
-      const amenities = place.amenities || place.rawSerpApiPropertyDetails?.amenities;
-      return Array.isArray(amenities) ? amenities.slice(0, 8) : undefined;
-    };
-
-    return {
-      ids: activePlaces.map((place) => place.id),
-      payload: activePlaces.map((place) => ({
-        id: place.id,
-        name: place.name || place.placeName || place.title,
-        address: place.address || place.placeAddress || place.displayAddress,
-        latitude: place.latitude || place.lat || place.coordinates?.lat || place.location?.lat,
-        longitude: place.longitude || place.lng || place.coordinates?.lng || place.location?.lng,
-        rating: place.rating || place.averageRating,
-        type: place.type || place.categories?.[0],
-        amenities: compactAmenities(place),
-        price: place.price || place.priceRange || place.priceText || place.ratePerNight,
-        reviewCount: place.reviewCount || place.reviewsCount || place.userRatingsTotal,
-        source: place.source,
-        sourcePlaceId: place.sourcePlaceId,
-      })),
-    };
+    return buildChatPlacesPayload(taggedPlaces.length > 0 ? taggedPlaces : fallbackSearchResults);
   };
 
   const getUserContext = () => {

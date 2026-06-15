@@ -2,6 +2,42 @@
 
 ---
 
+## [2026-06-15 17:23] — Normalize chat place context before streaming
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported that after the LLM analyzed search results, the next chat request returned `400 Bad Request` unless they dragged a place.
+- **Changes**:
+  - Diagnosed the likely cause as raw active search result objects being sent as `taggedPlaces` after search analysis, with values such as object prices, object amenities, numeric IDs, or numeric `sourcePlaceId` violating the backend `ChatRequestDto` validation.
+  - Added `chatPlacePayload` normalization for chat place context, coercing IDs/source IDs/prices/amenities to bounded strings, numeric coordinates/ratings/review counts to finite numbers, and dropping invalid fields.
+  - Reused the same normalization in both the global `ChatWidget` and `PlaceChatPanel` so active search results and dragged/tagged places use the same DTO-safe payload.
+  - Added focused frontend tests for SerpAPI-like place payload normalization.
+- **Verification**:
+  - `npm test -- src/utils/chatPlacePayload.test.js src/hooks/useStreamingChat.test.jsx` in `frontend`
+  - `npm run build` in `frontend` (existing large chunk warning remains)
+- **Modified files**: `frontend/src/components/ChatWidget.jsx`, `frontend/src/components/PlaceChatPanel.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `frontend/src/utils/chatPlacePayload.js`, `frontend/src/utils/chatPlacePayload.test.js`
+- **Deleted files**: None
+- **Architecture impact**: Yes — frontend chat context now has a shared DTO-safe place payload normalization layer before backend AI requests.
+
+---
+
+## [2026-06-15 17:11] — Disable Qwen thinking for OpenAI-compatible provider
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User clarified they are using qwen2api and want thinking mode disabled to improve response speed.
+- **Changes**:
+  - Updated `OpenAiCompatibleLlmClientService` to send `enable_thinking: false` and `chat_template_kwargs.enable_thinking: false` for both chat and streaming requests.
+  - Added tests that assert the Qwen non-thinking flags are included in non-streaming and streaming OpenAI-compatible SDK calls.
+- **Verification**:
+  - `npm test -- --runInBand --silent src/modules/ai/providers/openai-compatible-llm-client.service.spec.ts src/modules/ai/llm-provider.selector.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/providers/openai-compatible-llm-client.service.ts`, `backend/src/modules/ai/providers/openai-compatible-llm-client.service.spec.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — OpenAI-compatible LLM calls now default to Qwen non-thinking mode for faster direct responses.
+
+---
+
 ## [2026-06-15 17:01] — Rename Freemodel provider to OpenAI-compatible
 
 - **Branch**: `feat/insight_wf`

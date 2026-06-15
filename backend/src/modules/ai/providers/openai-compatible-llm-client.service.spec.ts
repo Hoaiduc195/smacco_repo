@@ -51,6 +51,58 @@ describe('OpenAiCompatibleLlmClientService', () => {
     );
   });
 
+  it('disables Qwen thinking mode on non-streaming requests', async () => {
+    const service = createService();
+    mockCreate.mockResolvedValueOnce({
+      choices: [{ message: { content: 'Xin chao' }, finish_reason: 'stop' }],
+    });
+    (service as any).client = { chat: { completions: { create: mockCreate } } };
+
+    await expect(service.chat([{ role: 'user', content: 'hello' }])).resolves.toMatchObject({
+      content: 'Xin chao',
+      finishReason: 'stop',
+    });
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      model: 'gpt-5.4',
+      messages: [{ role: 'user', content: 'hello' }],
+      enable_thinking: false,
+      chat_template_kwargs: {
+        enable_thinking: false,
+      },
+      stream: false,
+    });
+  });
+
+  it('disables Qwen thinking mode on streaming requests', async () => {
+    const service = createService();
+    async function* chunks() {
+      yield { choices: [{ delta: { content: 'Xin' } }] };
+      yield { choices: [{ delta: { content: ' chao' }, finish_reason: 'stop' }] };
+    }
+    mockCreate.mockResolvedValueOnce(chunks());
+    (service as any).client = { chat: { completions: { create: mockCreate } } };
+
+    const deltas: Array<{ delta: string; finishReason?: string }> = [];
+    for await (const chunk of service.streamChat([{ role: 'user', content: 'hello' }])) {
+      deltas.push(chunk);
+    }
+
+    expect(deltas).toEqual([
+      { delta: 'Xin', finishReason: undefined },
+      { delta: ' chao', finishReason: 'stop' },
+    ]);
+    expect(mockCreate).toHaveBeenCalledWith({
+      model: 'gpt-5.4',
+      messages: [{ role: 'user', content: 'hello' }],
+      enable_thinking: false,
+      chat_template_kwargs: {
+        enable_thinking: false,
+      },
+      stream: true,
+    });
+  });
+
   it('normalizes OpenAI-compatible runtime configuration', () => {
     const service = createService();
 

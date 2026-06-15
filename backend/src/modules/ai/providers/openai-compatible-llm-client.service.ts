@@ -168,6 +168,20 @@ export class OpenAiCompatibleLlmClientService implements ILlmClient {
     };
   }
 
+  private createChatCompletionPayload(messages: ChatMessage[], stream: boolean) {
+    return {
+      model: this.model,
+      messages: this.toOpenAiMessages(messages),
+      // Qwen-compatible proxies use this provider-specific field to skip
+      // reasoning output and respond directly.
+      enable_thinking: false,
+      chat_template_kwargs: {
+        enable_thinking: false,
+      },
+      stream,
+    };
+  }
+
   async chat(
     messages: ChatMessage[],
     options?: { response_format?: { type: string } },
@@ -175,13 +189,9 @@ export class OpenAiCompatibleLlmClientService implements ILlmClient {
     this.assertConfigured();
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: this.model,
-        messages: this.toOpenAiMessages(messages),
-        // Some OpenAI-compatible endpoints reject response_format even when the
-        // router prompt already asks for JSON, so keep the payload broadly compatible.
-        stream: false,
-      });
+      const response = await this.client.chat.completions.create(
+        this.createChatCompletionPayload(messages, false) as any,
+      );
 
       return this.extractChatCompletion(response);
     } catch (error: any) {
@@ -198,11 +208,9 @@ export class OpenAiCompatibleLlmClientService implements ILlmClient {
     this.assertConfigured();
 
     try {
-      const stream = await this.client.chat.completions.create({
-        model: this.model,
-        messages: this.toOpenAiMessages(messages),
-        stream: true,
-      });
+      const stream = await this.client.chat.completions.create(
+        this.createChatCompletionPayload(messages, true) as any,
+      ) as any;
 
       for await (const chunk of stream) {
         const upstreamError = this.extractErrorMessage(chunk);
