@@ -18,6 +18,6 @@
     }
   },
   "ai": {
-    "provider": "freemodel"
+    "provider": "openai-compatible"
   }
 }

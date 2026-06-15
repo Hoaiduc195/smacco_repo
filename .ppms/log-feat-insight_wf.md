@@ -2,6 +2,42 @@
 
 ---
 
+## [2026-06-15 17:01] — Rename Freemodel provider to OpenAI-compatible
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to convert the Freemodel provider to OpenAI-compatible by changing the name.
+- **Changes**:
+  - Renamed the backend runtime provider value from `freemodel` to `openai-compatible` across feature config, runtime selection, Nest config loading, provider class/files, tests, env example, and diagnostic script.
+  - Added backward-compatible normalization so existing `freemodel` provider values and `FREEMODEL_*` env vars still map to the OpenAI-compatible client.
+  - Updated the feature configuration helper and package script to expose `openai-compatible`.
+- **Verification**:
+  - `npm test -- --runInBand --silent src/modules/ai/providers/openai-compatible-llm-client.service.spec.ts src/modules/ai/llm-provider.selector.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/.env.example`, `backend/features.json`, `backend/package.json`, `backend/scripts/config-features.js`, `backend/src/app.module.ts`, `backend/src/config/index.ts`, `backend/src/config/runtime-config.ts`, `backend/src/modules/ai/ai.module.ts`, `backend/src/modules/ai/llm-provider.selector.ts`, `backend/src/modules/ai/llm-provider.selector.spec.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/src/config/openai-compatible.config.ts`, `backend/src/modules/ai/providers/openai-compatible-llm-client.service.ts`, `backend/src/modules/ai/providers/openai-compatible-llm-client.service.spec.ts`, `backend/test/test-openai-compatible.ts`
+- **Deleted files**: `backend/src/config/freemodel.config.ts`, `backend/src/modules/ai/providers/freemodel-llm-client.service.ts`, `backend/src/modules/ai/providers/freemodel-llm-client.service.spec.ts`, `backend/test/test-freemodel.ts`
+- **Architecture impact**: Yes — the app-facing LLM provider name and config namespace changed to OpenAI-compatible while preserving legacy aliases.
+
+---
+
+## [2026-06-13 13:24] — Remove unused frontend recommendation service
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to remove redundant frontend services after confirming backend recommendations are used through search/AI flows.
+- **Changes**:
+  - Deleted the unused `frontend/src/services/recommendationService.js` API wrapper.
+  - Confirmed no frontend references remain for `recommendationService`, `getRecommendations`, or the stale `/recommendations/recommend` endpoint.
+  - Kept backend recommendation flows intact; `SearchService`, AI parse, and the AI `recommend_places` tool still use `RecommendationsService`.
+- **Verification**:
+  - `rg -n "recommendationService|getRecommendations|/recommendations/recommend" frontend\src frontend\test`
+  - `npm run build` in `frontend` (existing large chunk warning remains)
+- **Modified files**: `.ppms/log-feat-insight_wf.md`, `.ppms/architecture-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: `frontend/src/services/recommendationService.js`
+- **Architecture impact**: Yes — frontend no longer contains a standalone recommendation API service; recommendation ranking remains backend-owned through search and AI flows.
+
+---
+
 ## [2026-06-11 22:07] — Add Freemodel direct diagnostic script
 
 - **Branch**: `feat/insight_wf`

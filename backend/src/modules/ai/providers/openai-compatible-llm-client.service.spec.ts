@@ -1,16 +1,16 @@
 import { Logger } from '@nestjs/common';
-import { FreemodelLlmClientService } from './freemodel-llm-client.service';
+import { OpenAiCompatibleLlmClientService } from './openai-compatible-llm-client.service';
 
 const mockCreate = jest.fn();
 
-describe('FreemodelLlmClientService', () => {
-  const createService = (overrides: Record<string, any> = {}) => new FreemodelLlmClientService({
+describe('OpenAiCompatibleLlmClientService', () => {
+  const createService = (overrides: Record<string, any> = {}) => new OpenAiCompatibleLlmClientService({
     get: jest.fn((key: string) => {
       const values: Record<string, any> = {
-        'freemodel.apiKey': 'freemodel-key-1',
-        'freemodel.baseUrl': 'https://api.freemodel.dev/v1/',
-        'freemodel.model': 'gpt-5.4',
-        'freemodel.timeout': 20,
+        'openaiCompatible.apiKey': 'openai-compatible-key-1',
+        'openaiCompatible.baseUrl': 'https://api.freemodel.dev/v1/',
+        'openaiCompatible.model': 'gpt-5.4',
+        'openaiCompatible.timeout': 20,
         ...overrides,
       };
       return values[key];
@@ -27,8 +27,8 @@ describe('FreemodelLlmClientService', () => {
   });
 
   it('throws a clear configuration error when the API key is missing', async () => {
-    await expect(createService({ 'freemodel.apiKey': '' }).chat([{ role: 'user', content: 'hello' }])).rejects.toThrow(
-      'Freemodel API key is not configured. Set FREEMODEL_API_KEY or switch AI_PROVIDER.',
+    await expect(createService({ 'openaiCompatible.apiKey': '' }).chat([{ role: 'user', content: 'hello' }])).rejects.toThrow(
+      'OpenAI-compatible API key is not configured. Set OPENAI_COMPATIBLE_API_KEY or switch AI_PROVIDER.',
     );
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -47,11 +47,11 @@ describe('FreemodelLlmClientService', () => {
     (service as any).client = { chat: { completions: { create: mockCreate } } };
 
     await expect(service.chat([{ role: 'user', content: 'hello' }])).rejects.toThrow(
-      'Freemodel API request failed (HTTP 401; invalid_request_error: Internal server error; code=invalid_api_key; request-id=req-123; model=gpt-5.4; baseURL=https://api.freemodel.dev/v1)',
+      'OpenAI-compatible API request failed (HTTP 401; invalid_request_error: Internal server error; code=invalid_api_key; request-id=req-123; model=gpt-5.4; baseURL=https://api.freemodel.dev/v1)',
     );
   });
 
-  it('normalizes Freemodel runtime configuration', () => {
+  it('normalizes OpenAI-compatible runtime configuration', () => {
     const service = createService();
 
     expect((service as any).baseURL).toBe('https://api.freemodel.dev/v1');

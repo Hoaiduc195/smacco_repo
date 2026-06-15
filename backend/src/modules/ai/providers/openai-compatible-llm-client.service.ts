@@ -5,26 +5,26 @@ import { ChatMessage } from '../dto/chat-response.dto';
 import { ILlmClient } from '../interfaces/llm-client.interface';
 
 @Injectable()
-export class FreemodelLlmClientService implements ILlmClient {
-  private readonly logger = new Logger(FreemodelLlmClientService.name);
+export class OpenAiCompatibleLlmClientService implements ILlmClient {
+  private readonly logger = new Logger(OpenAiCompatibleLlmClientService.name);
   private readonly client: OpenAI;
   private readonly model: string;
   private readonly baseURL: string;
   private readonly apiKeyConfigured: boolean;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseURL = (this.configService.get<string>('freemodel.baseUrl') || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
-    const apiKey = this.configService.get<string>('freemodel.apiKey') || '';
-    const timeout = (this.configService.get<number>('freemodel.timeout') || 20) * 1000;
+    this.baseURL = (this.configService.get<string>('openaiCompatible.baseUrl') || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
+    const apiKey = this.configService.get<string>('openaiCompatible.apiKey') || '';
+    const timeout = (this.configService.get<number>('openaiCompatible.timeout') || 20) * 1000;
     this.apiKeyConfigured = apiKey.trim().length > 0;
 
-    this.model = this.configService.get<string>('freemodel.model') || 'gpt-4o-mini';
-    this.client = new OpenAI({ apiKey: apiKey || 'missing-freemodel-api-key', baseURL: this.baseURL, timeout });
+    this.model = this.configService.get<string>('openaiCompatible.model') || 'gpt-4o-mini';
+    this.client = new OpenAI({ apiKey: apiKey || 'missing-openai-compatible-api-key', baseURL: this.baseURL, timeout });
   }
 
   private assertConfigured() {
     if (!this.apiKeyConfigured) {
-      throw new Error('Freemodel API key is not configured. Set FREEMODEL_API_KEY or switch AI_PROVIDER.');
+      throw new Error('OpenAI-compatible API key is not configured. Set OPENAI_COMPATIBLE_API_KEY or switch AI_PROVIDER.');
     }
   }
 
@@ -88,7 +88,7 @@ export class FreemodelLlmClientService implements ILlmClient {
     parts.push(`model=${this.model}`);
     parts.push(`baseURL=${this.baseURL}`);
 
-    return `Freemodel API request failed (${parts.join('; ')})`;
+    return `OpenAI-compatible API request failed (${parts.join('; ')})`;
   }
 
   private extractProviderErrorMessage(error: any): string | undefined {
@@ -135,7 +135,7 @@ export class FreemodelLlmClientService implements ILlmClient {
   private extractChatCompletion(response: any) {
     const upstreamError = this.extractErrorMessage(response);
     if (upstreamError) {
-      throw new Error(`Freemodel upstream error: ${upstreamError}`);
+      throw new Error(`OpenAI-compatible upstream error: ${upstreamError}`);
     }
 
     const choice = Array.isArray(response?.choices) ? response.choices[0] : undefined;
@@ -152,7 +152,7 @@ export class FreemodelLlmClientService implements ILlmClient {
     );
 
     if (!content) {
-      throw new Error(`Freemodel returned unsupported chat completion response shape: ${this.summarizeResponseShape(response)}`);
+      throw new Error(`OpenAI-compatible API returned unsupported chat completion response shape: ${this.summarizeResponseShape(response)}`);
     }
 
     return {
@@ -178,15 +178,15 @@ export class FreemodelLlmClientService implements ILlmClient {
       const response = await this.client.chat.completions.create({
         model: this.model,
         messages: this.toOpenAiMessages(messages),
-        // FreeModel's OpenAI-compatible endpoint may reject response_format even when
-        // the router prompt already asks for JSON, so keep the payload broadly compatible.
+        // Some OpenAI-compatible endpoints reject response_format even when the
+        // router prompt already asks for JSON, so keep the payload broadly compatible.
         stream: false,
       });
 
       return this.extractChatCompletion(response);
     } catch (error: any) {
       const normalizedError = this.normalizeRequestError(error);
-      this.logger.error(`Freemodel chat completion error: ${normalizedError.message}`, normalizedError.stack);
+      this.logger.error(`OpenAI-compatible chat completion error: ${normalizedError.message}`, normalizedError.stack);
       throw normalizedError;
     }
   }
@@ -207,7 +207,7 @@ export class FreemodelLlmClientService implements ILlmClient {
       for await (const chunk of stream) {
         const upstreamError = this.extractErrorMessage(chunk);
         if (upstreamError) {
-          throw new Error(`Freemodel upstream stream error: ${upstreamError}`);
+          throw new Error(`OpenAI-compatible upstream stream error: ${upstreamError}`);
         }
 
         const choice = Array.isArray((chunk as any)?.choices) ? (chunk as any).choices[0] : undefined;
@@ -227,7 +227,7 @@ export class FreemodelLlmClientService implements ILlmClient {
       }
     } catch (error: any) {
       const normalizedError = this.normalizeRequestError(error);
-      this.logger.error(`Freemodel streamChat error: ${normalizedError.message}`, normalizedError.stack);
+      this.logger.error(`OpenAI-compatible streamChat error: ${normalizedError.message}`, normalizedError.stack);
       throw normalizedError;
     }
   }

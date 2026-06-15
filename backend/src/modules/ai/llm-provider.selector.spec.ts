@@ -4,32 +4,32 @@ describe('selectLlmClientByProvider', () => {
   it('returns the Cloudflare client when runtime config selects cloudflare', () => {
     const groqClient = { name: 'groq' };
     const cloudflareClient = { name: 'cloudflare' };
-    const freemodelClient = { name: 'freemodel' };
+    const openAiCompatibleClient = { name: 'openai-compatible' };
     const geminiClient = { name: 'gemini' };
 
-    const selectedClient = selectLlmClientByProvider('cloudflare', groqClient, cloudflareClient, freemodelClient, geminiClient);
+    const selectedClient = selectLlmClientByProvider('cloudflare', groqClient, cloudflareClient, openAiCompatibleClient, geminiClient);
 
     expect(selectedClient).toBe(cloudflareClient);
   });
 
-  it('returns the Freemodel client when runtime config selects freemodel', () => {
+  it('returns the OpenAI-compatible client when runtime config selects openai-compatible', () => {
     const groqClient = { name: 'groq' };
     const cloudflareClient = { name: 'cloudflare' };
-    const freemodelClient = { name: 'freemodel' };
+    const openAiCompatibleClient = { name: 'openai-compatible' };
     const geminiClient = { name: 'gemini' };
 
-    const selectedClient = selectLlmClientByProvider('freemodel', groqClient, cloudflareClient, freemodelClient, geminiClient);
+    const selectedClient = selectLlmClientByProvider('openai-compatible', groqClient, cloudflareClient, openAiCompatibleClient, geminiClient);
 
-    expect(selectedClient).toBe(freemodelClient);
+    expect(selectedClient).toBe(openAiCompatibleClient);
   });
 
   it('returns the Gemini client when runtime config selects gemini', () => {
     const groqClient = { name: 'groq' };
     const cloudflareClient = { name: 'cloudflare' };
-    const freemodelClient = { name: 'freemodel' };
+    const openAiCompatibleClient = { name: 'openai-compatible' };
     const geminiClient = { name: 'gemini' };
 
-    const selectedClient = selectLlmClientByProvider('gemini', groqClient, cloudflareClient, freemodelClient, geminiClient);
+    const selectedClient = selectLlmClientByProvider('gemini', groqClient, cloudflareClient, openAiCompatibleClient, geminiClient);
 
     expect(selectedClient).toBe(geminiClient);
   });
@@ -37,10 +37,10 @@ describe('selectLlmClientByProvider', () => {
   it('falls back to the Groq client for unknown or missing providers', () => {
     const groqClient = { name: 'groq' };
     const cloudflareClient = { name: 'cloudflare' };
-    const freemodelClient = { name: 'freemodel' };
+    const openAiCompatibleClient = { name: 'openai-compatible' };
     const geminiClient = { name: 'gemini' };
 
-    expect(selectLlmClientByProvider('groq', groqClient, cloudflareClient, freemodelClient, geminiClient)).toBe(groqClient);
-    expect(selectLlmClientByProvider(undefined, groqClient, cloudflareClient, freemodelClient, geminiClient)).toBe(groqClient);
+    expect(selectLlmClientByProvider('groq', groqClient, cloudflareClient, openAiCompatibleClient, geminiClient)).toBe(groqClient);
+    expect(selectLlmClientByProvider(undefined, groqClient, cloudflareClient, openAiCompatibleClient, geminiClient)).toBe(groqClient);
   });
 });

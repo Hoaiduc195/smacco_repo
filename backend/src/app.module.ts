@@ -10,7 +10,7 @@ import osmConfig from './config/osm.config';
 import groqConfig from './config/groq.config';
 import r2Config from './config/r2.config';
 import cloudflareAiConfig from './config/cloudflare-ai.config';
-import freemodelConfig from './config/freemodel.config';
+import openaiCompatibleConfig from './config/openai-compatible.config';
 import geminiConfig from './config/gemini.config';
 import { RuntimeConfigModule } from './config/runtime-config.module';
 
@@ -38,7 +38,7 @@ import { UploadModule } from './modules/upload/upload.module';
     // ── Configuration ─────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig, r2Config, cloudflareAiConfig, freemodelConfig, geminiConfig],
+      load: [appConfig, databaseConfig, firebaseConfig, osmConfig, groqConfig, r2Config, cloudflareAiConfig, openaiCompatibleConfig, geminiConfig],
     }),
     RuntimeConfigModule,
 

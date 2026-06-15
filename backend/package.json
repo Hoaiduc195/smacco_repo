@@ -18,7 +18,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "config:features": "node scripts/config-features.js",
     "test:cloudflare": "ts-node test/test-cloudflare.ts",
-    "test:freemodel": "ts-node test/test-freemodel.ts"
+    "test:openai-compatible": "ts-node test/test-openai-compatible.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",

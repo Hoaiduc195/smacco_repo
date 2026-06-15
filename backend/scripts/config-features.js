@@ -3,7 +3,7 @@ const path = require('path');
 const readline = require('readline');
 
 const configPath = path.join(__dirname, '../features.json');
-const AI_PROVIDERS = ['groq', 'cloudflare', 'freemodel', 'gemini'];
+const AI_PROVIDERS = ['groq', 'cloudflare', 'openai-compatible', 'gemini'];
 
 const TEST_PROFILE = {
   environment: 'test',
@@ -66,12 +66,16 @@ function askQuestion(rl, query) {
   return new Promise((resolve) => rl.question(query, resolve));
 }
 
+function normalizeAiProvider(value) {
+  return value === 'freemodel' ? 'openai-compatible' : value;
+}
+
 function mergeAiProvider(profile, current) {
   return {
     ...profile,
     ai: {
       ...profile.ai,
-      provider: current?.ai?.provider || current?.aiProvider || profile.ai.provider,
+      provider: normalizeAiProvider(current?.ai?.provider || current?.aiProvider) || profile.ai.provider,
     },
   };
 }

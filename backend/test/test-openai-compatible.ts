@@ -97,7 +97,7 @@ function extractStreamContent(raw: string) {
 }
 
 async function testModels(baseUrl: string, apiKey: string, timeout: number) {
-  console.log('\n--- Freemodel models request ---');
+  console.log('\n--- OpenAI-compatible models request ---');
   const response = await axios.get(
     `${baseUrl}/models`,
     {
@@ -122,7 +122,7 @@ async function testModels(baseUrl: string, apiKey: string, timeout: number) {
 }
 
 async function testNonStreaming(url: string, apiKey: string, model: string, timeout: number) {
-  console.log('\n--- Freemodel non-streaming request ---');
+  console.log('\n--- OpenAI-compatible non-streaming request ---');
   const response = await axios.post(
     url,
     {
@@ -155,7 +155,7 @@ async function testNonStreaming(url: string, apiKey: string, model: string, time
 }
 
 async function testStreaming(url: string, apiKey: string, model: string, timeout: number) {
-  console.log('\n--- Freemodel streaming request ---');
+  console.log('\n--- OpenAI-compatible streaming request ---');
   const response = await axios.post(
     url,
     {
@@ -192,7 +192,7 @@ async function testStreaming(url: string, apiKey: string, model: string, timeout
 }
 
 async function testOpenAiSdk(baseUrl: string, apiKey: string, model: string, timeout: number) {
-  console.log('\n--- Freemodel OpenAI SDK request ---');
+  console.log('\n--- OpenAI-compatible SDK request ---');
   const client = new OpenAI({ apiKey, baseURL: baseUrl, timeout });
 
   try {
@@ -217,13 +217,13 @@ async function testOpenAiSdk(baseUrl: string, apiKey: string, model: string, tim
 async function main() {
   loadEnv();
 
-  const apiKey = process.env.FREEMODEL_API_KEY || '';
-  const baseUrl = (getArgValue('--base-url') || process.env.FREEMODEL_BASE_URL || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
-  const model = getArgValue('--model') || process.env.FREEMODEL_MODEL || 'gpt-4o-mini';
-  const timeout = Number(process.env.FREEMODEL_TIMEOUT || 20) * 1000;
+  const apiKey = process.env.OPENAI_COMPATIBLE_API_KEY || process.env.FREEMODEL_API_KEY || '';
+  const baseUrl = (getArgValue('--base-url') || process.env.OPENAI_COMPATIBLE_BASE_URL || process.env.FREEMODEL_BASE_URL || 'https://api.freemodel.dev/v1').replace(/\/$/, '');
+  const model = getArgValue('--model') || process.env.OPENAI_COMPATIBLE_MODEL || process.env.FREEMODEL_MODEL || 'gpt-4o-mini';
+  const timeout = Number(process.env.OPENAI_COMPATIBLE_TIMEOUT || process.env.FREEMODEL_TIMEOUT || 20) * 1000;
   const url = `${baseUrl}/chat/completions`;
 
-  console.log('--- Freemodel diagnostic config ---');
+  console.log('--- OpenAI-compatible diagnostic config ---');
   console.log(`Base URL: ${baseUrl}`);
   console.log(`Endpoint: ${url}`);
   console.log(`Model: ${model}`);
@@ -231,7 +231,7 @@ async function main() {
   console.log(`API key: ${maskSecret(apiKey)}`);
 
   if (!apiKey) {
-    console.error('Missing FREEMODEL_API_KEY.');
+    console.error('Missing OPENAI_COMPATIBLE_API_KEY.');
     process.exitCode = 1;
     return;
   }
@@ -243,15 +243,15 @@ async function main() {
     const sdkOk = await testOpenAiSdk(baseUrl, apiKey, model, timeout);
 
     console.log('\n=======================================');
-    console.log(`Freemodel models status:     ${modelsOk ? 'SUCCESS' : 'FAILED'}`);
-    console.log(`Freemodel non-stream status: ${nonStreamOk ? 'SUCCESS' : 'FAILED'}`);
-    console.log(`Freemodel stream status:     ${streamOk ? 'SUCCESS' : 'FAILED'}`);
-    console.log(`Freemodel SDK status:        ${sdkOk ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`OpenAI-compatible models status:     ${modelsOk ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`OpenAI-compatible non-stream status: ${nonStreamOk ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`OpenAI-compatible stream status:     ${streamOk ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`OpenAI-compatible SDK status:        ${sdkOk ? 'SUCCESS' : 'FAILED'}`);
     console.log('=======================================\n');
 
     process.exitCode = modelsOk && nonStreamOk && streamOk && sdkOk ? 0 : 1;
   } catch (error: any) {
-    console.error('Freemodel diagnostic crashed:');
+    console.error('OpenAI-compatible diagnostic crashed:');
     console.error(error.response?.data || error.message || error);
     process.exitCode = 1;
   }

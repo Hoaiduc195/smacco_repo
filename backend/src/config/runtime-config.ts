@@ -3,7 +3,7 @@ import * as path from 'path';
 
 export type DataMode = 'test' | 'production';
 export type ExternalProviderPolicy = 'never' | 'fallback' | 'always';
-export type AiProvider = 'groq' | 'cloudflare' | 'freemodel' | 'gemini';
+export type AiProvider = 'groq' | 'cloudflare' | 'openai-compatible' | 'gemini';
 
 export interface RuntimeConfig {
   environment: DataMode;
@@ -82,7 +82,8 @@ function isProductionMode(raw: any): boolean {
 }
 
 function normalizeProvider(value: any): AiProvider {
-  if (value === 'cloudflare' || value === 'freemodel' || value === 'gemini') return value;
+  if (value === 'cloudflare' || value === 'openai-compatible' || value === 'gemini') return value;
+  if (value === 'freemodel') return 'openai-compatible';
   return 'groq';
 }
 
