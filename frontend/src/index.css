@@ -118,6 +118,18 @@
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.15));
 }
 
+.exporting-panel-image,
+.exporting-panel-image * {
+  max-height: none !important;
+}
+
+.exporting-panel-image,
+.exporting-panel-image .overflow-hidden,
+.exporting-panel-image .overflow-x-auto,
+.exporting-panel-image .overflow-y-auto {
+  overflow: visible !important;
+}
+
 .leaflet-popup-content-wrapper {
   border: 1px solid rgba(232, 222, 206, 0.9);
   border-radius: 20px;

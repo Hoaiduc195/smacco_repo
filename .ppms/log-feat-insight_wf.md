@@ -2,6 +2,62 @@
 
 ---
 
+## [2026-06-15 18:05] — Refine panel PNG button visibility
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported the PNG button position was wrong in the compare panel and asked to display it only when the panel has output.
+- **Changes**:
+  - Updated the comparison panel so the PNG export button only appears after a `comparisonResult` exists.
+  - Updated the insight panel so the PNG export button only appears after an `insight` output exists.
+  - Repositioned the comparison PNG button as a small overlay on the rendered output area instead of showing it during the tagged-place setup state.
+- **Verification**:
+  - Not run per user request to skip tests/build.
+- **Modified files**: `frontend/src/components/ComparePlacesPanel.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — UI behavior refinement only.
+
+---
+
+## [2026-06-15 17:52] — Add panel image export
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked whether the app can support saving an image of the comparison panel or insight panel, and confirmed adding a package is acceptable.
+- **Changes**:
+  - Added `html-to-image` to the frontend for DOM-to-PNG export.
+  - Added a reusable `PanelImageExportButton` with export progress and inline error feedback.
+  - Added `exportPanelImage` utilities for full-content PNG capture, filename sanitization, and download triggering.
+  - Added compact icon-only image export buttons to the comparison and insight panels with minimal layout changes.
+  - Removed the insight panel's nested fixed-height scroll container so exported insight images can include the full rendered insight content.
+  - Added temporary export CSS that opens nested overflow during capture so long insight content and horizontally scrollable comparison tables render more completely in the PNG.
+- **Verification**:
+  - Not rerun after the final UI-minimizing adjustment per user request; previous frontend build passed before removing the extra test file and compacting the button placement.
+- **Modified files**: `frontend/package.json`, `frontend/package-lock.json`, `frontend/src/components/AreaInsightPanel.jsx`, `frontend/src/components/ComparePlacesPanel.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `frontend/src/index.css`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `frontend/src/components/PanelImageExportButton.jsx`, `frontend/src/utils/exportPanelImage.js`
+- **Deleted files**: None
+- **Architecture impact**: Yes — comparison and insight panels now expose frontend-only PNG export using `html-to-image`.
+
+---
+
+## [2026-06-15 17:30] — Compact router context
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to optimize all three router-context reductions: remove duplicated current user turn, reduce recent history window, and reduce per-message truncation.
+- **Changes**:
+  - Added route-specific history shaping in `AiOrchestratorService` so the current user message is not duplicated in router history after being appended to conversation history.
+  - Reduced router recent history from 6 messages to 4 messages.
+  - Reduced router history message truncation from 800 characters to 500 characters.
+  - Updated backend tests to assert compact route history while preserving full composer history.
+- **Verification**:
+  - `npm test -- --runInBand --silent src/modules/ai/orchestration/ai-orchestrator.service.spec.ts src/modules/ai/orchestration/router/llm-task-router.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/orchestration/ai-orchestrator.service.ts`, `backend/src/modules/ai/orchestration/router/llm-task-router.service.ts`, `backend/src/modules/ai/orchestration/ai-orchestrator.service.spec.ts`, `backend/src/modules/ai/orchestration/router/llm-task-router.service.spec.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — router context is now smaller and route-specific, while composer history remains unchanged.
+
+---
+
 ## [2026-06-15 17:23] — Normalize chat place context before streaming
 
 - **Branch**: `feat/insight_wf`

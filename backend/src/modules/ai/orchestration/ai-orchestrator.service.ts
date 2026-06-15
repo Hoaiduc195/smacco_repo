@@ -6,7 +6,7 @@ import { WorkflowEngineService } from './engine/workflow-engine.service';
 import { WORKFLOW_REGISTRY } from './engine/workflow-registry';
 import { ChatRequestDto } from '../dto/chat-request.dto';
 import { ConversationStoreService } from '../conversation-store.service';
-import { ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
+import { ChatMessage, ChatResponseDto, StreamChunkDto } from '../dto/chat-response.dto';
 import { SearchResultContextBuilder } from './composer/search-result-context.builder';
 import { PlaceComparisonResultsService } from '../place-comparison-results.service';
 import { PlaceInsightResultsService } from '../place-insight-results.service';
@@ -38,9 +38,10 @@ export class AiOrchestratorService implements IAiOrchestrator {
       await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
     }
     const history = await this.store.getHistory(conversationId, userId);
+    const routeHistory = this.buildRouteHistory(history, safeRequest);
 
     // 1. Task Router: Classify intent and extract params
-    const route = await this.resolveRoute(safeRequest, history);
+    const route = await this.resolveRoute(safeRequest, routeHistory);
     const shouldExecuteWorkflow = this.shouldExecuteWorkflow(safeRequest, route.workflowId);
     
     let searchAction;
@@ -136,9 +137,10 @@ export class AiOrchestratorService implements IAiOrchestrator {
       await this.store.append(conversationId, { role: 'user', content: safeRequest.text }, userId);
     }
     const history = await this.store.getHistory(conversationId, userId);
+    const routeHistory = this.buildRouteHistory(history, safeRequest);
 
     // 1. Task Router
-    const route = await this.resolveRoute(safeRequest, history);
+    const route = await this.resolveRoute(safeRequest, routeHistory);
     const shouldExecuteWorkflow = this.shouldExecuteWorkflow(safeRequest, route.workflowId);
 
     let toolResults: Record<string, any> = {};
@@ -413,6 +415,19 @@ export class AiOrchestratorService implements IAiOrchestrator {
     }
 
     return this.router.route(request.text, history);
+  }
+
+  private buildRouteHistory(history: ChatMessage[], request: ChatRequestDto): ChatMessage[] {
+    if (!Array.isArray(history) || history.length === 0 || request.hideUserMessage) {
+      return history || [];
+    }
+
+    const last = history[history.length - 1];
+    if (last?.role === 'user' && String(last.content || '') === request.text) {
+      return history.slice(0, -1);
+    }
+
+    return history;
   }
 
   private shouldExecuteWorkflow(request: ChatRequestDto, workflowId: string): boolean {

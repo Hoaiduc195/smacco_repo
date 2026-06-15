@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Lightbulb, MapPin, Sparkles } from 'lucide-react';
 import AreaInsightPanel from './AreaInsightPanel';
+import PanelImageExportButton from './PanelImageExportButton';
 
 export default function PlaceInsightPanel({
   selectedPlace,
@@ -10,6 +11,7 @@ export default function PlaceInsightPanel({
   onAskAIAboutPlace,
   onDirections,
 }) {
+  const exportRef = useRef(null);
   const insightPlace = insight?.place || (taggedPlaces.length === 1 ? taggedPlaces[0] : selectedPlace);
 
   if (taggedPlaces.length !== 1 && !insight) {
@@ -26,57 +28,67 @@ export default function PlaceInsightPanel({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="border-b border-base-200/80 bg-white/70 px-4 py-3">
-        <h3 className="line-clamp-1 text-sm font-black text-ink-900">
-          {insight?.title || insightPlace?.name || 'Insight địa điểm'}
-        </h3>
-        {insightPlace?.address ? (
-          <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-500">{insightPlace.address}</p>
+      <div className="flex items-start gap-3 border-b border-base-200/80 bg-white/70 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="line-clamp-1 text-sm font-black text-ink-900">
+            {insight?.title || insightPlace?.name || 'Insight địa điểm'}
+          </h3>
+          {insightPlace?.address ? (
+            <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-500">{insightPlace.address}</p>
+          ) : null}
+        </div>
+        {insight ? (
+          <PanelImageExportButton
+            targetRef={exportRef}
+            fileName={insight.title || insightPlace?.name || 'insight-dia-diem'}
+          />
         ) : null}
       </div>
       <div className="flex-1 overflow-y-auto p-3">
-        {insight ? (
-          <AreaInsightPanel location={location} insights={insight} />
-        ) : (
-          <div className="space-y-3">
-            <div className="rounded-3xl border border-primary-100 bg-primary-50/70 p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-soft">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-black text-ink-900">Insight chi tiết bằng AI</h4>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">
-                    AI sẽ phân tích di chuyển từ vị trí hiện tại hoặc điểm xuất phát bạn chọn, điểm mạnh/yếu,
-                    mục đích chuyến đi, địa danh xung quanh, khung giờ phù hợp và reviews.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-base-200 bg-white p-3">
-              <div className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
-                <div className="min-w-0">
-                  <p className="line-clamp-1 text-xs font-black text-ink-900">{insightPlace?.name}</p>
-                  {insightPlace?.address ? (
-                    <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-4 text-slate-500">
-                      {insightPlace.address}
+        <div ref={exportRef} className="bg-white">
+          {insight ? (
+            <AreaInsightPanel location={location} insights={insight} />
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-3xl border border-primary-100 bg-primary-50/70 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-soft">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-ink-900">Insight chi tiết bằng AI</h4>
+                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">
+                      AI sẽ phân tích di chuyển từ vị trí hiện tại hoặc điểm xuất phát bạn chọn, điểm mạnh/yếu,
+                      mục đích chuyến đi, địa danh xung quanh, khung giờ phù hợp và reviews.
                     </p>
-                  ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => onRequestInsight?.(insightPlace)}
-              className="w-full rounded-2xl bg-ink-900 px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-ink-700"
-            >
-              Tạo insight chi tiết
-            </button>
-          </div>
-        )}
+              <div className="rounded-2xl border border-base-200 bg-white p-3">
+                <div className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" />
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-xs font-black text-ink-900">{insightPlace?.name}</p>
+                    {insightPlace?.address ? (
+                      <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-4 text-slate-500">
+                        {insightPlace.address}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onRequestInsight?.(insightPlace)}
+                className="w-full rounded-2xl bg-ink-900 px-4 py-3 text-sm font-black text-white shadow-soft transition hover:bg-ink-700"
+              >
+                Tạo insight chi tiết
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       {insightPlace ? (
         <div className="flex gap-2 border-t border-base-200/80 bg-white/70 p-3">

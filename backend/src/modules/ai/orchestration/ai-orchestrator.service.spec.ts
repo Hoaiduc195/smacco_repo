@@ -71,7 +71,7 @@ describe('AiOrchestratorService history ordering', () => {
     conversationId: '11111111-1111-1111-1111-111111111111',
   };
 
-  it('includes the current user turn in router and composer history for processQuery', async () => {
+  it('excludes the duplicated current user turn from router history for processQuery', async () => {
     const store = createStore();
     const { service, router, composer } = createService(store);
 
@@ -82,14 +82,14 @@ describe('AiOrchestratorService history ordering', () => {
       { role: 'user', content: request.text },
     ];
 
-    expect(router.route).toHaveBeenCalledWith(request.text, expectedHistory);
+    expect(router.route).toHaveBeenCalledWith(request.text, baseHistory);
     expect(composer.compose).toHaveBeenCalledWith(
       expect.any(Object),
       expectedHistory,
     );
   });
 
-  it('includes the current user turn in router and composer history for streamQuery', async () => {
+  it('excludes the duplicated current user turn from router history for streamQuery', async () => {
     const store = createStore();
     const { service, router, composer } = createService(store);
 
@@ -104,7 +104,7 @@ describe('AiOrchestratorService history ordering', () => {
     ];
 
     expect(chunks).toContain('streamed answer');
-    expect(router.route).toHaveBeenCalledWith(request.text, expectedHistory);
+    expect(router.route).toHaveBeenCalledWith(request.text, baseHistory);
     expect(composer.streamCompose).toHaveBeenCalledWith(
       expect.any(Object),
       expectedHistory,

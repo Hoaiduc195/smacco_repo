@@ -26,7 +26,7 @@ export default function AreaInsightPanel({
   const data = insights || defaultInsights;
 
   return (
-    <div className="space-y-4 p-1 max-h-[500px] overflow-y-auto pr-2">
+    <div className="space-y-4 p-1 pr-2">
       {/* Overview Summary */}
       <div className="text-[11px] text-slate-700 leading-relaxed border-l-2 border-primary-500 pl-3">
         {data.summary}

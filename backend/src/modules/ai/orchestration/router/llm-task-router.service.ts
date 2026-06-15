@@ -94,116 +94,13 @@ Rules:
   - Route here when user wants analysis, review, or evaluation of a place.
   - If the previous assistant message asked about user preferences for analyzing a place, and the user responds with preference keywords (giá, vị trí, sạch sẽ, yên tĩnh, tiện nghi, hồ bơi, view, gần biển...), route to "ANALYZE_PLACE" with those preferences extracted.
   - If the user includes preferences in the same message as the analysis request, extract them directly.
-
-Examples:
-
-User:
-nhà nghỉ gần đà nẵng
-
-Output:
-{
-  "workflowId": "SEARCH_PLACES",
-  "parameters": {
-    "query": "nhà nghỉ gần đà nẵng",
-    "location": "Đà Nẵng",
-    "type": "hostel",
-    "types": ["hostel"]
-  }
-}
-
-User:
-khách sạn gần sân bay Nội Bài giá rẻ
-
-Output:
-{
-  "workflowId": "SEARCH_PLACES",
-  "parameters": {
-    "query": "khách sạn gần sân bay Nội Bài",
-    "anchor": "sân bay Nội Bài",
-    "budget": "low",
-    "type": "hotel",
-    "types": ["hotel"]
-  }
-}
-
-User:
-resort hoặc villa ở Đà Lạt
-
-Output:
-{
-  "workflowId": "SEARCH_PLACES",
-  "parameters": {
-    "query": "resort hoặc villa ở Đà Lạt",
-    "location": "Đà Lạt",
-    "type": "resort, villa",
-    "types": ["resort", "villa"]
-  }
-}
-
-User:
-so sánh hai khách sạn này giúp tôi
-
-Output:
-{
-  "workflowId": "COMPARE_PLACES",
-  "parameters": {
-    "placeNames": [],
-    "criteria": "overall"
-  }
-}
-
-User:
-cái nào rẻ hơn?
-
-Output:
-{
-  "workflowId": "COMPARE_PLACES",
-  "parameters": {
-    "placeNames": [],
-    "criteria": "price"
-  }
-}
-
-User:
-phân tích chỗ này giúp tôi
-
-Output:
-{
-  "workflowId": "ANALYZE_PLACE",
-  "parameters": {
-    "placeName": "",
-    "preferences": []
-  }
-}
-
-User:
-tôi quan tâm giá cả và vị trí
-
-Output:
-{
-  "workflowId": "ANALYZE_PLACE",
-  "parameters": {
-    "placeName": "",
-    "preferences": ["giá cả", "vị trí"]
-  }
-}
-
-User:
-khách sạn này tốt không? tôi cần chỗ yên tĩnh gần biển
-
-Output:
-{
-  "workflowId": "ANALYZE_PLACE",
-  "parameters": {
-    "placeName": "",
-    "preferences": ["yên tĩnh", "gần biển"]
-  }
-}
 `;
 
 @Injectable()
 export class LlmTaskRouterService implements ITaskRouter {
   private readonly logger = new Logger(LlmTaskRouterService.name);
+  private readonly maxRouterHistoryMessages = 4;
+  private readonly maxRouterHistoryMessageLength = 500;
 
   constructor(private readonly llmClient: ILlmClient) {}
 
@@ -457,7 +354,7 @@ export class LlmTaskRouterService implements ITaskRouter {
   private formatRecentHistory(conversationHistory: any[] = []): ChatMessage[] {
     return conversationHistory
       .filter((message) => message?.role === 'user' || message?.role === 'assistant')
-      .slice(-6)
+      .slice(-this.maxRouterHistoryMessages)
       .map((message) => ({
         role: message.role,
         content: this.truncateForRouter(String(message.content || '')),
@@ -467,7 +364,9 @@ export class LlmTaskRouterService implements ITaskRouter {
 
   private truncateForRouter(content: string): string {
     const normalized = this.stripLegacyPlacePrompt(content).replace(/\s+/g, ' ').trim();
-    return normalized.length > 800 ? `${normalized.slice(0, 800)}...` : normalized;
+    return normalized.length > this.maxRouterHistoryMessageLength
+      ? `${normalized.slice(0, this.maxRouterHistoryMessageLength)}...`
+      : normalized;
   }
 
   private stripLegacyPlacePrompt(content: string): string {
