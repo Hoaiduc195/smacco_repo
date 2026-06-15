@@ -26,6 +26,11 @@ const APP_STATES = {
 };
 const NAVBAR_HEIGHT = 64;
 const DESKTOP_PANEL_GAP = 20;
+const WORKSPACE_RAIL_WIDTH = 58;
+const WORKSPACE_PANEL_GAP = 12;
+const DEFAULT_WORKSPACE_PANEL_WIDTH = 390;
+const MIN_WORKSPACE_PANEL_WIDTH = 320;
+const MAX_WORKSPACE_PANEL_WIDTH = 680;
 const PANEL_IDS = {
   RESULTS: 'results',
   SAVED: 'saved',
@@ -95,9 +100,17 @@ export default function HomePage() {
   const [isLoadingSavedPlaces, setIsLoadingSavedPlaces] = useState(false);
   const [activePanel, setActivePanel] = useState(null);
   const [activeMobileTab, setActiveMobileTab] = useState('map'); // 'workspace' | 'map'
+  const [workspacePanelWidth, setWorkspacePanelWidth] = useState(DEFAULT_WORKSPACE_PANEL_WIDTH);
 
   const userLocationWatchIdRef = useRef(null);
   const rehydratedRef = useRef(false);
+
+  const clampWorkspacePanelWidth = useCallback((width) => {
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const availableWidth = viewportWidth - (DESKTOP_PANEL_GAP * 2) - WORKSPACE_RAIL_WIDTH - WORKSPACE_PANEL_GAP;
+    const maxWidth = Math.max(MIN_WORKSPACE_PANEL_WIDTH, Math.min(MAX_WORKSPACE_PANEL_WIDTH, availableWidth));
+    return Math.min(maxWidth, Math.max(MIN_WORKSPACE_PANEL_WIDTH, Math.round(width)));
+  }, []);
 
   const normalizeBudget = useCallback((value) => {
     if (!value) return '';
@@ -252,6 +265,9 @@ export default function HomePage() {
       if (saved.mapFocusTarget) setMapFocusTarget(saved.mapFocusTarget);
       if (saved.areaInsight !== undefined) setAreaInsight(saved.areaInsight);
       if (saved.comparisonResult !== undefined) setComparisonResult(saved.comparisonResult);
+      if (Number.isFinite(Number(saved.workspacePanelWidth))) {
+        setWorkspacePanelWidth(clampWorkspacePanelWidth(Number(saved.workspacePanelWidth)));
+      }
       if (saved.activePanel === null) {
         setActivePanel(null);
       } else if (typeof saved.activePanel === 'string' || typeof saved.activeWorkspaceTab === 'string') {
@@ -281,7 +297,7 @@ export default function HomePage() {
       sessionStorage.removeItem(STORAGE_KEY);
       rehydratedRef.current = true;
     }
-  }, [location.state]);
+  }, [clampWorkspacePanelWidth, location.state]);
 
   const showSearchResults = useCallback((results = []) => {
     const transformed = results.map(place => ({
@@ -655,6 +671,7 @@ export default function HomePage() {
       mapFocusTarget,
       areaInsight,
       comparisonResult,
+      workspacePanelWidth,
       activePanel,
       activeMobileTab,
     };
@@ -672,6 +689,7 @@ export default function HomePage() {
     mapFocusTarget,
     areaInsight,
     comparisonResult,
+    workspacePanelWidth,
     activePanel,
     activeMobileTab,
   ]);
@@ -725,11 +743,36 @@ export default function HomePage() {
 
   const activePanelMeta = ALL_PANEL_OPTIONS.find((panel) => panel.id === activePanel);
 
+  const handleWorkspacePanelResizeStart = useCallback((event) => {
+    if (isMobile) return;
+    event.preventDefault();
+
+    const panelLeft = DESKTOP_PANEL_GAP + WORKSPACE_RAIL_WIDTH + WORKSPACE_PANEL_GAP;
+    const handlePointerMove = (moveEvent) => {
+      setWorkspacePanelWidth(clampWorkspacePanelWidth(moveEvent.clientX - panelLeft));
+    };
+    const handlePointerUp = () => {
+      document.body.classList.remove('is-resizing-workspace-panel');
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+
+    document.body.classList.add('is-resizing-workspace-panel');
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+  }, [clampWorkspacePanelWidth, isMobile]);
+
   const renderActiveContextPanel = () => {
     if (!activePanel) return null;
 
     return (
-      <LeftContextPanel activePanel={activePanel} onCollapse={closeSidebar}>
+      <LeftContextPanel
+        activePanel={activePanel}
+        onCollapse={closeSidebar}
+        onResizeStart={!isMobile ? handleWorkspacePanelResizeStart : undefined}
+      >
         {activePanel === PANEL_IDS.RESULTS && (
             <SearchResultsPanel
               places={places}
@@ -810,7 +853,10 @@ export default function HomePage() {
 
         {/* Desktop Layout Overlay */}
         {!isMobile && (
-          <div className={`left-workspace-layout pointer-events-none z-40 ${activePanel ? 'is-open' : ''}`}>
+          <div
+            className={`left-workspace-layout pointer-events-none z-40 ${activePanel ? 'is-open' : ''}`}
+            style={{ '--workspace-panel-width': `${workspacePanelWidth}px` }}
+          >
             <div className="pointer-events-auto">
               <WorkspaceRail
                 activePanel={activePanel}

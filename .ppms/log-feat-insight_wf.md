@@ -2,6 +2,58 @@
 
 ---
 
+## [2026-06-15 18:39] — Prevent stale conversation reuse in new chat
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User still saw the assistant recall an old Dalat/two-person context after the hardcoded greeting and auto-select cleanup.
+- **Changes**:
+  - Removed `ChatWidget` auto-sync from streamed `conversationId` back into `selectedConversationId`; old backend ids are no longer treated as explicitly selected history.
+  - Changed new-conversation action to clear local chat state instead of pre-creating/selecting a backend conversation.
+  - Changed history loading so it only runs when a conversation is explicitly selected.
+  - Added an `ignoreConversationId` send option so the first message of a fresh UI session cannot accidentally send a stale React-state conversation id.
+- **Verification**:
+  - Not run per prior user instruction to skip tests/build.
+- **Modified files**: `frontend/src/components/ChatWidget.jsx`, `frontend/src/hooks/useStreamingChat.js`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — chat history reuse is now explicit-history only for restored conversations, while fresh sessions ignore stale conversation ids.
+
+---
+
+## [2026-06-15 18:32] — Fix resize handle Tailwind class
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported Vite/PostCSS failed because `text-ink-400` does not exist in Tailwind config.
+- **Changes**:
+  - Replaced the resize handle's invalid `text-ink-400` utility with the configured `text-ink-500` utility.
+  - Checked nearby `text-ink-*` usages against the configured `ink` palette.
+- **Verification**:
+  - Not run per prior user instruction to skip tests/build.
+- **Modified files**: `frontend/src/index.css`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: No — build error fix only.
+
+---
+
+## [2026-06-15 18:29] — Add resizable workspace panel
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to implement an interactive feature that lets users expand or narrow the panel.
+- **Changes**:
+  - Added a draggable resize handle to the desktop left workspace panel.
+  - Added bounded workspace panel width state in `HomePage`, backed by the existing `--workspace-panel-width` CSS variable.
+  - Persisted the workspace panel width in the existing home session snapshot.
+  - Added resize cursor/selection guard styling during drag.
+- **Verification**:
+  - Not run per prior user instruction to skip tests/build.
+- **Modified files**: `frontend/src/components/LeftContextPanel.jsx`, `frontend/src/pages/HomePage.jsx`, `frontend/src/index.css`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — desktop workspace panel width is now user-adjustable and persisted in session state.
+
+---
+
 ## [2026-06-15 18:23] — Remove sticky chat context hardcodes
 
 - **Branch**: `feat/insight_wf`

@@ -124,9 +124,7 @@ export default function ChatWidget() {
     selectConversation,
     selectedConversationId,
     setSelectedConversationId,
-    startNewConversation,
     deleteConversation,
-    refreshConversations,
   } = useConversation();
 
   const getActivePlacesAndPayload = () => {
@@ -152,9 +150,15 @@ export default function ChatWidget() {
     if (!userText) return;
     lastSubmittedUserMessageRef.current = userText;
     const { ids, payload } = getActivePlacesAndPayload();
+    const hasActiveChatMessages = messages.some((message) => {
+      if (message.hidden) return false;
+      if (message.role === 'user') return true;
+      return message.role === 'assistant' && message.content !== defaultMessages[0]?.content;
+    });
     await sendMessage(userText, ids, payload, {
       ...options,
       userContext: getUserContext(),
+      ignoreConversationId: !selectedConversationId && !hasActiveChatMessages,
     });
   };
 
@@ -223,12 +227,15 @@ export default function ChatWidget() {
     await sendTextMessage(input);
   };
 
-  const handleNewConversation = async () => {
-    const conversation = await startNewConversation();
-    if (!conversation?.id) return;
-    setConversationId(conversation.id);
+  const handleNewConversation = () => {
+    setSelectedConversationId(null);
+    setConversationId(null);
     setMessages(defaultMessages);
     setShowHistory(false);
+    latestSearchResultsRef.current = [];
+    lastOpenedComparisonKeyRef.current = null;
+    lastOpenedInsightKeyRef.current = null;
+    awaitingConfirmedSearchActionRef.current = false;
     wizard.resetWizard();
   };
 
@@ -315,24 +322,13 @@ export default function ChatWidget() {
   }, [sendMessage, setInput, taggedPlaces, wizard]);
 
   useEffect(() => {
-    if (conversationId && conversationId !== selectedConversationId) {
-      setSelectedConversationId(conversationId);
-      refreshConversations?.();
-    }
-  }, [conversationId, refreshConversations, selectedConversationId, setSelectedConversationId]);
-
-  useEffect(() => {
     window.dispatchEvent(new CustomEvent('app:place-comparison', { detail: null }));
     window.dispatchEvent(new CustomEvent('app:open-place-insight', { detail: null }));
   }, [selectedConversationId]);
 
   useEffect(() => {
     if (isStreaming) return;
-    if (!selectedConversationId) {
-      setConversationId(null);
-      setMessages(defaultMessages);
-      return;
-    }
+    if (!selectedConversationId) return;
 
     let active = true;
     const loadHistory = async () => {
@@ -347,6 +343,13 @@ export default function ChatWidget() {
       active = false;
     };
   }, [defaultMessages, isStreaming, selectConversation, selectedConversationId, setConversationId, setMessages]);
+
+  useEffect(() => {
+    setSelectedConversationId(null);
+    setConversationId(null);
+    setMessages(defaultMessages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (wizard.wizardState !== 'executing') return;

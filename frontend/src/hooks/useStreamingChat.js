@@ -92,7 +92,7 @@ export default function useStreamingChat({
     try {
       await streamChat({
         text: promptText,
-        conversationId,
+        conversationId: options.ignoreConversationId ? undefined : conversationId,
         taggedPlaceIds,
         taggedPlaces,
         userContext: options.userContext,

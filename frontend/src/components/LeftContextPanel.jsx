@@ -1,7 +1,7 @@
 import React from 'react';
-import { ChevronLeft, Sparkles } from 'lucide-react';
+import { ChevronLeft, GripVertical, Sparkles } from 'lucide-react';
 
-export default function LeftContextPanel({ activePanel, onCollapse, children }) {
+export default function LeftContextPanel({ activePanel, onCollapse, onResizeStart, children }) {
   const metaByPanel = {
     results: { eyebrow: 'Kết quả AI', title: 'Danh sách tìm kiếm' },
     compare: { eyebrow: 'Bảng làm việc', title: 'So sánh địa điểm' },
@@ -34,6 +34,17 @@ export default function LeftContextPanel({ activePanel, onCollapse, children }) 
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      {onResizeStart ? (
+        <button
+          type="button"
+          className="workspace-panel-resize-handle"
+          onPointerDown={onResizeStart}
+          title="Kéo để đổi độ rộng panel"
+          aria-label="Kéo để đổi độ rộng panel"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
     </section>
   );
 }

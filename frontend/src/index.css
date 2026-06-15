@@ -447,6 +447,24 @@
 
   .workspace-panel-shell {
     @apply h-full max-h-full rounded-3xl border border-base-200/80 bg-white/[0.92] shadow-card backdrop-blur-xl;
+    position: relative;
+  }
+
+  .workspace-panel-resize-handle {
+    @apply absolute top-1/2 -right-3 z-20 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-2xl border border-base-200 bg-white/95 text-ink-500 shadow-soft backdrop-blur transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700;
+    cursor: ew-resize;
+    touch-action: none;
+  }
+
+  .workspace-panel-resize-handle:focus-visible {
+    outline: 2px solid #2fb79c;
+    outline-offset: 2px;
+  }
+
+  .is-resizing-workspace-panel,
+  .is-resizing-workspace-panel * {
+    cursor: ew-resize !important;
+    user-select: none !important;
   }
 
   .left-workspace-layout {
