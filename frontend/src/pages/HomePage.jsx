@@ -885,7 +885,7 @@ export default function HomePage() {
               />
             </div>
             {activePanel ? (
-              <div className="pointer-events-auto h-full min-h-0 overflow-hidden animate-panel-in-left">
+              <div className="pointer-events-auto h-full min-h-0 overflow-visible animate-panel-in-left">
                 {renderActiveContextPanel()}
               </div>
             ) : null}

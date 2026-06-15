@@ -28,23 +28,17 @@ export default function PlaceInsightPanel({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex items-start gap-3 border-b border-base-200/80 bg-white/70 px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-1 text-sm font-black text-ink-900">
-            {insight?.title || insightPlace?.name || 'Insight địa điểm'}
-          </h3>
-          {insightPlace?.address ? (
-            <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-slate-500">{insightPlace.address}</p>
-          ) : null}
-        </div>
+      <div className="relative flex-1 overflow-y-auto p-3">
         {insight ? (
-          <PanelImageExportButton
-            targetRef={exportRef}
-            fileName={insight.title || insightPlace?.name || 'insight-dia-diem'}
-          />
+          <div className="pointer-events-none sticky top-0 z-10 flex justify-end">
+            <div className="pointer-events-auto rounded-2xl bg-white/92 p-1 shadow-soft backdrop-blur-sm">
+              <PanelImageExportButton
+                targetRef={exportRef}
+                fileName={insight.title || insightPlace?.name || 'insight-dia-diem'}
+              />
+            </div>
+          </div>
         ) : null}
-      </div>
-      <div className="flex-1 overflow-y-auto p-3">
         <div ref={exportRef} className="bg-white">
           {insight ? (
             <AreaInsightPanel location={location} insights={insight} />
@@ -90,28 +84,6 @@ export default function PlaceInsightPanel({
           )}
         </div>
       </div>
-      {insightPlace ? (
-        <div className="flex gap-2 border-t border-base-200/80 bg-white/70 p-3">
-          {onDirections ? (
-            <button
-              type="button"
-              onClick={() => onDirections(insightPlace)}
-              className="flex-1 rounded-xl border border-base-200 px-3 py-2 text-xs font-bold text-ink-700 transition hover:bg-base-50"
-            >
-              Chỉ đường
-            </button>
-          ) : null}
-          {onAskAIAboutPlace ? (
-            <button
-              type="button"
-              onClick={() => onAskAIAboutPlace(insightPlace)}
-              className="flex-1 rounded-xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-bold text-primary-700 transition hover:bg-primary-100"
-            >
-              Hỏi AI
-            </button>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }

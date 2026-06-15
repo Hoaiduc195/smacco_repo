@@ -2,6 +2,57 @@
 
 ---
 
+## [2026-06-15 19:16] — Remove duplicate compare/insight sub-headers
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User pointed out the panel corners looked duplicated and asked to remove one header.
+- **Changes**:
+  - Removed the inner compare panel title/description row and kept the shared workspace panel header as the single heading.
+  - Removed the inner insight panel title/address row for the same reason.
+  - Repositioned PNG export controls as small sticky top-right in-content actions so export remains accessible without reintroducing a second header bar.
+- **Verification**:
+  - `npm run build` in `frontend`
+- **Modified files**: `frontend/src/components/ComparePlacesPanel.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — compare and insight panels now rely on the shared workspace header only, with export controls moved to sticky in-content actions.
+
+---
+
+## [2026-06-15 19:13] — Fix workspace panel PNG controls and corner clipping
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported the PNG save button position was wrong in compare and insight panels, and the top corners of the current panels had lost their rounded clipping.
+- **Changes**:
+  - Moved the compare panel PNG export button out of the scroll-overlay positioning and into a stable header row.
+  - Aligned the insight panel PNG export button with the same fixed header placement strategy.
+  - Wrapped left workspace panel content in an inner clipped container so the outer shell can still expose the resize handle while the panel regains its rounded top-corner masking.
+- **Verification**:
+  - `npm run build` in `frontend`
+- **Modified files**: `frontend/src/components/ComparePlacesPanel.jsx`, `frontend/src/components/LeftContextPanel.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — workspace panel shell now separates visible resize-handle overflow from inner rounded clipping, and compare/insight export controls now live in fixed panel headers.
+
+---
+
+## [2026-06-15 19:07] — Improve place detail AI auto-reply UX
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to implement AI automatically answering questions in place detail.
+- **Changes**:
+  - Confirmed the backend already generates a pinned AI answer automatically when a place question is created.
+  - Updated `QASection` to insert the created question thread immediately from the create API response instead of always reloading the full list.
+  - Added an inline pending AI state for newly created threads when the AI answer is not yet present, plus a short delayed refresh fallback so the pinned answer appears automatically.
+- **Verification**:
+  - `npm run test -- useStreamingChat.test.jsx` in `frontend`
+- **Modified files**: `frontend/src/components/QASection.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — place detail Q&A now shows immediate create results and an explicit pending AI-reply state before the pinned AI answer is available.
+
+---
+
 ## [2026-06-15 18:42] — Smooth workspace panel resizing
 
 - **Branch**: `feat/insight_wf`

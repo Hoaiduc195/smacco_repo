@@ -101,6 +101,14 @@ function QuestionThreadCard({ thread, draft, onDraftChange, onAnswerSubmit, subm
             </div>
           </div>
         </section>
+      ) : thread.aiReplyStatus === 'pending' ? (
+        <section className="mx-4 mb-4 rounded-2xl border border-dashed border-violet-200 bg-violet-50/50 p-4 text-sm text-violet-700 sm:mx-5">
+          <div className="flex items-center gap-2 font-bold">
+            <Sparkles className="h-4 w-4 animate-pulse" />
+            AI đang soạn câu trả lời
+          </div>
+          <p className="mt-2 leading-6 text-violet-700/80">Hệ thống sẽ ghim câu trả lời tự động lên đầu thread trong giây lát.</p>
+        </section>
       ) : null}
 
       <div className="mx-4 mb-4 space-y-3 border-l-2 border-slate-100 pl-4 sm:mx-5">
@@ -195,14 +203,30 @@ export default function QASection({ placeId, place }) {
     try {
       setSubmittingQuestion(true);
       setError('');
-      await createPlaceQuestion(placeId, {
+      const createdThread = await createPlaceQuestion(placeId, {
         title: questionTitle.trim(),
         questionText: questionText.trim(),
       });
       setQuestionTitle('');
       setQuestionText('');
       setShowAskModal(false);
-      await loadThreads();
+      setThreads((prev) => {
+        const next = Array.isArray(prev) ? [...prev] : [];
+        const existingIndex = next.findIndex((thread) => thread.id === createdThread?.id);
+        const hydratedThread = createdThread?.aiAnswer ? createdThread : { ...createdThread, aiReplyStatus: 'pending' };
+
+        if (existingIndex >= 0) {
+          next[existingIndex] = hydratedThread;
+          return next;
+        }
+
+        return [hydratedThread, ...next];
+      });
+      if (!createdThread?.aiAnswer) {
+        setTimeout(() => {
+          loadThreads();
+        }, 1200);
+      }
     } catch (err) {
       setError(err?.message || 'Không thể đăng câu hỏi.');
     } finally {

@@ -16,11 +16,14 @@ export default function ComparePlacesPanel({
     <div className="flex h-full flex-col overflow-hidden">
       <div className="relative flex-1 overflow-y-auto p-3">
         {comparisonResult ? (
-          <PanelImageExportButton
-            targetRef={exportRef}
-            fileName="so-sanh-dia-diem"
-            className="absolute right-6 top-6 z-20"
-          />
+          <div className="pointer-events-none sticky top-0 z-10 flex justify-end">
+            <div className="pointer-events-auto rounded-2xl bg-white/92 p-1 shadow-soft backdrop-blur-sm">
+              <PanelImageExportButton
+                targetRef={exportRef}
+                fileName="so-sanh-dia-diem"
+              />
+            </div>
+          </div>
         ) : null}
         <div ref={exportRef} className="bg-white">
           {comparisonResult ? (
