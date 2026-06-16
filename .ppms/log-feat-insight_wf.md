@@ -2,6 +2,26 @@
 
 ---
 
+## [2026-06-16 15:34] — Humanize AI prompt mediation
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to optimize all AI prompts so the LLM acts as a human intermediary between system information and users, avoids exposing technical/internal wording, and keeps prompt instructions written in English.
+- **Changes**:
+  - Rewrote the composer system, compare, and insight prompts in English while requiring natural Vietnamese user-facing output.
+  - Added explicit human-mediation rules: synthesize evidence, avoid raw context repetition, use "mình/bạn", and phrase uncertainty as personal advisory judgment rather than internal data limitations.
+  - Updated legacy chat/place-question prompts and search-filter extraction prompt to English instructions.
+  - Removed user-facing technical fallback wording such as metadata/schema/fallback/data-missing language from compare and insight fallback payloads.
+  - Updated composer prompt tests for the new private English evidence labels.
+- **Verification**:
+  - `npm test -- llm-response-composer.service.spec.ts place-insight-results.service.spec.ts place-comparison-results.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/ai/chat.service.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.ts`, `backend/src/modules/ai/orchestration/composer/llm-response-composer.service.spec.ts`, `backend/src/modules/ai/place-comparison-results.service.ts`, `backend/src/modules/ai/place-insight-results.service.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — AI composition now uses English-maintained prompt instructions with stricter human-facing mediation and non-technical uncertainty language.
+
+---
+
 ## [2026-06-16 15:10] — Fix test-mode fixture search URL fallback
 
 - **Branch**: `feat/insight_wf`

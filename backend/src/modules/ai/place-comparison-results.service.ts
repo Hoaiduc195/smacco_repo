@@ -86,18 +86,18 @@ export class PlaceComparisonResultsService {
       places,
       comparisonRows: rows,
       overallAssessment: {
-        summary: this.truncateText(stripMarkdownPlaceLinks(content), 700) || 'Mình đã tạo bảng so sánh dựa trên metadata hiện có.',
+        summary: this.truncateText(stripMarkdownPlaceLinks(content), 700) || 'Mình đã tạo bảng so sánh dựa trên phần thông tin mình có thể tham khảo được.',
         recommendedPlaceId: recommended?.id || null,
         recommendedPlaceName: recommended?.name || null,
-        reasons: recommended ? [`${recommended.name} có rating nổi bật trong dữ liệu hiện có.`] : [],
-        tradeoffs: ['Một số tiêu chí có thể thiếu review hoặc giá chi tiết.'],
+        reasons: recommended ? [`${recommended.name} có rating nổi bật trong phần mình tham khảo được.`] : [],
+        tradeoffs: ['Một số tiêu chí chưa có đủ review hoặc giá chi tiết để mình chấm thật chắc.'],
         bestFor: places.map((place) => ({
           placeId: place.id,
           placeName: place.name,
-          scenario: 'Phù hợp khi ưu tiên các thông tin metadata đang có.',
+          scenario: 'Phù hợp khi ưu tiên các thông tin mình đang thấy rõ.',
         })).slice(0, 3),
       },
-      dataNotes: ['Bảng được dựng từ metadata vì phản hồi AI không phải JSON đúng schema.'],
+      dataNotes: ['Một vài tiêu chí chưa đủ rõ, nên mình đang so sánh theo các thông tin chắc hơn trước.'],
       followUpQuestion: 'Bạn muốn mình so sánh sâu hơn theo tiêu chí nào?',
     };
   }
@@ -169,7 +169,7 @@ export class PlaceComparisonResultsService {
     for (const place of places) {
       const source = placeMap.get(place.id) || {};
       values[place.id] = this.extractCriterionValue(criterion, source);
-      notes[place.id] = values[place.id] === 'Chưa rõ' ? 'Thiếu dữ liệu metadata' : '';
+      notes[place.id] = values[place.id] === 'Chưa rõ' ? 'Mình chưa thấy đủ thông tin rõ' : '';
     }
 
     return {

@@ -92,14 +92,14 @@ describe('LlmResponseComposerService compare context', () => {
     const messages = chat.mock.calls[0][0];
     const userContext = messages[messages.length - 1].content;
 
-    expect(userContext).toContain('[DANH SÁCH ĐỊA ĐIỂM ĐƯỢC TAG VÀ NHẬN XÉT THỰC TẾ]');
+    expect(userContext).toContain('[PRIVATE PLACE EVIDENCE - DO NOT MENTION THIS LABEL]');
     expect(userContext).toContain('Alpha Hotel');
-    expect(userContext).toContain('Giá/Tầm giá: 900.000đ/đêm');
-    expect(userContext).toContain('Số review: 128');
-    expect(userContext).toContain('Tiện nghi/đặc điểm nổi bật: wifi, pool');
-    expect(userContext).not.toContain('[ACTIVE SEARCH RESULTS CONTEXT]');
+    expect(userContext).toContain('Price/range: 900.000đ/đêm');
+    expect(userContext).toContain('Review count: 128');
+    expect(userContext).toContain('Amenities/highlights: wifi, pool');
+    expect(userContext).not.toContain('[PRIVATE ACTIVE SEARCH RESULTS - DO NOT MENTION THIS LABEL]');
     expect(userContext).toContain('Beta Homestay');
-    expect(userContext).toContain('Nguồn: serpapi/beta');
+    expect(userContext).toContain('Source: serpapi/beta');
   });
 
   it('loads local fixture reviews for local tagged places', async () => {
@@ -167,7 +167,7 @@ describe('LlmResponseComposerService compare context', () => {
     const userContext = messages[messages.length - 1].content;
 
     expect(userContext).toContain('Lady Hill Sapa Resort');
-    expect(userContext).toContain('Nguồn: local/0');
+    expect(userContext).toContain('Source: local/0');
     expect(userContext).toContain('Phòng nghỉ rộng rãi, sạch sẽ');
     expect(userContext).toContain('Vị trí thuận tiện, gần trung tâm');
   });

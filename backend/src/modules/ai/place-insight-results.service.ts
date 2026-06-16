@@ -49,11 +49,11 @@ export class PlaceInsightResultsService {
         summary: 'Insight địa điểm chỉ hoạt động khi bạn tag đúng 1 địa điểm.',
         pros: [],
         cons: ['Bạn hãy giữ lại đúng 1 địa điểm trong danh sách tag AI rồi thử lại.'],
-        safety: 'Chưa đủ dữ liệu để đánh giá.',
-        transportation: 'Chưa đủ dữ liệu để đánh giá.',
-        food: 'Chưa đủ dữ liệu để đánh giá.',
-        attractions: 'Chưa đủ dữ liệu để đánh giá.',
-        suitableFor: 'Chưa đủ dữ liệu để khuyến nghị.',
+        safety: 'Mình chưa đủ cơ sở để đánh giá chắc.',
+        transportation: 'Mình chưa đủ cơ sở để đánh giá chắc.',
+        food: 'Mình chưa đủ cơ sở để đánh giá chắc.',
+        attractions: 'Mình chưa đủ cơ sở để đánh giá chắc.',
+        suitableFor: 'Mình chưa đủ cơ sở để khuyến nghị.',
         overallAssessment: {
           summary: 'Bạn hãy tag đúng 1 địa điểm để mình tạo insight chi tiết ở panel bên trái.',
           verdict: 'Chưa thể phân tích vì số lượng địa điểm được tag chưa đúng.',
@@ -84,20 +84,20 @@ export class PlaceInsightResultsService {
     const transportation = this.describeTravel(travel);
     const food = foodPois.length
       ? `Gần một số điểm ăn uống/cafe như ${foodPois.slice(0, 4).map((item: any) => this.describePoi(item)).join(', ')}.`
-      : 'Chưa có dữ liệu quán ăn/cafe nổi bật quanh địa điểm trong phạm vi hiện tại.';
+      : 'Mình chưa thấy đủ thông tin đáng tin về quán ăn/cafe nổi bật quanh địa điểm này.';
     const attractions = attractionPois.length
       ? `Có thể kết hợp lịch trình với ${attractionPois.slice(0, 4).map((item: any) => this.describePoi(item)).join(', ')}.`
-      : 'Chưa có dữ liệu điểm tham quan nổi bật quanh địa điểm trong phạm vi hiện tại.';
+      : 'Mình chưa thấy đủ thông tin đáng tin về điểm tham quan nổi bật quanh địa điểm này.';
     const pros = [
       place.rating ? `Rating hiện có ở mức ${place.rating}/5${place.reviewCount ? ` với ${place.reviewCount} review` : ''}.` : '',
       amenities.length ? `Có các tiện nghi/đặc điểm đáng chú ý: ${amenities.join(', ')}.` : '',
       travel.status === 'estimated' ? travel.interpretation : '',
-      poiItems.length ? `Có ${poiItems.length} POI lân cận trong dữ liệu OpenStreetMap.` : '',
+      poiItems.length ? `Mình thấy có ${poiItems.length} điểm lân cận có thể tham khảo thêm.` : '',
     ].filter(Boolean).slice(0, 4);
     const cons = [
-      !place.reviewCount ? 'Thiếu review thực tế trong dữ liệu hiện có nên chưa thể kết luận sâu về chất lượng lưu trú.' : '',
-      travel.status !== 'estimated' ? this.truncateText(travel.reason || 'Thiếu dữ liệu tọa độ để ước lượng di chuyển.', 160) : '',
-      !foodPois.length && !attractionPois.length ? 'Dữ liệu xung quanh còn hạn chế, nên kiểm tra thêm bản đồ trước khi đặt.' : '',
+      !place.reviewCount ? 'Mình chưa thấy đủ review thực tế nên chưa thể kết luận sâu về chất lượng lưu trú.' : '',
+      travel.status !== 'estimated' ? this.truncateText(travel.reason || 'Mình chưa đủ thông tin vị trí để ước lượng di chuyển chắc.', 160) : '',
+      !foodPois.length && !attractionPois.length ? 'Thông tin xung quanh còn hạn chế, nên kiểm tra thêm bản đồ trước khi đặt.' : '',
     ].filter(Boolean).slice(0, 4);
 
     return this.normalizePayload({
@@ -107,24 +107,24 @@ export class PlaceInsightResultsService {
       location: place.address || place.name || 'Địa điểm',
       place,
       summary,
-      pros: pros.length ? pros : ['Có đủ metadata cơ bản để bắt đầu đánh giá.'],
-      cons: cons.length ? cons : ['Chưa thấy điểm trừ rõ ràng trong dữ liệu hiện có, nhưng vẫn nên kiểm tra giá và review mới nhất.'],
+      pros: pros.length ? pros : ['Mình có đủ vài thông tin cơ bản để bắt đầu đánh giá ở mức thận trọng.'],
+      cons: cons.length ? cons : ['Mình chưa thấy điểm trừ rõ ràng, nhưng vẫn nên kiểm tra giá và review mới nhất.'],
       safety: 'Chưa có đủ review/an toàn cụ thể để kết luận chắc chắn; nên kiểm tra thêm đánh giá mới nhất và khu vực xung quanh trước khi đặt.',
       transportation,
       food,
       attractions,
       suitableFor: tripPurposes.length
         ? `Phù hợp nhất với chuyến đi ưu tiên ${tripPurposes.join(', ')}${criteria.length ? ` và các tiêu chí ${criteria.join(', ')}` : ''}.`
-        : 'Phù hợp khi bạn cần một lựa chọn có metadata rõ ràng và muốn kiểm tra thêm trước khi đặt.',
+        : 'Phù hợp khi bạn cần một lựa chọn có thông tin cơ bản khá rõ và sẵn sàng kiểm tra thêm trước khi đặt.',
       overallAssessment: {
         summary,
-        verdict: `${place.name || 'Địa điểm này'} có thể là lựa chọn đáng cân nhắc nếu các tiêu chí chính của bạn khớp với dữ liệu hiện có.`,
+        verdict: `${place.name || 'Địa điểm này'} có thể là lựa chọn đáng cân nhắc nếu các tiêu chí chính của bạn khớp với phần mình đang thấy.`,
         reasons: pros.slice(0, 3),
         tradeoffs: cons.slice(0, 3),
         nextSteps: ['Kiểm tra giá/phòng trống mới nhất.', 'Đọc thêm review gần đây trước khi đặt.'],
       },
       dataNotes: [
-        'Insight fallback được dựng từ metadata/tool context vì phản hồi AI không phải JSON đúng schema.',
+        'Mình đang dựa vào các thông tin chắc hơn trước, nên một vài nhận định sẽ được giữ ở mức thận trọng.',
         ...(Array.isArray(insightContext.evidenceNotes) ? insightContext.evidenceNotes : []),
       ].slice(0, 4),
       followUpQuestion: 'Bạn muốn mình đào sâu thêm về di chuyển, tiện nghi hay review?',
@@ -278,7 +278,7 @@ export class PlaceInsightResultsService {
       return `Từ ${travel.startLabel || 'điểm xuất phát'}, khoảng ${travel.estimatedRoadDistanceKm || travel.straightLineDistanceKm || 'chưa rõ'} km${modes ? `; ${modes}` : ''}. ${travel.interpretation || ''}`.trim();
     }
 
-    return this.truncateText(travel?.reason || 'Thiếu dữ liệu tọa độ để ước lượng di chuyển.', 220);
+    return this.truncateText(travel?.reason || 'Mình chưa đủ thông tin vị trí để ước lượng di chuyển chắc.', 220);
   }
 
   private describePoi(item: any): string {
@@ -289,7 +289,7 @@ export class PlaceInsightResultsService {
 
   private buildSummary(place: any, travel: any, amenities: string[], tripPurposes: string[]): string {
     const parts = [
-      `${place?.name || 'Địa điểm này'} có thể là một lựa chọn đáng cân nhắc dựa trên metadata hiện có.`,
+      `${place?.name || 'Địa điểm này'} có thể là một lựa chọn đáng cân nhắc dựa trên phần thông tin mình đang thấy.`,
       travel?.status === 'estimated' ? `Di chuyển từ ${travel.startLabel || 'điểm xuất phát'} được ước lượng ở mức ${travel.interpretation || 'có thể chấp nhận được'}.` : '',
       amenities.length ? `Điểm đáng chú ý là ${amenities.slice(0, 3).join(', ')}.` : '',
       tripPurposes.length ? `Nên đối chiếu thêm với mục đích ${tripPurposes.join(', ')} trước khi đặt.` : '',

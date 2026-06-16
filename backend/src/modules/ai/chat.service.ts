@@ -5,8 +5,11 @@ import { ConversationStoreService } from './conversation-store.service';
 import { ILlmClient } from './interfaces/llm-client.interface';
 
 const SYSTEM_PROMPT =
-  'You are a helpful travel and local guide assistant. ' +
-  'Answer clearly and concisely in Vietnamese. ' +
+  'You are a Vietnamese travel assistant speaking directly with the user. ' +
+  'Answer in natural Vietnamese, using "mình" and "bạn" as conversational pronouns. ' +
+  'Turn available information into useful judgment instead of repeating raw facts. ' +
+  'Do not mention systems, context, internal data, or technical mechanics. ' +
+  'If evidence is weak, say naturally that you cannot conclude confidently yet or that you have not seen enough real reviews. ' +
   'Return plain text only (no Markdown, no bullet points, no code blocks).';
 
 /**
@@ -26,15 +29,15 @@ export class ChatService {
     questionText: string;
   }): Promise<string> {
     const systemPrompt =
-      'Bạn là AI hỗ trợ hỏi đáp về địa điểm trên một trang cộng đồng kiểu Reddit. ' +
-      'Trả lời bằng tiếng Việt, ngắn gọn, hữu ích, không bịa đặt dữ kiện nếu không có thông tin. ' +
-      'Nếu thiếu dữ kiện, hãy nói rõ là bạn chưa xác nhận được và gợi ý người dùng hỏi cộng đồng onsite.';
+      'You are a Vietnamese travel advisor answering a place question inside a community thread. ' +
+      'Answer in Vietnamese, keep it short and human, and do not invent facts when evidence is weak. ' +
+      'If you cannot conclude confidently, say so naturally and suggest asking people who are currently there.';
 
     const userPrompt = [
-      `Địa điểm: ${params.placeName}`,
-      params.placeAddress ? `Địa chỉ: ${params.placeAddress}` : null,
-      `Câu hỏi: ${params.questionText}`,
-      'Yêu cầu: trả lời như một section AI được ghim ở đầu thread, không dùng markdown quá phức tạp.',
+      `Place: ${params.placeName}`,
+      params.placeAddress ? `Address: ${params.placeAddress}` : null,
+      `Question: ${params.questionText}`,
+      'Requirement: answer like a pinned advisory reply at the top of the thread. Avoid complex Markdown.',
     ]
       .filter(Boolean)
       .join('\n');
@@ -56,16 +59,16 @@ export class ChatService {
   }
 
   async extractFiltersUsingAi(text: string): Promise<any> {
-    const prompt = `Phân tích câu sau xem người dùng có đang tìm kiếm địa điểm (nhà nghỉ, khách sạn, nhà hàng, quán ăn, điểm tham quan) không.
-    Nếu có, trả về định dạng JSON với các trường:
+    const prompt = `Analyze whether the user is searching for a place such as accommodation, food, or an attraction.
+    If yes, return valid JSON with:
     - "isSearch": true
-    - "location": tên địa phương/thành phố (VD: "Đà Nẵng", "Hà Nội")
-    - "type": phân loại ("accommodation" cho nhà nghỉ/khách sạn/chỗ ở, "food" cho ăn uống, "attraction" cho điểm tham quan)
-    - "budget": mức giá ("low" cho rẻ/bình dân, "mid" cho trung bình, "high" cho sang trọng/cao cấp)
-    - "query": câu tìm kiếm gốc
-    Nếu không phải câu tìm kiếm, trả về {"isSearch": false}.
-    Chỉ trả về chuỗi JSON hợp lệ, tuyệt đối không giải thích thêm.
-    Câu của người dùng: "${text}"`;
+    - "location": the city/locality name exactly as written, for example "Da Nang" or "Ha Noi"
+    - "type": one of "accommodation", "food", or "attraction"
+    - "budget": "low" for cheap/budget, "mid" for midrange, "high" for luxury/premium
+    - "query": the original user search text
+    If the message is not a search request, return {"isSearch": false}.
+    Return only valid JSON. Do not explain.
+    User message: "${text}"`;
 
     try {
       // Use llmClient directly for a fast extraction call
