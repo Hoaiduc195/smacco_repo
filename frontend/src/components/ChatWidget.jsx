@@ -187,7 +187,8 @@ export default function ChatWidget() {
     const purposes = Array.isArray(data.tripPurposes) && data.tripPurposes.length
       ? ` cho mục đích ${data.tripPurposes.join(', ')}`
       : '';
-    const startLocation = data.startLocation ? ` Xuất phát từ ${data.startLocation}.` : ' Mặc định xuất phát từ vị trí hiện tại.';
+    const shouldIncludeStartLocation = Array.isArray(data.criteria) && data.criteria.includes('Khoảng cách đi lại');
+    const startLocation = shouldIncludeStartLocation && data.startLocation ? ` Xuất phát từ ${data.startLocation}.` : '';
     return `Tạo insight cực chi tiết cho địa điểm tôi đã tag${criteria}${purposes}.${startLocation}`;
   };
 

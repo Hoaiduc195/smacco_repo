@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundEx
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { PlacesService } from '../places/places.service';
+import { LocalFixturePlacesService } from '../places/local-fixture-places.service';
 import { ChatService } from '../ai/chat.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CreateAnswerDto } from './dto/create-answer.dto';
@@ -23,6 +24,7 @@ export class QuestionsService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly placesService: PlacesService,
+    private readonly localFixtures: LocalFixturePlacesService,
     private readonly chatService: ChatService,
     private readonly runtimeConfig: RuntimeConfigService,
   ) {}
@@ -104,15 +106,11 @@ export class QuestionsService {
   }
 
   async createQuestion(dto: CreateQuestionDto, firebaseUser: FirebaseUser) {
-    const author = await this.usersService.upsertFromFirebaseUser(firebaseUser);
-    const place = await this.resolvePlace(dto.placeId);
-
-    if (!place) {
-      throw new BadRequestException(`Place #${dto.placeId} not found`);
-    }
-
-    if (this.runtimeConfig.environment === 'test') {
+    if (this.isTestMode()) {
+      const author = this.buildMockAuthor(firebaseUser);
+      const place = this.resolveMockPlaceInfo(dto.placeId);
       const questionId = `mock-q-${Math.random().toString(36).substring(2, 9)}`;
+      const now = new Date();
       const mockQuestion = {
         id: questionId,
         placeId: dto.placeId,
@@ -120,14 +118,21 @@ export class QuestionsService {
         title: dto.title?.trim() || null,
         questionText: dto.questionText.trim(),
         status: 'open',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
         user: author,
       };
       this.mockQuestions.push(mockQuestion);
 
-      await this.createAiAnswer(questionId, place.placeName || place.name || `Địa điểm`, place.placeAddress || place.address || null, dto.questionText);
+      await this.createAiAnswer(questionId, place.name, place.address, dto.questionText);
       return this.getQuestionThread(questionId);
+    }
+
+    const author = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+    const place = await this.resolvePlace(dto.placeId);
+
+    if (!place) {
+      throw new BadRequestException(`Place #${dto.placeId} not found`);
     }
 
     const question = await this.prisma.question.create({
@@ -145,20 +150,21 @@ export class QuestionsService {
   }
 
   async createAnswer(questionId: string, dto: CreateAnswerDto, firebaseUser: FirebaseUser) {
-    if (this.runtimeConfig.environment === 'test') {
+    if (this.isTestMode()) {
       const question = this.mockQuestions.find(q => q.id === questionId);
       if (!question) {
         throw new BadRequestException(`Question #${questionId} not found`);
       }
-      const author = await this.usersService.upsertFromFirebaseUser(firebaseUser);
+      const author = this.buildMockAuthor(firebaseUser);
       const answerId = `mock-a-${Math.random().toString(36).substring(2, 9)}`;
+      const now = new Date();
       const mockAnswer = {
         id: answerId,
         questionId,
         userId: author.id,
         answerText: dto.answerText.trim(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
         user: author,
         isAiGenerated: false,
       };
@@ -259,19 +265,21 @@ export class QuestionsService {
   }
 
   async deleteQuestion(questionId: string, firebaseUser: FirebaseUser): Promise<void> {
-    const dbUser = await this.usersService.findByFirebaseUid(firebaseUser.uid);
-    if (!dbUser) throw new ForbiddenException('Không tìm thấy người dùng.');
-
-    if (this.runtimeConfig.environment === 'test') {
+    if (this.isTestMode()) {
+      const userId = this.buildMockAuthor(firebaseUser).id;
       const questionIdx = this.mockQuestions.findIndex(q => q.id === questionId);
       if (questionIdx === -1) throw new NotFoundException(`Question #${questionId} not found`);
-      if (this.mockQuestions[questionIdx].userId !== dbUser.id) {
+      const question = this.mockQuestions[questionIdx];
+      if (question.userId !== userId && question.user?.firebaseUid !== firebaseUser.uid) {
         throw new ForbiddenException('Bạn chỉ có thể xóa câu hỏi của chính mình.');
       }
       this.mockQuestions.splice(questionIdx, 1);
       this.mockAnswers = this.mockAnswers.filter(ans => ans.questionId !== questionId);
       return;
     }
+
+    const dbUser = await this.usersService.findByFirebaseUid(firebaseUser.uid);
+    if (!dbUser) throw new ForbiddenException('Không tìm thấy người dùng.');
 
     const question = await this.prisma.question.findUnique({ where: { id: questionId } });
     if (!question) throw new NotFoundException(`Question #${questionId} not found`);
@@ -284,7 +292,7 @@ export class QuestionsService {
   }
 
   private async createAiAnswer(questionId: string, placeName: string, placeAddress: string | null, questionText: string) {
-    if (this.runtimeConfig.environment === 'test') {
+    if (this.isTestMode()) {
       try {
         const aiAnswerText = await this.chatService.answerPlaceQuestion({
           placeName,
@@ -444,5 +452,47 @@ export class QuestionsService {
 
   private isUuid(value: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  }
+
+  private isTestMode(): boolean {
+    return this.runtimeConfig.environment === 'test';
+  }
+
+  private buildMockAuthor(firebaseUser: FirebaseUser) {
+    const uid = firebaseUser?.uid || 'anonymous';
+    const displayName = firebaseUser?.name || firebaseUser?.email || 'Người dùng';
+    return {
+      id: `mock-user-${uid}`,
+      firebaseUid: uid,
+      email: firebaseUser?.email || null,
+      displayName,
+    };
+  }
+
+  private resolveMockPlaceInfo(placeId: string): { name: string; address: string | null } {
+    const localSourcePlaceId = this.getLocalSourcePlaceId(placeId);
+    if (localSourcePlaceId !== null) {
+      try {
+        const place = this.localFixtures.findOne(localSourcePlaceId);
+        return {
+          name: place?.placeName || place?.name || `Địa điểm ${placeId}`,
+          address: place?.placeAddress || place?.address || null,
+        };
+      } catch {
+        // Fall through to a non-DB fallback below.
+      }
+    }
+
+    return {
+      name: `Địa điểm ${placeId}`,
+      address: null,
+    };
+  }
+
+  private getLocalSourcePlaceId(placeId: string): string | null {
+    if (!placeId) return null;
+    if (placeId.startsWith('local-')) return placeId.slice('local-'.length);
+    if (/^\d+$/.test(placeId)) return placeId;
+    return null;
   }
 }

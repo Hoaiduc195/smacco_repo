@@ -11,12 +11,13 @@ export default function ComparePlacesPanel({
   comparisonResult,
 }) {
   const exportRef = useRef(null);
+  const introCardClass = 'rounded-3xl border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-accent-50/60 p-4 shadow-soft';
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="relative flex-1 overflow-y-auto p-3">
         {comparisonResult ? (
-          <div className="pointer-events-none sticky top-0 z-10 flex justify-end">
+          <div className="pointer-events-none sticky top-0 z-10 mb-2 flex justify-end">
             <div className="pointer-events-auto rounded-2xl bg-white/92 p-1 shadow-soft backdrop-blur-sm">
               <PanelImageExportButton
                 targetRef={exportRef}
@@ -27,8 +28,8 @@ export default function ComparePlacesPanel({
         ) : null}
         <div ref={exportRef} className="bg-white">
           {comparisonResult ? (
-            <div className="space-y-3">
-              <div className="rounded-3xl border border-primary-100 bg-primary-50/70 p-4">
+            <div className="space-y-3 pb-2">
+              <div className={introCardClass}>
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-soft">
                     <Sparkles className="h-4 w-4" />
@@ -43,9 +44,7 @@ export default function ComparePlacesPanel({
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-base-200 bg-white p-2 shadow-soft">
-                <PlaceComparisonTable data={comparisonResult} />
-              </div>
+              <PlaceComparisonTable data={comparisonResult} />
             </div>
           ) : taggedPlaces.length < 2 ? (
             <div className="workspace-empty-state">
@@ -55,7 +54,7 @@ export default function ComparePlacesPanel({
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-3xl border border-primary-100 bg-primary-50/70 p-4">
+              <div className={introCardClass}>
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-soft">
                     <Layers3 className="h-4 w-4" />

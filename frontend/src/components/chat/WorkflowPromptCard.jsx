@@ -1,9 +1,27 @@
 import { AlertCircle, GitCompareArrows, MapPin, Microscope, Search } from 'lucide-react';
 
 const WORKFLOW_UI = {
-  SEARCH_PLACES: { icon: Search, title: 'Tìm kiếm chỗ ở', action: 'tìm kiếm chỗ ở phù hợp' },
-  COMPARE_PLACES: { icon: GitCompareArrows, title: 'So sánh địa điểm', action: 'so sánh các địa điểm đã tag' },
-  ANALYZE_PLACE: { icon: Microscope, title: 'Phân tích chi tiết', action: 'phân tích chi tiết địa điểm' },
+  SEARCH_PLACES: {
+    icon: Search,
+    title: 'Tìm kiếm chỗ ở',
+    description: 'Mình có thể tìm các chỗ ở phù hợp với yêu cầu của bạn. Bạn muốn bắt đầu không?',
+    acceptLabel: 'Bắt đầu tìm',
+    declineLabel: 'Chưa cần',
+  },
+  COMPARE_PLACES: {
+    icon: GitCompareArrows,
+    title: 'Mình có thể so sánh giúp bạn',
+    description: 'Mình sẽ đặt các địa điểm đã tag cạnh nhau và chỉ ra lựa chọn nào hợp với bạn hơn.',
+    acceptLabel: 'Chọn tiêu chí',
+    declineLabel: 'Để sau',
+  },
+  ANALYZE_PLACE: {
+    icon: Microscope,
+    title: 'Mình có thể phân tích sâu địa điểm này',
+    description: 'Bạn chọn vài tiêu chí cần xem kỹ, mình sẽ phân tích đúng trọng tâm hơn.',
+    acceptLabel: 'Chọn tiêu chí',
+    declineLabel: 'Để sau',
+  },
 };
 
 export default function WorkflowPromptCard({
@@ -36,7 +54,7 @@ export default function WorkflowPromptCard({
         <div>
           <h4 className="text-xs font-black text-ink-900">{meta.title}</h4>
           <p className="text-[10px] text-ink-500 font-medium mt-0.5">
-            Tôi nhận thấy bạn muốn {meta.action}. Bạn muốn tôi hỗ trợ không?
+            {meta.description}
           </p>
         </div>
       </div>
@@ -104,14 +122,14 @@ export default function WorkflowPromptCard({
           disabled={hasTagWarning}
           className="flex-1 px-3 py-2 bg-primary-600 text-white text-[11px] font-black rounded-xl hover:bg-primary-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Bắt đầu
+          {meta.acceptLabel}
         </button>
         <button
           type="button"
           onClick={onDecline}
           className="flex-1 px-3 py-2 bg-white text-ink-700 text-[11px] font-semibold rounded-xl border border-base-200 hover:bg-base-50 transition"
         >
-          Không, tiếp tục chat
+          {meta.declineLabel}
         </button>
       </div>
     </div>

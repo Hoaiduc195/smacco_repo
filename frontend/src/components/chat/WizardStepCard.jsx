@@ -42,6 +42,8 @@ export default function WizardStepCard({
   if (step.type === 'checklist') inputProps.maxSelect = 5;
 
   const InputComponent = INPUT_MAP[step.type];
+  const isEmptyValue = Array.isArray(localValue) ? localValue.length === 0 : !localValue;
+  const isSubmitDisabled = Boolean(step.required && isEmptyValue);
 
   return (
     <div className="border border-base-200 bg-white rounded-2xl p-4 shadow-soft space-y-3 animate-soft-in">
@@ -81,18 +83,25 @@ export default function WizardStepCard({
         ) : (
           <p className="text-xs text-ink-500">Unsupported input type: {step.type}</p>
         )}
+        {isSubmitDisabled && step.requiredHint ? (
+          <p className="mt-2 text-[10px] font-semibold leading-4 text-amber-700">
+            {step.requiredHint}
+          </p>
+        ) : null}
       </div>
 
       {/* Footer buttons */}
       <div className="flex items-center justify-between pt-1 border-t border-base-100">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-[10px] font-semibold text-ink-500 hover:text-ink-700 transition px-2 py-1"
-          >
-            Bỏ qua
-          </button>
+          {!step.hideSkip ? (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-[10px] font-semibold text-ink-500 hover:text-ink-700 transition px-2 py-1"
+            >
+              {step.skipLabel || 'Bỏ qua'}
+            </button>
+          ) : null}
         </div>
         <div className="flex items-center gap-1.5">
           {onBack && (
@@ -108,9 +117,10 @@ export default function WizardStepCard({
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-3 py-1.5 bg-primary-600 text-white text-[10px] font-black rounded-xl hover:bg-primary-700 transition shadow-sm"
+            disabled={isSubmitDisabled}
+            className="px-3 py-1.5 bg-primary-600 text-white text-[10px] font-black rounded-xl hover:bg-primary-700 transition shadow-sm disabled:cursor-not-allowed disabled:bg-base-200 disabled:text-ink-500"
           >
-            Tiếp tục →
+            {step.submitLabel || 'Tiếp tục →'}
           </button>
           <button
             type="button"

@@ -38,6 +38,7 @@ export function PlaceComparisonTable({ data }) {
   const rows = Array.isArray(data?.comparisonRows) ? data.comparisonRows : [];
   const assessment = data?.overallAssessment || {};
   const hasEnoughData = data?.status !== 'insufficient_data' && places.length >= 2;
+  const comparisonSubtitle = places.length ? `${places.length} địa điểm được đối chiếu` : 'Bảng so sánh địa điểm';
 
   return (
     <div className="w-full overflow-hidden rounded-3xl border border-base-200 bg-white text-ink-900 shadow-soft">
@@ -48,6 +49,9 @@ export function PlaceComparisonTable({ data }) {
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-black text-ink-900">Đánh giá chi tiết</h3>
+            <p className="mt-0.5 line-clamp-1 text-[11px] font-semibold text-slate-500">
+              {comparisonSubtitle}
+            </p>
           </div>
         </div>
       </div>

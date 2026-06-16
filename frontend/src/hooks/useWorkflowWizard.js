@@ -47,63 +47,78 @@ const SEARCH_STEPS = [
 const COMPARE_STEPS = [
   {
     id: 'criteria',
-    title: 'So sánh theo tiêu chí nào?',
-    subtitle: 'Chọn các tiêu chí quan tâm',
+    title: 'Bạn muốn mình ưu tiên điều gì khi so sánh?',
+    subtitle: 'Chọn vài điểm bạn đang phân vân, mình sẽ tự cân bằng phần còn lại.',
+    summaryLabel: 'Ưu tiên so sánh',
+    skipLabel: 'Mình tự cân nhắc',
     type: 'checklist',
     options: [
-      { value: 'price', label: 'Giá cả' },
-      { value: 'rating', label: 'Đánh giá khách' },
-      { value: 'location', label: 'Vị trí' },
-      { value: 'amenities', label: 'Tiện nghi phòng' },
-      { value: 'quiet', label: 'Yên tĩnh' },
-      { value: 'cleanliness', label: 'Sạch sẽ/chất lượng' },
+      { value: 'price', label: 'Giá có đáng tiền không' },
+      { value: 'rating', label: 'Review và mức độ tin cậy' },
+      { value: 'location', label: 'Vị trí có tiện không' },
+      { value: 'amenities', label: 'Tiện nghi nổi bật' },
+      { value: 'quiet', label: 'Không gian yên tĩnh' },
+      { value: 'cleanliness', label: 'Độ sạch và chất lượng phòng' },
     ],
     defaultValue: [],
   },
 ];
 
-const ANALYZE_STEPS = [
-  {
-    id: 'startLocation',
-    title: 'Xuất phát từ đâu?',
-    subtitle: 'Bỏ trống hoặc chọn vị trí hiện tại nếu muốn dùng vị trí hiện tại',
-    type: 'location',
-    suggestions: ['Vị trí hiện tại', 'Trung tâm thành phố', 'Sân bay', 'Bến xe'],
-    defaultValue: '',
-  },
-  {
-    id: 'criteria',
-    title: 'Muốn đào sâu phần nào?',
-    subtitle: 'Insight vẫn bao quát đầy đủ, các mục này sẽ được ưu tiên hơn',
-    type: 'checklist',
-    options: [
-      { value: 'travel_time', label: 'Thời gian di chuyển' },
-      { value: 'strengths_weaknesses', label: 'Điểm mạnh/yếu' },
-      { value: 'trip_purpose', label: 'Theo mục đích chuyến đi' },
-      { value: 'nearby_landmarks', label: 'Địa danh xung quanh' },
-      { value: 'time_of_day', label: 'Khung giờ phù hợp trong ngày' },
-      { value: 'reviews', label: 'Phân tích reviews' },
-      { value: 'price', label: 'Giá cả hợp lý' },
-      { value: 'amenities', label: 'Tiện ích' },
-    ],
-    defaultValue: [],
-  },
-  {
-    id: 'tripPurposes',
-    title: 'Mục đích chuyến đi?',
-    subtitle: 'Chọn bối cảnh để AI đánh giá độ phù hợp',
-    type: 'checklist',
-    options: [
-      { value: 'nghi_duong', label: 'Nghỉ dưỡng' },
-      { value: 'cap_doi', label: 'Đi cặp đôi' },
-      { value: 'gia_dinh', label: 'Gia đình có trẻ nhỏ' },
-      { value: 'cong_tac', label: 'Công tác/làm việc' },
-      { value: 'kham_pha', label: 'Khám phá địa phương' },
-      { value: 'tiet_kiem', label: 'Tiết kiệm ngân sách' },
-    ],
-    defaultValue: [],
-  },
-];
+const INSIGHT_TRAVEL_CRITERION = 'Khoảng cách đi lại';
+
+const ANALYZE_CRITERIA_STEP = {
+  id: 'criteria',
+  title: 'Bạn muốn mình đánh giá theo tiêu chí nào?',
+  subtitle: 'Insight sẽ chỉ tập trung vào các tiêu chí bạn chọn ở đây.',
+  summaryLabel: 'Tiêu chí insight',
+  hideSkip: true,
+  required: true,
+  requiredHint: 'Chọn ít nhất 1 tiêu chí để mình phân tích đúng trọng tâm.',
+  submitLabel: 'Xác nhận tiêu chí',
+  type: 'checklist',
+  options: [
+    { value: INSIGHT_TRAVEL_CRITERION, label: 'Khoảng cách đi lại' },
+    { value: 'Giá trị so với giá tiền', label: 'Giá trị so với giá tiền' },
+    { value: 'Tiện nghi', label: 'Tiện nghi' },
+    { value: 'Độ sạch sẽ', label: 'Độ sạch sẽ' },
+    { value: 'Độ yên tĩnh', label: 'Độ yên tĩnh' },
+  ],
+  defaultValue: [],
+};
+
+const ANALYZE_START_LOCATION_STEP = {
+  id: 'startLocation',
+  title: 'Bạn muốn tính khoảng cách từ đâu?',
+  subtitle: 'Mình chỉ hỏi bước này vì bạn đã chọn tiêu chí khoảng cách đi lại.',
+  summaryLabel: 'Điểm xuất phát',
+  skipLabel: 'Bỏ qua vị trí',
+  type: 'location',
+  suggestions: ['Vị trí hiện tại', 'Trung tâm thành phố', 'Sân bay', 'Bến xe'],
+  defaultValue: '',
+};
+
+const ANALYZE_CRITERIA_ALIASES = {
+  travel_time: INSIGHT_TRAVEL_CRITERION,
+  travel_distance: INSIGHT_TRAVEL_CRITERION,
+  distance: INSIGHT_TRAVEL_CRITERION,
+  location: INSIGHT_TRAVEL_CRITERION,
+  'khoảng cách đi lại': INSIGHT_TRAVEL_CRITERION,
+  price: 'Giá trị so với giá tiền',
+  budget: 'Giá trị so với giá tiền',
+  value: 'Giá trị so với giá tiền',
+  value_for_money: 'Giá trị so với giá tiền',
+  'giá trị so với giá tiền': 'Giá trị so với giá tiền',
+  amenities: 'Tiện nghi',
+  'tiện nghi': 'Tiện nghi',
+  cleanliness: 'Độ sạch sẽ',
+  clean: 'Độ sạch sẽ',
+  'độ sạch sẽ': 'Độ sạch sẽ',
+  quiet: 'Độ yên tĩnh',
+  quietness: 'Độ yên tĩnh',
+  'độ yên tĩnh': 'Độ yên tĩnh',
+};
+
+const ANALYZE_STEPS = [ANALYZE_CRITERIA_STEP, ANALYZE_START_LOCATION_STEP];
 
 const WORKFLOW_STEPS_MAP = {
   SEARCH_PLACES: SEARCH_STEPS,
@@ -116,6 +131,40 @@ const WORKFLOW_META = {
   COMPARE_PLACES: { title: 'So sánh địa điểm', verb: 'so sánh' },
   ANALYZE_PLACE: { title: 'Phân tích chi tiết', verb: 'phân tích' },
 };
+
+function normalizeCriteriaInput(criteria) {
+  if (Array.isArray(criteria)) return criteria;
+  if (typeof criteria === 'string' && criteria !== 'overall') {
+    return criteria.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeCriteriaForWorkflow(workflowId, criteria) {
+  const values = normalizeCriteriaInput(criteria);
+  if (workflowId !== 'ANALYZE_PLACE') return values;
+
+  const allowed = new Set(ANALYZE_CRITERIA_STEP.options.map((option) => option.value));
+  return Array.from(new Set(values
+    .map((value) => {
+      const raw = String(value || '').trim();
+      return ANALYZE_CRITERIA_ALIASES[raw] || ANALYZE_CRITERIA_ALIASES[raw.toLowerCase()] || raw;
+    })
+    .filter((value) => allowed.has(value))));
+}
+
+function includesTravelDistance(criteria) {
+  return normalizeCriteriaForWorkflow('ANALYZE_PLACE', criteria).includes(INSIGHT_TRAVEL_CRITERION);
+}
+
+function getWorkflowSteps(workflowId, data = {}) {
+  if (workflowId === 'ANALYZE_PLACE') {
+    return includesTravelDistance(data.criteria)
+      ? ANALYZE_STEPS
+      : [ANALYZE_CRITERIA_STEP];
+  }
+  return WORKFLOW_STEPS_MAP[workflowId] || [];
+}
 
 /* ──────────────────────────────────────────
    Hook: useWorkflowWizard
@@ -133,8 +182,8 @@ export default function useWorkflowWizard() {
   // Derived step definitions for the active workflow
   const steps = useMemo(() => {
     if (!activeWorkflow?.workflowId) return [];
-    return WORKFLOW_STEPS_MAP[activeWorkflow.workflowId] || [];
-  }, [activeWorkflow?.workflowId]);
+    return getWorkflowSteps(activeWorkflow.workflowId, collectedData);
+  }, [activeWorkflow?.workflowId, collectedData]);
 
   // Current step object
   const currentStep = useMemo(() => {
@@ -167,17 +216,18 @@ export default function useWorkflowWizard() {
       }
     }
 
+    const criteria = normalizeCriteriaForWorkflow(activeWorkflow.workflowId, merged.criteria);
+    const shouldUseStartLocation = activeWorkflow.workflowId !== 'ANALYZE_PLACE' || includesTravelDistance(criteria);
+
     return {
       query: merged.query || activeWorkflow.detectedQuery || '',
       location: merged.location || '',
       types: merged.types || (merged.type ? [merged.type] : []),
       guests: merged.guests ?? 2,
       budget: merged.budget || '',
-      criteria: Array.isArray(merged.criteria)
-        ? merged.criteria
-        : (merged.criteria && merged.criteria !== 'overall' ? [merged.criteria] : []),
+      criteria,
       preferences: merged.preferences || [],
-      startLocation: merged.startLocation || '',
+      startLocation: shouldUseStartLocation ? (merged.startLocation || '') : '',
       tripPurposes: Array.isArray(merged.tripPurposes) ? merged.tripPurposes : [],
     };
   }, [activeWorkflow, collectedData, steps]);
@@ -186,27 +236,29 @@ export default function useWorkflowWizard() {
 
   /** Propose a workflow — show confirmation prompt */
   const proposeWorkflow = useCallback((workflowId, params = {}, query = '', rawUserMessage = '') => {
-    const workflowSteps = WORKFLOW_STEPS_MAP[workflowId];
+    const normalizedParams = {
+      ...params,
+      criteria: normalizeCriteriaForWorkflow(workflowId, params.criteria),
+    };
+    const workflowSteps = getWorkflowSteps(workflowId, normalizedParams);
     if (!workflowSteps) return;
 
     // Pre-fill collected data from router params
     const prefilled = {};
     for (const step of workflowSteps) {
       if (step.id === 'criteria') {
-        const criteria = Array.isArray(params.criteria)
-          ? params.criteria
-          : (typeof params.criteria === 'string' && params.criteria !== 'overall' ? [params.criteria] : []);
+        const criteria = normalizeCriteriaForWorkflow(workflowId, normalizedParams.criteria);
         if (criteria.length > 0) prefilled.criteria = criteria;
-      } else if (params[step.id] !== undefined && params[step.id] !== null && params[step.id] !== '') {
-        prefilled[step.id] = params[step.id];
+      } else if (normalizedParams[step.id] !== undefined && normalizedParams[step.id] !== null && normalizedParams[step.id] !== '') {
+        prefilled[step.id] = normalizedParams[step.id];
       }
     }
 
     setActiveWorkflow({
       workflowId,
-      initialParams: params,
+      initialParams: normalizedParams,
       detectedQuery: query,
-      rawUserMessage: rawUserMessage || query || params?.query || '',
+      rawUserMessage: rawUserMessage || query || normalizedParams?.query || '',
     });
     setCollectedData(prefilled);
     setCurrentStepIndex(0);
@@ -229,31 +281,35 @@ export default function useWorkflowWizard() {
 
   /** Submit current step value */
   const submitStep = useCallback((stepId, value) => {
-    setCollectedData(prev => ({ ...prev, [stepId]: value }));
-    if (currentStepIndex >= steps.length - 1) {
+    const nextCollectedData = { ...collectedData, [stepId]: value };
+    const nextSteps = getWorkflowSteps(activeWorkflow?.workflowId, nextCollectedData);
+
+    setCollectedData(nextCollectedData);
+    if (currentStepIndex >= nextSteps.length - 1) {
       setWizardState('confirming');
     } else {
       setCurrentStepIndex(prev => prev + 1);
     }
-  }, [currentStepIndex, steps.length]);
+  }, [activeWorkflow?.workflowId, collectedData, currentStepIndex]);
 
   /** Skip current step (use default) */
   const skipStep = useCallback(() => {
     const step = steps[currentStepIndex];
+    let nextCollectedData = collectedData;
     if (step) {
-      setCollectedData(prev => {
-        if (prev[step.id] === undefined) {
-          return { ...prev, [step.id]: step.defaultValue };
-        }
-        return prev;
-      });
+      nextCollectedData = collectedData[step.id] === undefined
+        ? { ...collectedData, [step.id]: step.defaultValue }
+        : collectedData;
     }
-    if (currentStepIndex >= steps.length - 1) {
+    const nextSteps = getWorkflowSteps(activeWorkflow?.workflowId, nextCollectedData);
+
+    setCollectedData(nextCollectedData);
+    if (currentStepIndex >= nextSteps.length - 1) {
       setWizardState('confirming');
     } else {
       setCurrentStepIndex(prev => prev + 1);
     }
-  }, [currentStepIndex, steps]);
+  }, [activeWorkflow?.workflowId, collectedData, currentStepIndex, steps]);
 
   /** Go back to previous step */
   const goBackStep = useCallback(() => {

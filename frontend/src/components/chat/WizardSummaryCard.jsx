@@ -67,7 +67,7 @@ export default function WizardSummaryCard({
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-[10px] font-bold text-ink-500 shrink-0 whitespace-nowrap">
-                  {step.title.replace('?', '')}:
+                  {step.summaryLabel || step.title.replace('?', '')}:
                 </span>
                 <span
                   className={`text-[10px] font-semibold truncate ${

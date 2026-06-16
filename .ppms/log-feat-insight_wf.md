@@ -2,6 +2,80 @@
 
 ---
 
+## [2026-06-16 16:32] — Keep place Q&A off the database in test mode
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to adjust the place-detail question feature so test mode does not touch the database.
+- **Changes**:
+  - Moved question create, answer, and delete test-mode branches before any user/place/database calls.
+  - Added in-memory mock authors derived from Firebase user payloads for test-mode ownership and display metadata.
+  - Added fixture-safe place label resolution for local test places, with a no-DB fallback when no fixture is available.
+  - Added regression coverage proving test-mode Q&A create/list/answer/delete does not call Prisma, `UsersService`, or database-backed `PlacesService`.
+- **Verification**:
+  - `npm test -- questions.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/questions/questions.service.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/src/modules/questions/questions.service.spec.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — place-detail Q&A now has a database-free in-memory execution path in runtime test mode.
+
+---
+
+## [2026-06-16 16:17] — Gate insight start-location question by travel criterion
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User specified that the insight workflow should only offer five criteria and should ask for the starting location only after the user confirms the travel-distance criterion.
+- **Changes**:
+  - Restricted insight wizard criteria to `Khoảng cách đi lại`, `Giá trị so với giá tiền`, `Tiện nghi`, `Độ sạch sẽ`, and `Độ yên tĩnh`.
+  - Reordered insight collection so criteria are asked first and the start-location step appears only when `Khoảng cách đi lại` is selected.
+  - Made the insight criteria step required, with no skip button, so the user explicitly confirms the analysis criteria.
+  - Removed the automatic “current location” wording from the generated insight execution prompt unless a travel-distance start location was chosen.
+  - Updated insight panel and workflow prompt copy to describe the new criteria-focused flow.
+- **Verification**:
+  - `npm run build` in `frontend`
+- **Modified files**: `frontend/src/hooks/useWorkflowWizard.js`, `frontend/src/components/chat/WizardStepCard.jsx`, `frontend/src/components/chat/WorkflowPromptCard.jsx`, `frontend/src/components/ChatWidget.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — insight workflow wizard steps are now dynamic based on the selected travel-distance criterion.
+
+---
+
+## [2026-06-16 16:08] — Humanize compare and insight wizard questions
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to make the user-intent questions in compare and insight workflows friendlier and easier to understand.
+- **Changes**:
+  - Reworded compare criteria questions and options into natural Vietnamese focused on what the user is actually deciding.
+  - Reworded insight start-location, deep-dive, and trip-purpose questions with clearer subtitles and less technical wording.
+  - Added per-step skip labels and short summary labels so wizard cards stay concise in the chat UI.
+  - Updated workflow prompt card descriptions and action labels for compare/insight to sound more like a helpful assistant.
+- **Verification**:
+  - `npm run build` in `frontend`
+- **Modified files**: `frontend/src/hooks/useWorkflowWizard.js`, `frontend/src/components/chat/WorkflowPromptCard.jsx`, `frontend/src/components/chat/WizardStepCard.jsx`, `frontend/src/components/chat/WizardSummaryCard.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — compare/insight workflow wizard UX now uses human-friendly Vietnamese copy and per-step labels.
+
+---
+
+## [2026-06-16 15:54] — Unify compare and insight panel styling
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User asked to make the compare panel and insight panel look more visually consistent.
+- **Changes**:
+  - Gave compare and insight panels the same gradient intro card treatment and sticky PNG export spacing.
+  - Removed the extra wrapper card around the comparison table so its result card sits at the same hierarchy as the insight result card.
+  - Rebuilt `AreaInsightPanel` as a rounded bordered result card with a gradient header, section cards, consistent typography, and matching note footer behavior.
+  - Added a small comparison-table subtitle so result headers in both panels share the same structure.
+- **Verification**:
+  - `npm run build` in `frontend`
+- **Modified files**: `frontend/src/components/ComparePlacesPanel.jsx`, `frontend/src/components/PlaceInsightPanel.jsx`, `frontend/src/components/AreaInsightPanel.jsx`, `frontend/src/components/chat/PlaceComparisonResult.jsx`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture impact**: Yes — compare and insight generated-result panels now share a consistent visual shell and card hierarchy.
+
+---
+
 ## [2026-06-16 15:34] — Humanize AI prompt mediation
 
 - **Branch**: `feat/insight_wf`
