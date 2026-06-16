@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Mono
 
-> Last updated: 2026-06-15 19:16
+> Last updated: 2026-06-16 15:10
 > Branch: feat/insight_wf
 
 ## Overview
@@ -41,6 +41,7 @@ The project is a smart accommodation discovery platform. It combines a React map
 - **Insight workflow**: `ANALYZE_PLACE` runs a context-tool pipeline for place metadata, optional geocoded start point, current/custom start location resolution, travel estimates, nearby POI context, and final place insight context before LLM synthesis. The composer requests raw `place_insight` JSON. `PlaceInsightResultsService` parses or fallback-builds the left-panel payload from tagged-place/tool context and converts the payload's `overallAssessment` into the right chat-panel summary.
 - **Authentication**: Firebase token validation integrated with backend auth/user modules.
 - **Persistence**: Prisma maps PostgreSQL tables for users, places, sources, reviews, files, chunks, conversations, messages, Q&A, comparison results, presence, and saved places.
+- **Test-mode fixtures**: When `features.json` selects test mode, search uses local JSON fixture places with external providers and database search disabled. Fixture image URLs use `app.publicBaseUrl` when configured and otherwise fall back to `http://localhost:<app.port|3001>` so AI workflow tools can return places even when no HTTP request object is available.
 
 ### Frontend <-> Backend Interaction
 - The frontend calls REST endpoints under `/api/v1` using Axios/fetch.

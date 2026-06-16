@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-06-16 15:10] — Fix test-mode fixture search URL fallback
+
+- **Branch**: `feat/insight_wf`
+- **Prompt**: User reported that the place search workflow returned no places while testing in test mode.
+- **Changes**:
+  - Fixed local fixture place URL generation so backend workflow/tool calls without an HTTP request no longer require `APP_PUBLIC_BASE_URL`.
+  - Applied the same fallback behavior to both local fixture mapping and general place URL formatting: use configured `app.publicBaseUrl` when present, otherwise `http://localhost:<app.port|3001>`.
+  - Added a regression test proving fixture search returns places when public base URL is unset.
+- **Verification**:
+  - `npm test -- local-fixture-places.service.spec.ts` in `backend`
+  - `npm run build` in `backend`
+- **Modified files**: `backend/src/modules/places/local-fixture-places.service.ts`, `backend/src/modules/places/places.service.ts`, `.ppms/architecture-feat-insight_wf.md`, `.ppms/log-feat-insight_wf.md`
+- **Created files**: `backend/src/modules/places/local-fixture-places.service.spec.ts`
+- **Deleted files**: None
+- **Architecture impact**: Yes — test-mode fixture place mapping now has a runtime-safe URL fallback for workflow/tool execution paths without request context.
+
+---
+
 ## [2026-06-15 19:16] — Remove duplicate compare/insight sub-headers
 
 - **Branch**: `feat/insight_wf`

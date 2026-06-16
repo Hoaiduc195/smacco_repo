@@ -9,10 +9,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly pool: Pool;
 
   constructor(private readonly configService: ConfigService) {
-    const databaseUrl =
-      configService.get<string>('database.url') ||
-      process.env.DATABASE_URL ||
-      'postgresql://postgres:postgres@localhost:5432/accommodation_db?schema=public';
+    const databaseUrl = configService.get<string>('database.url');
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is not configured');
+    }
 
     const pool = new Pool({ connectionString: databaseUrl });
     const adapter = new PrismaPg(pool as any);

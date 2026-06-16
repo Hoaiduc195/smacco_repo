@@ -33,8 +33,9 @@ export class PlacesService {
       const host = req.get('host');
       return `${protocol}://${host}/api/v1`;
     }
-    const port = this.configService.get<number>('app.port') || 3001;
-    return `http://localhost:${port}/api/v1`;
+    const publicBaseUrl = this.configService.get<string>('app.publicBaseUrl');
+    const baseUrl = publicBaseUrl || `http://localhost:${this.configService.get<number>('app.port') || 3001}`;
+    return `${baseUrl.replace(/\/$/, '')}/api/v1`;
   }
 
   private formatCoverImageUrl(url: string | null, req?: Request): string | null {

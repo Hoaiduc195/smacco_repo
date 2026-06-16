@@ -5,5 +5,6 @@ export default registerAs('app', () => {
   return {
     port: isNaN(port) ? 3001 : port,
     environment: process.env.NODE_ENV || 'development',
+    publicBaseUrl: process.env.APP_PUBLIC_BASE_URL || '',
   };
 });

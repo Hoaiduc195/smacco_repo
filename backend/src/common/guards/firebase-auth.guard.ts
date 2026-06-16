@@ -1,14 +1,22 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 
 
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
+  constructor(private readonly configService: ConfigService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (admin.apps.length === 0) {
+      const projectId = this.configService.get<string>('firebase.projectId');
+      if (!projectId) {
+        throw new UnauthorizedException('Firebase project ID is not configured');
+      }
+
       admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'evlewt-f3bd1',
+        projectId,
       });
     }
 

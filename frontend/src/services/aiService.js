@@ -1,7 +1,7 @@
 import apiClient from './api';
 import { auth } from './firebase';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.origin}/api/v1`;
 
 export const chat = async ({ text, conversationId, taggedPlaceIds, taggedPlaces, userContext, workflowExecution, wizardPreferences, hideUserMessage } = {}) => {
   const response = await apiClient.post('/ai/chat', {

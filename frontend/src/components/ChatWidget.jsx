@@ -749,7 +749,7 @@ export default function ChatWidget() {
                                   comparisonPayload: msg.comparisonPayload,
                                 },
                               }))}
-                              className="mt-2 inline-flex items-center rounded-full border border-primary-300 bg-primary-50 px-3 py-1 text-[11px] font-black text-primary-800 transition hover:bg-primary-100"
+                              className="mt-2 inline-flex items-center rounded-full border border-primary-700 bg-primary-700 px-3 py-1 text-[11px] font-black text-white shadow-soft transition hover:bg-primary-800"
                             >
                               Xem chi tiết
                             </button>
