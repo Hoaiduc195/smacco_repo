@@ -2,6 +2,120 @@
 
 ---
 
+## [2026-06-17 04:58] — Enrich AI context for place questions
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User noted that context engineering for the place-question feature was weak and LLM answers often lacked enough context to be accurate.
+- **Changes**:
+  - Added a structured `PlaceQuestionContext` payload for pinned AI Q&A answers.
+  - Enriched place-question prompts with place source, categories, rating summary, review count, description, amenities, contact details, room count, and bounded review snippets.
+  - Updated `QuestionsService` to build context from local fixtures in runtime `test` mode without touching the database.
+  - Updated non-test Q&A context building to include persisted user review snippets and available Google review context through existing `PlacesService` methods.
+  - Strengthened the AI instruction to answer only from supplied evidence and explicitly mention uncertainty when context does not directly answer the question.
+  - Updated Q&A tests to assert enriched fixture context is passed to the LLM while preserving test-mode no-DB behavior.
+- **Modified files**:
+  - `backend/src/modules/ai/chat.service.ts`
+  - `backend/src/modules/questions/questions.service.ts`
+  - `backend/src/modules/questions/questions.service.spec.ts`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — Place Q&A AI answers now include a bounded context-enrichment step before generation.
+- **Verification**:
+  - `npm test -- questions.service.spec.ts`
+  - `npm run build`
+  - `npm test -- --runInBand`
+
+---
+
+## [2026-06-17 04:48] — Fix test-mode presence DB access
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported that while running in test mode, asking a question from the place detail page still caused backend DB access through `UsersService.upsert()` from `PresenceService.getMyStatus()`.
+- **Changes**:
+  - Added an in-memory runtime `test` branch to `PresenceService` for `checkIn`, `leave`, `getMyStatus`, `getActiveUsers`, and `getActiveUserIds`.
+  - Prevented test-mode presence calls from upserting Firebase users, resolving places through the database, or querying/writing Prisma presence records.
+  - Added Jest coverage proving test-mode presence status/check-in/leave/list behavior does not touch `UsersService`, `PlacesService`, or Prisma.
+- **Modified files**:
+  - `backend/src/modules/presence/presence.service.ts`
+  - `backend/src/modules/presence/presence.service.spec.ts`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — Presence now follows the same fixture/test-mode storage separation as Q&A and saved places for place detail flows.
+- **Verification**:
+  - `npm test -- presence.service.spec.ts`
+  - `npm run build`
+  - `npm test -- --runInBand`
+
+---
+
+## [2026-06-17 04:29] — Refactor presence validation runtime policy
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to read the `mode_seperation_audit` handoff in `tmp/handoffs/` and refactor code, reporting anything strange or unsuitable.
+- **Changes**:
+  - Added explicit `development`, `test`, and `production` runtime environment vocabulary to `RuntimeConfig`.
+  - Added `presence.strictCoordinateValidation` and `presence.strictDistanceValidation` runtime policy flags.
+  - Kept `test` runtime normalization fixture-only, with external providers and chat persistence disabled.
+  - Refactored `PresenceService` to read validation strictness from `RuntimeConfigService` instead of `process.env.NODE_ENV`.
+  - Added Jest coverage for runtime config development/test behavior and presence strict/relaxed validation behavior.
+- **Modified files**:
+  - `backend/src/config/runtime-config.ts`
+  - `backend/src/config/runtime-config.service.ts`
+  - `backend/src/modules/presence/presence.service.ts`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**:
+  - `backend/src/config/runtime-config.spec.ts`
+  - `backend/src/modules/presence/presence.service.spec.ts`
+- **Deleted files**: —
+- **Architecture impact**: Yes — Runtime environment vocabulary now includes a first-class development profile, and onsite validation bypasses are capability policy flags instead of direct Node environment checks.
+- **Verification**:
+  - `npm test -- runtime-config.spec.ts presence.service.spec.ts`
+  - `npm run build`
+  - `npm test -- --runInBand`
+
+---
+
+## [2026-06-17 03:55] — Add architecture diagram to README
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested adding an architecture diagram section to the rewritten README.
+- **Changes**:
+  - Added a Mermaid `Architecture Diagram` section to `README.md`.
+  - Visualized the relationship between frontend, Firebase auth, NestJS modules, AI orchestration layers, PostgreSQL/Prisma, and external services.
+  - Updated PPMS architecture notes to mention the new diagram.
+- **Modified files**:
+  - `README.md`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No runtime architecture change. Project documentation now includes a visual architecture map for onboarding and maintenance.
+
+---
+
+## [2026-06-17 03:55] — Rewrite README to match current architecture
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested rewriting the project README using the newly installed README skill.
+- **Changes**:
+  - Replaced the outdated short README with a fuller project guide aligned to the current codebase.
+  - Documented the real frontend/backend architecture, hybrid search and place ingestion model, AI workflow orchestration, key API routes, database model overview, local/Docker setup, and troubleshooting guidance.
+  - Updated PPMS architecture notes to reflect that project documentation now better matches the implemented system.
+- **Modified files**:
+  - `README.md`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No runtime architecture change. Documentation now accurately reflects the current system architecture and development workflow.
+
+---
+
 ## [2026-05-21 17:50] — Implement Delete Own Reviews and Questions
 
 - **Branch**: `feat/place_detail`

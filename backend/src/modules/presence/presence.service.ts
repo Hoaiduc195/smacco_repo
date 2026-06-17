@@ -2,20 +2,29 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { PlacesService } from '../places/places.service';
+import { RuntimeConfigService } from '../../config/runtime-config.service';
 
 @Injectable()
 export class PresenceService {
   private readonly logger = new Logger(PresenceService.name);
 
   private readonly checkInRadiusMeters = 150;
+  private readonly mockPresenceByUser = new Map<string, any>();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly placesService: PlacesService,
+    private readonly runtimeConfig: RuntimeConfigService,
   ) {}
 
   async checkIn(firebaseUser: { uid: string; email?: string | null; name?: string | null }, input: { placeId: string; latitude: number; longitude: number }) {
+    if (this.isTestMode()) {
+      const presence = this.createMockPresence(firebaseUser, input.placeId);
+      this.mockPresenceByUser.set(firebaseUser.uid, presence);
+      return this.formatCurrentStatus(presence);
+    }
+
     const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
     const resolvedPlaceId = await this.resolvePlaceId(input.placeId);
     if (!resolvedPlaceId) {
@@ -24,8 +33,10 @@ export class PresenceService {
     const place = await this.placesService.findOne(resolvedPlaceId);
 
     if (place.lat == null || place.lng == null) {
-      if (process.env.NODE_ENV === 'development') {
-        this.logger.warn(`Bypassing missing coordinates in development.`);
+      if (!this.runtimeConfig.presence.strictCoordinateValidation) {
+        this.logger.warn(
+          `Bypassing missing coordinates for runtime environment ${this.runtimeConfig.environment}.`,
+        );
       } else {
         throw new BadRequestException('Địa điểm này chưa có tọa độ để xác minh onsite.');
       }
@@ -34,8 +45,10 @@ export class PresenceService {
     if (place.lat != null && place.lng != null) {
       const distance = this.distanceMeters(place.lat, place.lng, input.latitude, input.longitude);
       if (distance > this.checkInRadiusMeters) {
-        if (process.env.NODE_ENV === 'development') {
-          this.logger.warn(`Bypassing distance check in development. Distance was ${Math.round(distance)}m.`);
+        if (!this.runtimeConfig.presence.strictDistanceValidation) {
+          this.logger.warn(
+            `Bypassing distance check for runtime environment ${this.runtimeConfig.environment}. Distance was ${Math.round(distance)}m.`,
+          );
         } else {
           throw new BadRequestException('Bạn đang ở ngoài phạm vi xác minh onsite của địa điểm này.');
         }
@@ -60,6 +73,22 @@ export class PresenceService {
   }
 
   async leave(firebaseUser: { uid: string; email?: string | null; name?: string | null }) {
+    if (this.isTestMode()) {
+      const active = this.mockPresenceByUser.get(firebaseUser.uid);
+      this.mockPresenceByUser.delete(firebaseUser.uid);
+
+      if (!active) {
+        return { isActive: false };
+      }
+
+      return {
+        isActive: false,
+        placeId: active.placeId,
+        placeName: active.place?.placeName || 'Địa điểm',
+        leftAt: new Date(),
+      };
+    }
+
     const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
     const active = await this.prisma.presence.findFirst({
       where: { userId: user.id, leftAt: null },
@@ -87,6 +116,11 @@ export class PresenceService {
   }
 
   async getMyStatus(firebaseUser: { uid: string; email?: string | null; name?: string | null }) {
+    if (this.isTestMode()) {
+      const active = this.mockPresenceByUser.get(firebaseUser.uid);
+      return active ? this.formatCurrentStatus(active) : { isActive: false };
+    }
+
     const user = await this.usersService.upsertFromFirebaseUser(firebaseUser);
     const active = await this.prisma.presence.findFirst({
       where: { userId: user.id, leftAt: null },
@@ -102,6 +136,22 @@ export class PresenceService {
   }
 
   async getActiveUsers(placeId: string) {
+    if (this.isTestMode()) {
+      const activeUsers = [...this.mockPresenceByUser.values()]
+        .filter((record) => record.placeId === placeId)
+        .sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
+
+      return {
+        placeId,
+        activeUsers: activeUsers.length,
+        users: activeUsers.map((record) => ({
+          id: record.userId,
+          displayName: record.user?.displayName || record.user?.email || 'Người dùng',
+          joinedAt: record.joinedAt,
+        })),
+      };
+    }
+
     const resolvedPlaceId = await this.resolvePlaceId(placeId);
     if (!resolvedPlaceId) {
       return {
@@ -131,6 +181,13 @@ export class PresenceService {
   async getActiveUserIds(placeId: string, userIds: string[]) {
     if (!userIds.length) return new Set<string>();
 
+    if (this.isTestMode()) {
+      const active = [...this.mockPresenceByUser.values()]
+        .filter((record) => record.placeId === placeId && userIds.includes(record.userId))
+        .map((record) => record.userId);
+      return new Set(active);
+    }
+
     const resolvedPlaceId = await this.resolvePlaceId(placeId);
     if (!resolvedPlaceId) return new Set<string>();
 
@@ -144,6 +201,34 @@ export class PresenceService {
     });
 
     return new Set(active.map((record) => record.userId));
+  }
+
+  private isTestMode(): boolean {
+    return this.runtimeConfig.environment === 'test';
+  }
+
+  private createMockPresence(
+    firebaseUser: { uid: string; email?: string | null; name?: string | null },
+    placeId: string,
+  ) {
+    const displayName = firebaseUser.name || firebaseUser.email || 'Người dùng';
+    return {
+      id: `mock-presence-${firebaseUser.uid}`,
+      userId: firebaseUser.uid,
+      placeId,
+      joinedAt: new Date(),
+      user: {
+        id: firebaseUser.uid,
+        firebaseUid: firebaseUser.uid,
+        email: firebaseUser.email ?? null,
+        displayName,
+      },
+      place: {
+        id: placeId,
+        placeName: 'Địa điểm',
+        placeAddress: null,
+      },
+    };
   }
 
   private formatCurrentStatus(record: any) {

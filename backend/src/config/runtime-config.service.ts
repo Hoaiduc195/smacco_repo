@@ -15,6 +15,10 @@ export class RuntimeConfigService {
     return this.config.search;
   }
 
+  get presence() {
+    return this.config.presence;
+  }
+
   get serpApi() {
     return this.config.externalApis.serpapi;
   }

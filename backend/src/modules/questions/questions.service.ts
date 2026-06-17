@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { PlacesService } from '../places/places.service';
 import { LocalFixturePlacesService } from '../places/local-fixture-places.service';
-import { ChatService } from '../ai/chat.service';
+import { ChatService, PlaceQuestionContext } from '../ai/chat.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { RuntimeConfigService } from '../../config/runtime-config.service';
@@ -124,7 +124,7 @@ export class QuestionsService {
       };
       this.mockQuestions.push(mockQuestion);
 
-      await this.createAiAnswer(questionId, place.name, place.address, dto.questionText);
+      await this.createAiAnswer(questionId, place, dto.questionText);
       return this.getQuestionThread(questionId);
     }
 
@@ -145,7 +145,7 @@ export class QuestionsService {
       },
     });
 
-    await this.createAiAnswer(question.id, place.placeName, place.placeAddress, dto.questionText);
+    await this.createAiAnswer(question.id, place, dto.questionText);
     return this.getQuestionThread(question.id);
   }
 
@@ -291,13 +291,18 @@ export class QuestionsService {
     await this.prisma.question.delete({ where: { id: questionId } });
   }
 
-  private async createAiAnswer(questionId: string, placeName: string, placeAddress: string | null, questionText: string) {
+  private async createAiAnswer(questionId: string, place: any, questionText: string) {
+    const placeName = this.getPlaceName(place);
+    const placeAddress = this.getPlaceAddress(place);
+    const placeContext = await this.buildPlaceQuestionContext(place);
+
     if (this.isTestMode()) {
       try {
         const aiAnswerText = await this.chatService.answerPlaceQuestion({
           placeName,
           placeAddress,
           questionText,
+          placeContext,
         });
         this.mockAnswers.push({
           id: `mock-a-ai-${Math.random().toString(36).substring(2, 9)}`,
@@ -342,6 +347,7 @@ export class QuestionsService {
         placeName,
         placeAddress,
         questionText,
+        placeContext,
       });
 
       await this.prisma.answer.create({
@@ -469,14 +475,17 @@ export class QuestionsService {
     };
   }
 
-  private resolveMockPlaceInfo(placeId: string): { name: string; address: string | null } {
+  private resolveMockPlaceInfo(placeId: string): any {
     const localSourcePlaceId = this.getLocalSourcePlaceId(placeId);
     if (localSourcePlaceId !== null) {
       try {
         const place = this.localFixtures.findOne(localSourcePlaceId);
         return {
-          name: place?.placeName || place?.name || `Địa điểm ${placeId}`,
-          address: place?.placeAddress || place?.address || null,
+          ...place,
+          id: place?.id || placeId,
+          placeName: place?.placeName || place?.name || `Địa điểm ${placeId}`,
+          placeAddress: place?.placeAddress || place?.address || null,
+          reviewSnippets: this.localFixtures.findReviews(localSourcePlaceId),
         };
       } catch {
         // Fall through to a non-DB fallback below.
@@ -484,8 +493,10 @@ export class QuestionsService {
     }
 
     return {
-      name: `Địa điểm ${placeId}`,
-      address: null,
+      id: placeId,
+      source: 'local',
+      placeName: `Địa điểm ${placeId}`,
+      placeAddress: null,
     };
   }
 
@@ -494,5 +505,129 @@ export class QuestionsService {
     if (placeId.startsWith('local-')) return placeId.slice('local-'.length);
     if (/^\d+$/.test(placeId)) return placeId;
     return null;
+  }
+
+  private async buildPlaceQuestionContext(place: any): Promise<PlaceQuestionContext> {
+    const details = this.getRawPlaceDetails(place);
+    const reviewSnippets = await this.buildReviewSnippets(place);
+
+    return {
+      source: place?.source || null,
+      categories: this.normalizeStringArray(place?.categories).slice(0, 6),
+      averageRating: this.toNumberOrNull(place?.averageRating),
+      reviewCount: this.toNumberOrNull(place?.reviewCount),
+      description: this.truncateText(details.description || place?.description, 500),
+      amenities: this.normalizeStringArray([
+        ...this.normalizeStringArray(place?.amenities),
+        ...this.normalizeStringArray(details.amenities),
+      ]).slice(0, 14),
+      contact: {
+        phone: this.toStringOrNull(details.phone || place?.phone),
+        email: this.toStringOrNull(details.email || place?.email),
+        website: this.toStringOrNull(details.website || place?.website),
+      },
+      rooms: this.toNumberOrNull(details.rooms || place?.rooms),
+      reviewSnippets,
+    };
+  }
+
+  private async buildReviewSnippets(place: any): Promise<PlaceQuestionContext['reviewSnippets']> {
+    const snippets: PlaceQuestionContext['reviewSnippets'] = [];
+
+    for (const review of Array.isArray(place?.reviewSnippets) ? place.reviewSnippets : []) {
+      const text = this.truncateText(review?.reviewText || review?.content || review?.text, 280);
+      if (!text) continue;
+      snippets.push({
+        source: review?.source || 'local',
+        rating: this.toNumberOrNull(review?.rating),
+        author: this.toStringOrNull(review?.author),
+        text,
+      });
+    }
+
+    if (!this.isTestMode() && place?.id) {
+      try {
+        const userReviews = await this.prisma.review.findMany({
+          where: {
+            placeId: place.id,
+            source: { not: 'google' },
+            reviewText: { not: null },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        });
+
+        for (const review of userReviews) {
+          const text = this.truncateText(review.reviewText, 280);
+          if (!text) continue;
+          snippets.push({
+            source: review.source,
+            rating: review.rating,
+            text,
+          });
+        }
+      } catch (error) {
+        this.logger.warn(`Unable to load user reviews for AI question context: ${(error as Error).message}`);
+      }
+
+      try {
+        const googleReviews = await this.placesService.ensureGoogleReviewsForAiContext(place.id);
+        for (const review of googleReviews) {
+          const text = this.truncateText(review?.reviewText, 280);
+          if (!text) continue;
+          snippets.push({
+            source: review?.source || 'google',
+            rating: this.toNumberOrNull(review?.rating),
+            author: this.toStringOrNull(review?.author),
+            text,
+          });
+        }
+      } catch (error) {
+        this.logger.warn(`Unable to load Google reviews for AI question context: ${(error as Error).message}`);
+      }
+    }
+
+    return snippets.slice(0, 5);
+  }
+
+  private getRawPlaceDetails(place: any): Record<string, any> {
+    const details = place?.rawSerpApiPropertyDetails;
+    return details && typeof details === 'object' && !Array.isArray(details) ? details : {};
+  }
+
+  private getPlaceName(place: any): string {
+    return place?.placeName || place?.name || 'Địa điểm';
+  }
+
+  private getPlaceAddress(place: any): string | null {
+    return place?.placeAddress || place?.address || null;
+  }
+
+  private normalizeStringArray(value: any): string[] {
+    const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
+    return Array.from(
+      new Set(
+        values
+          .map((item) => String(item).trim())
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  private toStringOrNull(value: any): string | null {
+    if (value === null || value === undefined) return null;
+    const text = String(value).trim();
+    return text || null;
+  }
+
+  private toNumberOrNull(value: any): number | null {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : null;
+  }
+
+  private truncateText(value: any, maxLength: number): string | null {
+    const text = this.toStringOrNull(value);
+    if (!text) return null;
+    return text.length > maxLength ? `${text.slice(0, maxLength - 1).trim()}...` : text;
   }
 }

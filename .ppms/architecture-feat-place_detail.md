@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Platform
 
-> Last updated: 2026-05-21 17:53
+> Last updated: 2026-06-17 04:29
 > Branch: feat/place_detail
 
 ## Overview
@@ -61,7 +61,7 @@ A modular monolith web application for discovering accommodations and dining spo
 - **Dynamic ID Resolution**: External place IDs follow the format `<provider_name>-<provider_specific_id>` (e.g. `serpapi-xxx`). Methods like `findOne` and `findReviews` in `PlacesService`, `checkIn` in `PresenceService`, and place resolution in `QuestionsService` dynamically resolve provider composite IDs to standard UUIDs before querying Postgres.
 - **Q&A flow**:
   - A user creates a place question.
-  - The backend persists the question, generates an AI answer using Groq, and stores it as a pinned AI reply.
+  - The backend persists the question, builds a bounded AI context bundle from place facts, amenities, descriptions, ratings, and review snippets, generates an AI answer using Groq-compatible chat, and stores it as a pinned AI reply.
   - User answers are stored as normal answers and are annotated with onsite status when the author is actively checked in.
 - **Q&A access**:
   - `GET /questions/place/:placeId` is public so place detail can render threads without an auth token on mount.
@@ -69,9 +69,14 @@ A modular monolith web application for discovering accommodations and dining spo
 - **Search provider scope**:
   - SerpAPI is the only accommodation search provider in the provider list.
   - Goong is no longer part of the search provider fan-out; it is kept for geocoding / anchor lookup only.
+- **Runtime configuration**:
+  - `RuntimeConfigService` reads `backend/features.json` and exposes explicit `development`, `test`, and `production` runtime environments.
+  - `test` mode remains normalized to fixture-only search, disabled external SerpAPI features, and non-persistent chat history.
+  - `development` mode is now a first-class profile with local DB + fixture reads, disabled external providers by default, non-persistent chat history, and relaxed onsite validation policy.
 - **Onsite verification**:
   - `presence` verifies the user’s coordinates against the place location.
-  - In development mode (`process.env.NODE_ENV === 'development'`), coordinates range check and missing coordinates validation are automatically bypassed with a warning, facilitating cross-region local testing without coordinate errors.
+  - Coordinate and distance validation strictness is now controlled by `runtimeConfig.presence.strictCoordinateValidation` and `runtimeConfig.presence.strictDistanceValidation`, removing direct `NODE_ENV` business-rule branching from `PresenceService`.
+  - In runtime `test`, presence endpoints use an in-memory per-Firebase-user status store and do not upsert users, resolve places, or query Prisma, preserving fixture-only place detail and Q&A flows.
 
 ### Frontend ↔ Backend Interaction
 - Primary communication is REST JSON.
@@ -127,6 +132,7 @@ Key relationships:
 - [x] DB-backed saved places (bookmarking/saving places) with place detail check-status, rose-themed button UI, and interactive Profile page tab list with reactive unsaving
 - [x] Authenticated review writing with premium star-rating picker, textarea form, and real-time review list update in Place Detail page
 - [x] Personal review and question deletion with confirmation dialogs, secure backend Firebase UID ownership checks, and cascaded Prisma deletes for dependent answer entries
+- [x] Runtime-configured onsite validation policy with first-class development/test/production vocabulary
 
 ## In-Progress Features
 - [ ] Search result filtering and place-type refinement
@@ -175,3 +181,9 @@ mono/
 ├── docker-compose.yml
 └── .ppms/
 ```
+
+## Documentation Notes
+
+- `README.md` has been rewritten to match the current codebase instead of the older simplified architecture summary.
+- The README now documents the actual frontend/backend split, AI workflow orchestration, hybrid search and place-ingestion model, major API surfaces, local development setup, and current known gaps.
+- The README now also includes a Mermaid architecture diagram that visualizes frontend, backend modules, AI orchestration, persistence, and external integrations.

@@ -12,6 +12,27 @@ const SYSTEM_PROMPT =
   'If evidence is weak, say naturally that you cannot conclude confidently yet or that you have not seen enough real reviews. ' +
   'Return plain text only (no Markdown, no bullet points, no code blocks).';
 
+export interface PlaceQuestionContext {
+  source?: string | null;
+  categories?: string[];
+  averageRating?: number | null;
+  reviewCount?: number | null;
+  description?: string | null;
+  amenities?: string[];
+  contact?: {
+    phone?: string | null;
+    email?: string | null;
+    website?: string | null;
+  };
+  rooms?: number | null;
+  reviewSnippets?: Array<{
+    source?: string | null;
+    rating?: number | null;
+    author?: string | null;
+    text: string;
+  }>;
+}
+
 /**
  * Chat service orchestrating conversation history and LLM calls.
  * Ported from Python ChatService.
@@ -27,17 +48,20 @@ export class ChatService {
     placeName: string;
     placeAddress?: string | null;
     questionText: string;
+    placeContext?: PlaceQuestionContext;
   }): Promise<string> {
     const systemPrompt =
       'You are a Vietnamese travel advisor answering a place question inside a community thread. ' +
-      'Answer in Vietnamese, keep it short and human, and do not invent facts when evidence is weak. ' +
+      'Answer in Vietnamese, keep it short and human, and separate evidence-backed facts from uncertainty. ' +
+      'Use only the provided place facts and review evidence. Do not invent facts when evidence is weak. ' +
       'If you cannot conclude confidently, say so naturally and suggest asking people who are currently there.';
 
     const userPrompt = [
       `Place: ${params.placeName}`,
       params.placeAddress ? `Address: ${params.placeAddress}` : null,
+      this.formatPlaceQuestionContext(params.placeContext),
       `Question: ${params.questionText}`,
-      'Requirement: answer like a pinned advisory reply at the top of the thread. Avoid complex Markdown.',
+      'Requirement: answer like a pinned advisory reply at the top of the thread. Avoid complex Markdown. Mention uncertainty when the supplied context does not directly answer the question.',
     ]
       .filter(Boolean)
       .join('\n');
@@ -48,6 +72,43 @@ export class ChatService {
     ]);
 
     return content.trim();
+  }
+
+  private formatPlaceQuestionContext(context?: PlaceQuestionContext): string | null {
+    if (!context) return null;
+
+    const lines: string[] = [];
+    if (context.source) lines.push(`Source: ${context.source}`);
+    if (context.categories?.length) lines.push(`Categories: ${context.categories.join(', ')}`);
+    if (typeof context.averageRating === 'number') {
+      const reviewCount = typeof context.reviewCount === 'number' ? ` from ${context.reviewCount} reviews` : '';
+      lines.push(`Rating summary: ${context.averageRating.toFixed(1)}/5${reviewCount}`);
+    } else if (typeof context.reviewCount === 'number' && context.reviewCount > 0) {
+      lines.push(`Review count: ${context.reviewCount}`);
+    }
+    if (context.description) lines.push(`Description: ${context.description}`);
+    if (context.amenities?.length) lines.push(`Amenities: ${context.amenities.join(', ')}`);
+    if (typeof context.rooms === 'number') lines.push(`Rooms: ${context.rooms}`);
+
+    const contactParts = [
+      context.contact?.phone ? `phone ${context.contact.phone}` : null,
+      context.contact?.email ? `email ${context.contact.email}` : null,
+      context.contact?.website ? `website ${context.contact.website}` : null,
+    ].filter(Boolean);
+    if (contactParts.length) lines.push(`Contact: ${contactParts.join('; ')}`);
+
+    const snippets = (context.reviewSnippets || []).filter((review) => review.text).slice(0, 5);
+    if (snippets.length) {
+      lines.push('Review evidence:');
+      for (const review of snippets) {
+        const rating = typeof review.rating === 'number' ? `${review.rating}/5` : 'no rating';
+        const author = review.author ? ` by ${review.author}` : '';
+        const source = review.source ? ` (${review.source})` : '';
+        lines.push(`- ${rating}${author}${source}: ${review.text}`);
+      }
+    }
+
+    return lines.length ? `Place context:\n${lines.join('\n')}` : null;
   }
 
   private async buildMessages(conversationId: string, userText: string): Promise<ChatMessage[]> {

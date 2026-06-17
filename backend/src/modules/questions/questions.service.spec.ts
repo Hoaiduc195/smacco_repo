@@ -23,13 +23,33 @@ describe('QuestionsService test mode', () => {
     };
     const placesService = {
       findOne: jest.fn(),
+      ensureGoogleReviewsForAiContext: jest.fn(),
     };
     const localFixtures = {
       findOne: jest.fn(() => ({
         id: 'local-0',
+        source: 'local',
         placeName: 'Fixture Hotel',
         placeAddress: 'Da Nang',
+        categories: ['hotel'],
+        averageRating: 4.5,
+        reviewCount: 2,
+        rawSerpApiPropertyDetails: {
+          description: 'Khách sạn gần trung tâm, có bãi xe và hồ bơi.',
+          amenities: ['parking', 'pool', 'wifi'],
+          phone: '0123456789',
+          rooms: 40,
+        },
       })),
+      findReviews: jest.fn(() => [
+        {
+          id: 'local-review-0-0',
+          source: 'local',
+          rating: 5,
+          author: 'Anh Minh',
+          reviewText: 'Có bãi gửi xe máy ngay trước sảnh và nhân viên hỗ trợ nhanh.',
+        },
+      ]),
     };
     const chatService = {
       answerPlaceQuestion: jest.fn(async () => 'Câu trả lời AI fixture.'),
@@ -73,11 +93,34 @@ describe('QuestionsService test mode', () => {
       },
     });
     expect(localFixtures.findOne).toHaveBeenCalledWith('0');
-    expect(chatService.answerPlaceQuestion).toHaveBeenCalledWith({
-      placeName: 'Fixture Hotel',
-      placeAddress: 'Da Nang',
-      questionText: 'Ở đây có chỗ gửi xe máy không?',
-    });
+    expect(localFixtures.findReviews).toHaveBeenCalledWith('0');
+    expect(chatService.answerPlaceQuestion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        placeName: 'Fixture Hotel',
+        placeAddress: 'Da Nang',
+        questionText: 'Ở đây có chỗ gửi xe máy không?',
+        placeContext: expect.objectContaining({
+          source: 'local',
+          categories: ['hotel'],
+          averageRating: 4.5,
+          reviewCount: 2,
+          description: 'Khách sạn gần trung tâm, có bãi xe và hồ bơi.',
+          amenities: ['parking', 'pool', 'wifi'],
+          contact: expect.objectContaining({
+            phone: '0123456789',
+          }),
+          rooms: 40,
+          reviewSnippets: [
+            expect.objectContaining({
+              source: 'local',
+              rating: 5,
+              author: 'Anh Minh',
+              text: 'Có bãi gửi xe máy ngay trước sảnh và nhân viên hỗ trợ nhanh.',
+            }),
+          ],
+        }),
+      }),
+    );
 
     const answered = await service.createAnswer(created.id, {
       answerText: 'Có, ngay trước sảnh.',
@@ -99,6 +142,7 @@ describe('QuestionsService test mode', () => {
     expect(usersService.upsertFromFirebaseUser).not.toHaveBeenCalled();
     expect(usersService.findByFirebaseUid).not.toHaveBeenCalled();
     expect(placesService.findOne).not.toHaveBeenCalled();
+    expect(placesService.ensureGoogleReviewsForAiContext).not.toHaveBeenCalled();
     expect(prisma.question.create).not.toHaveBeenCalled();
     expect(prisma.question.findMany).not.toHaveBeenCalled();
     expect(prisma.question.findUnique).not.toHaveBeenCalled();

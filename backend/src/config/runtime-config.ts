@@ -1,17 +1,22 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export type DataMode = 'test' | 'production';
+export type RuntimeEnvironment = 'development' | 'test' | 'production';
+export type DataMode = RuntimeEnvironment;
 export type ExternalProviderPolicy = 'never' | 'fallback' | 'always';
 export type AiProvider = 'groq' | 'cloudflare' | 'openai-compatible' | 'gemini';
 
 export interface RuntimeConfig {
-  environment: DataMode;
+  environment: RuntimeEnvironment;
   search: {
     localDatabase: boolean;
     localFixture: boolean;
     externalProviders: boolean;
     externalProviderPolicy: ExternalProviderPolicy;
+  };
+  presence: {
+    strictCoordinateValidation: boolean;
+    strictDistanceValidation: boolean;
   };
   chat: {
     persistHistory: boolean;
@@ -37,6 +42,38 @@ const TEST_DEFAULTS: RuntimeConfig = {
     externalProviders: false,
     externalProviderPolicy: 'never',
   },
+  presence: {
+    strictCoordinateValidation: true,
+    strictDistanceValidation: true,
+  },
+  chat: {
+    persistHistory: false,
+  },
+  externalApis: {
+    serpapi: {
+      hotelSearch: false,
+      propertyDetails: false,
+      photos: false,
+      reviews: false,
+    },
+  },
+  ai: {
+    provider: 'groq',
+  },
+};
+
+const DEVELOPMENT_DEFAULTS: RuntimeConfig = {
+  environment: 'development',
+  search: {
+    localDatabase: true,
+    localFixture: true,
+    externalProviders: false,
+    externalProviderPolicy: 'never',
+  },
+  presence: {
+    strictCoordinateValidation: false,
+    strictDistanceValidation: false,
+  },
   chat: {
     persistHistory: false,
   },
@@ -61,6 +98,10 @@ const PRODUCTION_DEFAULTS: RuntimeConfig = {
     externalProviders: true,
     externalProviderPolicy: 'always',
   },
+  presence: {
+    strictCoordinateValidation: true,
+    strictDistanceValidation: true,
+  },
   chat: {
     persistHistory: true,
   },
@@ -77,8 +118,22 @@ const PRODUCTION_DEFAULTS: RuntimeConfig = {
   },
 };
 
-function isProductionMode(raw: any): boolean {
-  return raw?.environment === 'production' || raw?.mode === 'production' || raw?.dataMode === 'production';
+function normalizeEnvironment(value: any): RuntimeEnvironment | null {
+  if (value === 'development' || value === 'test' || value === 'production') return value;
+  return null;
+}
+
+function resolveEnvironment(raw: any): RuntimeEnvironment {
+  return normalizeEnvironment(raw?.environment)
+    || normalizeEnvironment(raw?.mode)
+    || normalizeEnvironment(raw?.dataMode)
+    || 'test';
+}
+
+function getDefaults(environment: RuntimeEnvironment): RuntimeConfig {
+  if (environment === 'production') return PRODUCTION_DEFAULTS;
+  if (environment === 'development') return DEVELOPMENT_DEFAULTS;
+  return TEST_DEFAULTS;
 }
 
 function normalizeProvider(value: any): AiProvider {
@@ -110,7 +165,8 @@ export function readRuntimeConfig(): RuntimeConfig {
     raw = {};
   }
 
-  const defaults = isProductionMode(raw) ? PRODUCTION_DEFAULTS : TEST_DEFAULTS;
+  const environment = resolveEnvironment(raw);
+  const defaults = getDefaults(environment);
   const legacySerpApi = definedBooleans({
     hotelSearch: raw.hotelSearch,
     propertyDetails: raw.propertyDetails,
@@ -119,10 +175,14 @@ export function readRuntimeConfig(): RuntimeConfig {
   });
 
   const merged: RuntimeConfig = {
-    environment: defaults.environment,
+    environment,
     search: {
       ...defaults.search,
       ...(raw.search || {}),
+    },
+    presence: {
+      ...defaults.presence,
+      ...(raw.presence || {}),
     },
     chat: {
       ...defaults.chat,
@@ -153,6 +213,10 @@ export function readRuntimeConfig(): RuntimeConfig {
       localFixture: true,
       externalProviders: false,
       externalProviderPolicy: 'never',
+    };
+    merged.presence = {
+      ...TEST_DEFAULTS.presence,
+      ...(raw.presence || {}),
     };
     merged.chat = {
       persistHistory: false,
