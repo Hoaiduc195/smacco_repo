@@ -20,168 +20,88 @@ Mục tiêu của chương trình là xây dựng một hệ thống hỗ trợ 
 
 ## **Input**
 
-Người dùng có thể cung cấp yêu cầu tìm kiếm dưới nhiều dạng khác nhau, bao gồm:
-
-**Ngôn ngữ tự nhiên**: mô tả nhu cầu bằng câu tự do (ví dụ: “khách sạn gần trung tâm, giá rẻ, yên tĩnh, có hồ bơi”).
-**Dữ liệu có cấu trúc**: payload JSON từ frontend, chứa các trường đã được chuẩn hoá để hệ thống xử lý tự động.
-**Ngữ cảnh tương tác**: câu hỏi gửi tới chatbot hoặc nội dung trao đổi với người dùng khác tại một địa điểm cụ thể.
-**Sử dụng bộ lọc được chuẩn hoá với các preferences thường thấy**:
-- Ngân sách / chi phí
-- Vị trí, khoảng cách hoặc bán kính tìm kiếm
-- Loại hình lưu trú (khách sạn, homestay, resort, …)
-- Tiện nghi (wifi, hồ bơi, bãi đỗ xe, …)
-- Thời gian lưu trú / số lượng người
+Người dùng cung cấp yêu cầu dưới các định dạng:
+1. **Ngôn ngữ tự nhiên**: Truy vấn tự do ("khách sạn rẻ gần sân bay có hồ bơi").
+2. **Ngữ cảnh hiện tại (Context)**: Vị trí của người dùng, hoặc tọa độ điểm đến (Anchor Location).
+3. **Bộ lọc có cấu trúc (JSON)**: Trích xuất từ AI Router hoặc nhập tay (Budget, Radius, Type, Amenities).
+4. **Hành vi tương tác (On-site / Community)**:
+   - Các câu hỏi / trả lời trong cộng đồng.
+   - Files, hình ảnh do người dùng upload tại hiện trường (sẽ được chuyển đổi thành *Vector Embeddings*).
 
 ## **Output**
 
-Hệ thống được kỳ vọng trả về danh sách các địa điểm lưu trú được đề xuất, được sắp xếp theo mức độ phù hợp với nhu cầu của người dùng. Mỗi kết quả thường bao gồm:
-
-**Thông tin cơ bản**: tên, địa chỉ, toạ độ (lat/lng)
-Nội dung mô tả: ảnh minh hoạ, mô tả ngắn
-**Đánh giá**: điểm rating và điểm xếp hạng tổng hợp (score)
-**Thông tin bổ sung**: giá cả, mức độ phù hợp với từng preference của người dùng
-
-**Ngoài ra, hệ thống còn cung cấp các khả năng hỗ trợ bổ sung:**
-
-- Cho phép người dùng đặt câu hỏi trực tiếp về từng địa điểm thông qua chatbot AI, với câu trả lời được sinh dựa trên dữ liệu liên quan (reviews, nội dung đã lưu trữ, v.v.)
-- Hỗ trợ hiển thị thông tin từ tương tác của người dùng khác (đặc biệt là người đang có mặt tại địa điểm) nhằm tăng độ tin cậy và tính thực tế
-
-_Kết quả được sắp xếp theo điểm và có thể kèm theo metadata như nguồn dữ liệu hoặc thời điểm cập nhật._
+Kết quả hệ thống trả về được định dạng và cá nhân hoá cao:
+1. **Danh sách địa điểm xếp hạng**: Cấu trúc JSON chứa thông tin cơ bản (lat/lng, name), điểm số (Score) được chấm dựa trên mức độ phù hợp với Input.
+2. **Bảng so sánh thông minh (Smart Comparison)**: Bảng phân tích chi tiết (ưu/nhược điểm) giữa các địa điểm cùng với gợi ý cuối cùng (Recommended Place).
+3. **Câu trả lời tự nhiên (AI Chat Response)**: Câu trả lời streaming qua SSE từ Chatbot, kèm theo các nguồn tham chiếu (Sources) lấy từ RAG.
 
 ## **Operators**
 
-Quy trình chuyển hoá Input thành Output được dựa trên các use cases chính:
+Quy trình chuyển hoá Input thành Output trải qua các *phép toán (Computational Operations)* cốt lõi:
 
-**1. Tìm kiếm cơ bản:** Người dùng tìm kiếm địa điểm bằng từ khoá hệ thống trả về kết quả chuẩn hoá từ internal search và fallback external khi cần.
-**2. Tìm kiếm nâng cao:** Người dùng nhập preferences chi tiết (location/type/budget/radius/...); recommender system sẽ lọc, tính score và xếp hạng các địa điểm phù hợp.
-**3. Xử lý ngôn ngữ tự nhiên:** Người dùng nhập truy vấn bằng ngôn ngữ tự nhiên với chatbot; AI trích xuất intent hoặc filter rồi gọi recommendation engine hoặc trả lời trực tiếp qua chatbot.
-**4. Trợ lý lưu trú thông minh:** Người dùng chat trực tiếp với chatbot của hệ thống, chatbot có thể trả lời người dùng về các địa điểm xung quanh, những thông tin được thu thập từ các người dùng khác để củng cố quyết định lựa chọn lưu trú.
-**5. Hệ thống QA, theo dõi và tương tác với người dùng on-site:** Khi người dùng truy cập chi tiết địa điểm, hệ thống đồng bộ dữ liệu on-site và cho phép đóng góp review, hình ảnh, thông tin thực tế. Ngoài ra, người dùng bên ngoài có thể đặt câu hỏi QA trên nền tảng của địa điểm để tìm kiếm hỗ trợ từ người dùng on-site hoặc chatbot.
-
+**1. NLP Intent Parsing (Trích xuất ý định):** Chuyển đổi câu hỏi ngôn ngữ tự nhiên $T$ thành một vector đặc trưng hoặc cấu trúc JSON $F = \{location, budget, type\}$.
+**2. Search & Deduplication (Tìm kiếm & Lọc trùng):** Quét các địa điểm từ Database và External Providers, áp dụng thuật toán hợp nhất (Merge) để loại bỏ các địa điểm trùng lặp dựa trên tọa độ và tên.
+**3. Recommendation Scoring (Chấm điểm gợi ý):** Áp dụng hàm tính điểm $S(p)$ cho từng địa điểm $p$ dựa trên trọng số về khoảng cách, giá cả, và đánh giá (rating).
+**4. Vector Retrieval (Truy xuất KNN):** Với câu hỏi Chatbot, chuyển câu hỏi thành embedding vector $ec{q}$, sau đó truy vấn KNN trên `pgvector` để tìm tập văn bản $ec{c_i}$ sao cho $cosine\_similarity(ec{q}, ec{c_i})$ lớn nhất.
+**5. Generation & Comparison (Sinh văn bản & So sánh):** Sử dụng LLM tổng hợp các văn bản truy xuất được để đưa ra câu trả lời cuối cùng hoặc bảng phân tích so sánh điểm mạnh/yếu.
 
 ```mermaid
-flowchart LR
-
-%% ======================
-%% ACTORS
-%% ======================
-User["User (Non On-site)"]
-OnSite["On-site User"]
-LLM["LLM System"]
-ExtAPI["External Search API"]
-
-%% ======================
-%% SYSTEM BOUNDARY
-%% ======================
-subgraph System["Chatbot Travel System"]
-    UC1(["Basic Search"])
-    UC2(["Advanced Recommendation"])
-    UC3(["NL Query -> Recommendation"])
-    UC4(["AI Chat"])
-    UC5(["RAG / Enriched Answer"])
-    UC6(["Place View & Context"])
-    UC7(["On-site QA"])
-    UC8(["Contribute Place Data"])
-end
-
-%% ======================
-%% USER INTERACTIONS
-%% ======================
-User --> UC1
-User --> UC2
-User --> UC3
-User --> UC4
-User --> UC5
-User --> UC6
-User --> UC7
-
-OnSite --> UC6
-OnSite --> UC7
-OnSite --> UC8
-
-%% ======================
-%% INCLUDE RELATIONSHIPS (UML STYLE)
-%% ======================
-UC3 -. "<< include >>" .-> UC2
-UC4 -. "<< include >>" .-> UC5
-UC2 -. "<< include >>" .-> UC1
-UC7 -. "<< include >>" .-> UC6
-
-%% ======================
-%% EXTEND RELATIONSHIPS
-%% ======================
-UC1 -. "<< extend >> fallback external search" .-> ExtAPI
-UC5 -. "<< extend >> LLM generation" .-> LLM
-UC4 -. "<< extend >> LLM conversation" .-> LLM
-
-%% ======================
-%% PLACE CONTEXT (IMPORTANT FIX)
-%% ======================
-UC6 -. "<< uses context >>" .-> UC5
-UC7 -. "<< uses context >>" .-> UC5
-UC8 -. "<< updates >>" .-> UC6
+flowchart TD
+    User["Người dùng"] --> Router["AI Router (Phân tích Ý định)"]
+    
+    Router -->|Tìm kiếm / Đề xuất| Engine["Workflow Engine"]
+    Engine --> Search["Hybrid Search Tool"]
+    Engine --> Recommend["Recommendation Tool (Scoring)"]
+    
+    Router -->|Hỏi đáp Chat| RAG["RAG Module (Vector Search)"]
+    RAG --> DB[(pgvector Chunks)]
+    
+    Router -->|So sánh| Comp["Smart Comparison Tool"]
+    
+    Search --> Composer["Response Composer"]
+    Recommend --> Composer
+    RAG --> Composer
+    Comp --> Composer
+    
+    Composer -->|Natural Language + JSON| User
 ```
 
 ## **Evaluation Function**
 
-Dựa theo các tiêu chí sau để đánh giá khả năng giải quyết vấn đề của chương trình:
+Đánh giá khả năng giải quyết bài toán qua các tiêu chí (metrics) tính toán cụ thể:
 
-**Tiêu chí về người dùng:** 
-Đánh giá dựa trên phản hồi trực tiếp của người dùng, lượng người dùng thường xuyên của ứng dụng, mức độ tương tác của người dùng. Ngoài ra, tiến hành các cuộc khảo sát nhằm tối ưu hoá quá trình tự đánh giá và cải thiện sản phẩm. 
+1. **Về độ chính xác (Relevance)**: 
+   - $Precision@k \ge 0.75$: Đo lường tỷ lệ địa điểm phù hợp trong top $k$ kết quả trả về.
+   - *Cosine Similarity* của câu trả lời RAG so với ngữ cảnh truy xuất $\ge 0.8$.
+2. **Về hiệu năng (Performance)**: 
+   - $Latency \le 800ms$ cho các thao tác Search/Recommend.
+   - Time-to-first-token (TTFT) cho AI Chat streaming $\le 1000ms$.
+3. **Chỉ số tương tác (User Engagement)**:
+   - **Sentiment Score** = $rac{Positive - Negative}{Total\ Reviews}$
+   - Tỷ lệ Upvote/Downvote trong Q&A cộng đồng.
 
-Các metrics có thể sử dụng:
-1. **Rating Score**
-$$RatingScore = \frac{\sum{rating}}{n}$$
-
-2. **Sentiment Score** (_từ reviews của người dùng về ứng dụng, hoặc qua survey_)
-$$Sentiment Score = \frac{positive - negative}{total}$$
-
-**Tiêu chí về Ứng dụng:** 
-Đánh giá dựa trên tính chính xác và khả năng đưa ra kết quả dựa theo tập dữ liệu đã có. Hơn nữa, các tiêu chí kĩ thuật khác như thời gian phản hổi của hệ thống, khả năng mở rộng và bảo trì, giao diện thân thiện với các người dùng.
-
-Các thông số cụ thể mà chương trình cần phải đạt được:
-- Về độ chính xác: $Precision@k \ge 0.5$ sẽ được xem là tạm ổn, kỳ vọng cuối cùng sẽ là từ $0.7$ trở lên
-- Về thời gian phản hồi của hệ thống: trung bình độ trễ của các module phải đạt là $Latency \le 700 - 800$ $(ms)$ 
-- Về khả năng mở rộng: dùng metrics của hệ thống để kiểm tra khả năng chịu tải hiện thời của hệ thống.
-
-**Tiêu chí về tính có ích:** 
-Ứng dụng phải giải quyết được ít nhất một vấn đề của xã hội, phải đảm bảo người dùng có thể sử dụng ứng dụng để nâng cao chất lượng cuộc sống.
 ## **Constraint**
 
-**Về cấu trúc hệ thống**: Sử dụng kiến trúc monolith module hoá cho MVP, với các module chức năng rõ ràng và khả năng tách dịch vụ khi cần mở rộng.
-
-**Về phạm vi**: Chương trình trước tiên sẽ tập trung vào phục vụ các người dùng tại Việt Nam, tập dữ liệu cần tìm kiếm sẽ tập trung vào những địa điểm lưu trú ở Việt Nam
-
-**Giao tiếp giữa các thành phần**: Sử dụng API Gateway làm điểm vào chung để điều phối yêu cầu tới backend và các thành phần phụ trợ.
-
-**Về phần cứng**: Chương trình không quá nặng, yêu cầu chạy mượt ở máy cấu hình trung bình:
-
-- 16+ GB RAM
-- CPU có xung nhịp 3.8 GHz 
-- Dung lượng chương trình khoảng từ 3 - 5 GB (dành cho nhà phát triển)
-- Có thể chạy tốt trên máy không có VGA
-
-Ưu tiên thiết kế để chạy tốt trong môi trường local/development, ví dụ Docker Compose.
+1. **Ràng buộc Hệ thống (Architecture)**: 
+   - Ứng dụng Monolith NestJS, không sử dụng Microservices phức tạp ở giai đoạn MVP để tiết kiệm chi phí vận hành.
+   - Không sử dụng Nginx Gateway tại local dev.
+2. **Ràng buộc Dữ liệu & Địa lý**:
+   - Chỉ áp dụng tìm kiếm nội địa Việt Nam. 
+   - Giới hạn quota gọi API LLM (Groq) và Google Maps/OSM để tránh quá tải chi phí.
+3. **Ràng buộc Phần cứng (Hardware)**:
+   - Chạy mượt trên máy 16GB RAM, CPU 3.8 GHz.
+   - **Đặc biệt**: Không cần thiết bị có GPU/VGA cục bộ, do tác vụ LLM đã được "offload" qua API bên thứ ba.
 
 ## **Technically executable**
 
-Thông qua việc trả lời các câu hỏi sau để đánh giá tính khả thi của dự án:
+**1. Khả năng hiện thực hoá AI (Agentic Workflow):**
+Việc sử dụng mô hình Router -> Tools -> Composer thay vì một prompt LLM khổng lồ giúp giảm ảo giác (hallucination), tăng độ chính xác 100% trong việc trích xuất JSON.
 
-**Khả năng của AI có thể xử lý các tính năng hay không?**
+**2. Offload LLM & Tích hợp Vector DB:**
+Thích hợp triển khai thực tế. Thay vì tốn kém huấn luyện mô hình (Fine-tuning) từ đầu, hệ thống tận dụng API (Groq) siêu tốc kết hợp với `pgvector` được nhúng trực tiếp trong PostgreSQL, giúp toàn bộ hệ thống (Frontend, Backend, DB) có thể khởi chạy siêu tốc chỉ qua 1 lệnh `docker-compose up`.
 
-1. **Trích xuất ý định và Dữ liệu có cấu trúc (JSON Mode)**: Các LLM hiện tại cực kỳ xuất sắc trong việc xuất dữ liệu chuẩn định dạng. Chúng dễ dàng bóc tách truy vấn phức tạp (ví dụ: "phòng đôi, có hồ bơi, dưới 1 triệu") thành chuỗi JSON chính xác gần như 100% (nhờ kỹ thuật Few-shot prompting), tạo bộ lọc chuẩn ngay lập tức cho Backend.
-
-2. **Khả năng "đọc hiểu" ngữ cảnh:** giúp LLM dễ dàng tự động tóm tắt, trích xuất từ khóa và chấm điểm (scoring) hàng loạt đánh giá dài dòng của người dùng. Khối lượng siêu dữ liệu (metadata) này trở thành đầu vào chất lượng cao để hệ thống gợi ý (Recommendation) hoạt động chính xác và cá nhân hóa hơn so với các thuật toán truyền thống.
-
-**Có thể tích hợp AI vào hệ thống này hay không và khả năng triển khai thực tế như thế nào?**
-
-1. **Giảm tải phần cứng bằng API tích hợp LLM:** Việc xử lý mô hình AI nặng nề được đẩy sang các dịch vụ API của bên thứ ba như Groq, OpenAI, hay Anthropic. Điều này giúp hệ thống không phải gánh tải việc xử lý mô hình AI nặng nề và không phải gánh vác chi phí hạ tầng đắt đỏ.
-
-2. **Khả năng triển khai thực tế cao:** Nhờ việc không tự chạy các mô hình LLM lớn cục bộ, hệ thống ưu tiên chạy tốt trong môi trường local với cấu hình trung bình, yêu cầu phần cứng rất dễ thở: chỉ cần RAM 16GB, CPU 3.8 GHz, không đòi hỏi VGA. Toàn bộ hệ thống, bao gồm ứng dụng và database (kèm pgvector), có thể được đóng gói và khởi chạy nhanh chóng, đồng nhất thông qua docker-compose.yml.
-
-**Tính khả thi về thời gian thực hiện**
-
-1. **Triển khai khi đã có công nghệ lõi:** Thay vì đội ngũ phải mất thời gian thu thập dữ liệu khổng lồ, gán nhãn, và huấn luyện mô hình từ đầu, hệ thống chỉ cần gọi API để thực hiện các tác vụ NLP, trích xuất ý định (Intent Parsing), và Chatbot. Điều này không chỉ giúp tránh gánh nặng chi phí hạ tầng mà còn đẩy nhanh tốc độ ra mắt sản phẩm.
+**3. Khả năng mở rộng (Scalability):**
+Kiến trúc modular hóa các Service (SearchModule, AiModule, RagModule) cho phép dễ dàng bóc tách thành Microservices khi lượng người dùng tăng cao trong tương lai.
 
 
 # **Decomposition**
@@ -589,4 +509,5 @@ Giải thích:
 - Chỉ số (KPIs): thời gian từ upload đến sẵn sàng, độ chính xác presence, tỉ lệ sử dụng đóng góp trong câu trả lời RAG.
 
 ## Mô hình C4 
+
 

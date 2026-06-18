@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Platform
 
-> Last updated: 2026-06-17 07:15
+> Last updated: 2026-06-18 19:51
 > Branch: feat/place_detail
 
 ## Overview

@@ -2,6 +2,66 @@
 
 ---
 
+## [2026-06-18 19:51] — Rewrite Problem Analysis section in PA_and_Decomposition.md
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested to know if the Problem Analysis section matches the architecture and if it can be improved.
+- **Changes**:
+  - Rewrote the `# **Problem Analysis**` section in `docs/PA_and_Decomposition.md` to explicitly align with the Agentic Orchestration workflow and new features.
+  - Formatted Inputs/Outputs to include RAG Vector Embeddings, JSON schemas, and Smart Comparison responses.
+  - Clarified Operators with specific mathematical/CT terms (e.g. $cosine\_similarity$, NLP Intent Parsing, Vector Retrieval, KNN).
+  - Replaced the Operator flowchart with an accurate representation of the Router -> Engine -> Composer pipeline and Smart Comparison logic.
+  - Specified constraints and evaluations related to TTFT (Time-to-first-token) and API limits.
+- **Modified files**:
+  - `docs/PA_and_Decomposition.md`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Ensures the theoretical problem analysis deeply mirrors the implemented architecture (C4 models) without losing the rigorous CT (Computational Thinking) structure.
+- **Verification**: Ensured Markdown syntax (mermaid, LaTeX equations) renders correctly and content aligns with `ARCHITECTURE.md` and `FEATURES.md`.
+
+---
+
+## [2026-06-18 19:48] — Rewrite DATABASE.md and FEATURES.md
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested to rewrite `DATABASE.md` and `FEATURES.md`.
+- **Changes**:
+  - Rewrote `docs/DATABASE.md` to properly include missing tables like `SavedPlace`, `PlaceSource`, `ConversationPlaceReference`, `PlaceComparisonResult`, and `Presence`.
+  - Structured the database documentation clearly with Logical Schema grouping, Cascade behaviors, and Index Strategies.
+  - Rewrote `docs/FEATURES.md` to include all the latest capabilities such as AI Auto-Workflow Search, Smart Place Comparison, RAG Chatbot, Reddit-style Q&A, and Saved Places (Bookmarks).
+- **Modified files**:
+  - `docs/DATABASE.md`
+  - `docs/FEATURES.md`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No code-level changes, but system data schemas and feature listings are now completely synchronized with the actual implementation.
+- **Verification**: Cross-referenced `schema.prisma` and latest feature logs to ensure full coverage.
+
+---
+
+## [2026-06-18 19:45] — Rewrite ARCHITECTURE.md
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested to rewrite the entire structure of the `ARCHITECTURE.md` file.
+- **Changes**:
+  - Rewrote `docs/ARCHITECTURE.md` to be fully structured, incorporating C4 Model (Context, Container, Component).
+  - Integrated detailed data-flow decomposition from Problem Analysis for Use Cases.
+  - Kept technical details accurately aligned with actual mono NestJS monolith structure and PostgreSQL / pgvector.
+- **Modified files**:
+  - `docs/ARCHITECTURE.md`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No code-level changes, but architectural documentation is now properly structured and comprehensive.
+- **Verification**: Reviewed new structure against actual codebase constraints and previous PA docs.
+
+---
+
 ## [2026-06-17 07:15] — Soften AI tone for place-question answers
 
 - **Branch**: `feat/place_detail`

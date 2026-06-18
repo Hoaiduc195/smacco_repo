@@ -6,7 +6,7 @@
 \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2cm]{geometry}
 \usepackage{xcolor} % Để dùng màu sắc
 \usepackage{tikz}   % Để vẽ khung
-\usetikzlibrary{positioning,shapes,arrows.meta,fit,backgrounds,shapes.geometric,patterns,calc}
+\usetikzlibrary{positioning,shapes,arrows.meta,fit,backgrounds,shapes.geometric,patterns,calc,shadows}
 \usepackage{amsfonts}
 \usepackage{listings}
 \usepackage{xcolor}
@@ -174,12 +174,10 @@ Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch
 
 \noindent \textbf{Giải pháp:} Nhóm đề xuất xây dựng một hệ thống tìm kiếm và gợi ý lưu trú thông minh, cho phép người dùng mô tả nhu cầu bằng ngôn ngữ tự nhiên. Hệ thống sẽ phân tích yêu cầu, tìm kiếm các địa điểm phù hợp, thực hiện đánh giá và xếp hạng, sau đó đưa ra những gợi ý trực quan và dễ hiểu nhằm hỗ trợ người dùng đưa ra quyết định nhanh chóng và hiệu quả hơn.
 
-\subsection{Tầm nhìn sản phẩm}
-\noindent Tầm nhìn của Smacco là trở thành người bạn đồng hành không thể thiếu trong mỗi chuyến đi, giúp mọi người tìm thấy "ngôi nhà thứ hai" một cách dễ dàng và tin cậy nhất. 
+\subsection{Tầm nhìn ứng dụng}
+\noindent Tầm nhìn của dự án là xây dựng một nguyên mẫu thử nghiệm nhằm chứng minh tính khả thi của việc kết hợp trí tuệ nhân tạo vào quy trình tìm kiếm địa điểm lưu trú. Thay vì định hướng thành một nền tảng thương mại hoàn chỉnh ngay từ đầu, dự án tập trung vào việc định hình lại cách người dùng tương tác với dữ liệu. 
 \\\par
-\noindent Ứng dụng hướng tới việc chuẩn hóa dữ liệu lưu trú đa nguồn, kết hợp với sức mạnh của RAG  để cung cấp những hiểu biết sâu sắc từ hàng ngàn ý kiến người dùng. Smacco không chỉ là một công cụ tìm kiếm, mà là một hệ sinh thái nơi công nghệ AI và trải nghiệm con người giao thoa để giải quyết các vấn đề thực tiễn.
-
-
+\noindent Thông qua việc mô phỏng một môi trường tích hợp thông tin đa nguồn và ứng dụng kỹ thuật RAG (Retrieval-Augmented Generation), nguyên mẫu này kỳ vọng sẽ tạo ra một tiền đề (proof of concept) cho các hệ thống tìm kiếm trong tương lai. Ở đó, AI đóng vai trò như một tác tử điều phối trung gian, biến những truy vấn ngôn ngữ tự nhiên mơ hồ của người dùng thành các kết quả trực quan, đáng tin cậy và mang tính cá nhân hóa cao.
 
 \subsection{Người dùng mục tiêu}
 Smacco tập trung phục vụ ba nhóm đối tượng chính:
@@ -190,356 +188,111 @@ Smacco tập trung phục vụ ba nhóm đối tượng chính:
 \end{itemize}
 
 \newpage
-\section{Problem Analyst \& Decomposition}
-\subsection{Problem Analyst}
-Để xây dựng hệ thống Smacco, nhóm đã tiến hành phân tích bài toán và chia nhỏ các yêu cầu thành những thành phần chức năng chính của hệ thống. Việc phân tích này giúp nhóm hiểu rõ luồng xử lý dữ liệu, xác định các chức năng cần thiết và xây dựng giải pháp phù hợp với mục tiêu của dự án.
-\subsubsection{Đầu vào (Input)}
-Hệ thống Smacco tiếp nhận dữ liệu từ ba nguồn chính, tạo nên một tập hợp thông tin đa chiều và phi cấu trúc cần được xử lý:
+\section{Problem Analysis \& Decomposition}
+
+\subsection{Sử dụng phương pháp User Journey}
+Để phân rã và thiết kế hệ thống bám sát thực tiễn, nhóm đã đặt mình vào vị trí của người dùng (User Journey) và đặt ra chuỗi câu hỏi dẫn dắt như sau:
+
 \begin{itemize}
-    \item \textbf{Dữ liệu từ người dùng tìm kiếm:} 
-    \begin{itemize}
-        \item Truy vấn bằng ngôn ngữ tự nhiên (Natural Language Query): Những câu hỏi mang tính định tính như "Tìm khách sạn yên tĩnh, gần biển, giá dưới 1 triệu tại Đà Nẵng".
-        \item Bộ lọc (Filters) có cấu trúc: Vị trí địa lý (tọa độ, bán kính), loại hình lưu trú (homestay, khách sạn), ngân sách, và các tiện nghi mong muốn (wifi, hồ bơi).
-        \item Ngữ cảnh hội thoại: Lịch sử các tin nhắn trong phiên chat giúp AI hiểu rõ hơn ý định của người dùng.
-    \end{itemize}
-    \item \textbf{Dữ liệu từ người dùng On-site và Cộng đồng:}
-    \begin{itemize}
-        \item Các bài đánh giá (Reviews) mới nhất, hình ảnh thực tế và các tệp tin đóng góp (Contributions) từ những người đang có mặt tại địa điểm.
-        \item Các câu hỏi và câu trả lời trong hệ thống Q\&A thực tế.
-    \end{itemize}
-    \item \textbf{Dữ liệu hệ thống và ngoại vi:}
-    \begin{itemize}
-        \item Cơ sở dữ liệu địa điểm hiện có (Places database) từ các nguồn Google Places, OpenStreetMap.
-        \item Kho lưu trữ Vector (Vector Store) chứa các đoạn văn bản (chunks) đã được nhúng (embedded) từ các đánh giá và dữ liệu đóng góp.
-    \end{itemize}
+    \item \textbf{Người dùng sẽ làm gì với ứng dụng của chúng tôi?} \\
+    $\rightarrow$ Người dùng cần tìm địa điểm lưu trú phù hợp với nhu cầu cá nhân.
+
+    \item \textbf{Người dùng có thể tìm kiếm địa điểm lưu trú như thế nào?} \\
+    $\rightarrow$ Cần thiết kế giao diện tìm kiếm hoặc cung cấp phương thức tìm kiếm linh hoạt (như tìm trên bản đồ, lọc theo tiêu chí, tìm bằng từ khóa).
+
+    \item \textbf{Vậy làm sao để phương thức tìm kiếm có thể cho ra kết quả tốt?} \\
+    $\rightarrow$ Chúng ta sẽ đánh giá trên các tiêu chí cụ thể; như vậy chúng ta cần trích xuất ý định thực sự của người dùng từ các yêu cầu thô.
+
+    \item \textbf{Vậy việc trích xuất ý định nên được thực hiện thế nào?} \\
+    $\rightarrow$ Có thể cho phép người dùng chủ động chọn qua bộ lọc, hoặc thông qua một tác tử AI được cài đặt để phân tích ngôn ngữ tự nhiên.
+
+    \item \textbf{Nếu người dùng sau khi đã có các địa điểm phù hợp với nhu cầu của họ, làm cách nào để hệ thống có thể giúp người dùng ra quyết định cuối cùng?} \\
+    $\rightarrow$ Có thể cài đặt tính năng giúp người dùng so sánh các địa điểm, qua đó hỗ trợ ra quyết định cuối cùng một cách khách quan.
+
+    \item \textbf{Vậy nếu người dùng muốn tìm hiểu sâu hơn về một địa điểm thì sao?} \\
+    $\rightarrow$ Cài đặt tính năng AI đưa ra phân tích chi tiết về một địa điểm cụ thể, cho phép người dùng lựa chọn các tiêu chí để phân tích (ví dụ: wifi, bữa sáng, thái độ phục vụ).
+
+    \item \textbf{Việc sử dụng LLM có thể không đạt được độ chính xác cao, liệu nguồn thông tin nào uy tín hơn không?} \\
+    $\rightarrow$ Sử dụng nguồn thông tin từ chính người dùng. Có thể áp dụng chính sách "người dùng onsite" (những người đang thực sự có mặt tại địa điểm) để tăng độ tin cậy.
+
+    \item \textbf{Vậy với các tính năng như trên, có thể tối giản giao diện để người dùng có thể tương tác nhanh chóng và dễ dàng, phù hợp với nhiều người dùng ở các độ tuổi, trình độ khác nhau hay không?} \\
+    $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian. Người dùng sẽ tương tác trực tiếp với LLM; sau đó, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động dưới nền.
 \end{itemize}
 
-\subsubsection{Đầu ra (Output)}
-Mục tiêu cuối cùng của Smacco là chuyển đổi các dữ liệu rời rạc trên thành những kết quả có giá trị sử dụng cao cho người dùng:
-\begin{itemize}
-    \item \textbf{Danh sách gợi ý tối ưu:} Trả về các địa điểm lưu trú được xếp hạng theo mức độ phù hợp (Scoring) với nhu cầu cá nhân của người dùng, kèm theo metadata đầy đủ (giá, vị trí, rating).
-    \item \textbf{Phản hồi AI thông minh (RAG-based Response):} Các câu trả lời từ chatbot không chỉ mang tính tổng quát mà còn trích xuất được những thông tin cụ thể từ hàng ngàn đánh giá (ví dụ: "Người dùng khen bữa sáng ở đây rất ngon nhưng lưu ý tiếng ồn từ công trường gần đó").
-    \item \textbf{Trạng thái thực tế tại địa điểm:} Hiển thị số lượng người đang hiện diện, các câu trả lời trực tiếp từ người on-site, giúp người dùng cảm nhận được "linh hồn" và tình trạng thực tế của nơi mình định đến.
-    \item \textbf{Dữ liệu chuẩn hóa:} Chuyển đổi các yêu cầu ngôn ngữ tự nhiên thành định dạng JSON có cấu trúc để các hệ thống khác có thể tiêu thụ.
-\end{itemize}
-
-\subsubsection{Operators}
-Quy trình chuyển đổi từ Input sang Output được thực hiện thông qua một chuỗi các thao tác logic và kỹ thuật:
-\begin{itemize}
-    \item \textbf{Intent Parsing (Xử lý ý định):} Sử dụng LLM để bóc tách câu lệnh của người dùng thành các tham số máy có thể hiểu được (ví dụ: chuyển "khách sạn rẻ ở Hà Nội" thành \texttt{\{type: "hotel", budget: "low", location: "Hanoi"\}}).
-    \item \textbf{Vector Retrieval (Truy xuất Vector):} Thực hiện tìm kiếm ngữ nghĩa (Semantic Search) trên \textit{pgvector} để lấy ra các đoạn thông tin (chunks) liên quan nhất đến câu hỏi của người dùng từ kho dữ liệu đánh giá khổng lồ.
-    \item \textbf{Scoring Engine (Công cụ tính điểm):} Áp dụng các thuật toán tính toán trọng số để xếp hạng các địa điểm dựa trên sự kết hợp giữa khoảng cách, giá cả, và điểm số đánh giá từ AI.
-    \item \textbf{RAG Pipeline (Quy trình sinh câu trả lời có dẫn chứng):} Kết hợp ngữ cảnh đã truy xuất được với sức mạnh sinh ngôn ngữ của LLM để tạo ra câu trả lời cuối cùng, đảm bảo tính xác thực và có nguồn gốc rõ ràng.
-\end{itemize}
-
-\subsubsection{Evaluation Function}
-Dựa theo các tiêu chí sau để đánh giá khả năng giải quyết vấn đề của chương trình:
+\textbf{Kết luận:} \\
+Thông qua việc đặt câu hỏi với vai trò là người dùng, nhóm thống nhất ý tưởng xây dựng một hệ thống hỗ trợ người dùng tìm kiếm địa điểm lưu trú với sự hỗ trợ thông minh của AI với vai trò là người hướng dẫn, điều phối. Hệ thống sẽ có các chức năng chính bao gồm:
 \begin{enumerate}
-
-
-\item{\textbf{Tiêu chí về người dùng:}}
-\par
-Đánh giá dựa trên phản hồi trực tiếp của người dùng, lượng người dùng thường xuyên của ứng dụng,
-mức độ tương tác của người dùng. Ngoài ra, tiến hành các cuộc khảo sát nhằm tối ưu hoá quá trình
-tự đánh giá và cải thiện sản phẩm.\\
-Các metrics có thể sử dụng:
-\begin{enumerate}
-    \item Rating Score
-    \begin{center} 
-    \begin{tabular}{|c|} 
-        \hline
-        \rowcolor{gray!10} 
-        \parbox[c][1.4cm][c]{5cm}{
-                \centering
-                $\displaystyle \text{RatingScore} = \frac{\sum \text{rating}}{n}$
-            } \tabularnewline
-        \hline
-    \end{tabular}
-    \renewcommand{\arraystretch}{2} 
-\end{center}
-
-    \item Sentiment Score
-     \begin{center}
-    \renewcommand{\arraystretch}{2} 
-    \begin{tabular}{|m{8cm}|}  
-        \hline
-        \rowcolor{gray!10} 
-        \parbox[c][1.4cm][c]{7.5cm}{
-                \centering
-                $\displaystyle \text{SentimentScore} = \frac{\text{positive} - \text{negative}}{\text{total}}$
-            } \tabularnewline
-        \hline
-    \end{tabular}
-     \renewcommand{\arraystretch}{2} 
-    \end{center}
+    \item \textbf{Tìm kiếm thông minh (Hybrid Search):} Hỗ trợ tìm kiếm địa điểm qua các bộ lọc truyền thống kết hợp với khả năng phân tích ý định ngôn ngữ tự nhiên từ AI.
+    \item \textbf{So sánh địa điểm lưu trú:} Cung cấp bảng đối chiếu các tiện ích, giá cả và đánh giá để hỗ trợ người dùng ra quyết định cuối cùng.
+    \item \textbf{Phân tích và cung cấp Insight bằng AI:} Khai thác hàng ngàn bài đánh giá thực tế để AI tóm tắt và trả lời các câu hỏi chuyên sâu về một địa điểm cụ thể.
+    \item \textbf{Cộng đồng Hỏi-Đáp và Check-in:} Nền tảng chia sẻ thông tin từ những người dùng thực tế, đặc biệt ưu tiên phản hồi từ người dùng đang "On-site" để đảm bảo tính uy tín của thông tin.
 \end{enumerate}
 
-\item{\textbf{Tiêu chí về ứng dụng:}}
-Đánh giá dựa trên tính chính xác và khả năng đưa ra kết quả dựa theo tập dữ liệu đã có. Hơn nữa,
-các tiêu chí kĩ thuật khác như thời gian phản hổi của hệ thống, khả năng mở rộng và bảo trì, giao diện
-thân thiện với các người dùng\\
-Các thông số cụ thể mà chương trình cần phải đạt được:
+\subsection{Từ bài toán thực tế đến bài toán tính toán}
+Từ việc nhận định được mục tiệu cụ thể, nhóm tiến hành phân rã các bài toán thực tế thành các bài toán tính toán cụ thể hơn như sau: 
 \begin{itemize}
-    \item Về độ chính xác: $Precision@k \ge 0.5$ sẽ được xem là tạm ổn, kỳ vọng cuối cùng sẽ là từ $0.7$ trở lên
-    \item Về thời gian phản hồi của hệ thống: trung bình độ trễ của các module phải đạt là $Latency \le 700 - 800$ $(ms)$ 
-    \item Về khả năng mở rộng: dùng metrics của hệ thống để kiểm tra khả năng chịu tải hiện thời của hệ thống. 
-\end{itemize}
-\item \textbf{Tiêu chí về tính có ích:} 
-Ứng dụng phải giải quyết được ít nhất một vấn đề của xã hội, phải đảm bảo người dùng có thể sử dụng ứng dụng để nâng cao chất lượng cuộc sống
-
-\end{enumerate}
-
-
-\subsubsection{Constraint}
-\textbf{Về cấu trúc hệ thống}: Sử dụng kiến trúc Monolith module hóa. Toàn bộ backend được xây dựng thành một ứng dụng duy nhất, nhưng vẫn phân chia rõ ràng thành các module chức năng (Core, Recommendation, NLP,...). Mỗi module đảm nhận một nhóm nghiệp vụ riêng, giúp codebase dễ bảo trì, phát triển nhanh và thuận tiện kiểm thử. Khi cần mở rộng quy mô, các module này có thể tách dần thành service độc lập mà không ảnh hưởng đến logic tổng thể. \\[0.3cm]
-\textbf{Về phạm vi}: Chương trình trước tiên sẽ tập trung vào phục vụ các người dùng tại Việt Nam, tập dữ liệu cần tìm kiếm sẽ tập trung vào những địa điểm lưu trú ở Việt Nam \\[0.3cm]
-\textbf{Giao tiếp giữa các Service}: Sử dụng API Gateway đóng vai trò làm trung gian, kiểm soát giao tiếp \\[0.3cm]
-\textbf{Về phần cứng}: Chương trình không quá nặng, yêu cầu chạy mượt ở máy cấu hình trung bình:
-
-\begin{itemize} 
-    \item 16+ GB RAM
-    \item CPU có xung nhịp 3.8 GHz
-    \item Dung lượng chương trình khoảng từ 3 - 5 GB (dành cho nhà phát triển)
-    \item Có thể chạy tốt trên máy không có VGA
+    \item \textbf{Phân tích ý định ngôn ngữ tự nhiên:} Chuyển đổi các câu truy vấn tự do của người dùng thành các tham số truy vấn có cấu trúc nhằm kích hoạt workflow cụ thể.
+    \item \textbf{Tìm kiếm và Tổng hợp Dữ liệu:} Xây dựng cơ chế truy xuất đồng thời từ cơ sở dữ liệu nội bộ và các nhà cung cấp bên thứ ba, sau đó chuẩn hóa và loại bỏ dữ liệu trùng lặp.
+    \item \textbf{Truy xuất thông tin ngữ nghĩa:} Số hóa các user reviews và dữ liệu hỏi đáp cộng đồng thành các vector embeddings. Điều này cho phép hệ thống thực hiện tìm kiếm theo ngữ nghĩa, giúp trợ lý AI đưa ra câu trả lời dựa trên trải nghiệm thực tế thay vì gặp ảo giác.
+    \item \textbf{Tích hợp dữ liệu và hệ thống tính toán ngoài:} Xây dựng luồng kết nối API và đồng bộ hóa dữ liệu từ các hệ thống ngoại vi để đáp ứng nhu cầu truy xuất thông tin liên tục và đảm bảo tính nhất quán của dữ liệu.
+    \item \textbf{Xây dựng khung làm việc cố định cho LLM:} Thiết lập các quy tắc, cấu trúc prompt và hệ thống workflow cứng nhằm kiểm soát hành vi của LLM, giúp AI hoạt động một cách nhất quán, chính xác và có thể dự đoán được.
+    \item \textbf{Lập kế hoạch phát triển giao diện phần mềm, nâng cao tính dễ tiếp cận:} Phân tích và thiết kế trải nghiệm người dùng (UX/UI), đảm bảo tính trực quan để người dùng ở nhiều độ tuổi và trình độ công nghệ khác nhau có thể dễ dàng tương tác.
 \end{itemize}
 
-\subsection{Decomposition}
+\subsection{Ràng buộc, giả định và tiêu chí đánh giá}
+Để đảm bảo tính khả thi trong phạm vi đồ án, hệ thống được thiết kế dựa trên các giới hạn rõ ràng:
 
-Từ mục tiêu lớn của dự án, hệ thống được phân rã thành các hệ thống con (\textit{Systems}) cốt lõi bao gồm:
+\textbf{1. Ràng buộc:}
 \begin{itemize}
-    \item Môi trường phát triển và hạ tầng kỹ thuật
-    \item Hệ thống cơ sở dữ liệu (\textit{Database System})
-    \item Hệ thống giao diện người dùng (\textit{Frontend System})
-    \item Hệ thống xử lý logic nghiệp vụ (\textit{Backend System})
+    \item \textit{Về mặt kiến trúc:} Chọn mô hình Modular Monolith để giảm thiểu chi phí quản lý vận hành cho giai đoạn MVP, nhưng vẫn giữ tính phân tách cao để dễ dàng mở rộng.
+    \item \textit{Về mặt tài nguyên:} Offload toàn bộ tải tính toán AI nặng nề sang API của bên thứ ba, do đó hệ thống có thể chạy cục bộ trên phần cứng không yêu cầu GPU.
+    \item \textit{Về phạm vi hỗ trợ:} Ứng dụng trước hết là sẽ tập trung vào người dùng ở Việt Nam, thông qua đó xác định được các địa điểm lưu trú có mặt ở Việt Nam, ứng dụng phải hỗ trợ tiếng Việt và đảm bảo AI phải hiểu ngữ cảnh tiếng Việt.
 \end{itemize}
 
-\noindent Từ cấu trúc các hệ thống lớn trên, tiến hành chia nhỏ thành các module với các phân hệ (\textit{Subsystems}) chức năng chi tiết như sau:
-
-\subsubsection{Môi trường phát triển và hạ tầng:}
+\textbf{2. Giả định:}
 \begin{itemize}
-    \item Sử dụng \texttt{Docker Compose} để triển khai và kiểm thử ứng dụng tại môi trường cục bộ (\textit{Local environment}).
-    \item Sử dụng \texttt{Git/GitHub} phục vụ quy trình quản lý phiên bản mã nguồn (\textit{Version Control}).
+    \item Khả năng lập luận, phân tích và đưa ra giải pháp của AI là yếu tố khách quan, không phụ thuộc hệ thống.
+    \item Dữ liệu từ các nhà cung cấp bên ngoài đảm bảo độ tin cậy và thời gian phản hồi nhất định.
 \end{itemize}
 
-\subsubsection{Cơ sở dữ liệu (Database):}
+\textbf{3. Tiêu chí đánh giá:}
 \begin{itemize}
-    \item Thiết kế và chuẩn hóa lược đồ quan hệ (\textit{Relational Schema}).
-    \item Tích hợp giải pháp \texttt{Object Storage} để lưu trữ các tệp tin vật lý (hình ảnh, tài liệu).
-\end{itemize}
-
-\subsubsection{Hệ thống Frontend:} Cài đặt và cấu hình các thành phần giao diện cốt lõi:
-\begin{itemize}
-    \item \textbf{Trang đăng nhập:} 
-    \begin{itemize}
-        \item Tính năng đăng nhập xác thực bằng tài khoản Email.
-        \item Tính năng đăng nhập nhanh thông qua bên thứ ba (\texttt{Google OAuth}).
-    \end{itemize}
-    \item \textbf{Trang chính (Main Dashboard):}
-    \begin{itemize}
-        \item Thanh điều hướng (\texttt{Navbar}).
-        \item Bản đồ tương tác: Tích hợp và hiển thị thông qua các \texttt{External API}.
-        \item Hộp thoại trò chuyện trí tuệ nhân tạo (\texttt{AI Chatbox}).
-        \item Giao diện tìm kiếm theo bộ lọc (\textit{Filter}): Hỗ trợ lọc theo các tiêu chí như giá cả, thời gian lưu trú, đánh giá tổng thể, vị trí, bán kính tìm kiếm; tích hợp ô nhập văn bản tự do (\textit{Textbox ghi chú}) để người dùng tùy biến đặc điểm mong muốn.
-    \end{itemize}
-    \item \textbf{Thanh bên kết quả tìm kiếm (Search Sidebar):} Giao diện hiển thị danh sách các địa điểm phù hợp kèm thông tin cơ bản (tên, địa chỉ, số sao đánh giá) và tích hợp nút chức năng chỉ đường.
-    \item \textbf{Trang thông tin chi tiết địa điểm:}
-    \begin{itemize}
-        \item Giao diện nền tảng Hỏi-Đáp (Q\&A) tương tác theo mô hình \textit{Reddit-like}.
-        \item Giao diện cửa sổ \texttt{Chatbot} được cấu hình riêng cho từng địa điểm lưu trú.
-    \end{itemize}
-    \item \textbf{Trang so sánh các địa điểm lưu trú:}
-    \begin{itemize}
-        \item Hiển thị danh sách các địa điểm được hệ thống xếp hạng tối ưu cho người dùng.
-        \item Tổng hợp và nêu bật các ưu điểm, nhược điểm của từng địa điểm một cách trực quan.
-    \end{itemize}
-    \item \textbf{Hồ sơ người dùng (User Profile):} Hiển thị lịch sử các bài đánh giá, trạng thái hoạt động trực tuyến, lối tắt tin nhắn nhanh (\textit{Nút chat}),...
-\end{itemize}
-
-\subsubsection{Hệ thống Backend:} Phân chia cấu trúc thành các module chức năng độc lập:
-\begin{itemize}
-    \item \textbf{Core Module:} Trung tâm quản lý dữ liệu và logic nghiệp vụ cơ bản, đóng vai trò xương sống cho toàn bộ hệ thống backend.
-    \begin{itemize}
-        \item Quản lý các tiến trình Đăng nhập / Đăng ký / Phân quyền người dùng.
-        \item Cung cấp các \texttt{CRUD API} tương tác với các thực thể Đánh giá (\textit{Reviews}), Địa điểm (\textit{Places}), và Người dùng (\textit{Users}).
-    \end{itemize}
-    \item \textbf{Recommendation Module:} Phân hệ chịu trách nhiệm tính toán và gợi ý địa điểm tối ưu.
-    \begin{itemize}
-        \item Thực hiện truy vấn dữ liệu thô từ database.
-        \item Xử lý danh sách ứng viên (\textit{Candidates}): Đánh giá mức độ phù hợp dựa trên bộ lọc cố định; ứng dụng \texttt{LLM} để phân tích ngữ nghĩa phần ghi chú tự do của người dùng.
-        \item Xếp hạng (\textit{Ranking}): Thực hiện chấm điểm (\textit{AI Scoring}) và sắp xếp thứ tự ưu tiên.
-    \end{itemize}
-    \item \textbf{NLP Module:} Phân hệ xử lý ngôn ngữ tự nhiên.
-    \begin{itemize}
-        \item Thực hiện kết nối và gọi tới các \texttt{API} mô hình ngôn ngữ bên ngoài.
-        \item \texttt{Parser}: Chuyển đổi và chuẩn hóa văn bản ngôn ngữ tự nhiên thành cấu trúc dữ liệu hệ thống.
-        \item \texttt{Communicator}: Phản hồi người dùng đối với các câu hỏi kịch bản cơ bản.
-        \item \texttt{RAG (Retrieval-Augmented Generation)}: Thực hiện cơ chế truy xuất thông tin từ cơ sở tri thức để tạo câu trả lời chính xác theo ngữ cảnh.
-    \end{itemize}
-\end{itemize}
-
-
-\subsubsection{Kết luận}
-Chúng em đã chia nhỏ mục tiêu xây dựng một "Hệ thống lưu trú thông minh" thành các bài toán con có thể quản lý và thực hiện độc lập:
-\begin{itemize}
-    \item \textbf{Phân rã chức năng:} Tách biệt các luồng công việc như Tìm kiếm (Search), Gợi ý (Recommendation), và Trò chuyện (AI Chat). Mỗi bài toán con này lại được chia nhỏ thành các module kỹ thuật như \textit{UsersModule}, \textit{PlacesModule}, \textit{RagModule}, v.v.
-    \item \textbf{Phân rã luồng dữ liệu:} Các Use Case được bóc tách thành các bước tuần tự (Sequence Diagrams), từ việc xác thực người dùng, trích xuất ý định từ LLM, truy vấn cơ sở dữ liệu cho đến việc chuẩn hóa kết quả trả về.
-\end{itemize}
-
-\section{Kiến thức Tư duy Tính toán được áp dụng}
-
-Trong quá trình phân tích và xây dựng hệ thống Smacco, chúng em đã vận dụng linh hoạt bốn trụ cột cốt lõi của Tư duy Tính toán để giải quyết các vấn đề phức tạp một cách có hệ thống:
-
-\subsection{Nhận diện mẫu (Pattern Recognition)}
-Việc nhận diện các quy luật lặp đi lặp lại giúp hệ thống xử lý dữ liệu hiệu quả hơn:
-\begin{itemize}
-    \item \textbf{Chuẩn hóa yêu cầu:} Nhận diện các mẫu tìm kiếm phổ biến của người dùng (về ngân sách, vị trí, tiện nghi) để xây dựng cấu trúc JSON Schema thống nhất, giúp AI có thể trích xuất thông tin (intent parsing) một cách chính xác.
-    \item \textbf{Đồng bộ hóa dữ liệu đa nguồn:} Nhận diện các điểm chung trong cấu trúc dữ liệu địa điểm từ nhiều nguồn khác nhau (Google Places, OpenStreetMap) để thiết kế một mô hình dữ liệu (Database Schema) bền vững và có khả năng mở rộng.
-\end{itemize}
-
-\subsection{Trừu tượng hóa (Abstraction)}
-Chúng tôi đã ẩn đi các chi tiết kỹ thuật phức tạp để tạo ra các giao diện lập trình đơn giản và dễ bảo trì:
-\begin{itemize}
-    \item \textbf{Trừu tượng hóa AI/LLM:} Người phát triển chỉ cần gọi qua các service của \textit{AiModule} mà không cần quan tâm đến cách thức kết nối API hay xử lý lỗi của các nhà cung cấp LLM cụ thể (Groq, OpenAI).
-    \item \textbf{Module hóa kiến trúc:} Sử dụng kiến trúc Monolith Module-based để đóng gói logic nghiệp vụ. Mỗi module hoạt động như một "hộp đen", giao tiếp với nhau qua các interface xác định, giúp giảm sự phụ thuộc lẫn nhau (coupling).
-    \item \textbf{ORM (Object-Relational Mapping):} Sử dụng Prisma để trừu tượng hóa các câu lệnh SQL phức tạp, giúp việc thao tác với cơ sở dữ liệu trở nên trực quan và an toàn hơn.
-\end{itemize}
-
-\subsection{Thuật toán (Algorithms)}
-Các thuật toán cụ thể được thiết kế để chuyển đổi dữ liệu đầu vào thành giá trị cho người dùng:
-\begin{itemize}
-    \item \textbf{Thuật toán Xếp hạng (Scoring Algorithm):} Kết hợp nhiều trọng số như khoảng cách địa lý, điểm đánh giá trung bình và mức giá để đưa ra danh sách gợi ý tối ưu nhất.
-    \item \textbf{Tìm kiếm Vector (Semantic Search):} Sử dụng thuật toán so khớp tương đồng vector (Cosine Similarity) trong \textit{pgvector} để thực hiện kỹ thuật RAG, giúp chatbot tìm đúng đoạn thông tin liên quan nhất từ hàng ngàn đánh giá của người dùng.
-    \item \textbf{Đánh giá hệ thống:} Sử dụng các thuật toán định lượng như \textit{Precision@k} và \textit{Sentiment Analysis} để đo lường hiệu quả và chất lượng của các đề xuất mà hệ thống đưa ra.
+    \item \textit{Sự hài lòng của người dùng (User Satisfaction):} Đánh giá mức độ thoải mái và hài lòng tổng thể của người dùng khi trải nghiệm các tính năng tìm kiếm và tương tác trên nền tảng.
+    \item \textit{Tính hữu ích và khả năng sử dụng (Usefulness \& Usability):} Ứng dụng phải thực sự giải quyết được bài toán tìm chỗ ở, giao diện trực quan, dễ thao tác và luồng tương tác mượt mà cho mọi đối tượng.
+    \item \textit{Tính chính xác của thông tin (Information Accuracy):} Đảm bảo chất lượng và độ tin cậy của dữ liệu trả về, bao gồm độ sát thực tế của danh sách địa điểm gợi ý và tính chuẩn xác (không bịa đặt thông tin) trong các phân tích chi tiết từ LLM.
 \end{itemize}
 
 \newpage
+
 \section{System Overview}
-SMACCO tập trung xây dựng một ứng dụng web với giao diện trực quan, tích hợp bản đồ số
-và trợ lý ảo (chatbot). Điểm nhấn của hệ thống là khả năng tương tác linh hoạt: người
-dùng có thể giao tiếp tự nhiên với chatbot để AI tự động xử lý và cập nhật kết quả trực
-tiếp lên giao diện (AI-driven UI), hoặc chủ động sử dụng các công cụ tìm kiếm, lọc và gợi
-ý thủ công được cung cấp sẵn trên nền tảng. Ngoài ra, hệ thống còn sử dụng đánh giá
-của người dùng để tăng cường chất lượng gợi ý
-\subsection{Tổng quan kiến trúc}
-\subsubsection{Kiến trúc: }
-Được xây dựng theo kiến trúc \textbf{Monolithic}, trong đó các chức năng được tổ chức thành các module bên trong cùng một ứng dụng thay vì triển khai thành nhiều dịch vụ độc lập như mô hình Microservices.
+SMACCO là một nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp giữa hệ thống tra cứu truyền thống và sức mạnh của Trí tuệ Nhân tạo (AI). Dự án chuyển đổi cách người dùng tương tác với thông tin du lịch thông qua giao diện hội thoại (chatbot) và công nghệ tìm kiếm theo ngữ nghĩa (semantic search).
+
+\subsection{List of Core Features}
 \begin{itemize}
-    \item \textbf{Frontend}: React, cung cấp giao diện tương tác với người dùng.
-    \item \textbf{Backend}: NestJS, chịu trách nhiệm xử lý các nghiệp vụ chính của hệ thống như quản lý người dùng, địa điểm, đánh giá và tìm kiếm.
-    \item \textbf{AI Module}: Tích hợp trong hệ thống Backend để hỗ trợ chatbot và các chức năng trí tuệ nhân tạo.
-    \item \textbf{Recommendation Module}: Thực hiện chức năng gợi ý địa điểm và cá nhân hóa nội dung cho người dùng.
-    \item \textbf{Database}: PostgreSQL dùng để lưu trữ dữ liệu người dùng, địa điểm, đánh giá và lịch sử tương tác.
+    \item \textbf{Tìm kiếm và Gợi ý Lưu trú (Search \& Recommendations):} Tìm kiếm đa chiều kết hợp bộ lọc truyền thống và gợi ý cá nhân hóa.
+    \item \textbf{Trợ lý Ảo AI Tích hợp RAG (AI Chatbot \& RAG):} Giao tiếp tự nhiên bằng tiếng Việt để tìm kiếm, phân tích và trích xuất thông tin thực tế từ hệ thống.
+    \item \textbf{Quản lý Cộng đồng (Reviews \& Questions):} Nền tảng chia sẻ đánh giá và hỏi đáp trực tiếp tại từng địa điểm lưu trú.
+    \item \textbf{Theo dõi Hiện diện Tại chỗ (Presence / On-site Tracking):} Xác nhận và ưu tiên thông tin từ những người dùng đang có mặt tại địa điểm.
+    \item \textbf{Đóng góp Nội dung (User Contributions \& Uploads):} Cho phép người dùng tải lên hình ảnh, thêm mới hoặc cập nhật thông tin địa điểm.
+    \item \textbf{Lưu trữ Địa điểm Yêu thích (Saved Places):} Đánh dấu và quản lý danh sách các địa điểm quan tâm.
 \end{itemize}
 
-\subsubsection{Hệ thống lưu trữ chính}
-
+\subsection{Explanation of Core Features}
 \begin{itemize}
-    \item PostgreSQL (pgvector extension) + Prisma: lưu trữ chính
-    \item Lưu trữ phía người dùng: Firebase Auth/Firestore
-    \item Sử dụng object storage cho ảnh (ảnh của các places, ảnh được users đăng tải lên reviews)
-    \item Dùng Redis lưu trữ TTL/in-memory store cho conversation (AI Service) (\textit{đang được xem xét})
+    \item \textbf{Tìm kiếm và Gợi ý Lưu trú:} Hệ thống tổng hợp dữ liệu từ các API bản đồ (Goong, SerpAPI) và cơ sở dữ liệu nội bộ. Người dùng có thể tìm kiếm theo tọa độ, mức giá, tiện nghi, hoặc nhận các đề xuất được hệ thống tính toán dựa trên mức độ phù hợp.
+    \item \textbf{Trợ lý Ảo AI Tích hợp RAG:} Sử dụng mô hình ngôn ngữ lớn (LLM) làm bộ định tuyến (router) để hiểu ý định người dùng (intent parsing). Khi người dùng đặt câu hỏi sâu về địa điểm, AI áp dụng kỹ thuật RAG (Retrieval-Augmented Generation) thông qua \texttt{pgvector} để trích xuất các bài đánh giá thực tế và tổng hợp thành câu trả lời chính xác, tránh hiện tượng sinh chữ ảo giác (hallucination).
+    \item \textbf{Quản lý Cộng đồng:} Mỗi địa điểm lưu trú đóng vai trò như một diễn đàn thu nhỏ. Người dùng có thể đặt câu hỏi về tiện ích, chất lượng phục vụ và nhận câu trả lời từ những khách du lịch khác. Các bài đánh giá (reviews) này sau đó trở thành nguồn dữ liệu chất lượng cao cho AI.
+    \item \textbf{Theo dõi Hiện diện Tại chỗ:} Điểm khác biệt cốt lõi là tính năng \textit{check-in} tại chỗ. Hệ thống ghi nhận trạng thái ``On-site'' của người dùng, qua đó tăng độ tin cậy và ưu tiên hiển thị các câu trả lời/đánh giá từ những người đang thực sự trải nghiệm dịch vụ.
+    \item \textbf{Đóng góp Nội dung:} Người dùng không chỉ là người tiêu thụ thông tin mà còn là người xây dựng hệ thống. Nền tảng cho phép tải lên hình ảnh thực tế và đề xuất chỉnh sửa thông tin chỗ ở, giúp dữ liệu luôn được làm mới.
+    \item \textbf{Lưu trữ Địa điểm Yêu thích:} Người dùng có thể dễ dàng lưu lại các tùy chọn tiềm năng để so sánh và ra quyết định sau này.
 \end{itemize}
 
-\subsection{Các Bên Liên Quan Chính }
-
-\begin{enumerate}
-    \item \textbf{Nhà Phát Triển / Chủ Sở Hữu Sản Phẩm}
-    \begin{itemize}
-        \item Quản lý kiến trúc hệ thống, mở rộng chức năng và tích hợp nền tảng
-        \item Sử dụng API và mô hình dữ liệu để phát triển các tính năng mới
-    \end{itemize}
-    
-    \item \textbf{Người Dùng Cuối (Khách Du Lịch)}
-    \begin{itemize}
-        \item Tìm kiếm accommodations phù hợp
-        \item Tương tác với AI chatbot để tìm hiểu thông tin chi tiết
-        \item Đánh giá và chia sẻ kinh nghiệm
-    \end{itemize}
-    
-    \item \textbf{Nhà Cung Cấp Dữ Liệu / Người Đóng Góp}
-    \begin{itemize}
-        \item Cung cấp thông tin về accommodations
-        \item Tải lên tài liệu và dữ liệu bổ sung
-        \item Cải thiện chất lượng dữ liệu của hệ thống
-    \end{itemize}
-    
-    \item \textbf{Các Nhà Cung Cấp Dịch Vụ Ngoài}
-    \begin{itemize}
-        \item Google Maps, OpenStreetMap: cung cấp dữ liệu địa lý
-        \item Firebase: quản lý xác thực
-        \item Groq: cung cấp mô hình LLM
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Các Tác Nhân Chính Trong Hệ Thống}
-Hệ thống phân rã người dùng thành các vai trò cụ thể dựa trên hành vi tương tác với nền tảng:
-
+\subsection{Innovation Highlights}
 \begin{itemize}
-    \item \textbf{Traveler (Khách du lịch):} Tác nhân thực hiện duyệt danh sách chỗ lưu trú, đặt câu hỏi, đọc đánh giá và lựa chọn địa điểm phù hợp.
-    \item \textbf{On-site Guest (Khách lưu trú tại chỗ):} Tác nhân đã check-in hoặc đang có mặt tại địa điểm; có quyền tham gia vào các cuộc trò chuyện nội bộ và khai thác dữ liệu từ chatbot để lấy thông tin tại chỗ.
-    \item \textbf{Reviewer (Người đánh giá):} Tác nhân đóng góp nội dung, để lại các đánh giá giúp làm giàu tập dữ liệu cho hệ thống gợi ý và tối ưu phản hồi của chatbot RAG.
-    \item \textbf{Recommendation Seeker (Người tìm kiếm gợi ý):} Vai trò người dùng yêu cầu hệ thống trả về các đề xuất lưu trú cá nhân hóa dựa trên sở thích và tín hiệu ngữ cảnh.
-    \item \textbf{Product Owner / Developer (Nhà phát triển):} Tác nhân kỹ thuật sử dụng kiến trúc hệ thống, các cổng API và mô hình dữ liệu để bảo trì, mở rộng hoặc tích hợp nền tảng.
+    \item \textbf{Tích hợp AI điều phối quy trình (AI-Driven Workflow):} AI không chỉ đóng vai trò sinh văn bản mà hoạt động như một cỗ máy điều phối (workflow engine). Thay vì click qua nhiều bộ lọc phức tạp, người dùng chỉ cần ra lệnh bằng tiếng Việt tự nhiên (ví dụ: ``Tìm một homestay yên tĩnh ở Đà Lạt cho gia đình''), AI sẽ tự động gọi API, tính toán, và cập nhật kết quả thẳng lên giao diện (AI-driven UI).
+    \item \textbf{Tìm kiếm Dựa trên Ngữ nghĩa (Semantic Search với Vector DB):} Việc sử dụng PostgreSQL kết hợp \texttt{pgvector} cho phép hệ thống hiểu được ý nghĩa sâu xa của các bài đánh giá. Thay vì so khớp từ khóa cứng nhắc, hệ thống có thể trả lời các câu hỏi trừu tượng dựa trên độ đo tương đồng Cosine (Cosine Similarity) của các vector nhúng (embeddings).
+    \item \textbf{Ưu tiên Trải nghiệm Thực tế (On-site Insights):} Hạn chế rủi ro từ các đánh giá ảo bằng cách gắn trọng số cao cho những tương tác của người dùng \textit{On-site}. Điều này giải quyết bài toán nhức nhối trong ngành du lịch là sự sai lệch thông tin giữa quảng cáo và thực tế.
 \end{itemize}
-
-
-\subsection{Các tính năng cơ bản}
-SMACCO tích hợp 3 tính năng chính để cung cấp trải nghiệm tìm kiếm accommodation thông minh, xã hội và được cá nhân hóa:
-\subsubsection{Tìm Kiếm Accommodations Qua Chatbot AI}
-\begin{itemize}
-    \item \textbf{Ngữ cảnh sử dụng (Use Case):} Khách du lịch có nhu cầu tìm kiếm chỗ lưu trú nhưng không muốn thao tác thủ công với các bộ lọc phức tạp, hoặc có những yêu cầu tinh tế khó diễn đạt bằng các tiêu chí lọc truyền thống 
-    \par
-    Ví dụ: Tìm nơi "yên tĩnh để làm việc" hoặc "phù hợp cho gia đình có trẻ nhỏ".
-    
-    \item \textbf{Đầu vào (Input):} Câu lệnh hoặc yêu cầu bằng ngôn ngữ tự nhiên từ người dùng thông qua giao diện chat (ví dụ: "Tìm giúp mình một homestay ở Đà Lạt có view rừng thông, giá dưới 1.5 triệu và cho phép mang theo thú cưng").
-    
-    \item \textbf{Đầu ra (Output):} Danh sách các địa điểm phù hợp nhất được hiển thị trực tiếp trong cửa sổ chat, kèm theo lời giải thích ngắn gọn từ AI về lý do tại sao các địa điểm này được đề xuất dựa trên yêu cầu của người dùng.
-    
-    \item \textbf{Cách thức hoạt động (Operation / Workflow):} \\
-    Hệ thống nhận văn bản \\ $\rightarrow$ \textit{AiModule} sử dụng LLM để thực hiện \textit{Intent Parsing}, trích xuất các tham số (vị trí, giá, loại hình, tiện nghi) \\$\rightarrow$ Các tham số này được gửi đến \textit{RecommendationsModule} để truy vấn và xếp hạng địa điểm \\$\rightarrow$ Kết quả được trả về chatbot để AI tổng hợp thành câu trả lời tự nhiên.
-    
-    \item \textbf{Lợi ích (Benefits):} Tiết kiệm thời gian, cá nhân hóa trải nghiệm tìm kiếm, thấu hiểu nhu cầu thực tế của người dùng thông qua hội thoại tự nhiên.
-\end{itemize}
-
-\subsubsection{Chức năng so sánh các địa điểm lưu trú}
-\begin{itemize}
-    \item \textbf{Ngữ cảnh sử dụng (Use Case):} Sau khi tìm kiếm, người dùng thường phân vân giữa 2-3 lựa chọn hàng đầu. Tính năng này giúp họ đặt các địa điểm này lên "bàn cân" để thấy rõ sự khác biệt về mọi mặt trước khi đưa ra quyết định đặt phòng cuối cùng.
-    \item \textbf{Đầu vào (Input):} Danh sách ID của các địa điểm (từ 2 đến 4 địa điểm) mà người dùng đã chọn để so sánh từ danh sách kết quả tìm kiếm hoặc danh sách yêu thích.
-    \item \textbf{Đầu ra (Output):} Một bảng so sánh trực quan các tiêu chí cứng (giá, hạng sao, khoảng cách, số lượng người ở) và đặc biệt là phần tóm tắt so sánh định tính từ AI (ví dụ: "Chỗ A có view đẹp hơn nhưng chỗ B có dịch vụ khách hàng được đánh giá cao hơn").
-    
-    \item \textbf{Cách thức hoạt động (Operation / Workflow):} \\
-    Hệ thống tổng hợp dữ liệu chi tiết của các địa điểm được chọn \\$\rightarrow$ Sử dụng LLM để phân tích toàn bộ các bài đánh giá gần đây của các địa điểm này \\$\rightarrow$ Trích xuất các điểm mạnh/yếu tương quan \\$\rightarrow$ Hiển thị bảng so sánh tổng hợp kết hợp dữ liệu cấu trúc và nhận xét AI.
-    \item \textbf{Lợi ích (Benefits):} Hỗ trợ ra quyết định nhanh chóng, khách quan; giảm thiểu rủi ro chọn sai địa điểm do thiếu thông tin đối chiếu.
-\end{itemize}
-
-\subsubsection{Chức năng trích xuất thông tin chi tiết và đánh giá của AI về một địa điểm}
-\begin{itemize}
-    \item \textbf{Ngữ cảnh sử dụng (Use Case):} Người dùng muốn tìm hiểu sâu về một địa điểm cụ thể mà không có thời gian để đọc hàng trăm bài đánh giá cũ/mới. Họ cần một cái nhìn tổng quan, trung thực và được cập nhật mới nhất về chất lượng dịch vụ thực tế.
-    
-    \item \textbf{Đầu vào (Input):} Một địa điểm cụ thể được chọn; yêu cầu trích xuất thông tin hoặc các câu hỏi chuyên sâu về địa điểm đó (ví dụ: "Chất lượng wifi ở đây thế nào?" hoặc "Bữa sáng có thực sự đa dạng không?").
-    
-    \item \textbf{Đầu ra (Output):} Bản tóm tắt thông minh gồm các ý chính: Ưu điểm nổi bật, Nhược điểm cần lưu ý, và các Insight thực tế từ người dùng on-site, kèm theo điểm số đánh giá độ tin cậy của thông tin.
-    
-    \item \textbf{Cách thức hoạt động (Operation / Workflow):} \\
-    Sử dụng kỹ thuật RAG (\textit{Retrieval-Augmented Generation}) \\$\rightarrow$ Truy xuất các \textit{chunks} văn bản liên quan nhất từ Vector DB (chứa reviews và đóng góp mới) \\$\rightarrow$ Đưa ngữ cảnh này vào LLM để tóm tắt và đánh giá theo thời gian thực \\$\rightarrow$ Trả về kết quả cô đọng cho người dùng.
-    
-    \item \textbf{Lợi ích (Benefits):} Cung cấp thông tin có chiều sâu và độ tin cậy cao; giúp người dùng nắm bắt nhanh chóng "vấn đề" của địa điểm mà không bị nhiễu bởi các quảng cáo hay review rác.
-\end{itemize}
-
-
-
-\subsection{Điểm nổi bật về đổi mới}
-\begin{enumerate}
-    \item \textbf{Cho phép người dùng tương tác với nhau}
-    \par
-\noindent Hệ thống không chỉ hỗ trợ tìm kiếm địa điểm mà còn tạo môi trường để người dùng trao đổi, học hỏi lẫn nhau. Mỗi địa điểm đều có nền tảng hỏi đáp (Q&A) nơi người dùng có thể đặt câu hỏi, trả lời, bình luận, chia sẻ kinh nghiệm thực tế về địa điểm đó. Ngoài ra, hệ thống còn tích hợp tính năng chat trực tiếp giữa các người dùng, giúp họ dễ dàng kết nối, trao đổi thông tin, thảo luận về các địa điểm quan tâm hoặc hỗ trợ nhau trong quá trình lựa chọn.
-    \item \textbf{Tích hợp AI phân tích ngôn ngữ tự nhiên và tự động hoá workflow}
-    \begin{itemize}
-        \item Người dùng chỉ cần nhập yêu cầu bằng tiếng Việt tự nhiên, AI sẽ tự động phân tích, chuẩn hoá và chuyển thành tiêu chí tìm kiếm hoặc thực hiện các tác vụ phức tạp như so sánh, gợi ý, tổng hợp đánh giá, thu thập thông tin mới nhất.
-        \item Không chỉ dừng ở tìm kiếm, AI còn tự động hóa các quy trình xử lý, giúp tiết kiệm thời gian và nâng cao trải nghiệm.
-    \end{itemize}
-    
-\end{enumerate}
 
 \newpage
 \section{Pattern Recognition}
