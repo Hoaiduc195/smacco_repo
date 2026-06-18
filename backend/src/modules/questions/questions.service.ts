@@ -124,8 +124,9 @@ export class QuestionsService {
       };
       this.mockQuestions.push(mockQuestion);
 
-      await this.createAiAnswer(questionId, place, dto.questionText);
-      return this.getQuestionThread(questionId);
+      const createdThread = await this.getQuestionThread(questionId);
+      this.createAiAnswerInBackground(questionId, place, dto.questionText);
+      return createdThread;
     }
 
     const author = await this.usersService.upsertFromFirebaseUser(firebaseUser);
@@ -145,8 +146,9 @@ export class QuestionsService {
       },
     });
 
-    await this.createAiAnswer(question.id, place, dto.questionText);
-    return this.getQuestionThread(question.id);
+    const createdThread = await this.getQuestionThread(question.id);
+    this.createAiAnswerInBackground(question.id, place, dto.questionText);
+    return createdThread;
   }
 
   async createAnswer(questionId: string, dto: CreateAnswerDto, firebaseUser: FirebaseUser) {
@@ -368,6 +370,12 @@ export class QuestionsService {
         },
       });
     }
+  }
+
+  private createAiAnswerInBackground(questionId: string, place: any, questionText: string) {
+    void this.createAiAnswer(questionId, place, questionText).catch((error) => {
+      this.logger.warn(`Background AI answer generation failed for question ${questionId}: ${(error as Error).message}`);
+    });
   }
 
   private async getActiveOnsiteUserIds(placeId: string, userIds: string[]) {

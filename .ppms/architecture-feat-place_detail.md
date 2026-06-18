@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Platform
 
-> Last updated: 2026-06-17 04:29
+> Last updated: 2026-06-17 07:15
 > Branch: feat/place_detail
 
 ## Overview
@@ -32,7 +32,7 @@ A modular monolith web application for discovering accommodations and dining spo
   - `LoginPage` — Firebase authentication.
   - `ProfilePage` — User profile with current onsite status and historical review/check-in context.
 - **Key components**:
-  - `QASection` — Live threaded Q&A UI with AI section and user replies.
+  - `QASection` — Compact question-list UI that shows only titles by default and expands individual threads to reveal the question body, AI guidance, community replies, and reply composer. Question creation now posts immediately while AI replies are hydrated asynchronously afterward.
   - `PlaceChatPanel` — Place-scoped AI chat panel.
   - `PlaceCard`, `MapComponent`, `Navbar`, `SidebarOverlay`, `ProtectedRoute`, `ErrorBoundary`.
 - **Service layer**:
@@ -61,7 +61,9 @@ A modular monolith web application for discovering accommodations and dining spo
 - **Dynamic ID Resolution**: External place IDs follow the format `<provider_name>-<provider_specific_id>` (e.g. `serpapi-xxx`). Methods like `findOne` and `findReviews` in `PlacesService`, `checkIn` in `PresenceService`, and place resolution in `QuestionsService` dynamically resolve provider composite IDs to standard UUIDs before querying Postgres.
 - **Q&A flow**:
   - A user creates a place question.
-  - The backend persists the question, builds a bounded AI context bundle from place facts, amenities, descriptions, ratings, and review snippets, generates an AI answer using Groq-compatible chat, and stores it as a pinned AI reply.
+  - The backend persists the question and returns the thread immediately so the post appears on the platform without waiting for AI generation.
+  - AI context is then built asynchronously from place facts, amenities, descriptions, ratings, and review snippets; the generated AI answer is stored afterward and appears on subsequent thread fetches/polls.
+  - The place-question AI prompt is tuned for warmer, more conversational Vietnamese instead of a pinned-advisory tone.
   - User answers are stored as normal answers and are annotated with onsite status when the author is actively checked in.
 - **Q&A access**:
   - `GET /questions/place/:placeId` is public so place detail can render threads without an auth token on mount.
@@ -123,7 +125,7 @@ Key relationships:
 - [x] Place detail pages with AI chat, reviews, and map preview
 - [x] Firebase authentication and backend user syncing
 - [x] DB-backed onsite check-in/out
-- [x] Reddit-like place Q&A with AI-pinned answers
+- [x] Reddit-like place Q&A with compact-by-default question rows, expandable thread detail, AI guidance, and community answers
 - [x] Onsite badges in thread UI and profile status display
 - [x] SerpAPI-only search provider list with Goong geocoding retained separately
 - [x] SerpAPI result normalization now preserves `types` and address fallbacks for downstream UI/search filtering

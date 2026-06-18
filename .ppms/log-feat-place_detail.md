@@ -2,6 +2,321 @@
 
 ---
 
+## [2026-06-17 07:15] — Soften AI tone for place-question answers
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to adjust the `answerPlaceQuestion` system prompt so AI answers feel more natural and friendly, and explicitly asked to remove the old requirement about sounding like a pinned advisory reply.
+- **Changes**:
+  - Rewrote the `answerPlaceQuestion()` system prompt toward a warmer, more conversational Vietnamese tone.
+  - Removed the old requirement that told the AI to answer like a pinned advisory reply at the top of the thread.
+  - Replaced the rigid wording with a lighter requirement to answer naturally, helpfully, and without complex formatting while still avoiding unsupported claims.
+- **Modified files**:
+  - `backend/src/modules/ai/chat.service.ts`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — AI prompt behavior for place-question answers is now more conversational and less system-like.
+- **Verification**:
+  - `npm test -- --runInBand questions.service.spec.ts`
+  - `npm run build` (backend)
+
+---
+
+## [2026-06-17 07:09] — Improve Q&A request error surfacing for question posting
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported that posting a question resulted in a `Network Error` and asked for the issue to be checked and fixed.
+- **Changes**:
+  - Added shared request-error extraction in `QASection` so backend response messages are surfaced instead of collapsing many failures into the generic Axios `Network Error` label.
+  - Updated load/create/delete/answer error handling in the place-detail Q&A UI to show actionable messages from `error.response.data.message` when present.
+  - Confirmed that the auth guard can return concrete 401 causes such as missing/invalid auth header or missing Firebase project configuration, which are now visible to the user instead of being obscured.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend diagnostics and error-display improvement only.
+- **Verification**:
+  - `npm run build` (frontend)
+
+---
+
+## [2026-06-17 07:02] — Make question posting non-blocking while AI answers in background
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to adjust the AI question-answering flow because the app appeared to block users from posting questions until the AI response was generated.
+- **Changes**:
+  - Updated backend `QuestionsService.createQuestion()` to return the created thread immediately after persisting the question.
+  - Moved AI answer generation to a non-blocking background call so the UI can show the question right away with pending AI state.
+  - Preserved existing fallback behavior for failed AI generation and aligned the test-mode spec with the new asynchronous hydration flow.
+- **Modified files**:
+  - `backend/src/modules/questions/questions.service.ts`
+  - `backend/src/modules/questions/questions.service.spec.ts`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: Yes — question creation no longer blocks on AI generation; AI replies are now attached asynchronously after post creation.
+- **Verification**:
+  - `npm test -- --runInBand questions.service.spec.ts`
+  - `npm run build` (frontend)
+  - `npm run build` (backend)
+
+---
+
+## [2026-06-17 06:54] — Fix ask-question modal using old partial overlay implementation
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported the popup overlay issue still existed.
+- **Changes**:
+  - Identified that the ask-question popup in `QASection` was still using the older in-tree fixed overlay with `backdrop-blur`.
+  - Extracted the ask-question popup into a dedicated `AskQuestionModal` portal component.
+  - Switched the ask-question modal to the same full-screen portal overlay strategy as the reply modal so both dialogs behave consistently.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend modal consistency fix only.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:49] — Replace fragile reply blur overlay with full-screen dim layer
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported the partial-background issue still existed when the reply popup opened.
+- **Changes**:
+  - Replaced the modal's `backdrop-blur`-based overlay with a deterministic full-screen dim layer rendered in the portal.
+  - Added a dedicated full-viewport background button layer for outside-click dismissal and guaranteed coverage.
+  - Raised the modal overlay z-index substantially to avoid interference from other stacked UI surfaces.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend modal overlay stability fix only.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:45] — Fix reply modal overlay covering only partial area
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported that when the reply popup appears, only a small portion of the background becomes blurred.
+- **Changes**:
+  - Identified the issue as a stacking/containing-context problem caused by rendering the fixed modal inside the Q&A panel subtree.
+  - Extracted the reply popup into a dedicated `ReplyModal` component.
+  - Rendered the reply popup with `createPortal(..., document.body)` so the overlay correctly covers the full viewport.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — frontend interaction fix for modal rendering scope.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:41] — Match community answer cards to AI card size
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked the answer panels to be adjusted so they are the same size as the AI panel.
+- **Changes**:
+  - Updated community answer card radius, padding, and desktop width/indent so they visually align with the AI answer block.
+  - Kept the existing answer list structure and content hierarchy unchanged while making response cards feel more consistent.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only sizing refinement in the place-detail Q&A UI.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:38] — Remove AI suggestion label from Q&A thread
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to remove the `Ghim trả lời:` wording from the AI suggestion block; after clarification, they wanted the entire AI label row removed.
+- **Changes**:
+  - Removed the visible AI label row from the AI answer block in `QASection`.
+  - Kept the AI answer content, author avatar, and styling intact while making the card feel lighter and less system-like.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only copy and layout simplification in the place-detail Q&A UI.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:34] — Remove oversized ask-tab intro panel
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to remove the large top panel in the community Q&A tab header.
+- **Changes**:
+  - Removed the oversized intro/hero panel from the top of `QASection`.
+  - Replaced it with a compact control bar showing the tab title, question count, and `Đặt câu hỏi` action.
+  - Preserved all question-list and thread interactions while reducing wasted vertical space.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only header simplification in the place-detail Q&A tab.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:31] — Move reply composer into popup from thread panel
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked the answer input area to be replaced with a comment icon on the main question panel, and only show the reply UI in a popup when the user clicks it.
+- **Changes**:
+  - Removed the always-visible reply composer from the expanded thread body.
+  - Added a reply icon action directly on the main question panel so the affordance is visible without cluttering the thread.
+  - Added a dedicated reply popup modal with textarea, cancel, and submit actions.
+  - Kept the existing answer submission flow and data handling intact while making the thread layout cleaner.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only interaction refinement for the place-detail Q&A thread UI.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:26] — Redesign Place Detail ask tab into compact expandable list
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked to redesign the entire ask-question tab in place detail so it is collapsed by default to only show question titles, with a right-side expand button, and an extremely polished, user-friendly UI.
+- **Changes**:
+  - Rebuilt `QASection` into a cleaner premium thread experience with a dark hero header and a more focused ask-question action.
+  - Simplified collapsed thread rows so they show only the question title as the primary content, with concise metadata and a right-side expand control.
+  - Redesigned expanded state to present the question body, AI guidance, community answers, and reply composer inside a calmer, better-structured reading flow.
+  - Refined empty, loading, and question-creation modal states to match the upgraded visual language.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/architecture-feat-place_detail.md`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only redesign of the existing place-detail Q&A interface.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:17] — Increase question/reply scale separation in Q&A
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User said reply panels still did not look visibly smaller than the question panel, and asked to remove the `Smacco Q&A` and `thread cộng đồng` labels.
+- **Changes**:
+  - Removed the `Smacco Q&A` meta label from the thread header.
+  - Removed the `Thread cộng đồng` badge from the collapsed question summary.
+  - Increased the size and presence of the main question post surface.
+  - Further reduced the width impression, padding, and typography scale of AI and community answer cards so replies read as subordinate thread content.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only Q&A thread refinement.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:10] — Soften AI answer presentation in Q&A threads
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked the AI answer to look friendlier, requested removal of the pinned-style wording, and wanted answer tabs/cards to be visually smaller than the main question thread.
+- **Changes**:
+  - Changed the AI answer heading from a rigid system-style label to a friendlier `Gợi ý từ Smacco AI` label.
+  - Removed the `Ghim đầu` badge from the AI answer header.
+  - Reduced padding and text scale for AI and community answer cards so the question post remains the dominant visual element.
+  - Kept all Q&A thread behavior and data flow unchanged.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only refinement in the existing Q&A thread UI.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 06:04] — Attach expanded question content to thread header
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked for the expanded question detail to stay attached at the top of the thread so the community Q&A feels more like Reddit.
+- **Changes**:
+  - Moved the expanded question body into the same primary post surface as the thread header and title.
+  - Removed the separate detached question-detail card so the expanded layout now reads like a single Reddit-style post followed by responses.
+  - Kept AI answers, community answers, and reply composer below the post body as follow-on thread content.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only layout refinement in the place-detail Q&A thread UI.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 05:58] — Refine community Q&A visual hierarchy
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User said the community Q&A UI still looked visually mixed together and unattractive, and asked for the feature UI to be redesigned.
+- **Changes**:
+  - Reworked the `QASection` thread cards to create clearer hierarchy between vote rail, metadata, thread summary, expand action, and expanded content blocks.
+  - Introduced stronger visual separation between question summary, AI answer surface, community answers block, and reply composer.
+  - Restyled the thread toggle and status badges so the collapsed/expanded state is much easier to scan.
+  - Kept the existing collapsed Reddit-like thread behavior and all Q&A logic intact.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only refinement inside the existing place-detail Q&A view.
+- **Verification**:
+  - `npm run build`
+
+---
+
+## [2026-06-17 05:49] — Collapse community Q&A threads by default
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User asked the community Q&A tab to show only question titles by default, hide answers and question details initially, and provide a Reddit-like toggle to reveal the thread details below.
+- **Changes**:
+  - Updated `QASection` thread cards so they render in a collapsed list-first format by default.
+  - Replaced the always-open thread body with a per-thread expand/collapse control labeled `Xem chi tiết` / `Ẩn chi tiết`.
+  - Kept question body, AI answer, user answers, and answer composer available only in expanded mode.
+  - Added compact thread metadata showing response count and whether AI has replied, preserving the existing data model and service behavior.
+- **Modified files**:
+  - `frontend/src/components/QASection.jsx`
+  - `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — presentation-only change inside the existing place-detail Q&A component.
+- **Verification**:
+  - `npm run build`
+
+---
+
 ## [2026-06-17 04:58] — Enrich AI context for place questions
 
 - **Branch**: `feat/place_detail`

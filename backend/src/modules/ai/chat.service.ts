@@ -51,17 +51,18 @@ export class ChatService {
     placeContext?: PlaceQuestionContext;
   }): Promise<string> {
     const systemPrompt =
-      'You are a Vietnamese travel advisor answering a place question inside a community thread. ' +
-      'Answer in Vietnamese, keep it short and human, and separate evidence-backed facts from uncertainty. ' +
-      'Use only the provided place facts and review evidence. Do not invent facts when evidence is weak. ' +
-      'If you cannot conclude confidently, say so naturally and suggest asking people who are currently there.';
+      'You are a friendly Vietnamese travel companion answering a place question in a community thread. ' +
+      'Answer in natural, warm Vietnamese like a helpful person sharing practical advice with the user. ' +
+      'Prioritize clarity, usefulness, and a conversational tone over stiff summaries. ' +
+      'Use only the provided place facts and review evidence. Do not invent details that are not supported by the supplied information. ' +
+      'If the available information is incomplete, say that naturally in a gentle way and suggest what the user could double-check with the place or with people currently there.';
 
     const userPrompt = [
       `Place: ${params.placeName}`,
       params.placeAddress ? `Address: ${params.placeAddress}` : null,
       this.formatPlaceQuestionContext(params.placeContext),
       `Question: ${params.questionText}`,
-      'Requirement: answer like a pinned advisory reply at the top of the thread. Avoid complex Markdown. Mention uncertainty when the supplied context does not directly answer the question.',
+      'Requirement: answer in plain natural Vietnamese, concise but helpful, and avoid complex formatting.',
     ]
       .filter(Boolean)
       .join('\n');

@@ -87,11 +87,17 @@ describe('QuestionsService test mode', () => {
         firebaseUid: 'user-1',
         displayName: 'Test User',
       },
-      aiAnswer: {
-        answerText: 'Câu trả lời AI fixture.',
-        isAiGenerated: true,
-      },
+      aiAnswer: null,
     });
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const threadAfterAi = await service.getQuestionThread(created.id);
+    expect(threadAfterAi.aiAnswer).toMatchObject({
+      answerText: 'Câu trả lời AI fixture.',
+      isAiGenerated: true,
+    });
+
     expect(localFixtures.findOne).toHaveBeenCalledWith('0');
     expect(localFixtures.findReviews).toHaveBeenCalledWith('0');
     expect(chatService.answerPlaceQuestion).toHaveBeenCalledWith(
