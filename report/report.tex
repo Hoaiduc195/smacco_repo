@@ -14,6 +14,7 @@
 \usepackage{amssymb}    
 \usepackage{setspace}   
 \usepackage{titlesec}
+\usepackage{float}
 \usepackage[vietnamese]{babel}
 \usepackage{datetime2}
 \usepackage{tcolorbox}
@@ -355,7 +356,7 @@ Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng 
 \end{minipage}
 
 \vspace{0.8cm}
-\noindent\Large\textbf{\textcolor{orange!80!black}{\faCheckCircle \ 3. Chống Thông tin Sai lệch qua cơ chế "On-site"}}\normalsize
+\noindent\Large\textbf{\textcolor{orange!80!black}{\faCheckCircle \ 3. Chống Thông tin Sai lệch qua cơ chế ``On-site''}}\normalsize
 
 \vspace{0.3cm}
 \noindent
@@ -399,47 +400,181 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 \newpage
 \section{Pattern Recognition}
 
-Để thiết kế một kiến trúc hệ thống chặt chẽ, nhóm đã tiến hành phân tích và nhận diện các hành vi lặp lại của người dùng cũng như các cấu trúc tiềm ẩn trong luồng dữ liệu thực tế.
+\tikzset{
+    common box/.style={rectangle, draw=#1!50, fill=#1!5, rounded corners=3mm, align=center, minimum height=1.2cm, drop shadow={opacity=0.25, shadow xshift=2pt, shadow yshift=-2pt}, font=\small},
+    common box/.default=gray,
+    router node/.style={rectangle, draw=blue!60, fill=blue!10, rounded corners=4mm, align=center, font=\bfseries\small, drop shadow={opacity=0.3}, inner sep=10pt},
+    db node/.style={cylinder, draw=green!60!black, shape border rotate=90, aspect=0.25, align=center, fill=green!5, minimum height=1.8cm, minimum width=2.8cm, drop shadow={opacity=0.25}, font=\small},
+    error node/.style={rectangle, draw=red!60, fill=red!5, rounded corners=2mm, align=center, drop shadow={opacity=0.3}, font=\small, inner sep=8pt},
+    data node/.style={rectangle, draw=blue!40, dashed, fill=blue!2, align=center, font=\footnotesize\ttfamily, rounded corners=1mm},
+    main arrow/.style={-{Stealth[scale=1.2]}, line width=1.2pt, draw=blue!50!gray, rounded corners=2mm},
+    error arrow/.style={-{Stealth[scale=1.2]}, line width=1.2pt, dashed, draw=red!70, rounded corners=2mm}
+}
+
+Để thiết kế một kiến trúc hệ thống chặt chẽ, nhóm đã tiến hành phân tích và nhận diện các hành vi lặp lại của người dùng cũng như các cấu trúc tiềm ẩn trong luồng dữ liệu thực tế. Dựa trên quá trình quan sát, nhóm đã nhận diện được 6 mẫu cốt lõi để đưa ra các quyết định thiết kế kiến trúc chuẩn xác.
 
 \vspace{0.4cm}
 \noindent\textcolor{blue!80!black}{\large\textbf{\faSearch \ 1. User Query Pattern}}
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{blue!60!black}, left=12pt, top=2pt, bottom=2pt]
-Quan sát thực tế cho thấy, dù người dùng có cách diễn đạt rất đa dạng khi tìm kiếm nơi lưu trú, các câu truy vấn này luôn xoay quanh một tập hợp các đặc trưng cốt lõi lặp lại. Những yếu tố này bao gồm các thông số định lượng như vị trí, ngân sách, loại hình lưu trú, tiện nghi, và các yếu tố định tính (yêu cầu mềm) như "yên tĩnh", "gần trung tâm" hay "phù hợp cho gia đình". Nhận diện được mẫu cấu trúc tiềm ẩn này, \textbf{quy tắc tổng quát} được rút ra là: mọi câu lệnh phức tạp đều có thể được bóc tách thành các tham số rời rạc kết hợp với ngữ nghĩa mở rộng. Quy tắc này trực tiếp định hình quyết định thiết kế hệ thống phân tích ý định. Thay vì cố gắng khớp chuỗi nguyên văn, kiến trúc hệ thống sử dụng mô hình ngôn ngữ để trích xuất và định tuyến các thông tin này vào một cấu trúc tham số chuẩn hóa, làm đầu vào cho các bước truy vấn tiếp theo.
+Quan sát thực tế cho thấy, dù người dùng có cách diễn đạt rất đa dạng khi tìm kiếm nơi lưu trú, các câu truy vấn này luôn xoay quanh một tập hợp các đặc trưng cốt lõi lặp lại. Những yếu tố này bao gồm các thông số định lượng như vị trí, ngân sách, loại hình lưu trú, tiện nghi, và các yếu tố định tính (yêu cầu mềm). \textbf{Quy tắc tổng quát} được rút ra là: mọi câu lệnh phức tạp đều có thể được bóc tách thành các tham số rời rạc kết hợp với ý định (Intent). Quy tắc này trực tiếp định hình quyết định thiết kế hệ thống phân tích ý định, sử dụng mô hình ngôn ngữ thông qua \texttt{LlmTaskRouter} để chuẩn hóa ngôn ngữ tự nhiên thành JSON object tĩnh.
 \end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm and 2.5cm]
+        % User Queries
+        \node[common box=green, text width=4.2cm, fill=green!10, draw=green!60!black] (q2) {\faCommentDots\ \textit{``So sánh 2 chỗ này''}};
+        \node[common box=green, text width=4.2cm, fill=green!10, draw=green!60!black, above=0.5cm of q2] (q1) {\faCommentDots\ \textit{``Tìm nhà nghỉ rẻ ở Đà Lạt''}};
+        \node[common box=green, text width=4.2cm, fill=green!10, draw=green!60!black, below=0.5cm of q2] (q3) {\faCommentDots\ \textit{``Đánh giá giá và tiện nghi''}};
+
+        % Router
+        \node[router node, right=2.5cm of q2, minimum height=2.5cm] (router) {\Large\faRobot\normalsize\\ \textbf{LLM Task Router}\\ \footnotesize Phân tích \& định tuyến};
+
+        % Workflows
+        \node[common box=blue, align=left, text width=5cm, right=2.5cm of router] (w2) {\textbf{\faCogs\ COMPARE\_PLACES}\\[3pt]\ttfamily\scriptsize criteria: `overall'};
+        \node[common box=orange, align=left, text width=5cm, above=0.5cm of w2] (w1) {\textbf{\faCogs\ SEARCH\_PLACES}\\[3pt]\ttfamily\scriptsize type: `hostel'\\\ttfamily\scriptsize budget: `low'\\\ttfamily\scriptsize location: `Đà Lạt'};
+        \node[common box=teal, align=left, text width=5cm, below=0.5cm of w2] (w3) {\textbf{\faCogs\ ANALYZE\_PLACE}\\[3pt]\ttfamily\scriptsize preferences: [`giá', `tiện nghi']};
+
+        % Curved Arrows
+        \draw[main arrow] (q1.east) to[out=0, in=160] (router.160);
+        \draw[main arrow] (q2.east) -- (router.west);
+        \draw[main arrow] (q3.east) to[out=0, in=200] (router.200);
+
+        \draw[main arrow] (router.20) to[out=20, in=180] (w1.west);
+        \draw[main arrow] (router.east) -- (w2.west);
+        \draw[main arrow] (router.340) to[out=340, in=180] (w3.west);
+    \end{tikzpicture}
+    \caption{Query Pattern: Chuẩn hóa đa dạng câu hỏi tự nhiên thành các tham số định tuyến.}
+\end{figure}
 
 \vspace{0.4cm}
 \noindent\textcolor{teal!80!black}{\large\textbf{\faDatabase \ 2. Accommodation Data Pattern}}
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{teal!60!black}, left=12pt, top=2pt, bottom=2pt]
-Trong quá trình thu thập thông tin từ nhiều nhà cung cấp khác nhau, nhóm phát hiện ra một sự tương đồng lớn về cấu trúc dữ liệu. Dù định dạng đầu vào có khác biệt, mọi điểm lưu trú đều chia sẻ các thuộc tính chung cốt lõi như tên, tọa độ địa lý, địa chỉ, mức giá, điểm đánh giá, tiện nghi, loại hình và các bài nhận xét. Mẫu cấu trúc này chỉ ra rằng, dữ liệu đa nguồn hoàn toàn có thể được ánh xạ về một khuôn dạng chung. Dựa trên quy tắc này, nhóm đã đưa ra \textbf{quyết định thiết kế} một lược đồ dữ liệu và các đối tượng truyền tải dữ liệu (DTO) thống nhất. Mọi luồng dữ liệu từ Goong, SerpAPI hay cơ sở dữ liệu nội bộ đều phải đi qua bước chuẩn hóa này, đảm bảo hệ thống có thể xử lý và hiển thị thông tin nhất quán bất kể nguồn gốc.
+Trong quá trình thu thập thông tin từ nhiều nhà cung cấp khác nhau, nhóm phát hiện ra một sự tương đồng lớn về cấu trúc dữ liệu. Dù định dạng đầu vào có khác biệt (Goong, SerpAPI), mọi điểm lưu trú đều mang chung một mẫu về mặt thực thể không gian. Dựa trên quy tắc này, nhóm đã đưa ra \textbf{quyết định thiết kế} một cấu trúc DTO trung gian là \texttt{PlaceSource} để gom và chuẩn hóa trước khi ánh xạ vào thực thể bảng \texttt{Place} thống nhất trong CSDL.
 \end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=2cm and 2cm]
+        % Nodes
+        \node[common box=orange, text width=3.5cm] (goong) {\textbf{\faCloud\ Goong API}\\rawName, rawAddress\\lat, lng};
+        \node[common box=blue, text width=3.5cm, below=1cm of goong] (serp) {\textbf{\faCloud\ SerpAPI}\\raw\_serpapi\_...\\price\_level, rating};
+
+        \node[common box=yellow, text width=3.8cm, right=of goong, yshift=-1.1cm] (ps) {\textbf{\faSync\ Table: PlaceSource}\\Chuẩn hóa dữ liệu\\(normalizedName, ...)};
+
+        \node[db node, right=of ps] (place) {\textbf{\faDatabase\ Table: Place}\\place\_name\\place\_address\\price\_level\\average\_rating};
+
+        % Arrows
+        \draw[main arrow] (goong.east) to[out=0, in=160] (ps.160);
+        \draw[main arrow] (serp.east) to[out=0, in=200] (ps.200);
+        \draw[main arrow] (ps.east) -- (place.west);
+    \end{tikzpicture}
+    \caption{Data Pattern: Nhận diện mẫu thuộc tính từ các nguồn phân mảnh để ánh xạ về mô hình chuẩn hóa Place.}
+\end{figure}
 
 \vspace{0.4cm}
 \noindent\textcolor{orange!80!black}{\large\textbf{\faBalanceScale \ 3. Decision-making Pattern}}
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{orange!70!black}, left=12pt, top=2pt, bottom=2pt]
-Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm khi là một đường thẳng. Quan sát cho thấy, du khách thường không chọn ngay kết quả đầu tiên được đề xuất. Thay vào đó, họ có xu hướng lưu lại một vài lựa chọn nổi bật, đặt chúng lên bàn cân để so sánh các yếu tố như giá cả, vị trí và tiện ích trước khi đưa ra quyết định cuối cùng. Nhận ra mẫu hành vi vòng lặp này, \textbf{quy tắc tổng quát} được xác định là quá trình tìm kiếm luôn đi kèm với nhu cầu đối chiếu đa chiều. Từ đó, hệ thống được thiết kế bổ sung một luồng tính năng chuyên biệt cho việc đánh dấu và lưu trữ địa điểm. Điều này giúp trải nghiệm không bị gián đoạn và hỗ trợ người dùng ra quyết định một cách tự tin hơn.
+Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm khi là một đường thẳng. Quan sát cho thấy mẫu hành vi lặp lại: Người dùng sẽ "Tìm diện rộng" $\rightarrow$ "Khoanh vùng/Tag" $\rightarrow$ "So sánh / Phân tích chuyên sâu". Từ pattern này, nhóm định hình sẵn các Workflows chủ chốt trong \texttt{workflow-registry.ts} để đáp ứng chính xác vòng lặp ra quyết định này.
 \end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm and 2.5cm]
+        \node[common box=blue, text width=3.5cm] (search) {\textbf{\faSearch\ Tìm kiếm}\\(\texttt{SEARCH\_PLACES})};
+        \node[common box=orange, text width=3.5cm, right=of search] (tag) {\textbf{\faBookmark\ Lưu / Tag}\\(Giao diện User)};
+        \node[common box=teal, text width=3.5cm, below=1.5cm of tag] (compare) {\textbf{\faBalanceScale\ So sánh}\\(\texttt{COMPARE\_PLACES})};
+        \node[common box=purple, text width=3.5cm, left=of compare] (analyze) {\textbf{\faChartPie\ Phân tích chi tiết}\\(\texttt{ANALYZE\_PLACE})};
+
+        \draw[main arrow] (search.east) -- (tag.west);
+        \draw[main arrow] (tag.south) to[out=270, in=90] (compare.north);
+        \draw[main arrow] (tag.south) to[out=270, in=90] (analyze.north);
+        \draw[main arrow, dashed, bend left=20] (compare.west) to node[below, font=\scriptsize] {Đổi quyết định} (analyze.east);
+    \end{tikzpicture}
+    \caption{Decision-making Pattern: Khớp nối Workflow hệ thống với mẫu hành vi ra quyết định lặp lại.}
+\end{figure}
 
 \vspace{0.4cm}
 \noindent\textcolor{purple!80!black}{\large\textbf{\faStar \ 4. Review và RAG Pattern}}
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{purple!60!black}, left=12pt, top=2pt, bottom=2pt]
-Khi đi sâu vào các câu hỏi mà người dùng thường đặt ra về một khách sạn cụ thể, một mẫu chủ đề rõ nét xuất hiện. Hầu hết các thắc mắc đều lặp lại quanh các khía cạnh: độ sạch sẽ, chất lượng mạng kết nối, mức độ tiếng ồn, vị trí thực tế so với quảng cáo và thái độ phục vụ. Từ sự hội tụ về chủ đề này, \textbf{quy tắc rút ra} là phần lớn giá trị của các bài đánh giá nằm ở việc trả lời các câu hỏi cụ thể này. Nhận thức được điều đó, thay vì để người dùng đọc toàn bộ văn bản dài, nhóm \textbf{quyết định thiết kế} tổ chức dữ liệu đánh giá thành các đoạn thông tin nhỏ và sử dụng kỹ thuật tìm kiếm vector. Thiết kế này cho phép hệ thống tự động trích xuất đúng phần nhận xét chứa câu trả lời và tổng hợp lại cho người dùng.
+Tất cả các văn bản dài (bảng \texttt{Review} hay \texttt{File} tải lên) đều có mẫu chứa đựng nhiều ý nghĩa rời rạc. Nếu nạp toàn bộ vào AI sẽ gây nhiễu. Quyết định thiết kế là bẻ văn bản thành bảng \texttt{Chunk} (\texttt{content}, \texttt{embedding}) để \texttt{pgvector} tính toán độ tương đồng (Cosine Similarity). Thiết kế này cho phép hệ thống tự động trích xuất đúng phần nội dung chứa câu trả lời.
 \end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm and 2cm]
+        \node[common box=gray, text width=3cm, minimum height=1.5cm] (review) {\textbf{\faFile\ Dữ liệu chữ}\\Table: Review\\Table: File};
+        \node[common box=yellow, text width=3cm, right=of review] (chunking) {\textbf{\faCut\ Phân mảnh}\\(Chunk Indexing)};
+        \node[db node, right=of chunking, minimum width=3cm] (pgvector) {\textbf{\faVectorSquare\ Table: Chunk}\\(pgvector)\\ \small embedding};
+        \node[common box=blue, text width=3.5cm, below=1cm of pgvector] (search) {\textbf{\faSearchPlus\ Truy xuất RAG}\\(Cosine Similarity)};
+
+        \draw[main arrow] (review.east) -- (chunking.west);
+        \draw[main arrow] (chunking.east) -- node[above, font=\footnotesize]{\faBolt\ vector hóa} (pgvector.west);
+        \draw[main arrow] (pgvector.south) -- (search.north);
+    \end{tikzpicture}
+    \caption{RAG Pattern: Xử lý văn bản tự do thành các khối thông tin (chunks) truy xuất được bằng vector ngữ nghĩa.}
+\end{figure}
 
 \vspace{0.4cm}
 \noindent\textcolor{red!80!black}{\large\textbf{\faExclamationTriangle \ 5. Failure Pattern}}
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{red!60!black}, left=12pt, top=2pt, bottom=2pt]
-Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn những rủi ro có tính quy luật. Quá trình kiểm thử cho thấy các lỗi thường lặp lại theo những dạng nhất định: thiếu thông tin về giá, không có điểm đánh giá, dữ liệu trả về bị trùng lặp, lỗi kết nối hoặc hoàn toàn không tìm thấy kết quả phù hợp. Mẫu lỗi này dẫn đến \textbf{quy tắc}: sự thiếu hụt hoặc sai lệch dữ liệu ngoại vi là điều tất yếu và hệ thống lõi phải có khả năng tự phục hồi. Áp dụng quy tắc này vào \textbf{quyết định thiết kế}, các cơ chế xử lý lỗi biên, khử trùng lặp và kịch bản dự phòng đã được xây dựng. Khi một nhà cung cấp gặp sự cố hoặc dữ liệu không toàn vẹn, hệ thống sẽ tự động bù đắp bằng các luồng thông tin khác hoặc cấu trúc lại giao diện phù hợp mà không làm sập toàn bộ ứng dụng.
+Hoạt động của các dịch vụ bên ngoài luôn tiềm ẩn những rủi ro có tính quy luật như timeout hoặc rate limit. Mẫu lỗi này dẫn đến \textbf{quy tắc}: sự sai lệch dữ liệu ngoại vi là điều tất yếu và hệ thống lõi phải có khả năng tự phục hồi. Tiêu biểu như việc Mã hóa địa lý: Khi \texttt{Goong API} gặp sự cố $\rightarrow$ Chuyển qua \texttt{Nominatim (OSM)} $\rightarrow$ Nếu thất bại thì trả về rỗng nhưng không sập ứng dụng.
 \end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm and 2cm]
+        \node[common box=blue, text width=3cm] (req) {\textbf{\faMapMarker\ Mã hóa địa lý}\\(Geocode req)};
+        \node[error node, text width=3cm, right=of req] (goong) {\textbf{\faServer\ Goong API}\\(Gặp sự cố)};
+        \node[error node, text width=3cm, below=1cm of goong] (osm) {\textbf{\faServer\ Nominatim}\\(Quá tải/Lỗi)};
+        \node[common box=green, text width=3cm, right=of osm] (empty) {\textbf{\faCheckCircle\ Kết quả rỗng}\\(Fallback an toàn)};
+
+        \draw[main arrow] (req.east) -- (goong.west);
+        \draw[error arrow] (goong.south) -- node[right, font=\footnotesize, text=red!80!black]{\faExclamationTriangle\ Lỗi/Timeout} (osm.north);
+        \draw[error arrow] (osm.east) -- node[above, font=\footnotesize, text=red!80!black]{\faExclamationTriangle\ Thất bại} (empty.west);
+    \end{tikzpicture}
+    \caption{Failure Pattern: Cơ chế Fallback đối phó với mẫu lỗi lặp lại từ các nhà cung cấp API ngoại vi.}
+\end{figure}
+
+\vspace{0.4cm}
+\noindent\textcolor{brown!80!black}{\large\textbf{\faProjectDiagram \ 6. Workflow Tool Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{brown!60!black}, left=12pt, top=2pt, bottom=2pt]
+Các Workflow phức tạp thực chất là một đồ thị phụ thuộc dữ liệu lặp lại giữa các Node công cụ. Nhóm đã nhận diện pattern Data Dependency này để trừu tượng hóa bằng cách sử dụng String Template (như \texttt{\{\{fetch\_places.data\}\}}) làm hợp đồng giao tiếp giữa các Tool trong \texttt{workflow-registry.ts}, giúp dễ dàng lắp ghép các quy trình mới.
+\end{tcolorbox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm and 1cm]
+        % Nodes
+        \node[common box=teal, text width=4.5cm] (fetch) {\textbf{\faWrench\ Tool: fetch\_places}\\inputs: query, location};
+        \node[common box=teal, text width=4.5cm, below=1cm of fetch] (geocode) {\textbf{\faWrench\ Tool: geocode\_anchor}\\inputs: anchor, location};
+        
+        \node[common box=orange, text width=4.8cm, right=4cm of fetch, yshift=-1.1cm] (recommend) {\textbf{\faWrench\ Tool: recommend\_places}\\inputs: places, anchorLocation};
+
+        \node[data node, right=0.4cm of fetch] (d1) {\{\{fetch\_places.data\}\}};
+        \node[data node, right=0.4cm of geocode] (d2) {\{\{geocode\_anchor.data.location\}\}};
+
+        % Arrows
+        \draw[main arrow] (fetch.east) -- (d1.west);
+        \draw[main arrow] (d1.east) to[out=0, in=160] (recommend.160);
+        
+        \draw[main arrow] (geocode.east) -- (d2.west);
+        \draw[main arrow] (d2.east) to[out=0, in=200] (recommend.200);
+    \end{tikzpicture}
+    \caption{Workflow Tool Pattern: Nhận diện mẫu phụ thuộc dữ liệu bằng cách sử dụng String Template giữa các Tool.}
+\end{figure}
 
 \vspace{0.6cm}
 \begin{table}[h!]
@@ -453,11 +588,13 @@ Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn 
     \addlinespace
     \textbf{Data Pattern} \newline Điểm lưu trú đa nguồn đều chung các thuộc tính cốt lõi. & Dữ liệu đa nguồn có thể được ánh xạ về một khuôn dạng chuẩn duy nhất. & Thiết kế DTO và lược đồ dữ liệu thống nhất làm đầu mối chuẩn hóa. \\
     \addlinespace
-    \textbf{Decision-making} \newline Người dùng cân nhắc nhiều lựa chọn trước khi chốt đặt phòng. & Hành trình tìm kiếm luôn đi kèm nhu cầu đối chiếu đa chiều. & Tích hợp tính năng lưu trữ và theo dõi địa điểm song song tìm kiếm. \\
+    \textbf{Decision-making} \newline Cân nhắc nhiều lựa chọn trước khi chốt đặt phòng. & Hành trình tìm kiếm luôn đi kèm nhu cầu đối chiếu đa chiều. & Tích hợp tính năng lưu trữ và đối chiếu địa điểm song song tìm kiếm. \\
     \addlinespace
-    \textbf{Review/RAG Pattern} \newline Thắc mắc lặp lại các chủ đề (sạch sẽ, wifi, tiếng ồn). & Giá trị của đánh giá nằm ở khả năng giải đáp các thắc mắc cụ thể này. & Chia nhỏ đánh giá thành vector để truy xuất tự động qua RAG. \\
+    \textbf{Review/RAG Pattern} \newline Thắc mắc lặp lại các chủ đề (sạch sẽ, wifi, tiếng ồn). & Giá trị của đánh giá nằm ở khả năng giải đáp các thắc mắc cụ thể. & Chia nhỏ đánh giá thành vector để truy xuất tự động qua RAG. \\
     \addlinespace
-    \textbf{Failure Pattern} \newline Thiếu giá, trùng lặp, lỗi dịch vụ bên thứ ba. & Lỗi ngoại vi là tất yếu, hệ thống lõi cần tự bảo vệ và phục hồi. & Xây dựng cơ chế fallback, khử trùng lặp và các kịch bản kiểm thử biên. \\
+    \textbf{Failure Pattern} \newline Lỗi dịch vụ ngoại vi mang tính lặp lại. & Lỗi ngoại vi là tất yếu, hệ thống lõi cần tự bảo vệ và phục hồi. & Xây dựng cơ chế fallback, khử trùng lặp và xử lý rỗng. \\
+    \addlinespace
+    \textbf{Workflow Tool Pattern} \newline Các quy trình phức tạp lặp lại giao tiếp qua luồng dữ liệu. & Ràng buộc chuỗi thực thi bằng khuôn mẫu truyền tham số. & Cấu hình DAG các tool thông qua string template phụ thuộc. \\
     \bottomrule
   \end{tabularx}
   \caption{\textbf{Pattern Recognition Summary}}
@@ -465,7 +602,7 @@ Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn 
 
 \vspace{0.3cm}
 \begin{tcolorbox}[colback=blue!2, colframe=blue!40!white, arc=4pt, boxrule=0.5pt, left=10pt, right=10pt]
-\textbf{Tóm lại,} hệ thống không đơn thuần là một tập hợp các tính năng rời rạc được chắp vá lại với nhau. Thay vào đó, toàn bộ kiến trúc được định hình vững chắc dựa trên quá trình quan sát, khái quát hóa và vận dụng các \textbf{mẫu lặp lại} đặc thù của bài toán lưu trú. Điều này đảm bảo nền tảng hoạt động nhất quán, dễ dàng mở rộng và thực sự giải quyết đúng những vấn đề cốt lõi của người dùng.
+\textbf{Tóm lại,} hệ thống không đơn thuần là một tập hợp các tính năng rời rạc được chắp vá lại với nhau. Thay vào đó, toàn bộ kiến trúc được định hình vững chắc dựa trên quá trình quan sát, khái quát hóa và vận dụng các \textbf{mẫu lặp lại} đặc thù của bài toán. Điều này đảm bảo nền tảng hoạt động nhất quán, dễ dàng mở rộng và thực sự giải quyết đúng những vấn đề cốt lõi của người dùng.
 \end{tcolorbox}
 
 \newpage
