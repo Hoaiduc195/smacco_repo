@@ -195,11 +195,13 @@
 \section{Idea}
 
 \subsection{Đặt vấn đề}
-Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn:
+Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn với các \textbf{điểm đau (pain points)} cốt lõi:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faTimesCircle}]
-    \item \textbf{Thông tin phân tán:} Dữ liệu về khách sạn, homestay rải rác trên nhiều nền tảng, khiến người dùng mất nhiều thời gian so sánh.
-    \item \textbf{Bộ lọc cứng nhắc:} Các công cụ truyền thống chỉ cho phép lọc theo bộ lọc có sẵn, không hỗ trợ tìm kiếm dựa trên nhu cầu tự nhiên và cá nhân hóa của người dùng.
+    \item \textbf{Thông tin phân mảnh \& Rời rạc:} Dữ liệu về khách sạn, homestay rải rác trên nhiều nền tảng, khiến người dùng mất nhiều thời gian tổng hợp và so sánh.
+    \item \textbf{Bộ lọc cứng nhắc \& Thiếu cá nhân hoá:} Các công cụ truyền thống chỉ cho phép lọc theo các tùy chọn có sẵn, không hỗ trợ tìm kiếm linh hoạt dựa trên nhu cầu tự nhiên và đặc thù của người dùng.
+    \item \textbf{Độ tin cậy của dữ liệu thấp:} Đánh giá từ người dùng trước thường mang tính chủ quan, có thể bị thao túng (fake reviews) và thiếu tính cập nhật thực tế tại thời điểm hiện tại.
+    \item \textbf{Quá tải thông tin \& Tốn thời gian:} Người dùng mất quá nhiều thời gian để đọc và đối chiếu thông tin từ nhiều nguồn trước khi có thể đưa ra quyết định chính xác.
 \end{itemize}
 
 \begin{infobox}[\faLightbulb \ Giải pháp đề xuất]
@@ -706,7 +708,8 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
     proc/.style={rectangle, draw=black!70, fill=white, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
     dproc/.style={rectangle, draw=green!60!black!70, fill=green!8, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
     arrow/.style={-{Stealth[scale=1]}, thick},
-    label/.style={font=\tiny}
+    label/.style={font=\tiny},
+    dec/.style={diamond, aspect=2, draw=orange!70!black, fill=orange!10, text width=2cm, align=center, font=\small}
 ]
 
 \node[io] (input) {Từ khóa, vị trí, ngân sách};

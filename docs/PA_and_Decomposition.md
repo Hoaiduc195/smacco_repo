@@ -4,11 +4,14 @@
 
 ## **Đặt vấn đề**
 
-Hiện nay, người dùng gặp nhiều khó khăn trong việc tìm kiếm chỗ lưu trú phù hợp do thông tin bị phân tán trên nhiều nền tảng và thiếu sự đồng nhất. Các yếu tố quan trọng như giá cả, vị trí, tiện nghi và chất lượng dịch vụ thường tồn tại dưới dạng dữ liệu rời rạc, mang tính chủ quan và khó so sánh.
+Hiện nay, người dùng gặp nhiều khó khăn trong việc tìm kiếm chỗ lưu trú phù hợp. Quá trình tìm kiếm và ra quyết định hiện tại đang gặp phải những **điểm đau (pain points)** cốt lõi sau:
 
-Điều này khiến người dùng phải tốn nhiều thời gian để tổng hợp thông tin, nhưng vẫn khó đưa ra quyết định chính xác. Đồng thời, các hệ thống hiện tại chưa thực sự hiểu nhu cầu cá nhân, chủ yếu dựa trên bộ lọc thủ công và thiếu khả năng xử lý dữ liệu đa nguồn một cách thông minh.
+1. **Thông tin phân mảnh và rời rạc:** Dữ liệu về giá cả, vị trí, tiện nghi rải rác trên nhiều nền tảng khác nhau, khiến người dùng không thể dễ dàng đối chiếu và so sánh.
+2. **Bộ lọc tìm kiếm cứng nhắc:** Các nền tảng hiện tại chủ yếu sử dụng bộ lọc thủ công, không hỗ trợ người dùng diễn đạt nhu cầu phức tạp và cá nhân hóa bằng ngôn ngữ tự nhiên.
+3. **Thiếu độ tin cậy và tính cập nhật:** Các đánh giá (review) thường mang tính chủ quan, có nguy cơ là đánh giá ảo (fake review), và thiếu thông tin thực tế từ những người đang có mặt tại địa điểm (on-site).
+4. **Tốn nhiều thời gian và công sức:** Người dùng dễ bị quá tải thông tin và phải tốn hàng giờ đồng hồ để tổng hợp trước khi đưa ra quyết định chính xác.
 
-Do đó, nhóm chúng em đề xuất xây dựng một hệ thống gợi ý lưu trú thông minh có khả năng hiểu ngôn ngữ tự nhiên, chuẩn hoá dữ liệu từ nhiều nguồn và cung cấp các đề xuất nhanh chóng, chính xác, mang tính cá nhân hoá cao.
+Những hạn chế này khiến hệ thống hiện tại chưa thực sự giải quyết trọn vẹn nhu cầu của khách hàng. Do đó, nhóm chúng em đề xuất xây dựng một hệ thống gợi ý lưu trú thông minh có khả năng hiểu ngôn ngữ tự nhiên, chuẩn hoá dữ liệu từ nhiều nguồn và cung cấp các đề xuất nhanh chóng, chính xác, mang tính cá nhân hoá cao.
 
 ## **Mô tả mục tiêu chương trình**
 
