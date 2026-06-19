@@ -10,9 +10,9 @@
 \usepackage{amsfonts}
 \usepackage{listings}
 \usepackage{colortbl}
-\usepackage{enumitem}       
-\usepackage{amssymb}        
-\usepackage{setspace}     
+\usepackage{enumitem}    
+\usepackage{amssymb}    
+\usepackage{setspace}   
 \usepackage{titlesec}
 \usepackage[vietnamese]{babel}
 \usepackage{datetime2}
@@ -26,14 +26,14 @@
 
 % ===== Define custom style =====
 \lstdefinestyle{customjson}{
-    backgroundcolor=\color{gray!5},
-    basicstyle=\ttfamily\footnotesize,
-    breaklines=true,
-    columns=fullflexible,
-    frame=single,
-    captionpos=t,
-    showstringspaces=false,
-    escapeinside={(*@}{@*)} 
+  backgroundcolor=\color{gray!5},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  captionpos=t,
+  showstringspaces=false,
+  escapeinside={(*@}{@*)} 
 }
 \lstset{style=customjson}
 
@@ -50,89 +50,89 @@
 
 % Section formatting
 \titleformat{\section}
-  {\normalfont\Large\bfseries\color{blue!80!black}}
-  {\thesection.}{1em}{}
-  [\vspace{-0.5em}\rule{\textwidth}{0.5pt}]
+ {\normalfont\Large\bfseries\color{blue!80!black}}
+ {\thesection.}{1em}{}
+ [\vspace{-0.5em}\rule{\textwidth}{0.5pt}]
 
 \titleformat{\subsection}
-  {\normalfont\large\bfseries\color{cyan!70!black}}
-  {\thesubsection.}{1em}{}
+ {\normalfont\large\bfseries\color{cyan!70!black}}
+ {\thesubsection.}{1em}{}
 
 % Custom Tcolorbox for important notes
 \newtcolorbox{infobox}[1][]{
-  colback=blue!5!white,
-  colframe=blue!75!black,
-  fonttitle=\bfseries,
-  title=#1,
-  boxrule=1pt,
-  arc=4pt,
-  shadow={2mm}{-2mm}{0mm}{black!20},
-  enhanced
+ colback=blue!5!white,
+ colframe=blue!75!black,
+ fonttitle=\bfseries,
+ title=#1,
+ boxrule=1pt,
+ arc=4pt,
+ shadow={2mm}{-2mm}{0mm}{black!20},
+ enhanced
 }
 
 \begin{document}
 
 \begin{titlepage}
-    % Vẽ khung viền đôi bằng TikZ
-    \begin{tikzpicture}[overlay, remember picture]
-        % Khung ngoài (đậm hơn)
-        \draw [line width=3pt, color=blue!50!black] 
-            ([yshift=-1.8cm, xshift=1.8cm]current page.north west) 
-            rectangle 
-            ([yshift=1.8cm, xshift=-1.8cm]current page.south east);
-        
-        % Khung trong (mảnh hơn)
-        \draw [line width=1pt, color=blue!80!black] 
-            ([yshift=-2.0cm, xshift=2.0cm]current page.north west) 
-            rectangle 
-            ([yshift=2.0cm, xshift=-2.0cm]current page.south east);
-    \end{tikzpicture}
-
-    \begin{center}
-        \normalsize
-         % 1. Thông tin Trường & Khoa
-        \textbf{BỘ GIÁO DỤC VÀ ĐÀO TẠO} \\
-        \textbf{TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN} \\
-        \textbf{KHOA CÔNG NGHỆ THÔNG TIN} \\
-        
-        % 2. Chèn Logo 
-        \includegraphics[width=0.4\textwidth]{images.png} \\
-        
-        % 3. Tên môn học và Đồ án
-        \Large \textbf{CSC10014 - TƯ DUY TÍNH TOÁN} \\
-        \normalsize \textbf{HKII: 2025 - 2026}\\
-        \huge \textcolor{cyan!70!black}{\textbf{HỆ THỐNG LƯU TRÚ \\DU LỊCH THÔNG MINH}} \\
-        
-        % 4. Thông tin chi tiết (Dùng minipage để căn lề cho đẹp)
- 
-        \large
-        \vspace{0.8cm}
-        \begin{tabular}{l l l}
-        \textbf{Lớp} & : & CQ2024/6 \\        
-        \textbf{Nhóm thực hiện}       & : & Nhóm 12 \\
-        \textbf{Giáo viên hướng dẫn} & : & Hồ Tuấn Thanh \\
-        \textbf{GVHDTH} & : & Mai Anh Tuấn \\
-        \textbf{Trợ giảng} & : & Phạm Nguyễn Sơn Tùng \\
-        \end{tabular}
-
-       
-        \vspace{0.8cm}
-        
-        \begin{tabular}{l l l}
-        \textbf{Thành Viên:} \\
-        \quad 24120033: Đào Tiến Đạt. \\
-        \quad 24120040: Dương Hoài Đức. \\
-        \quad 24120304: Trần Thị Bích Hạnh. \\
-        \quad 24120310: Nguyễn Đình Hiếu. \\
-        \quad 24120483: Hoàng Văn Trường.
-        \end{tabular}
-        
-        \vfill % Đẩy phần còn lại xuống cuối trang
-        \normalsize
-        \newcommand{\todayVN}{NGÀY \the\day/\the\month/\the\year}
-        \textbf{THÀNH PHỐ HỒ CHÍ MINH, \todayVN}
-            \end{center}
+  % Vẽ khung viền đôi bằng TikZ
+  \begin{tikzpicture}[overlay, remember picture]
+    % Khung ngoài (đậm hơn)
+    \draw [line width=3pt, color=blue!50!black] 
+      ([yshift=-1.8cm, xshift=1.8cm]current page.north west) 
+      rectangle 
+      ([yshift=1.8cm, xshift=-1.8cm]current page.south east);
     
+    % Khung trong (mảnh hơn)
+    \draw [line width=1pt, color=blue!80!black] 
+      ([yshift=-2.0cm, xshift=2.0cm]current page.north west) 
+      rectangle 
+      ([yshift=2.0cm, xshift=-2.0cm]current page.south east);
+  \end{tikzpicture}
+
+  \begin{center}
+    \normalsize
+     % 1. Thông tin Trường & Khoa
+    \textbf{BỘ GIÁO DỤC VÀ ĐÀO TẠO} \\
+    \textbf{TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN} \\
+    \textbf{KHOA CÔNG NGHỆ THÔNG TIN} \\
+    
+    % 2. Chèn Logo 
+    \includegraphics[width=0.4\textwidth]{images.png} \\
+    
+    % 3. Tên môn học và Đồ án
+    \Large \textbf{CSC10014 - TƯ DUY TÍNH TOÁN} \\
+    \normalsize \textbf{HKII: 2025 - 2026}\\
+    \huge \textcolor{cyan!70!black}{\textbf{HỆ THỐNG LƯU TRÚ \\DU LỊCH THÔNG MINH}} \\
+    
+    % 4. Thông tin chi tiết (Dùng minipage để căn lề cho đẹp)
+ 
+    \large
+    \vspace{0.8cm}
+    \begin{tabular}{l l l}
+    \textbf{Lớp} & : & CQ2024/6 \\    
+    \textbf{Nhóm thực hiện}    & : & Nhóm 12 \\
+    \textbf{Giáo viên hướng dẫn} & : & Hồ Tuấn Thanh \\
+    \textbf{GVHDTH} & : & Mai Anh Tuấn \\
+    \textbf{Trợ giảng} & : & Phạm Nguyễn Sơn Tùng \\
+    \end{tabular}
+
+    
+    \vspace{0.8cm}
+    
+    \begin{tabular}{l l l}
+    \textbf{Thành Viên:} \\
+    \quad 24120033: Đào Tiến Đạt. \\
+    \quad 24120040: Dương Hoài Đức. \\
+    \quad 24120304: Trần Thị Bích Hạnh. \\
+    \quad 24120310: Nguyễn Đình Hiếu. \\
+    \quad 24120483: Hoàng Văn Trường.
+    \end{tabular}
+    
+    \vfill % Đẩy phần còn lại xuống cuối trang
+    \normalsize
+    \newcommand{\todayVN}{NGÀY \the\day/\the\month/\the\year}
+    \textbf{THÀNH PHỐ HỒ CHÍ MINH, \todayVN}
+      \end{center}
+  
 \end{titlepage}
 
 \newpage
@@ -142,7 +142,7 @@
 \thispagestyle{empty}
 \vspace*{2cm}
 \begin{center}
-    {\LARGE \textbf{\textcolor{blue!80!black}{Lời Cảm Ơn}}}
+  {\LARGE \textbf{\textcolor{blue!80!black}{Lời Cảm Ơn}}}
 \end{center}
 \vspace{1cm}
 \begin{spacing}{1.3}
@@ -163,8 +163,8 @@
 
 \vspace{1.5cm}
 \begin{flushright}
-    \textit{Trân trọng,}\\
-    \textbf{Các thành viên Nhóm 12}
+  \textit{Trân trọng,}\\
+  \textbf{Các thành viên Nhóm 12}
 \end{flushright}
 
 
@@ -176,18 +176,18 @@
 \vspace{0.5cm}
 \renewcommand{\arraystretch}{1.8}
 \begin{table}[h!]
-    \centering
-    \begin{tabularx}{\textwidth}{@{} c c X X @{}}
-        \toprule
-        \textbf{STT} & \textbf{MSSV} & \textbf{Họ và Tên} & \textbf{Vai trò / Nhiệm vụ chính} \\
-        \midrule
-        1 & 24120033 & \textbf{Đào Tiến Đạt} & \\
-        2 & 24120040 & \textbf{Dương Hoài Đức} & \\
-        3 & 24120304 & \textbf{Trần Thị Bích Hạnh} & \\
-        4 & 24120310 & \textbf{Nguyễn Đình Hiếu} & \\
-        5 & 24120483 & \textbf{Hoàng Văn Trường} & \\
-        \bottomrule
-    \end{tabularx}
+  \centering
+  \begin{tabularx}{\textwidth}{@{} c c X X @{}}
+    \toprule
+    \textbf{STT} & \textbf{MSSV} & \textbf{Họ và Tên} & \textbf{Vai trò / Nhiệm vụ chính} \\
+    \midrule
+    1 & 24120033 & \textbf{Đào Tiến Đạt} & \\
+    2 & 24120040 & \textbf{Dương Hoài Đức} & \\
+    3 & 24120304 & \textbf{Trần Thị Bích Hạnh} & \\
+    4 & 24120310 & \textbf{Nguyễn Đình Hiếu} & \\
+    5 & 24120483 & \textbf{Hoàng Văn Trường} & \\
+    \bottomrule
+  \end{tabularx}
 \end{table}
 
 
@@ -195,13 +195,13 @@
 \section{Idea}
 
 \subsection{Đặt vấn đề}
-Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn với các \textbf{điểm đau (pain points)} cốt lõi:
+Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn với các \textbf{điểm đau} cốt lõi:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faTimesCircle}]
-    \item \textbf{Thông tin phân mảnh \& Rời rạc:} Dữ liệu về khách sạn, homestay rải rác trên nhiều nền tảng, khiến người dùng mất nhiều thời gian tổng hợp và so sánh.
-    \item \textbf{Bộ lọc cứng nhắc \& Thiếu cá nhân hoá:} Các công cụ truyền thống chỉ cho phép lọc theo các tùy chọn có sẵn, không hỗ trợ tìm kiếm linh hoạt dựa trên nhu cầu tự nhiên và đặc thù của người dùng.
-    \item \textbf{Độ tin cậy của dữ liệu thấp:} Đánh giá từ người dùng trước thường mang tính chủ quan, có thể bị thao túng (fake reviews) và thiếu tính cập nhật thực tế tại thời điểm hiện tại.
-    \item \textbf{Quá tải thông tin \& Tốn thời gian:} Người dùng mất quá nhiều thời gian để đọc và đối chiếu thông tin từ nhiều nguồn trước khi có thể đưa ra quyết định chính xác.
+  \item \textbf{Thông tin phân mảnh và Rời rạc:} Dữ liệu về khách sạn, homestay rải rác trên nhiều nền tảng, khiến người dùng mất nhiều thời gian tổng hợp và so sánh.
+  \item \textbf{Bộ lọc cứng nhắc và Thiếu cá nhân hoá:} Các công cụ truyền thống chỉ cho phép lọc theo các tùy chọn có sẵn, không hỗ trợ tìm kiếm linh hoạt dựa trên nhu cầu tự nhiên và đặc thù của người dùng.
+  \item \textbf{Độ tin cậy của dữ liệu thấp:} Đánh giá từ người dùng trước thường mang tính chủ quan, có thể bị thao túng bằng các đánh giá giả mạo và thiếu tính cập nhật thực tế tại thời điểm hiện tại.
+  \item \textbf{Quá tải thông tin và Tốn thời gian:} Người dùng mất quá nhiều thời gian để đọc và đối chiếu thông tin từ nhiều nguồn trước khi có thể đưa ra quyết định chính xác.
 \end{itemize}
 
 \begin{infobox}[\faLightbulb \ Giải pháp đề xuất]
@@ -213,9 +213,9 @@ Dự án không chỉ nhằm xây dựng một nền tảng thương mại thôn
 
 \subsection{Người dùng mục tiêu}
 \begin{itemize}[label=\textcolor{cyan!70!black}{\faUserCheck}]
-    \item \textbf{Khách du lịch tự túc:} Cần tìm kiếm nhanh chóng, so sánh giá để tối ưu hóa trải nghiệm.
-    \item \textbf{Người dùng On-site:} Đang lưu trú tại địa điểm, sẵn sàng đóng góp thông tin thực tế và trả lời câu hỏi cộng đồng.
-    \item \textbf{Người ưu tiên cá nhân hóa:} Thích tương tác với AI thay vì tốn hàng giờ với các bộ lọc phức tạp.
+  \item \textbf{Khách du lịch tự túc:} Cần tìm kiếm nhanh chóng, so sánh giá để tối ưu hóa trải nghiệm.
+  \item \textbf{Người dùng On-site:} Đang lưu trú tại địa điểm, sẵn sàng đóng góp thông tin thực tế và trả lời câu hỏi cộng đồng.
+  \item \textbf{Người ưu tiên cá nhân hóa:} Thích tương tác với AI thay vì tốn hàng giờ với các bộ lọc phức tạp.
 \end{itemize}
 
 
@@ -225,38 +225,38 @@ Dự án không chỉ nhằm xây dựng một nền tảng thương mại thôn
 Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế hệ thống thông qua chuỗi câu hỏi dẫn dắt từ góc nhìn người dùng:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faQuestionCircle}, leftmargin=0.5cm]
-    \item \textbf{Người dùng sẽ làm gì với ứng dụng của tôi?} \\
-    $\rightarrow$ Người dùng cần tìm địa điểm lưu trú.
-    
-    \item \textbf{Người dùng có thể tìm kiếm địa điểm lưu trú như thế nào?} \\
-    $\rightarrow$ Thiết kế giao diện tìm kiếm hoặc phương thức tìm kiếm linh hoạt.
+  \item \textbf{Người dùng sẽ làm gì với ứng dụng của tôi?} \\
+  $\rightarrow$ Người dùng cần tìm địa điểm lưu trú.
+  
+  \item \textbf{Người dùng có thể tìm kiếm địa điểm lưu trú như thế nào?} \\
+  $\rightarrow$ Thiết kế giao diện tìm kiếm hoặc phương thức tìm kiếm linh hoạt.
 
-    \item \textbf{Vậy làm sao để phương thức tìm kiếm có thể cho ra kết quả tốt?} \\
-    $\rightarrow$ Chúng ta sẽ đánh giá trên các tiêu chí, như vậy chúng ta cần trích xuất ý định của người dùng.
+  \item \textbf{Vậy làm sao để phương thức tìm kiếm có thể cho ra kết quả tốt?} \\
+  $\rightarrow$ Chúng ta sẽ đánh giá trên các tiêu chí, như vậy chúng ta cần trích xuất ý định của người dùng.
 
-    \item \textbf{Vậy việc trích xuất nên được thực hiện thế nào?} \\
-    $\rightarrow$ Có thể cho phép người dùng chọn hoặc thông qua tác tử AI được cài đặt.
+  \item \textbf{Vậy việc trích xuất nên được thực hiện thế nào?} \\
+  $\rightarrow$ Có thể cho phép người dùng chọn hoặc thông qua tác tử AI được cài đặt.
 
-    \item \textbf{Nếu người dùng sau khi đã có các địa điểm phù hợp với nhu cầu của họ, làm cách nào để hệ thống có thể giúp người dùng ra quyết định cuối cùng như thế nào?} \\
-    $\rightarrow$ Có thể cài đặt tính năng giúp người dùng so sánh các địa điểm, hỗ trợ ra quyết định cuối.
+  \item \textbf{Nếu người dùng sau khi đã có các địa điểm phù hợp với nhu cầu của họ, làm cách nào để hệ thống có thể giúp người dùng ra quyết định cuối cùng như thế nào?} \\
+  $\rightarrow$ Có thể cài đặt tính năng giúp người dùng so sánh các địa điểm, hỗ trợ ra quyết định cuối.
 
-    \item \textbf{Vậy nếu người dùng muốn tìm hiểu sâu hơn về một địa điểm thì sao?} \\
-    $\rightarrow$ Cài đặt tính năng AI đưa ra phân tích chi tiết về một địa điểm cụ thể, cho phép người dùng lựa chọn các tiêu chí để phân tích.
+  \item \textbf{Vậy nếu người dùng muốn tìm hiểu sâu hơn về một địa điểm thì sao?} \\
+  $\rightarrow$ Cài đặt tính năng AI đưa ra phân tích chi tiết về một địa điểm cụ thể, cho phép người dùng lựa chọn các tiêu chí để phân tích.
 
-    \item \textbf{Việc sử dụng LLM có thể không đạt được độ chính xác cao, liệu nguồn thông tin nào uy tín hơn không?} \\
-    $\rightarrow$ Sử dụng nguồn thông tin từ chính người dùng, có thể áp dụng chính sách 'người dùng onsite' để tăng độ tin cậy.
+  \item \textbf{Việc sử dụng LLM có thể không đạt được độ chính xác cao, liệu nguồn thông tin nào uy tín hơn không?} \\
+  $\rightarrow$ Sử dụng nguồn thông tin từ chính người dùng, có thể áp dụng chính sách 'người dùng onsite' để tăng độ tin cậy.
 
-    \item \textbf{Vậy với các tính năng như trên, có thể tối giản giao diện để người dùng có thể tương tác nhanh chóng và dễ dàng, phù hợp với nhiều người dùng ở các độ tuổi, trình độ khác nhau hay không?} \\
-    $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian, người dùng sẽ tương tác trực tiếp với LLM, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động.
+  \item \textbf{Vậy với các tính năng như trên, có thể tối giản giao diện để người dùng có thể tương tác nhanh chóng và dễ dàng, phù hợp với nhiều người dùng ở các độ tuổi, trình độ khác nhau hay không?} \\
+  $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian, người dùng sẽ tương tác trực tiếp với LLM, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động.
 \end{itemize}
 
 \subsection{Phân rã Bài toán Tính toán}
 Từ nhu cầu thực tế, hệ thống được phân rã thành các module kỹ thuật chuyên biệt:
 \begin{itemize}[label=\textcolor{blue!60}{\faCogs}]
-    \item \textbf{Intent Parsing:} LLM chuyển đổi ngôn ngữ tự nhiên thành JSON cấu trúc.
-    \item \textbf{Data Aggregation:} Truy xuất đồng thời DB nội bộ và API đối tác.
-    \item \textbf{Semantic Search:} Số hóa văn bản thành vector embeddings (pgvector).
-    \item \textbf{Workflow Engine:} Xây dựng khung làm việc cứng (guardrails) kiểm soát AI.
+  \item \textbf{Intent Parsing:} LLM chuyển đổi ngôn ngữ tự nhiên thành JSON cấu trúc.
+  \item \textbf{Data Aggregation:} Truy xuất đồng thời DB nội bộ và API đối tác.
+  \item \textbf{Semantic Search:} Số hóa văn bản thành vector nhúng (với pgvector).
+  \item \textbf{Workflow Engine:} Xây dựng khung làm việc cứng kiểm soát AI.
 \end{itemize}
 
 \subsection{Ràng buộc, Giả định và Tiêu chí}
@@ -265,48 +265,61 @@ Từ nhu cầu thực tế, hệ thống được phân rã thành các module k
 \vspace{0.3cm}
 \noindent\textbf{\textcolor{blue!80!black}{\faLink \ 1. Ràng buộc}}
 \begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
-    \item \textbf{Về mặt kiến trúc:} Lựa chọn mô hình \textit{Modular Monolith} để giảm thiểu chi phí quản lý và vận hành trong giai đoạn MVP, đồng thời vẫn giữ được tính phân tách cao giúp dễ dàng mở rộng sang Microservices sau này.
-    \item \textbf{Về mặt tài nguyên:} Hệ thống offload (chuyển giao) toàn bộ tải tính toán AI nặng nề sang các API của bên thứ ba (như Groq). Nhờ đó, hệ thống lõi có thể chạy cục bộ mượt mà trên phần cứng cơ bản không yêu cầu GPU.
-    \item \textbf{Về phạm vi hỗ trợ:} Ứng dụng ở giai đoạn này tập trung vào thị trường Việt Nam. Hệ thống tập trung xác định các địa điểm lưu trú trong nước, yêu cầu AI phải hỗ trợ tiếng Việt tốt và hiểu rõ ngữ cảnh văn hóa địa phương.
+  \item \textbf{Về mặt kiến trúc:} Lựa chọn mô hình \textit{Modular Monolith} để giảm thiểu chi phí quản lý và vận hành trong giai đoạn MVP, đồng thời vẫn giữ được tính phân tách cao giúp dễ dàng mở rộng sang Microservices sau này.
+  \item \textbf{Về mặt tài nguyên:} Hệ thống chuyển giao toàn bộ tải tính toán AI nặng nề sang các API của bên thứ ba (như Groq). Nhờ đó, hệ thống lõi có thể chạy cục bộ mượt mà trên phần cứng cơ bản không yêu cầu GPU.
+  \item \textbf{Về phạm vi hỗ trợ:} Ứng dụng ở giai đoạn này tập trung vào thị trường Việt Nam. Hệ thống tập trung xác định các địa điểm lưu trú trong nước, yêu cầu AI phải hỗ trợ tiếng Việt tốt và hiểu rõ ngữ cảnh văn hóa địa phương.
 \end{itemize}
 
 \vspace{0.3cm}
 \noindent\textbf{\textcolor{blue!80!black}{\faLightbulb \ 2. Giả định}}
 \begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
-    \item Khả năng lập luận, phân tích ngữ nghĩa và đưa ra quyết định của Mô hình ngôn ngữ lớn là yếu tố khách quan, tính chính xác phụ thuộc vào API cung cấp chứ không bị giới hạn bởi hệ thống nội bộ.
-    \item Dữ liệu thu thập từ các nhà cung cấp bên thứ ba (Goong, SerpAPI) luôn đảm bảo độ tin cậy về mặt nội dung và ổn định về thời gian phản hồi (uptime).
+  \item Khả năng lập luận, phân tích ngữ nghĩa và đưa ra quyết định của Mô hình ngôn ngữ lớn là yếu tố khách quan, tính chính xác phụ thuộc vào API cung cấp chứ không bị giới hạn bởi hệ thống nội bộ.
+  \item Dữ liệu thu thập từ các nhà cung cấp bên thứ ba (Goong, SerpAPI) luôn đảm bảo độ tin cậy về mặt nội dung và ổn định về thời gian phản hồi (uptime).
 \end{itemize}
 
 \vspace{0.3cm}
 \noindent\textbf{\textcolor{blue!80!black}{\faTasks \ 3. Tiêu chí đánh giá}}
 \begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
-    \item \textbf{Sự hài lòng của người dùng:} Đánh giá mức độ thoải mái, mức độ cá nhân hóa và sự hài lòng tổng thể khi người dùng trải nghiệm các tính năng tìm kiếm, trò chuyện cùng AI trên nền tảng.
-    \item \textbf{Tính hữu dụng:} Ứng dụng phải giải quyết được triệt để bài toán tìm kiếm chỗ ở. Giao diện cần trực quan, dễ thao tác và có luồng tương tác mượt mà phù hợp với nhiều nhóm đối tượng.
-    \item \textbf{Độ chính xác của thông tin:} Đảm bảo chất lượng dữ liệu trả về. Danh sách địa điểm phải sát thực tế, và đặc biệt câu trả lời phân tích chi tiết từ AI phải chuẩn xác, tuyệt đối không được xảy ra tình trạng ảo giác.
+  \item \textbf{Sự hài lòng của người dùng:} Đánh giá mức độ thoải mái, mức độ cá nhân hóa và sự hài lòng tổng thể khi người dùng trải nghiệm các tính năng tìm kiếm, trò chuyện cùng AI trên nền tảng.
+  \item \textbf{Tính hữu dụng:} Ứng dụng phải giải quyết được triệt để bài toán tìm kiếm chỗ ở. Giao diện cần trực quan, dễ thao tác và có luồng tương tác mượt mà phù hợp với nhiều nhóm đối tượng.
+  \item \textbf{Độ chính xác của thông tin:} Đảm bảo chất lượng dữ liệu trả về. Danh sách địa điểm phải sát thực tế, và đặc biệt câu trả lời phân tích chi tiết từ AI phải chuẩn xác, tuyệt đối không được xảy ra tình trạng ảo giác.
 \end{itemize}
 
 
 \section{System Overview}
 \textbf{Hệ thống} là nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp tra cứu truyền thống và sức mạnh Trí tuệ Nhân tạo. Dự án mang đến trải nghiệm đột phá qua giao diện hội thoại và tìm kiếm ngữ nghĩa.
 
+\subsection{Kiến trúc tổng quan}
+\noindent Hệ thống được thiết kế theo mô hình \textbf{Modular Monolith} kết hợp với cơ chế điều phối tác tử AI. 
+
+\begin{infobox}[\faQuestionCircle \ Tại sao chọn Modular Monolith?]
+Lý do nhóm ưu tiên sử dụng \textbf{Modular Monolith} là nhằm giảm thiểu tối đa sự phức tạp trong quá trình triển khai và vận hành hệ thống ở giai đoạn nguyên mẫu. Với kiến trúc này, toàn bộ hệ thống được đóng gói chung để dễ quản lý, nhưng bên trong lại được phân tách nghiêm ngặt thành các phân hệ nghiệp vụ độc lập. Cách thiết kế này giúp mã nguồn luôn rõ ràng, ngăn chặn sự chồng chéo logic, tiết kiệm tài nguyên hệ thống, và đặc biệt là tạo tiền đề thuận lợi để dễ dàng bóc tách thành các dịch vụ độc lập (Microservices) trong tương lai khi dự án thực sự cần mở rộng quy mô.
+\end{infobox}
+
+\noindent Về tổng thể, kiến trúc bao gồm ba tầng chính:
+\begin{itemize}[label=\textcolor{blue!70!black}{\faCubes}]
+  \item \textbf{Tầng Giao diện:} Tập trung tối ưu hóa trải nghiệm người dùng, cung cấp bản đồ tương tác, không gian hỏi đáp cộng đồng và đặc biệt là khung trò chuyện AI với khả năng nhận luồng phản hồi liên tục theo thời gian thực.
+  \item \textbf{Tầng Xử lý (Nghiệp vụ và AI):} Đóng vai trò là trung tâm điều phối, bao gồm các phân hệ quản lý người dùng, địa điểm và đánh giá. Điểm nhấn là phân hệ AI hoạt động như một cỗ máy điều phối quy trình công việc, chịu trách nhiệm phân tích ý định từ ngôn ngữ tự nhiên và tự động kích hoạt các công cụ tương ứng.
+  \item \textbf{Tầng Dữ liệu:} Chịu trách nhiệm lưu trữ an toàn toàn bộ dữ liệu quan hệ của nền tảng. Đồng thời, tầng này cũng tích hợp khả năng lưu trữ và truy vấn các vector nhúng, làm cốt lõi cho tính năng tìm kiếm ngữ nghĩa và truy xuất dữ liệu tăng cường.
+\end{itemize}
+
 \subsection{Tính Năng Cốt Lõi}
 \vspace{0.3cm}
-\begin{table}[h!]
-    \centering
-    \renewcommand{\arraystretch}{1.6}
-    \begin{tabularx}{\textwidth}{@{} c >{\bfseries}l X @{}}
-        \toprule
-        \textcolor{blue!80!black}{\textbf{STT}} & \textcolor{blue!80!black}{\textbf{Tính Năng}} & \textcolor{blue!80!black}{\textbf{Mô Tả Ngắn}} \\
-        \midrule
-        1 & \faSearch \ Tìm kiếm và Gợi ý & Trải nghiệm tìm kiếm đa chiều kết hợp linh hoạt giữa bộ lọc và hệ thống gợi ý cá nhân hóa. \\
-        2 & \faRobot \ Trợ lý Ảo AI & Chatbot thông minh hỗ trợ tìm kiếm và chắt lọc thông tin lưu trú qua hội thoại tự nhiên. \\
-        3 & \faComments \ Quản lý Cộng đồng & Không gian tương tác, hỏi đáp và chia sẻ nhận xét trực tiếp tại trang của từng địa điểm. \\
-        4 & \faMapMarker \ Xác nhận On-site & Tính năng check-in độc đáo để xác nhận người dùng đang có mặt tại địa điểm thực tế. \\
-        5 & \faCamera \ Đóng góp Nội dung & Trao quyền cho người dùng tải lên hình ảnh và cập nhật tình trạng mới nhất của chỗ ở. \\
-        6 & \faHeart \ Lưu trữ Địa điểm & Công cụ cá nhân để đánh dấu, lưu lại và so sánh các danh sách địa điểm yêu thích. \\
-        \bottomrule
-    \end{tabularx}
-\end{table}
+\begin{center}
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabularx}{\textwidth}{@{} c >{\bfseries}l X @{}}
+    \toprule
+    \textcolor{blue!80!black}{\textbf{STT}} & \textcolor{blue!80!black}{\textbf{Tính Năng}} & \textcolor{blue!80!black}{\textbf{Mô Tả Ngắn}} \\
+    \midrule
+    1 & \faSearch \ Tìm kiếm và Gợi ý & Trải nghiệm tìm kiếm đa chiều kết hợp linh hoạt giữa bộ lọc và hệ thống gợi ý cá nhân hóa. \\
+    2 & \faRobot \ Trợ lý Ảo AI & Chatbot thông minh hỗ trợ tìm kiếm và chắt lọc thông tin lưu trú qua hội thoại tự nhiên. \\
+    3 & \faComments \ Quản lý Cộng đồng & Không gian tương tác, hỏi đáp và chia sẻ nhận xét trực tiếp tại trang của từng địa điểm. \\
+    4 & \faMapMarker \ Xác nhận On-site & Tính năng check-in độc đáo để xác nhận người dùng đang có mặt tại địa điểm thực tế. \\
+    5 & \faCamera \ Đóng góp Nội dung & Trao quyền cho người dùng tải lên hình ảnh và cập nhật tình trạng mới nhất của chỗ ở. \\
+    6 & \faHeart \ Lưu trữ Địa điểm & Công cụ cá nhân để đánh dấu, lưu lại và so sánh các danh sách địa điểm yêu thích. \\
+    \bottomrule
+  \end{tabularx}
+\end{center}
 
 \subsection{Minh họa Tính năng}
 Thay vì tiếp cận theo hướng kỹ thuật, hệ thống được thiết kế dựa trên quá trình tối ưu hóa trải nghiệm thực tế của người dùng thông qua các tính năng sau:
@@ -320,10 +333,10 @@ Thay vì tiếp cận theo hướng kỹ thuật, hệ thống được thiết 
 Hệ thống khắc phục hạn chế của các bộ lọc tìm kiếm truyền thống bằng cách cho phép người dùng nhập trực tiếp các yêu cầu phức tạp dưới dạng ngôn ngữ tự nhiên. Ví dụ: \textit{"Tìm một homestay yên tĩnh ở Đà Lạt cho gia đình 4 người, có bếp nướng BBQ và giá dưới 2 triệu."} Thông qua khả năng phân tích ngữ nghĩa, hệ thống sẽ trích xuất chính xác các tiêu chí và trả về danh sách địa điểm phù hợp nhất.
 \end{minipage}\hfill
 \begin{minipage}[c]{0.6\textwidth}
-    \centering
-    \begin{tikzpicture}
-        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Tìm kiếm)};
-    \end{tikzpicture}
+  \centering
+  \begin{tikzpicture}
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Tìm kiếm)};
+  \end{tikzpicture}
 \end{minipage}
 
 \vspace{0.8cm}
@@ -332,10 +345,10 @@ Hệ thống khắc phục hạn chế của các bộ lọc tìm kiếm truyề
 \vspace{0.3cm}
 \noindent
 \begin{minipage}[c]{0.6\textwidth}
-    \centering
-    \begin{tikzpicture}
-        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Chat AI)};
-    \end{tikzpicture}
+  \centering
+  \begin{tikzpicture}
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Chat AI)};
+  \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.35\textwidth}
 Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng loạt đánh giá dài, người dùng có thể đặt câu hỏi trực tiếp cho AI tại trang thông tin của điểm lưu trú. Ví dụ: \textit{"Khách sạn này ăn sáng có đa dạng không? Tốc độ mạng wifi có ổn định không?"}. Trợ lý ảo sẽ tự động phân tích các đánh giá thực tế từ cơ sở dữ liệu để đưa ra câu trả lời khách quan, ngắn gọn và bám sát thắc mắc của người dùng.
@@ -350,10 +363,10 @@ Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng 
 Để giải quyết rủi ro sai lệch thông tin giữa quảng cáo và thực tế, hệ thống tích hợp tính năng xác thực "Check-in" dành riêng cho những khách hàng đang có mặt tại điểm lưu trú. Những hình ảnh, đánh giá hoặc câu trả lời được cung cấp bởi nhóm người dùng "On-site" này sẽ được gán nhãn xác thực và ưu tiên hiển thị, qua đó nâng cao độ tin cậy của thông tin trên nền tảng.
 \end{minipage}\hfill
 \begin{minipage}[c]{0.6\textwidth}
-    \centering
-    \begin{tikzpicture}
-        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(On-site)};
-    \end{tikzpicture}
+  \centering
+  \begin{tikzpicture}
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(On-site)};
+  \end{tikzpicture}
 \end{minipage}
 
 \vspace{0.8cm}
@@ -362,10 +375,10 @@ Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng 
 \vspace{0.3cm}
 \noindent
 \begin{minipage}[c]{0.6\textwidth}
-    \centering
-    \begin{tikzpicture}
-        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Cộng đồng)};
-    \end{tikzpicture}
+  \centering
+  \begin{tikzpicture}
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Cộng đồng)};
+  \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.35\textwidth}
 Mỗi địa điểm trên nền tảng được tổ chức như một diễn đàn độc lập. Người dùng có thể đặt các câu hỏi đặc thù và nhận phản hồi trực tiếp từ những du khách đã hoặc đang lưu trú tại đó. Tính năng này tạo ra một vòng lặp chia sẻ thông tin liên tục, giúp dữ liệu luôn được cập nhật và phản ánh đúng tình trạng hiện tại của điểm đến.
@@ -375,9 +388,9 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 \subsection{Điểm Đột Phá}
 \begin{infobox}[\faRocket \ Các điểm đổi mới nổi bật]
 \begin{itemize}[label=\textcolor{orange}{\faCheck}]
-    \item \textbf{AI-Driven Workflow:} AI không chỉ sinh chữ. Nó là "bộ định tuyến" gọi API, tính toán logic và vẽ thẳng kết quả lên UI.
-    \item \textbf{Semantic Search và Vector DB:} Khám phá chỗ ở thông qua độ tương đồng Cosine của ngữ nghĩa, vượt ra khỏi giới hạn so khớp từ khóa cứng nhắc.
-    \item \textbf{On-site Insights:} Giải quyết triệt để sự sai lệch giữa quảng cáo và thực tế bằng cách ưu tiên tương tác từ người dùng thực chứng.
+  \item \textbf{AI-Driven Workflow:} AI không chỉ sinh chữ. Nó là "bộ định tuyến" gọi API, tính toán logic và vẽ thẳng kết quả lên UI.
+  \item \textbf{Semantic Search và Vector DB:} Khám phá chỗ ở thông qua độ tương đồng Cosine của ngữ nghĩa, vượt ra khỏi giới hạn so khớp từ khóa cứng nhắc.
+  \item \textbf{On-site Insights:} Giải quyết triệt để sự sai lệch giữa quảng cáo và thực tế bằng cách ưu tiên tương tác từ người dùng thực chứng.
 \end{itemize}
 \end{infobox}
 
@@ -393,7 +406,7 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{blue!60!black}, left=12pt, top=2pt, bottom=2pt]
-Quan sát thực tế cho thấy, dù người dùng có cách diễn đạt rất đa dạng khi tìm kiếm nơi lưu trú, các câu truy vấn này luôn xoay quanh một tập hợp các đặc trưng cốt lõi lặp lại. Những yếu tố này bao gồm các thông số định lượng như vị trí, ngân sách, loại hình lưu trú, tiện nghi, và các yếu tố định tính (yêu cầu mềm) như "yên tĩnh", "gần trung tâm" hay "phù hợp cho gia đình". Nhận diện được mẫu cấu trúc tiềm ẩn này, \textbf{quy tắc tổng quát} được rút ra là: mọi câu lệnh phức tạp đều có thể được bóc tách thành các tham số rời rạc kết hợp với ngữ nghĩa mở rộng. Quy tắc này trực tiếp định hình quyết định thiết kế hệ thống phân tích ý định (intent parsing). Thay vì cố gắng khớp chuỗi nguyên văn, kiến trúc hệ thống sử dụng mô hình ngôn ngữ để trích xuất và định tuyến các thông tin này vào một cấu trúc tham số chuẩn hóa, làm đầu vào cho các bước truy vấn tiếp theo.
+Quan sát thực tế cho thấy, dù người dùng có cách diễn đạt rất đa dạng khi tìm kiếm nơi lưu trú, các câu truy vấn này luôn xoay quanh một tập hợp các đặc trưng cốt lõi lặp lại. Những yếu tố này bao gồm các thông số định lượng như vị trí, ngân sách, loại hình lưu trú, tiện nghi, và các yếu tố định tính (yêu cầu mềm) như "yên tĩnh", "gần trung tâm" hay "phù hợp cho gia đình". Nhận diện được mẫu cấu trúc tiềm ẩn này, \textbf{quy tắc tổng quát} được rút ra là: mọi câu lệnh phức tạp đều có thể được bóc tách thành các tham số rời rạc kết hợp với ngữ nghĩa mở rộng. Quy tắc này trực tiếp định hình quyết định thiết kế hệ thống phân tích ý định. Thay vì cố gắng khớp chuỗi nguyên văn, kiến trúc hệ thống sử dụng mô hình ngôn ngữ để trích xuất và định tuyến các thông tin này vào một cấu trúc tham số chuẩn hóa, làm đầu vào cho các bước truy vấn tiếp theo.
 \end{tcolorbox}
 
 \vspace{0.4cm}
@@ -417,7 +430,7 @@ Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm kh
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{purple!60!black}, left=12pt, top=2pt, bottom=2pt]
-Khi đi sâu vào các câu hỏi mà người dùng thường đặt ra về một khách sạn cụ thể, một mẫu chủ đề rõ nét xuất hiện. Hầu hết các thắc mắc đều lặp lại quanh các khía cạnh: độ sạch sẽ, chất lượng mạng kết nối, mức độ tiếng ồn, vị trí thực tế so với quảng cáo và thái độ phục vụ. Từ sự hội tụ về chủ đề này, \textbf{quy tắc rút ra} là phần lớn giá trị của các bài đánh giá nằm ở việc trả lời các câu hỏi cụ thể này. Nhận thức được điều đó, thay vì để người dùng đọc toàn bộ văn bản dài, nhóm \textbf{quyết định thiết kế} tổ chức dữ liệu đánh giá thành các đoạn thông tin nhỏ (chunks) và sử dụng kỹ thuật tìm kiếm vector. Thiết kế này cho phép hệ thống tự động trích xuất đúng phần nhận xét chứa câu trả lời và tổng hợp lại cho người dùng.
+Khi đi sâu vào các câu hỏi mà người dùng thường đặt ra về một khách sạn cụ thể, một mẫu chủ đề rõ nét xuất hiện. Hầu hết các thắc mắc đều lặp lại quanh các khía cạnh: độ sạch sẽ, chất lượng mạng kết nối, mức độ tiếng ồn, vị trí thực tế so với quảng cáo và thái độ phục vụ. Từ sự hội tụ về chủ đề này, \textbf{quy tắc rút ra} là phần lớn giá trị của các bài đánh giá nằm ở việc trả lời các câu hỏi cụ thể này. Nhận thức được điều đó, thay vì để người dùng đọc toàn bộ văn bản dài, nhóm \textbf{quyết định thiết kế} tổ chức dữ liệu đánh giá thành các đoạn thông tin nhỏ và sử dụng kỹ thuật tìm kiếm vector. Thiết kế này cho phép hệ thống tự động trích xuất đúng phần nhận xét chứa câu trả lời và tổng hợp lại cho người dùng.
 \end{tcolorbox}
 
 \vspace{0.4cm}
@@ -425,34 +438,34 @@ Khi đi sâu vào các câu hỏi mà người dùng thường đặt ra về m�
 \vspace{0.15cm}
 
 \begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{red!60!black}, left=12pt, top=2pt, bottom=2pt]
-Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn những rủi ro có tính quy luật. Quá trình kiểm thử cho thấy các lỗi thường lặp lại theo những dạng nhất định: thiếu thông tin về giá, không có điểm đánh giá, dữ liệu trả về bị trùng lặp, lỗi kết nối hoặc hoàn toàn không tìm thấy kết quả phù hợp. Mẫu lỗi này dẫn đến \textbf{quy tắc}: sự thiếu hụt hoặc sai lệch dữ liệu ngoại vi là điều tất yếu và hệ thống lõi phải có khả năng tự phục hồi. Áp dụng quy tắc này vào \textbf{quyết định thiết kế}, các cơ chế xử lý lỗi biên, khử trùng lặp (deduplication) và kịch bản dự phòng (fallback) đã được xây dựng. Khi một nhà cung cấp gặp sự cố hoặc dữ liệu không toàn vẹn, hệ thống sẽ tự động bù đắp bằng các luồng thông tin khác hoặc cấu trúc lại giao diện phù hợp mà không làm sập toàn bộ ứng dụng.
+Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn những rủi ro có tính quy luật. Quá trình kiểm thử cho thấy các lỗi thường lặp lại theo những dạng nhất định: thiếu thông tin về giá, không có điểm đánh giá, dữ liệu trả về bị trùng lặp, lỗi kết nối hoặc hoàn toàn không tìm thấy kết quả phù hợp. Mẫu lỗi này dẫn đến \textbf{quy tắc}: sự thiếu hụt hoặc sai lệch dữ liệu ngoại vi là điều tất yếu và hệ thống lõi phải có khả năng tự phục hồi. Áp dụng quy tắc này vào \textbf{quyết định thiết kế}, các cơ chế xử lý lỗi biên, khử trùng lặp và kịch bản dự phòng đã được xây dựng. Khi một nhà cung cấp gặp sự cố hoặc dữ liệu không toàn vẹn, hệ thống sẽ tự động bù đắp bằng các luồng thông tin khác hoặc cấu trúc lại giao diện phù hợp mà không làm sập toàn bộ ứng dụng.
 \end{tcolorbox}
 
 \vspace{0.6cm}
 \begin{table}[h!]
-    \centering
-    \renewcommand{\arraystretch}{1.6}
-    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash\hsize=0.8\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X @{}}
-        \toprule
-        \textcolor{blue!80!black}{\textbf{\faClipboardList \ Mẫu được nhận diện}} & \textcolor{blue!80!black}{\textbf{\faLightbulb \ Quy tắc tổng quát}} & \textcolor{blue!80!black}{\textbf{\faCogs \ Quyết định thiết kế}} \\
-        \midrule
-        \textbf{User Query Pattern} \newline Đa dạng cách diễn đạt nhưng chung các tiêu chí cốt lõi. & Các yêu cầu phức tạp có thể bóc tách thành tham số và ngữ nghĩa. & Xây dựng luồng phân tích ý định để trích xuất tham số có cấu trúc. \\
-        \addlinespace
-        \textbf{Data Pattern} \newline Điểm lưu trú đa nguồn đều chung các thuộc tính cốt lõi. & Dữ liệu đa nguồn có thể được ánh xạ về một khuôn dạng chuẩn duy nhất. & Thiết kế DTO và lược đồ dữ liệu thống nhất làm đầu mối chuẩn hóa. \\
-        \addlinespace
-        \textbf{Decision-making} \newline Người dùng cân nhắc nhiều lựa chọn trước khi chốt đặt phòng. & Hành trình tìm kiếm luôn đi kèm nhu cầu đối chiếu đa chiều. & Tích hợp tính năng lưu trữ và theo dõi địa điểm song song tìm kiếm. \\
-        \addlinespace
-        \textbf{Review/RAG Pattern} \newline Thắc mắc lặp lại các chủ đề (sạch sẽ, wifi, tiếng ồn). & Giá trị của đánh giá nằm ở khả năng giải đáp các thắc mắc cụ thể này. & Chia nhỏ đánh giá thành vector để truy xuất tự động qua RAG. \\
-        \addlinespace
-        \textbf{Failure Pattern} \newline Thiếu giá, trùng lặp, lỗi dịch vụ bên thứ ba. & Lỗi ngoại vi là tất yếu, hệ thống lõi cần tự bảo vệ và phục hồi. & Xây dựng cơ chế fallback, khử trùng lặp và các kịch bản kiểm thử biên. \\
-        \bottomrule
-    \end{tabularx}
-    \caption{\textbf{Pattern Recognition Summary}}
+  \centering
+  \renewcommand{\arraystretch}{1.6}
+  \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash\hsize=0.8\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X @{}}
+    \toprule
+    \textcolor{blue!80!black}{\textbf{\faClipboardList \ Mẫu được nhận diện}} & \textcolor{blue!80!black}{\textbf{\faLightbulb \ Quy tắc tổng quát}} & \textcolor{blue!80!black}{\textbf{\faCogs \ Quyết định thiết kế}} \\
+    \midrule
+    \textbf{User Query Pattern} \newline Đa dạng cách diễn đạt nhưng chung các tiêu chí cốt lõi. & Các yêu cầu phức tạp có thể bóc tách thành tham số và ngữ nghĩa. & Xây dựng luồng phân tích ý định để trích xuất tham số có cấu trúc. \\
+    \addlinespace
+    \textbf{Data Pattern} \newline Điểm lưu trú đa nguồn đều chung các thuộc tính cốt lõi. & Dữ liệu đa nguồn có thể được ánh xạ về một khuôn dạng chuẩn duy nhất. & Thiết kế DTO và lược đồ dữ liệu thống nhất làm đầu mối chuẩn hóa. \\
+    \addlinespace
+    \textbf{Decision-making} \newline Người dùng cân nhắc nhiều lựa chọn trước khi chốt đặt phòng. & Hành trình tìm kiếm luôn đi kèm nhu cầu đối chiếu đa chiều. & Tích hợp tính năng lưu trữ và theo dõi địa điểm song song tìm kiếm. \\
+    \addlinespace
+    \textbf{Review/RAG Pattern} \newline Thắc mắc lặp lại các chủ đề (sạch sẽ, wifi, tiếng ồn). & Giá trị của đánh giá nằm ở khả năng giải đáp các thắc mắc cụ thể này. & Chia nhỏ đánh giá thành vector để truy xuất tự động qua RAG. \\
+    \addlinespace
+    \textbf{Failure Pattern} \newline Thiếu giá, trùng lặp, lỗi dịch vụ bên thứ ba. & Lỗi ngoại vi là tất yếu, hệ thống lõi cần tự bảo vệ và phục hồi. & Xây dựng cơ chế fallback, khử trùng lặp và các kịch bản kiểm thử biên. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{\textbf{Pattern Recognition Summary}}
 \end{table}
 
 \vspace{0.3cm}
 \begin{tcolorbox}[colback=blue!2, colframe=blue!40!white, arc=4pt, boxrule=0.5pt, left=10pt, right=10pt]
-\textbf{Tóm lại,} hệ thống không đơn thuần là một tập hợp các tính năng rời rạc được chắp vá lại với nhau. Thay vào đó, toàn bộ kiến trúc được định hình vững chắc dựa trên quá trình quan sát, khái quát hóa và vận dụng các \textbf{mẫu lặp lại (patterns)} đặc thù của bài toán lưu trú. Điều này đảm bảo nền tảng hoạt động nhất quán, dễ dàng mở rộng và thực sự giải quyết đúng những vấn đề cốt lõi của người dùng.
+\textbf{Tóm lại,} hệ thống không đơn thuần là một tập hợp các tính năng rời rạc được chắp vá lại với nhau. Thay vào đó, toàn bộ kiến trúc được định hình vững chắc dựa trên quá trình quan sát, khái quát hóa và vận dụng các \textbf{mẫu lặp lại} đặc thù của bài toán lưu trú. Điều này đảm bảo nền tảng hoạt động nhất quán, dễ dàng mở rộng và thực sự giải quyết đúng những vấn đề cốt lõi của người dùng.
 \end{tcolorbox}
 
 \newpage
@@ -467,18 +480,18 @@ Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn 
 \textbf{Cách nhóm áp dụng 5 dạng biểu diễn:}
 
 \begin{enumerate}
-    \item \textbf{Biểu diễn dữ liệu:} Các thực thể thực tế (người dùng, địa điểm, đánh giá, hội thoại, tệp tin) được ánh xạ thành 13 mô hình quan hệ trong PostgreSQL. Mỗi thực thể được gán kiểu dữ liệu tương ứng: UUID cho định danh, JSONB cho dữ liệu linh hoạt, vector cho nhúng ngữ nghĩa.
-    \item \textbf{Biểu diễn cấu trúc:} Mối quan hệ giữa người dùng---địa điểm---nội dung được mô hình hóa qua ERD với khóa ngoại và chỉ mục. Sự phụ thuộc giữa các module được biểu diễn bằng sơ đồ lớp và C4 Model.
-    \item \textbf{Biểu diễn quy trình:} Luồng tương tác (tìm kiếm $\to$ gợi ý $\to$ trò chuyện AI $\to$ check-in) được mô hình hóa qua sơ đồ tuần tự và flowchart.
-    \item \textbf{Biểu diễn toán học:} Công thức tính điểm gợi ý đa yếu tố (rating, ngân sách, khoảng cách, tiện ích, cận kề) với trọng số và hàm chuẩn hóa.
-    \item \textbf{Biểu diễn logic:} Quy tắc định tuyến ý định người dùng (IF-THEN) qua LLM JSON Mode; logic kiểm tra điều kiện trong workflow registry.
+  \item \textbf{Biểu diễn dữ liệu:} Các thực thể thực tế (người dùng, địa điểm, đánh giá, hội thoại, tệp tin) được ánh xạ thành 13 mô hình quan hệ trong PostgreSQL. Mỗi thực thể được gán kiểu dữ liệu tương ứng: UUID cho định danh, JSONB cho dữ liệu linh hoạt, vector cho nhúng ngữ nghĩa.
+  \item \textbf{Biểu diễn cấu trúc:} Mối quan hệ giữa người dùng---địa điểm---nội dung được mô hình hóa qua ERD với khóa ngoại và chỉ mục. Sự phụ thuộc giữa các module được biểu diễn bằng sơ đồ lớp và C4 Model.
+  \item \textbf{Biểu diễn quy trình:} Luồng tương tác (tìm kiếm $\to$ gợi ý $\to$ trò chuyện AI $\to$ check-in) được mô hình hóa qua sơ đồ tuần tự và flowchart.
+  \item \textbf{Biểu diễn toán học:} Công thức tính điểm gợi ý đa yếu tố (rating, ngân sách, khoảng cách, tiện ích, cận kề) với trọng số và hàm chuẩn hóa.
+  \item \textbf{Biểu diễn logic:} Quy tắc định tuyến ý định người dùng (IF-THEN) qua LLM JSON Mode; logic kiểm tra điều kiện trong workflow registry.
 \end{enumerate}
 
 \textbf{Ba nguyên tắc cốt lõi được tuân thủ:}
 \begin{itemize}
-    \item \textbf{Trừu tượng hóa:} Chỉ lưu nội bộ địa điểm người dùng tương tác, ủy thác khám phá cho API ngoài --- loại bỏ chi tiết không cần thiết.
-    \item \textbf{Mô hình hóa có cấu trúc:} Mỗi module có ranh giới rõ ràng (controller/service/DTO), dữ liệu và quan hệ được đồng bộ qua Prisma schema.
-    \item \textbf{Đa biểu diễn:} Cùng một bài toán (tìm kiếm chỗ ở) được biểu diễn đồng thời dưới dạng flowchart (luồng), công thức (điểm số) và mã giả (giải thuật hợp nhất).
+  \item \textbf{Trừu tượng hóa:} Chỉ lưu nội bộ địa điểm người dùng tương tác, ủy thác khám phá cho API ngoài --- loại bỏ chi tiết không cần thiết.
+  \item \textbf{Mô hình hóa có cấu trúc:} Mỗi module có ranh giới rõ ràng (controller/service/DTO), dữ liệu và quan hệ được đồng bộ qua Prisma schema.
+  \item \textbf{Đa biểu diễn:} Cùng một bài toán (tìm kiếm chỗ ở) được biểu diễn đồng thời dưới dạng flowchart (luồng), công thức (điểm số) và mã giả (giải thuật hợp nhất).
 \end{itemize}
 
 \subsection{Tổng quan Công nghệ}
@@ -515,12 +528,12 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=2cm and 3cm,
-    person/.style={rectangle, rounded corners, draw=teal!70, fill=teal!20, minimum width=2.8cm, minimum height=1.2cm, align=center, font=\small\bfseries},
-    system/.style={rectangle, draw=blue!70, fill=blue!20, minimum width=3.5cm, minimum height=1.5cm, align=center, font=\small\bfseries},
-    external/.style={rectangle, draw=gray!70, fill=gray!20, minimum width=2.8cm, minimum height=1.2cm, align=center, font=\small\bfseries},
-    arrow/.style={-{Stealth[scale=1.2]}, thick},
-    label/.style={font=\scriptsize, align=center}
+  node distance=2cm and 3cm,
+  person/.style={rectangle, rounded corners, draw=teal!70, fill=teal!20, minimum width=2.8cm, minimum height=1.2cm, align=center, font=\small\bfseries},
+  system/.style={rectangle, draw=blue!70, fill=blue!20, minimum width=3.5cm, minimum height=1.5cm, align=center, font=\small\bfseries},
+  external/.style={rectangle, draw=gray!70, fill=gray!20, minimum width=2.8cm, minimum height=1.2cm, align=center, font=\small\bfseries},
+  arrow/.style={-{Stealth[scale=1.2]}, thick},
+  label/.style={font=\scriptsize, align=center}
 ]
 
 \node[person] (user) {Người dùng};
@@ -548,13 +561,13 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=2cm and 2.5cm,
-    person/.style={rectangle, rounded corners, draw=teal!70, fill=teal!20, minimum width=2.5cm, minimum height=1cm, align=center, font=\small\bfseries},
-    container/.style={rectangle, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=1.2cm, align=center, font=\small},
-    database/.style={cylinder, draw=orange!80, fill=orange!15, minimum width=2.5cm, minimum height=1.2cm, shape border rotate=90, align=center, font=\small},
-    external/.style={rectangle, draw=gray!70, fill=gray!15, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
-    arrow/.style={-{Stealth[scale=1.1]}, thick},
-    label/.style={font=\tiny, align=center}
+  node distance=2cm and 2.5cm,
+  person/.style={rectangle, rounded corners, draw=teal!70, fill=teal!20, minimum width=2.5cm, minimum height=1cm, align=center, font=\small\bfseries},
+  container/.style={rectangle, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=1.2cm, align=center, font=\small},
+  database/.style={cylinder, draw=orange!80, fill=orange!15, minimum width=2.5cm, minimum height=1.2cm, shape border rotate=90, align=center, font=\small},
+  external/.style={rectangle, draw=gray!70, fill=gray!15, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+  arrow/.style={-{Stealth[scale=1.1]}, thick},
+  label/.style={font=\tiny, align=center}
 ]
 
 \node[person] (user) {Người dùng};
@@ -588,11 +601,11 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=0.8cm and 1.2cm,
-    comp/.style={rectangle, draw=green!60!black!70, fill=green!10, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\tiny\bfseries, rounded corners},
-    shared/.style={rectangle, draw=purple!70, fill=purple!10, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\tiny\bfseries, rounded corners},
-    arrow/.style={-{Stealth[scale=0.8]}, thin, gray!60},
-    label/.style={font=\tiny}
+  node distance=0.8cm and 1.2cm,
+  comp/.style={rectangle, draw=green!60!black!70, fill=green!10, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\tiny\bfseries, rounded corners},
+  shared/.style={rectangle, draw=purple!70, fill=purple!10, minimum width=2.8cm, minimum height=0.9cm, align=center, font=\tiny\bfseries, rounded corners},
+  arrow/.style={-{Stealth[scale=0.8]}, thin, gray!60},
+  label/.style={font=\tiny}
 ]
 
 \node[comp] (ai) {AI Module};
@@ -630,22 +643,22 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=1.5cm,
-    llm/.style={rectangle, draw=purple!70, fill=purple!15, minimum width=6cm, minimum height=1.2cm, align=center, font=\small, rounded corners, drop shadow},
-    det/.style={rectangle, draw=green!60!black!70, fill=green!10, minimum width=6cm, minimum height=1.2cm, align=center, font=\small, rounded corners, drop shadow},
-    arrow/.style={-{Stealth[scale=1.2]}, thick},
-    label/.style={font=\small, align=center}
+  node distance=1.5cm,
+  llm/.style={rectangle, draw=purple!70, fill=purple!15, minimum width=6cm, minimum height=1.2cm, align=center, font=\small, rounded corners, drop shadow},
+  det/.style={rectangle, draw=green!60!black!70, fill=green!10, minimum width=6cm, minimum height=1.2cm, align=center, font=\small, rounded corners, drop shadow},
+  arrow/.style={-{Stealth[scale=1.2]}, thick},
+  label/.style={font=\small, align=center}
 ]
 
 \node (input) [font=\bfseries] {Câu truy vấn người dùng};
 
-\node[llm, below=0.8cm of input] (router) {Lớp 1: Bộ định tuyến (Router) \\
+\node[llm, below=0.8cm of input] (router) {Lớp 1: Bộ định tuyến \\
 \fontsize{8}{10}\selectfont LLM --- JSON Mode: phân loại ý định, trích xuất tham số};
 
 \node[det, below=of router] (engine) {Lớp 2: Cỗ máy Workflow \\
 \fontsize{8}{10}\selectfont Thực thi DAG các bước tất định, không gọi LLM};
 
-\node[det, below=of engine] (tools) {Lớp 3: Tầng Công cụ (Tools) \\
+\node[det, below=of engine] (tools) {Lớp 3: Tầng Công cụ \\
 \fontsize{8}{10}\selectfont 5 công cụ nghiệp vụ: tìm kiếm, mã hóa địa lý, gợi ý, kiểm tra cận kề};
 
 \node[llm, below=of tools] (composer) {Lớp 4: Bộ tổng hợp phản hồi \\
@@ -677,13 +690,13 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=1.2cm and 0.5cm,
-    io/.style={ellipse, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
-    proc/.style={rectangle, draw=black!70, fill=white, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
-    llmproc/.style={rectangle, draw=purple!70, fill=purple!10, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
-    detproc/.style={rectangle, draw=green!60!black!70, fill=green!8, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
-    arrow/.style={-{Stealth[scale=1]}, thick},
-    dec/.style={diamond, draw=orange!70, fill=orange!10, minimum width=2cm, minimum height=1cm, align=center, font=\small}
+  node distance=1.2cm and 0.5cm,
+  io/.style={ellipse, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
+  proc/.style={rectangle, draw=black!70, fill=white, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
+  llmproc/.style={rectangle, draw=purple!70, fill=purple!10, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
+  detproc/.style={rectangle, draw=green!60!black!70, fill=green!8, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
+  arrow/.style={-{Stealth[scale=1]}, thick},
+  dec/.style={diamond, draw=orange!70, fill=orange!10, minimum width=2cm, minimum height=1cm, align=center, font=\small}
 ]
 
 \node[io] (input) {Câu truy vấn};
@@ -714,19 +727,19 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 
 \textbf{Đánh giá:} Độ phức tạp $O(|DAG| + |LLM|)$ với $|DAG| \leq 3$. Hai trong bốn lớp không tương tác LLM, đảm bảo tính tất định cho logic nghiệp vụ. Cơ chế an toàn: Router thất bại $\to$ GENERAL\_CHAT; Tool lỗi $\to$ đánh dấu và tiếp tục.
 
-\subsubsection{Tìm kiếm Lai (Hybrid Search)}
+\subsubsection{Tìm kiếm Lai}
 
 \textbf{Mô tả:} Kết hợp dữ liệu từ cơ sở dữ liệu nội bộ và ba nhà cung cấp ngoài (Goong, OSM, SerpAPI) để tạo danh sách địa điểm toàn diện.
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=1.2cm and 1.5cm,
-    io/.style={ellipse, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
-    proc/.style={rectangle, draw=black!70, fill=white, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
-    dproc/.style={rectangle, draw=green!60!black!70, fill=green!8, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
-    arrow/.style={-{Stealth[scale=1]}, thick},
-    label/.style={font=\tiny},
-    dec/.style={diamond, aspect=2, draw=orange!70!black, fill=orange!10, text width=2cm, align=center, font=\small}
+  node distance=1.2cm and 1.5cm,
+  io/.style={ellipse, draw=blue!70, fill=blue!15, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
+  proc/.style={rectangle, draw=black!70, fill=white, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
+  dproc/.style={rectangle, draw=green!60!black!70, fill=green!8, minimum width=3cm, minimum height=0.8cm, align=center, font=\small, rounded corners},
+  arrow/.style={-{Stealth[scale=1]}, thick},
+  label/.style={font=\tiny},
+  dec/.style={diamond, aspect=2, draw=orange!70!black, fill=orange!10, text width=2cm, align=center, font=\small}
 ]
 
 \node[io] (input) {Từ khóa, vị trí, ngân sách};
@@ -771,10 +784,10 @@ Công thức tính điểm:
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=1cm and 0.8cm,
-    proc/.style={rectangle, draw=black!60, fill=white, minimum width=2.5cm, minimum height=0.7cm, align=center, font=\tiny, rounded corners},
-    arrow/.style={-{Stealth[scale=0.8]}, thin},
-    label/.style={font=\tiny}
+  node distance=1cm and 0.8cm,
+  proc/.style={rectangle, draw=black!60, fill=white, minimum width=2.5cm, minimum height=0.7cm, align=center, font=\tiny, rounded corners},
+  arrow/.style={-{Stealth[scale=0.8]}, thin},
+  label/.style={font=\tiny}
 ]
 
 \node[proc] (places) {Danh sách địa điểm};
@@ -810,8 +823,8 @@ Khi không có vị trí neo, trọng số khoảng cách và cận kề đượ
 Pipeline phục vụ tìm kiếm ngữ nghĩa trên dữ liệu đóng góp (đánh giá, tệp tin):
 
 \begin{itemize}
-    \item \textbf{Tiếp nhận:} Nguồn (review/file) $\to$ Phân đoạn văn bản $\to$ Sinh embedding $\to$ Lưu vào bảng \texttt{chunks} với vector.
-    \item \textbf{Truy xuất:} Truy vấn $\to$ Sinh embedding $\to$ Tìm kiếm tương đồng cosine (pgvector) $\to$ Xây dựng ngữ cảnh $\to$ LLM.
+  \item \textbf{Tiếp nhận:} Nguồn (review/file) $\to$ Phân đoạn văn bản $\to$ Sinh embedding $\to$ Lưu vào bảng \texttt{chunks} với vector.
+  \item \textbf{Truy xuất:} Truy vấn $\to$ Sinh embedding $\to$ Tìm kiếm tương đồng cosine (pgvector) $\to$ Xây dựng ngữ cảnh $\to$ LLM.
 \end{itemize}
 
 Trạng thái hiện tại: Lược đồ và lưu trữ chunk đã hoàn thiện; sinh embedding đang chờ triển khai.
@@ -819,9 +832,9 @@ Trạng thái hiện tại: Lược đồ và lưu trữ chunk đã hoàn thiệ
 \subsubsection{Các Giải thuật Bổ trợ}
 
 \begin{itemize}
-    \item \textbf{Theo dõi hiện diện (Presence):} Check-in/check-out với 3 endpoint. Dữ liệu hiện diện phục vụ UI thời gian thực và làm yếu tố tăng điểm trong gợi ý.
-    \item \textbf{Bỏ phiếu Q\&A:} Mô hình Reddit với ràng buộc UNIQUE(answer\_id, user\_id). Giá trị vote (1/-1) được vật chất hóa trên bảng answers.
-    \item \textbf{Khử trùng lặp:} Chiến lược hai khóa (chính xác: \texttt{source:source\_place\_id}; mờ: \texttt{tên\_chuẩn\_hóa:lat(3):lng(3)}) đảm bảo toàn vẹn khi hợp nhất đa nguồn.
+  \item \textbf{Theo dõi hiện diện:} Check-in/check-out với 3 endpoint. Dữ liệu hiện diện phục vụ UI thời gian thực và làm yếu tố tăng điểm trong gợi ý.
+  \item \textbf{Bỏ phiếu Q và A:} Mô hình Reddit với ràng buộc UNIQUE(answer\_id, user\_id). Giá trị vote (1/-1) được vật chất hóa trên bảng answers.
+  \item \textbf{Khử trùng lặp:} Chiến lược hai khóa (chính xác: \texttt{source:source\_place\_id}; mờ: \texttt{tên\_chuẩn\_hóa:lat(3):lng(3)}) đảm bảo toàn vẹn khi hợp nhất đa nguồn.
 \end{itemize}
 
 \subsection{Đánh giá Hiệu năng và Khả năng Mở rộng}
@@ -846,9 +859,9 @@ Truy vấn N+1 Prisma & Thấp & Eager loading \\
 Từ các mô hình đã xây dựng ở phần Thiết kế Hệ thống (C4 Model, ERD, sơ đồ tuần tự), nhóm tiến hành phân rã thành các module triển khai theo ba bước:
 
 \begin{enumerate}
-    \item \textbf{Phân rã chức năng:} Các khối chức năng trong C4 Container $\to$ 10 module NestJS, mỗi module gồm tầng giao tiếp (API), tầng logic (xử lý nghiệp vụ) và tầng dữ liệu (DTO).
-    \item \textbf{Ánh xạ dữ liệu:} Mô hình ERD $\to$ 13 lược đồ Prisma với quan hệ, ràng buộc và chỉ mục. Các thao tác vector nhúng (pgvector) được xử lý qua SQL thô do hạn chế của ORM.
-    \item \textbf{Ánh xạ quy trình:} Sơ đồ tuần tự $\to$ workflow registry dạng JSON và các lớp điều phối AI. Mỗi ca sử dụng tương ứng với một workflow cụ thể trong registry.
+  \item \textbf{Phân rã chức năng:} Các khối chức năng trong C4 Container $\to$ 10 module NestJS, mỗi module gồm tầng giao tiếp (API), tầng logic (xử lý nghiệp vụ) và tầng dữ liệu (DTO).
+  \item \textbf{Ánh xạ dữ liệu:} Mô hình ERD $\to$ 13 lược đồ Prisma với quan hệ, ràng buộc và chỉ mục. Các thao tác vector nhúng (pgvector) được xử lý qua SQL thô do hạn chế của ORM.
+  \item \textbf{Ánh xạ quy trình:} Sơ đồ tuần tự $\to$ workflow registry dạng JSON và các lớp điều phối AI. Mỗi ca sử dụng tương ứng với một workflow cụ thể trong registry.
 \end{enumerate}
 
 Các module được tổ chức thành bốn nhóm:
@@ -874,10 +887,10 @@ Dùng chung & PrismaService, ToolRegistry, Global Filters & Toàn cục, dùng c
 Hệ thống nguyên bản vận hành với bốn dịch vụ riêng rẽ (Nginx Gateway, Core-service, AI-service, Recommendation-service). Kiến trúc này bộc lộ các vấn đề:
 
 \begin{itemize}
-    \item \textbf{Chi phí mạng:} Mỗi yêu cầu chat trải qua ba chặng HTTP, gây độ trễ tích lũy.
-    \item \textbf{Trùng lặp logic:} Xác thực, xử lý lỗi, cấu hình bị sao chép giữa các dịch vụ.
-    \item \textbf{Phân mảnh kiểu:} Python $\leftrightarrow$ TypeScript yêu cầu tuần tự hóa thủ công, dễ sai sót.
-    \item \textbf{Phức tạp vận hành:} Bốn Docker image, bốn pipeline triển khai riêng biệt.
+  \item \textbf{Chi phí mạng:} Mỗi yêu cầu chat trải qua ba chặng HTTP, gây độ trễ tích lũy.
+  \item \textbf{Trùng lặp logic:} Xác thực, xử lý lỗi, cấu hình bị sao chép giữa các dịch vụ.
+  \item \textbf{Phân mảnh kiểu:} Python $\leftrightarrow$ TypeScript yêu cầu tuần tự hóa thủ công, dễ sai sót.
+  \item \textbf{Phức tạp vận hành:} Bốn Docker image, bốn pipeline triển khai riêng biệt.
 \end{itemize}
 
 \textbf{Giải pháp:} Hợp nhất thành một monolith dạng module NestJS duy nhất. Các lời gọi HTTP liên dịch vụ được thay thế bằng phương thức gọi trực tiếp qua dependency injection, loại bỏ Gateway Nginx trung gian.
@@ -890,10 +903,10 @@ Hệ thống nguyên bản vận hành với bốn dịch vụ riêng rẽ (Ngin
 
 \textbf{Giải pháp --- Kiến trúc Bốn Lớp:}
 \begin{itemize}
-    \item \textbf{Lớp 1 (Router):} LLM với JSON Mode $\to$ phân loại ý định, trích xuất tham số có cấu trúc. Thất bại $\to$ mặc định GENERAL\_CHAT.
-    \item \textbf{Lớp 2 (Workflow Engine):} Thực thi DAG các bước tất định, không gọi LLM.
-    \item \textbf{Lớp 3 (Tool Layer):} Mỗi công cụ có hợp đồng đầu ra chuẩn hóa, không ném ngoại lệ.
-    \item \textbf{Lớp 4 (Composer):} Neo phản hồi Markdown vào dữ liệu thực tế từ công cụ, giảm hallucination.
+  \item \textbf{Lớp 1 (Router):} LLM với JSON Mode $\to$ phân loại ý định, trích xuất tham số có cấu trúc. Thất bại $\to$ mặc định GENERAL\_CHAT.
+  \item \textbf{Lớp 2 (Workflow Engine):} Thực thi DAG các bước tất định, không gọi LLM.
+  \item \textbf{Lớp 3 (Tool Layer):} Mỗi công cụ có hợp đồng đầu ra chuẩn hóa, không ném ngoại lệ.
+  \item \textbf{Lớp 4 (Composer):} Neo phản hồi Markdown vào dữ liệu thực tế từ công cụ, giảm hallucination.
 \end{itemize}
 
 Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần biên dịch lại.
@@ -904,10 +917,10 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
 
 \textbf{Giải pháp --- Mô hình hai pha:}
 \begin{itemize}
-    \item Sử dụng \texttt{fetch()} với \texttt{ReadableStream} thay vì \texttt{EventSource}, cho phép POST và đính kèm token.
-    \item Pha 1: Gửi dữ liệu cấu trúc (\texttt{searchAction}) ngay sau khi công cụ thực thi --- cho phép frontend render bản đồ trước.
-    \item Pha 2: Truyền token LLM dưới dạng delta SSE.
-    \item Header \texttt{X-Accel-Buffering: no} để vô hiệu hóa bộ đệm Nginx khi triển khai sau reverse proxy.
+  \item Sử dụng \texttt{fetch()} với \texttt{ReadableStream} thay vì \texttt{EventSource}, cho phép POST và đính kèm token.
+  \item Pha 1: Gửi dữ liệu cấu trúc (\texttt{searchAction}) ngay sau khi công cụ thực thi --- cho phép frontend render bản đồ trước.
+  \item Pha 2: Truyền token LLM dưới dạng delta SSE.
+  \item Header \texttt{X-Accel-Buffering: no} để vô hiệu hóa bộ đệm Nginx khi triển khai sau reverse proxy.
 \end{itemize}
 
 \subsubsection{Tích hợp Đa Nhà cung cấp Bản đồ}
@@ -916,9 +929,9 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
 
 \textbf{Giải pháp:}
 \begin{itemize}
-    \item Chuẩn hóa giao diện đầu ra cho mọi nhà cung cấp.
-    \item Gọi song song qua \texttt{Promise.all} với \texttt{.catch()} riêng biệt --- đảm bảo cách ly lỗi.
-    \item Chuỗi dự phòng: Goong $\to$ OSM $\to$ mảng rỗng.
+  \item Chuẩn hóa giao diện đầu ra cho mọi nhà cung cấp.
+  \item Gọi song song qua \texttt{Promise.all} với \texttt{.catch()} riêng biệt --- đảm bảo cách ly lỗi.
+  \item Chuỗi dự phòng: Goong $\to$ OSM $\to$ mảng rỗng.
 \end{itemize}
 
 \subsubsection{Vector Embedding và Prisma}
@@ -953,9 +966,9 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=0cm,
-    layer/.style={rectangle, minimum width=11cm, minimum height=1cm, align=center, font=\small, text=white, rounded corners},
-    arrow/.style={-{Stealth[scale=1]}, thick, gray}
+  node distance=0cm,
+  layer/.style={rectangle, minimum width=11cm, minimum height=1cm, align=center, font=\small, text=white, rounded corners},
+  arrow/.style={-{Stealth[scale=1]}, thick, gray}
 ]
 
 \node[layer, fill=blue!70!black!80] (fe) {Tầng 1: Kiểm thử Đơn vị Frontend};
@@ -981,30 +994,30 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
 \subsubsection{Frontend --- Giao diện và Tương tác}
 
 \begin{itemize}
-    \item \textbf{Dịch vụ (Service layer):} Kiểm thử 12 dịch vụ frontend bao gồm API chat, tìm kiếm, địa điểm, đánh giá, hiện diện, đóng góp tệp, gợi ý, RAG, người dùng --- xác nhận mỗi service gọi đúng endpoint, xử lý đúng dữ liệu trả về và bắt lỗi HTTP.
-    \item \textbf{Context:} Kiểm thử 3 context (Auth, TravelData, Theme) --- xác nhận provider render đúng, cung cấp giá trị mặc định và cập nhật state khi có thay đổi.
-    \item \textbf{Hooks:} Kiểm thử hook streaming AI --- ghép chunk delta SSE, xây dựng prompt ngữ cảnh, xử lý lỗi luồng. Kiểm thử ánh xạ lỗi Firebase --- dịch 4 mã lỗi (permission-denied, unauthenticated, network-request-failed, unknown) sang thông báo tiếng Việt.
-    \item \textbf{Component:} Kiểm thử 25 component giao diện chính: MapComponent (hiển thị marker, cluster), ChatPanel (gửi/nhận tin nhắn, streaming), PlaceCard (hiển thị thông tin, nút tương tác), SearchBar (tìm kiếm, gợi ý), các component wizard-inputs (LocationPicker, BudgetSelector, TypeSelector) và chat subcomponents (MessageList, StreamingText).
-    \item \textbf{Trang:} Kiểm thử 5 trang: HomePage, SearchPage, PlaceDetailPage, ProfilePage, AdminPage --- xác nhận layout, điều hướng và tích hợp component.
+  \item \textbf{Tầng dịch vụ:} Kiểm thử 12 dịch vụ frontend bao gồm API chat, tìm kiếm, địa điểm, đánh giá, hiện diện, đóng góp tệp, gợi ý, RAG, người dùng --- xác nhận mỗi service gọi đúng endpoint, xử lý đúng dữ liệu trả về và bắt lỗi HTTP.
+  \item \textbf{Context:} Kiểm thử 3 context (Auth, TravelData, Theme) --- xác nhận provider render đúng, cung cấp giá trị mặc định và cập nhật state khi có thay đổi.
+  \item \textbf{Hooks:} Kiểm thử hook streaming AI --- ghép chunk delta SSE, xây dựng prompt ngữ cảnh, xử lý lỗi luồng. Kiểm thử ánh xạ lỗi Firebase --- dịch 4 mã lỗi (permission-denied, unauthenticated, network-request-failed, unknown) sang thông báo tiếng Việt.
+  \item \textbf{Component:} Kiểm thử 25 component giao diện chính: MapComponent (hiển thị marker, cluster), ChatPanel (gửi/nhận tin nhắn, streaming), PlaceCard (hiển thị thông tin, nút tương tác), SearchBar (tìm kiếm, gợi ý), các component wizard-inputs (LocationPicker, BudgetSelector, TypeSelector) và chat subcomponents (MessageList, StreamingText).
+  \item \textbf{Trang:} Kiểm thử 5 trang: HomePage, SearchPage, PlaceDetailPage, ProfilePage, AdminPage --- xác nhận layout, điều hướng và tích hợp component.
 \end{itemize}
 
 \subsubsection{Backend --- Xử lý Nghiệp vụ và Tích hợp}
 
 \begin{itemize}
-    \item \textbf{Dịch vụ (Services):} Kiểm thử 17 service backend bao phủ toàn bộ module: Người dùng (CRUD, upsert, tìm kiếm), Địa điểm (CRUD, lọc, fuzzy match), Đánh giá (CRUD, điểm số), Tìm kiếm (đa nhà cung cấp, hợp nhất, khử trùng lặp), Gợi ý (tính điểm, xếp hạng, trọng số), Hiện diện (join/leave/get, tải đồng thời), Đóng góp (tạo/lấy/cập nhật tệp), RAG (lưu/truy xuất chunk, xây dựng ngữ cảnh), Hội thoại AI (danh sách/tạo/xóa/tin nhắn), NLP (trích xuất bộ lọc từ văn bản tiếng Việt).
-    \item \textbf{Controller:} Kiểm thử 12 controller --- xác nhận route đăng ký đúng, validation pipe hoạt động, response format chuẩn.
-    \item \textbf{Công cụ AI (Tools):} Kiểm thử 10 tool --- SearchPlaces (tìm kiếm lai), RecommendPlaces (xếp hạng), GeocodeAnchor (mã hóa địa lý), ProximityChecker (khoảng cách), NearbyAmenities (tiện ích lân cận), và các tool bổ trợ. Mỗi tool được kiểm tra cả luồng thành công và thất bại.
-    \item \textbf{Guard/Filter/Interceptor:} Kiểm thử FirebaseAuthGuard (thiếu header, sai định dạng, token không hợp lệ), AllExceptionsFilter (HttpException, lỗi không xác định), LoggingInterceptor (định nghĩa, phương thức).
+  \item \textbf{Dịch vụ (Services):} Kiểm thử 17 service backend bao phủ toàn bộ module: Người dùng (CRUD, upsert, tìm kiếm), Địa điểm (CRUD, lọc, fuzzy match), Đánh giá (CRUD, điểm số), Tìm kiếm (đa nhà cung cấp, hợp nhất, khử trùng lặp), Gợi ý (tính điểm, xếp hạng, trọng số), Hiện diện (join/leave/get, tải đồng thời), Đóng góp (tạo/lấy/cập nhật tệp), RAG (lưu/truy xuất chunk, xây dựng ngữ cảnh), Hội thoại AI (danh sách/tạo/xóa/tin nhắn), NLP (trích xuất bộ lọc từ văn bản tiếng Việt).
+  \item \textbf{Controller:} Kiểm thử 12 controller --- xác nhận route đăng ký đúng, validation pipe hoạt động, response format chuẩn.
+  \item \textbf{Công cụ AI:} Kiểm thử 10 tool --- SearchPlaces (tìm kiếm lai), RecommendPlaces (xếp hạng), GeocodeAnchor (mã hóa địa lý), ProximityChecker (khoảng cách), NearbyAmenities (tiện ích lân cận), và các tool bổ trợ. Mỗi tool được kiểm tra cả luồng thành công và thất bại.
+  \item \textbf{Guard/Filter/Interceptor:} Kiểm thử FirebaseAuthGuard (thiếu header, sai định dạng, token không hợp lệ), AllExceptionsFilter (HttpException, lỗi không xác định), LoggingInterceptor (định nghĩa, phương thức).
 \end{itemize}
 
 \subsubsection{Các Tình huống và Giả lập Đặc thù}
 
 \begin{itemize}
-    \item \textbf{Giả lập lỗi nhà cung cấp ngoài:} Khi Goong API thất bại, hệ thống tự động chuyển sang OSM; khi cả hai thất bại, trả về kết quả rỗng an toàn. Một nhà cung cấp lỗi không ảnh hưởng đến kết quả từ các nhà cung cấp khác.
-    \item \textbf{Xử lý workflow thất bại:} Router phân tích lỗi $\to$ dự phòng GENERAL\_CHAT; tool lỗi $\to$ đánh dấu lỗi và tiếp tục thực thi workflow.
-    \item \textbf{SSE streaming đầu cuối:} Xác minh kết nối, nhận chunk delta, xử lý finish, buffer ghép mảnh.
-    \item \textbf{Dữ liệu rỗng và trường hợp biên:} Tìm kiếm không kết quả, hội thoại mới, người dùng chưa có profile, địa điểm không có đánh giá.
-    \item \textbf{Tải đồng thời:} 100 người dùng join cùng lúc vào cùng địa điểm --- kiểm tra tính toàn vẹn của cấu trúc dữ liệu.
+  \item \textbf{Giả lập lỗi nhà cung cấp ngoài:} Khi Goong API thất bại, hệ thống tự động chuyển sang OSM; khi cả hai thất bại, trả về kết quả rỗng an toàn. Một nhà cung cấp lỗi không ảnh hưởng đến kết quả từ các nhà cung cấp khác.
+  \item \textbf{Xử lý workflow thất bại:} Router phân tích lỗi $\to$ dự phòng GENERAL\_CHAT; tool lỗi $\to$ đánh dấu lỗi và tiếp tục thực thi workflow.
+  \item \textbf{SSE streaming đầu cuối:} Xác minh kết nối, nhận chunk delta, xử lý finish, buffer ghép mảnh.
+  \item \textbf{Dữ liệu rỗng và trường hợp biên:} Tìm kiếm không kết quả, hội thoại mới, người dùng chưa có profile, địa điểm không có đánh giá.
+  \item \textbf{Tải đồng thời:} 100 người dùng join cùng lúc vào cùng địa điểm --- kiểm tra tính toàn vẹn của cấu trúc dữ liệu.
 \end{itemize}
 
 \subsection{Kết quả Kiểm thử}
@@ -1013,8 +1026,8 @@ Kết quả kiểm thử tổng thể được thống kê như sau:
 
 \begin{center}
 \begin{tikzpicture}[
-    bar/.style={rectangle, minimum width=1.2cm, minimum height=0cm, rounded corners=2pt, font=\tiny},
-    scale=1.2
+  bar/.style={rectangle, minimum width=1.2cm, minimum height=0cm, rounded corners=2pt, font=\tiny},
+  scale=1.2
 ]
 
 % Frontend bars
@@ -1041,9 +1054,9 @@ Kết quả kiểm thử tổng thể được thống kê như sau:
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=0.5cm and 0cm,
-    module/.style={rectangle, minimum width=9cm, minimum height=0.6cm, align=center, font=\small, text=white, rounded corners},
-    label/.style={font=\tiny}
+  node distance=0.5cm and 0cm,
+  module/.style={rectangle, minimum width=9cm, minimum height=0.6cm, align=center, font=\small, text=white, rounded corners},
+  label/.style={font=\tiny}
 ]
 
 \node[module, fill=green!60!black!80] (fe) {Frontend --- 177/188 đạt (94,1\%)};
@@ -1059,9 +1072,9 @@ Phân bố kiểm thử theo nhóm chức năng backend:
 
 \begin{center}
 \begin{tikzpicture}[
-    node distance=0.8cm,
-    bar/.style={rectangle, minimum height=0.5cm, rounded corners, font=\tiny},
-    label/.style={font=\tiny}
+  node distance=0.8cm,
+  bar/.style={rectangle, minimum height=0.5cm, rounded corners, font=\tiny},
+  label/.style={font=\tiny}
 ]
 
 \node[anchor=west] (l1) {Dịch vụ lõi (Users, Places, Reviews, Health)};
@@ -1113,21 +1126,21 @@ Trang (Home, Search, PlaceDetail, Profile, Admin) & 5 pages & 5/5 đạt \\
 Quá trình kiểm thử đã phát hiện và dẫn đến các cải tiến sau:
 
 \begin{itemize}
-    \item \textbf{Cải tiến xử lý lỗi:} Chuẩn hóa phản hồi lỗi thành cấu trúc JSON thống nhất với timestamp, loại bỏ try/catch trùng lặp ở controller.
-    \item \textbf{Cải tiến khử trùng lặp:} Bổ sung khóa mờ theo tọa độ (lat:lng độ chính xác 3 chữ số thập phân) bên cạnh khóa chính xác, giúp phát hiện trùng lặp khi ID nhà cung cấp khác nhau.
-    \item \textbf{Cải tiến buffer SSE:} Cả backend và frontend được đồng bộ buffer pattern để xử lý chunk SSE bị phân mảnh do TCP.
-    \item \textbf{Cải tiến Presence:} Thêm kiểm tra tải 100 người dùng đồng thời, đảm bảo cấu trúc dữ liệu hoạt động ổn định dưới tải cao.
-    \item \textbf{Cải tiến NLP:} Tham số hóa 14 văn bản tiếng Việt thực tế, bao phủ đa dạng biến thể ngôn ngữ (tên tỉnh thành, loại hình, mức giá).
+  \item \textbf{Cải tiến xử lý lỗi:} Chuẩn hóa phản hồi lỗi thành cấu trúc JSON thống nhất với timestamp, loại bỏ try/catch trùng lặp ở controller.
+  \item \textbf{Cải tiến khử trùng lặp:} Bổ sung khóa mờ theo tọa độ (lat:lng độ chính xác 3 chữ số thập phân) bên cạnh khóa chính xác, giúp phát hiện trùng lặp khi ID nhà cung cấp khác nhau.
+  \item \textbf{Cải tiến buffer SSE:} Cả backend và frontend được đồng bộ buffer pattern để xử lý chunk SSE bị phân mảnh do TCP.
+  \item \textbf{Cải tiến Presence:} Thêm kiểm tra tải 100 người dùng đồng thời, đảm bảo cấu trúc dữ liệu hoạt động ổn định dưới tải cao.
+  \item \textbf{Cải tiến NLP:} Tham số hóa 14 văn bản tiếng Việt thực tế, bao phủ đa dạng biến thể ngôn ngữ (tên tỉnh thành, loại hình, mức giá).
 \end{itemize}
 
 \subsection{Hướng Phát triển}
 
 Các khoảng trống kiểm thử đã được xác định:
 \begin{itemize}
-    \item Kiểm thử tích hợp với PostgreSQL + pgvector thực (hiện đang mock Prisma).
-    \item Pipeline CI/CD tự động hóa quy trình kiểm thử.
-    \item Kiểm thử hiệu năng với tập dữ liệu lớn ($10^5+$ địa điểm).
-    \item Kiểm thử người dùng (usability testing) có tổ chức.
+  \item Kiểm thử tích hợp với PostgreSQL + pgvector thực (hiện đang mock Prisma).
+  \item Pipeline CI/CD tự động hóa quy trình kiểm thử.
+  \item Kiểm thử hiệu năng với tập dữ liệu lớn ($10^5+$ địa điểm).
+  \item Kiểm thử người dùng có tổ chức.
 \end{itemize}
 
 
@@ -1142,35 +1155,35 @@ Các khoảng trống kiểm thử đã được xác định:
 
 \section{Kết luận và hướng phát triển}
 \subsection{Kết luận}
-Trong quá trình thực hiện đề tài, nhóm đã xây dựng thành công ứng dụng web toàn diện với kiến trúc hiện đại, tích hợp các công nghệ AI tiên tiến. Hệ thống được phát triển trên nền tảng React (frontend) và NestJS (backend), kết hợp với Prisma ORM, Firebase Authentication, và các dịch vụ AI đa nền tảng (Gemini, Cloudflare AI, FreeModel).\\\\Các chức năng đã được triển khai thành công bao gồm:
+Trong quá trình thực hiện đề tài, nhóm đã xây dựng thành công ứng dụng web toàn diện với kiến trúc hiện đại, tích hợp các công nghệ AI tiên tiến. Hệ thống được phát triển trên nền tảng React và NestJS, kết hợp với Prisma ORM, Firebase Authentication, và các dịch vụ AI đa nền tảng (Gemini, Cloudflare AI, FreeModel).\\\\Các chức năng đã được triển khai thành công bao gồm:
 \begin{itemize}
-    \item Chức năng tìm kiếm qua chatbot
-    \item Chức năng so sánh các địa điểm lưu trú
-    \item Chức năng trích xuất thông tin chi tiết và đánh giá của AI về một địa điểm lưu trú cụ thể
+  \item Chức năng tìm kiếm qua chatbot
+  \item Chức năng so sánh các địa điểm lưu trú
+  \item Chức năng trích xuất thông tin chi tiết và đánh giá của AI về một địa điểm lưu trú cụ thể
 \end{itemize}
 \subsection{Những kiến thức và kỹ năng đạt được}
 Môn học và đồ án lần này đã mang lại cho chúng em những bài học vô cùng thực tế, giúp thu hẹp khoảng cách giữa lý thuyết và ứng dụng:
 \begin{itemize}
-    \item \textbf{Vận dụng 4 trụ cột cốt lõi của Tư duy Máy tính (Computational Thinking):} Thông qua đồ án, chúng em đã làm chủ và áp dụng thành công mô hình tư duy này để giải quyết bài toán thực tế. Cụ thể, chúng em thực hiện 
-    \begin{enumerate}
-        \item \textit{Phân rã bài toán} (Decomposition) để chia nhỏ hệ thống thành các module độc lập (\textit{AiModule} và \textit{RecommendationsModule});
-        \item \textit{Nhận biết mẫu} (Pattern Recognition) để tìm ra khuôn mẫu trong hành vi tìm kiếm của khách hàng;
-        \item \textit{Trừu tượng hóa} (Abstraction) để lọc bỏ thông tin nhiễu, trích xuất tham số cốt lõi qua \textit{Intent Parsing};
-        \item \textit{Thiết kế thuật toán} (Algorithm Design) để xây dựng luồng vận hành (Workflow) tối ưu cho Chatbot.
-    \end{enumerate}
-       \noindent Các kỹ năng này giúp chúng em định hình được tư duy logic vững chắc cho các dự án phức tạp sau này.
-    
-    \item \textbf{Tư duy khai thác Trí tuệ nhân tạo: }Chúng em đã học được cách viết cấu trúc câu lệnh (Prompt Engineering) và cách ứng dụng AI một cách hiệu quả, biến AI thành một công cụ đồng hành đắc lực để tối ưu hóa việc tìm kiếm thông tin thay vì lạm dụng một cách máy móc.
-    \item \textbf{Làm quen với các công nghệ mới: }Đồ án là cơ hội để chúng em tiếp cận và biết cách sử dụng hàng loạt công cụ, ngôn ngữ và nền tảng cốt lõi trong phát triển phần mềm hiện đại như HTML, JavaScript, nền tảng cơ sở dữ liệu Firebase, bản đồ OpenStreetMap,... Dù thời gian có hạn và chưa thể tìm hiểu quá sâu sắc từng công nghệ, nhưng đây là nền móng cực kỳ quan trọng cho các môn học chuyên ngành tiếp theo.
-    \item \textbf{Kỹ năng làm việc nhóm và Quản lý mã nguồn: }Biết cách sử dụng GitHub để quản lý các phiên bản code, phối hợp phân chia công việc trong nhóm một cách hệ thống.
-    \item \textbf{Tư duy Hệ thống: }Hiểu rõ bức tranh toàn cảnh về cách một hệ thống phần mềm vận hành trong thực tế (cách Frontend tương tác với Backend, cách gọi API và truy vấn dữ liệu từ Database).
+  \item \textbf{Vận dụng 4 trụ cột cốt lõi của Tư duy Máy tính:} Thông qua đồ án, chúng em đã làm chủ và áp dụng thành công mô hình tư duy này để giải quyết bài toán thực tế. Cụ thể, chúng em thực hiện 
+  \begin{enumerate}
+    \item \textit{Phân rã bài toán} (Decomposition) để chia nhỏ hệ thống thành các module độc lập (\textit{AiModule} và \textit{RecommendationsModule});
+    \item \textit{Nhận biết mẫu} (Pattern Recognition) để tìm ra khuôn mẫu trong hành vi tìm kiếm của khách hàng;
+    \item \textit{Trừu tượng hóa} (Abstraction) để lọc bỏ thông tin nhiễu, trích xuất tham số cốt lõi qua \textit{Intent Parsing};
+    \item \textit{Thiết kế thuật toán} (Algorithm Design) để xây dựng luồng vận hành tối ưu cho Chatbot.
+  \end{enumerate}
+    \noindent Các kỹ năng này giúp chúng em định hình được tư duy logic vững chắc cho các dự án phức tạp sau này.
+  
+  \item \textbf{Tư duy khai thác Trí tuệ nhân tạo: }Chúng em đã học được cách viết kỹ năng Prompt Engineering và cách ứng dụng AI một cách hiệu quả, biến AI thành một công cụ đồng hành đắc lực để tối ưu hóa việc tìm kiếm thông tin thay vì lạm dụng một cách máy móc.
+  \item \textbf{Làm quen với các công nghệ mới: }Đồ án là cơ hội để chúng em tiếp cận và biết cách sử dụng hàng loạt công cụ, ngôn ngữ và nền tảng cốt lõi trong phát triển phần mềm hiện đại như HTML, JavaScript, nền tảng cơ sở dữ liệu Firebase, bản đồ OpenStreetMap,... Dù thời gian có hạn và chưa thể tìm hiểu quá sâu sắc từng công nghệ, nhưng đây là nền móng cực kỳ quan trọng cho các môn học chuyên ngành tiếp theo.
+  \item \textbf{Kỹ năng làm việc nhóm và Quản lý mã nguồn: }Biết cách sử dụng GitHub để quản lý các phiên bản code, phối hợp phân chia công việc trong nhóm một cách hệ thống.
+  \item \textbf{Tư duy Hệ thống: }Hiểu rõ bức tranh toàn cảnh về cách một hệ thống phần mềm vận hành trong thực tế (cách Frontend tương tác với Backend, cách gọi API và truy vấn dữ liệu từ Database).
 \end{itemize}
 
 \subsection{Hướng phát triển trong tương lai}
 Nhằm nâng cấp và hoàn thiện dự án thành một sản phẩm có tính ứng dụng thực tế cao hơn, các mục tiêu trong tương lai bao gồm:
 \begin{itemize}
-    \item \textbf{Nghiên cứu sâu về RAG và LLM: }Tối ưu hóa sâu hơn kỹ thuật Retrieval-Augmented Generation (RAG) kết hợp với các mô hình ngôn ngữ lớn (như Groq) để nâng cao độ chính xác, giảm thiểu hiện tượng "ảo tưởng" (hallucination) của Chatbot khi trả lời khách hàng.
-    \item \textbf{Tối ưu hóa UI/UX: }Thiết kế lại giao diện người dùng thân thiện, trực quan hơn trên cả hai nền tảng Web và Mobile, tối ưu hóa các bộ lọc nâng cao để nâng cao trải nghiệm của các nhóm đối tượng Target Users.
+  \item \textbf{Nghiên cứu sâu về RAG và LLM: }Tối ưu hóa sâu hơn kỹ thuật Retrieval-Augmented Generation (RAG) kết hợp với các mô hình ngôn ngữ lớn (như Groq) để nâng cao độ chính xác, giảm thiểu hiện tượng "ảo tưởng" (hallucination) của Chatbot khi trả lời khách hàng.
+  \item \textbf{Tối ưu hóa UI/UX: }Thiết kế lại giao diện người dùng thân thiện, trực quan hơn trên cả hai nền tảng Web và Mobile, tối ưu hóa các bộ lọc nâng cao để nâng cao trải nghiệm của các nhóm đối tượng Target Users.
 \end{itemize}
 
 \end{document}
