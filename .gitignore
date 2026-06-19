@@ -17,3 +17,4 @@ backend/test/fixtures/
 *.synctex.gz
 *.lof
 *.lot
+report/*.py

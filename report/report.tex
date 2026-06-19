@@ -1,15 +1,14 @@
-\documentclass[12pt, a4paper]{article} % Khai báo loại văn bản (bài báo)
-\usepackage[utf8]{vietnam}              % Thư viện để gõ tiếng Việt có dấu
-\usepackage{graphicx}                   % Thư viện để chèn hình ảnh
-\usepackage{amsmath}                    % Thư viện hỗ trợ toán học nâng cao
-\usepackage{hyperref}                   % Tạo liên kết (link) trong file PDF
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{vietnam}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[colorlinks=true, linkcolor=blue!70!black, urlcolor=cyan!70!black]{hyperref}
 \usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2cm]{geometry}
-\usepackage{xcolor} % Để dùng màu sắc
-\usepackage{tikz}   % Để vẽ khung
+\usepackage{xcolor}
+\usepackage{tikz}
 \usetikzlibrary{positioning,shapes,arrows.meta,fit,backgrounds,shapes.geometric,patterns,calc,shadows}
 \usepackage{amsfonts}
 \usepackage{listings}
-\usepackage{xcolor}
 \usepackage{colortbl}
 \usepackage{enumitem}       
 \usepackage{amssymb}        
@@ -18,11 +17,16 @@
 \usepackage[vietnamese]{babel}
 \usepackage{datetime2}
 \usepackage{tcolorbox}
-
+\tcbuselibrary{skins, breakable, theorems}
+\usepackage{fontawesome5}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{microtype} % Typography improvements
+\usepackage{fancyhdr}
 
 % ===== Define custom style =====
 \lstdefinestyle{customjson}{
-    backgroundcolor=\color{gray!10},
+    backgroundcolor=\color{gray!5},
     basicstyle=\ttfamily\footnotesize,
     breaklines=true,
     columns=fullflexible,
@@ -32,6 +36,40 @@
     escapeinside={(*@}{@*)} 
 }
 \lstset{style=customjson}
+
+% Header and Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{gray}{\small \textbf{CSC10014} -- Tư duy Tính toán}}
+\fancyhead[R]{\textcolor{gray}{\small Nhóm 12}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{gray!50}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{gray!50}\leaders\hrule height \footrulewidth\hfill}}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue!80!black}}
+  {\thesection.}{1em}{}
+  [\vspace{-0.5em}\rule{\textwidth}{0.5pt}]
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{cyan!70!black}}
+  {\thesubsection.}{1em}{}
+
+% Custom Tcolorbox for important notes
+\newtcolorbox{infobox}[1][]{
+  colback=blue!5!white,
+  colframe=blue!75!black,
+  fonttitle=\bfseries,
+  title=#1,
+  boxrule=1pt,
+  arc=4pt,
+  shadow={2mm}{-2mm}{0mm}{black!20},
+  enhanced
+}
+
 \begin{document}
 
 \begin{titlepage}
@@ -96,208 +134,311 @@
             \end{center}
     
 \end{titlepage}
-\newpage
 
 \newpage
-{\centerline{\LARGE \textbf{Lời cảm ơn}}}
-\vspace{0.5cm}
-\noindent Trong quá trình thực hiện đồ án môn học, nhóm chúng em đã nhận được rất nhiều sự hỗ trợ và hướng dẫn quý báu từ các thầy cô và bạn bè.
-\\\\
-Trước hết, chúng em xin gửi lời cảm ơn chân thành đến thầy Hồ Tuấn Thanh -- giảng viên phụ trách học phần, đã cung cấp những kiến thức nền tảng cũng như tạo điều kiện để chúng em có cơ hội tiếp cận với các công nghệ và quy trình phát triển ứng dụng thực tế. Chúng em cũng xin chân thành cảm ơn thầy Mai Anh Tuấn -- giảng viên hướng dẫn thực hành cùng các thầy cô trợ giảng đã tận tình hỗ trợ, giải đáp các thắc mắc trong quá trình học tập và thực hiện đồ án.
-\\\\
-Thông qua học phần này, các thành viên trong nhóm không chỉ tích lũy được những kiến thức chuyên môn quý báu mà còn rèn luyện được tư duy giải quyết vấn đề, kỹ năng làm việc nhóm và khả năng vận dụng kiến thức vào các bài toán thực tế. Những kinh nghiệm thu được trong quá trình thực hiện đề tài sẽ là nền tảng quan trọng cho việc học tập và nghiên cứu trong tương lai.
-\\\\
-Mặc dù đã nỗ lực hoàn thành đồ án với tinh thần học hỏi và trách nhiệm cao nhất, song do kiến thức và kinh nghiệm thực tiễn còn hạn chế nên bài làm khó tránh khỏi những thiếu sót. Chúng em rất mong nhận được những ý kiến đóng góp và nhận xét quý báu từ Thầy/Cô để có thể tiếp tục hoàn thiện kiến thức và kỹ năng của mình.
-\\\\
-Cuối cùng, chúng em xin kính chúc quý Thầy/Cô luôn dồi dào sức khỏe, hạnh phúc và gặt hái được nhiều thành công trong sự nghiệp giảng dạy và nghiên cứu.
 
+
+\newpage
+\thispagestyle{empty}
+\vspace*{2cm}
+\begin{center}
+    {\LARGE \textbf{\textcolor{blue!80!black}{Lời Cảm Ơn}}}
+\end{center}
 \vspace{1cm}
+\begin{spacing}{1.3}
+\noindent Trong quá trình thực hiện đồ án môn học, nhóm chúng em đã nhận được rất nhiều sự hỗ trợ và hướng dẫn quý báu từ các thầy cô và bạn bè.
 
+\vspace{0.3cm}
+\noindent Trước hết, chúng em xin gửi lời cảm ơn chân thành đến thầy \textbf{Hồ Tuấn Thanh} -- giảng viên phụ trách học phần, đã cung cấp những kiến thức nền tảng cũng như tạo điều kiện để chúng em có cơ hội tiếp cận với các công nghệ và quy trình phát triển ứng dụng thực tế. Chúng em cũng xin chân thành cảm ơn thầy \textbf{Mai Anh Tuấn} -- giảng viên hướng dẫn thực hành cùng các thầy cô trợ giảng đã tận tình hỗ trợ, giải đáp các thắc mắc trong quá trình học tập và thực hiện đồ án.
+
+\vspace{0.3cm}
+\noindent Thông qua học phần này, các thành viên trong nhóm không chỉ tích lũy được những kiến thức chuyên môn quý báu mà còn rèn luyện được tư duy giải quyết vấn đề, kỹ năng làm việc nhóm và khả năng vận dụng kiến thức vào các bài toán thực tế. Những kinh nghiệm thu được trong quá trình thực hiện đề tài sẽ là nền tảng quan trọng cho việc học tập và nghiên cứu trong tương lai.
+
+\vspace{0.3cm}
+\noindent Mặc dù đã nỗ lực hoàn thành đồ án với tinh thần học hỏi và trách nhiệm cao nhất, song do kiến thức và kinh nghiệm thực tiễn còn hạn chế nên bài làm khó tránh khỏi những thiếu sót. Chúng em rất mong nhận được những ý kiến đóng góp và nhận xét quý báu từ Thầy/Cô để có thể tiếp tục hoàn thiện kiến thức và kỹ năng của mình.
+
+\vspace{0.3cm}
+\noindent Cuối cùng, chúng em xin kính chúc quý Thầy/Cô luôn dồi dào sức khỏe, hạnh phúc và gặt hái được nhiều thành công trong sự nghiệp giảng dạy và nghiên cứu.
+\end{spacing}
+
+\vspace{1.5cm}
 \begin{flushright}
-Các thành viên của nhóm 12
+    \textit{Trân trọng,}\\
+    \textbf{Các thành viên Nhóm 12}
 \end{flushright}
+
 
 \newpage
 \tableofcontents
-\newpage
-
 
 \newpage
-\section{Group member}
-\begin{itemize}
-    \item \textbf{Thành viên 1:} \\
-    Tên: Đào Tiến Đạt \\
-    MSSV: 24120033            \\
-    Email:                      \\
-    Vai trò/Nhiệm vụ:   
+\section{Group Member}
+\vspace{0.5cm}
+\renewcommand{\arraystretch}{1.8}
+\begin{table}[h!]
+    \centering
+    \begin{tabularx}{\textwidth}{@{} c c X X @{}}
+        \toprule
+        \textbf{STT} & \textbf{MSSV} & \textbf{Họ và Tên} & \textbf{Vai trò / Nhiệm vụ chính} \\
+        \midrule
+        1 & 24120033 & \textbf{Đào Tiến Đạt} & \\
+        2 & 24120040 & \textbf{Dương Hoài Đức} & \\
+        3 & 24120304 & \textbf{Trần Thị Bích Hạnh} & \\
+        4 & 24120310 & \textbf{Nguyễn Đình Hiếu} & \\
+        5 & 24120483 & \textbf{Hoàng Văn Trường} & \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-    \item \textbf{Thành viên 2:} \\
-    Tên: Dương Hoài Đức \\
-    MSSV: 24120040      \\
-    Email:                      \\
-    Vai Trò/Nhiệm vụ:
-
-    \item \textbf{Thành viên 3:} \\
-    Tên: Trần Thị Bích Hạnh     \\
-    MSSV: 24120304              \\
-    Email: 24120304@student.hcmus.ed.vn \\
-    Vai trò/Nhiệm vụ:       
-
-    \item \textbf{Thành Viên 4:}\\
-    Tên: Nguyễn Đình Hiếu       \\
-    MSSV: 24120310              \\
-    Email:                      \\
-    Vai trò/Nhiệm vụ:
-
-    \item \textbf{Thành viên 5:}\\
-    Tên: Hoàng Văn Trường       \\
-    MSSV: 24120483              \\
-    Email:                      \\
-    Vai trò/Nhiệm vụ:
-\end{itemize}
 
 \newpage
-
-
 \section{Idea}
+
 \subsection{Đặt vấn đề}
+Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn:
 
-Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Tuy nhiên, quá trình này vẫn còn gặp nhiều khó khăn do các nguyên nhân sau:
-
-\begin{itemize}
-    \item \textbf{Thông tin phân tán trên nhiều nền tảng:} Thông tin về khách sạn, homestay hay resort thường được đăng tải trên nhiều website và ứng dụng khác nhau. Người dùng phải mất nhiều thời gian để tìm kiếm, so sánh giá cả, tiện nghi và đánh giá trước khi đưa ra quyết định.
-    
-    \item \textbf{Khó tìm được địa điểm phù hợp với nhu cầu cá nhân:} Mỗi người dùng có những tiêu chí khác nhau về nơi lưu trú như ngân sách, vị trí, loại hình chỗ ở hoặc các tiện ích đi kèm. Tuy nhiên, các công cụ tìm kiếm truyền thống chủ yếu dựa trên bộ lọc cố định nên chưa hỗ trợ tốt cho việc tìm kiếm theo nhu cầu tự nhiên của người dùng.
+\begin{itemize}[label=\textcolor{blue!70!black}{\faTimesCircle}]
+    \item \textbf{Thông tin phân tán:} Dữ liệu về khách sạn, homestay rải rác trên nhiều nền tảng, khiến người dùng mất nhiều thời gian so sánh.
+    \item \textbf{Bộ lọc cứng nhắc:} Các công cụ truyền thống chỉ cho phép lọc theo bộ lọc có sẵn, không hỗ trợ tìm kiếm dựa trên nhu cầu tự nhiên và cá nhân hóa của người dùng.
 \end{itemize}
 
-\noindent \textbf{Hệ quả:} Người dùng phải tốn nhiều thời gian để thu thập và xử lý thông tin nhưng vẫn có thể gặp khó khăn trong việc lựa chọn nơi lưu trú phù hợp nhất với nhu cầu của mình.\\\par
-
-\noindent \textbf{Giải pháp:} Nhóm đề xuất xây dựng một hệ thống tìm kiếm và gợi ý lưu trú thông minh, cho phép người dùng mô tả nhu cầu bằng ngôn ngữ tự nhiên. Hệ thống sẽ phân tích yêu cầu, tìm kiếm các địa điểm phù hợp, thực hiện đánh giá và xếp hạng, sau đó đưa ra những gợi ý trực quan và dễ hiểu nhằm hỗ trợ người dùng đưa ra quyết định nhanh chóng và hiệu quả hơn.
+\begin{infobox}[\faLightbulb \ Giải pháp đề xuất]
+Nhóm xây dựng hệ thống tìm kiếm và gợi ý lưu trú thông minh, cho phép người dùng mô tả nhu cầu bằng \textbf{ngôn ngữ tự nhiên}. Hệ thống sẽ phân tích yêu cầu, tìm kiếm các địa điểm phù hợp, đánh giá, xếp hạng và đưa ra những gợi ý trực quan, giúp người dùng ra quyết định nhanh chóng.
+\end{infobox}
 
 \subsection{Tầm nhìn ứng dụng}
-\noindent Tầm nhìn của dự án là xây dựng một nguyên mẫu thử nghiệm nhằm chứng minh tính khả thi của việc kết hợp trí tuệ nhân tạo vào quy trình tìm kiếm địa điểm lưu trú. Thay vì định hướng thành một nền tảng thương mại hoàn chỉnh ngay từ đầu, dự án tập trung vào việc định hình lại cách người dùng tương tác với dữ liệu. 
-\\\par
-\noindent Thông qua việc mô phỏng một môi trường tích hợp thông tin đa nguồn và ứng dụng kỹ thuật RAG (Retrieval-Augmented Generation), nguyên mẫu này kỳ vọng sẽ tạo ra một tiền đề (proof of concept) cho các hệ thống tìm kiếm trong tương lai. Ở đó, AI đóng vai trò như một tác tử điều phối trung gian, biến những truy vấn ngôn ngữ tự nhiên mơ hồ của người dùng thành các kết quả trực quan, đáng tin cậy và mang tính cá nhân hóa cao.
+Dự án không chỉ nhằm xây dựng một nền tảng thương mại thông thường, mà định hình lại cách người dùng tương tác với dữ liệu. Thông qua việc ứng dụng AI và kỹ thuật \textbf{RAG}, hệ thống kỳ vọng tạo ra một tiền đề cho tương lai, nơi AI đóng vai trò như một người điều phối đáng tin cậy.
 
 \subsection{Người dùng mục tiêu}
-Smacco tập trung phục vụ ba nhóm đối tượng chính:
-\begin{itemize}
-    \item \textbf{Khách du lịch tự túc:} Những người cần tìm kiếm thông tin chi tiết, so sánh giá và chất lượng một cách nhanh chóng để tối ưu hóa ngân sách và trải nghiệm.
-    \item \textbf{Người dùng đang lưu trú (On-site Users):} Những người muốn đóng góp thông tin thực tế, hình ảnh tại chỗ và hỗ trợ cộng đồng thông qua việc trả lời các câu hỏi thực tế.
-    \item \textbf{Người dùng cần sự hỗ trợ cá nhân hóa:} Những người ưu tiên việc sử dụng chatbot thông minh để tìm kiếm theo nhu cầu đặc biệt thay vì tự tay lọc qua hàng trăm kết quả.
+\begin{itemize}[label=\textcolor{cyan!70!black}{\faUserCheck}]
+    \item \textbf{Khách du lịch tự túc:} Cần tìm kiếm nhanh chóng, so sánh giá để tối ưu hóa trải nghiệm.
+    \item \textbf{Người dùng On-site:} Đang lưu trú tại địa điểm, sẵn sàng đóng góp thông tin thực tế và trả lời câu hỏi cộng đồng.
+    \item \textbf{Người ưu tiên cá nhân hóa:} Thích tương tác với AI thay vì tốn hàng giờ với các bộ lọc phức tạp.
 \end{itemize}
 
-\newpage
-\section{Problem Analysis \& Decomposition}
 
-\subsection{Sử dụng phương pháp User Journey}
-Để phân rã và thiết kế hệ thống bám sát thực tiễn, nhóm đã đặt mình vào vị trí của người dùng (User Journey) và đặt ra chuỗi câu hỏi dẫn dắt như sau:
+\section{Problem Analysis}
 
-\begin{itemize}
-    \item \textbf{Người dùng sẽ làm gì với ứng dụng của chúng tôi?} \\
-    $\rightarrow$ Người dùng cần tìm địa điểm lưu trú phù hợp với nhu cầu cá nhân.
+\subsection{Hành trình Người dùng}
+Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế hệ thống thông qua chuỗi câu hỏi dẫn dắt từ góc nhìn người dùng:
 
-    \item \textbf{Người dùng có thể tìm kiếm địa điểm lưu trú như thế nào?} \\
-    $\rightarrow$ Cần thiết kế giao diện tìm kiếm hoặc cung cấp phương thức tìm kiếm linh hoạt (như tìm trên bản đồ, lọc theo tiêu chí, tìm bằng từ khóa).
+\begin{tcolorbox}[colback=white, colframe=gray!30, arc=5pt, boxrule=1pt, breakable]
+\begin{description}[style=multiline, leftmargin=1cm, font=\bfseries\color{blue!70!black}]
+    \item[\faSearch] \textbf{Tìm kiếm thế nào?} Cần giao diện linh hoạt (bản đồ, lọc tiêu chí, từ khóa) kết hợp LLM để phân tích ý định thô.
+    \item[\faBalanceScale] \textbf{So sánh ra sao?} Cung cấp bảng đối chiếu tiện ích và nhận xét tổng hợp từ AI để ra quyết định khách quan.
+    \item[\faSearchPlus] \textbf{Hiểu sâu địa điểm?} AI khai thác hàng ngàn bài đánh giá, trả lời trực tiếp các câu hỏi chi tiết về wifi, bữa sáng,...
+    \item[\faCheckCircle] \textbf{Chống "ảo giác" AI?} Sử dụng dữ liệu từ người dùng "On-site" để đảm bảo tính xác thực tối đa.
+\end{description}
+\end{tcolorbox}
 
-    \item \textbf{Vậy làm sao để phương thức tìm kiếm có thể cho ra kết quả tốt?} \\
-    $\rightarrow$ Chúng ta sẽ đánh giá trên các tiêu chí cụ thể; như vậy chúng ta cần trích xuất ý định thực sự của người dùng từ các yêu cầu thô.
-
-    \item \textbf{Vậy việc trích xuất ý định nên được thực hiện thế nào?} \\
-    $\rightarrow$ Có thể cho phép người dùng chủ động chọn qua bộ lọc, hoặc thông qua một tác tử AI được cài đặt để phân tích ngôn ngữ tự nhiên.
-
-    \item \textbf{Nếu người dùng sau khi đã có các địa điểm phù hợp với nhu cầu của họ, làm cách nào để hệ thống có thể giúp người dùng ra quyết định cuối cùng?} \\
-    $\rightarrow$ Có thể cài đặt tính năng giúp người dùng so sánh các địa điểm, qua đó hỗ trợ ra quyết định cuối cùng một cách khách quan.
-
-    \item \textbf{Vậy nếu người dùng muốn tìm hiểu sâu hơn về một địa điểm thì sao?} \\
-    $\rightarrow$ Cài đặt tính năng AI đưa ra phân tích chi tiết về một địa điểm cụ thể, cho phép người dùng lựa chọn các tiêu chí để phân tích (ví dụ: wifi, bữa sáng, thái độ phục vụ).
-
-    \item \textbf{Việc sử dụng LLM có thể không đạt được độ chính xác cao, liệu nguồn thông tin nào uy tín hơn không?} \\
-    $\rightarrow$ Sử dụng nguồn thông tin từ chính người dùng. Có thể áp dụng chính sách "người dùng onsite" (những người đang thực sự có mặt tại địa điểm) để tăng độ tin cậy.
-
-    \item \textbf{Vậy với các tính năng như trên, có thể tối giản giao diện để người dùng có thể tương tác nhanh chóng và dễ dàng, phù hợp với nhiều người dùng ở các độ tuổi, trình độ khác nhau hay không?} \\
-    $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian. Người dùng sẽ tương tác trực tiếp với LLM; sau đó, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động dưới nền.
+\subsection{Phân rã Bài toán Tính toán}
+Từ nhu cầu thực tế, hệ thống được phân rã thành các module kỹ thuật chuyên biệt:
+\begin{itemize}[label=\textcolor{blue!60}{\faCogs}]
+    \item \textbf{Intent Parsing:} LLM chuyển đổi ngôn ngữ tự nhiên thành JSON cấu trúc.
+    \item \textbf{Data Aggregation:} Truy xuất đồng thời DB nội bộ và API đối tác.
+    \item \textbf{Semantic Search:} Số hóa văn bản thành vector embeddings (pgvector).
+    \item \textbf{Workflow Engine:} Xây dựng khung làm việc cứng (guardrails) kiểm soát AI.
 \end{itemize}
 
-\textbf{Kết luận:} \\
-Thông qua việc đặt câu hỏi với vai trò là người dùng, nhóm thống nhất ý tưởng xây dựng một hệ thống hỗ trợ người dùng tìm kiếm địa điểm lưu trú với sự hỗ trợ thông minh của AI với vai trò là người hướng dẫn, điều phối. Hệ thống sẽ có các chức năng chính bao gồm:
-\begin{enumerate}
-    \item \textbf{Tìm kiếm thông minh (Hybrid Search):} Hỗ trợ tìm kiếm địa điểm qua các bộ lọc truyền thống kết hợp với khả năng phân tích ý định ngôn ngữ tự nhiên từ AI.
-    \item \textbf{So sánh địa điểm lưu trú:} Cung cấp bảng đối chiếu các tiện ích, giá cả và đánh giá để hỗ trợ người dùng ra quyết định cuối cùng.
-    \item \textbf{Phân tích và cung cấp Insight bằng AI:} Khai thác hàng ngàn bài đánh giá thực tế để AI tóm tắt và trả lời các câu hỏi chuyên sâu về một địa điểm cụ thể.
-    \item \textbf{Cộng đồng Hỏi-Đáp và Check-in:} Nền tảng chia sẻ thông tin từ những người dùng thực tế, đặc biệt ưu tiên phản hồi từ người dùng đang "On-site" để đảm bảo tính uy tín của thông tin.
-\end{enumerate}
+\subsection{Ràng buộc, Giả định và Tiêu chí}
+Để đảm bảo tính khả thi trong phạm vi đồ án, hệ thống được thiết kế và đánh giá dựa trên các khía cạnh rõ ràng sau:
 
-\subsection{Từ bài toán thực tế đến bài toán tính toán}
-Từ việc nhận định được mục tiệu cụ thể, nhóm tiến hành phân rã các bài toán thực tế thành các bài toán tính toán cụ thể hơn như sau: 
-\begin{itemize}
-    \item \textbf{Phân tích ý định ngôn ngữ tự nhiên:} Chuyển đổi các câu truy vấn tự do của người dùng thành các tham số truy vấn có cấu trúc nhằm kích hoạt workflow cụ thể.
-    \item \textbf{Tìm kiếm và Tổng hợp Dữ liệu:} Xây dựng cơ chế truy xuất đồng thời từ cơ sở dữ liệu nội bộ và các nhà cung cấp bên thứ ba, sau đó chuẩn hóa và loại bỏ dữ liệu trùng lặp.
-    \item \textbf{Truy xuất thông tin ngữ nghĩa:} Số hóa các user reviews và dữ liệu hỏi đáp cộng đồng thành các vector embeddings. Điều này cho phép hệ thống thực hiện tìm kiếm theo ngữ nghĩa, giúp trợ lý AI đưa ra câu trả lời dựa trên trải nghiệm thực tế thay vì gặp ảo giác.
-    \item \textbf{Tích hợp dữ liệu và hệ thống tính toán ngoài:} Xây dựng luồng kết nối API và đồng bộ hóa dữ liệu từ các hệ thống ngoại vi để đáp ứng nhu cầu truy xuất thông tin liên tục và đảm bảo tính nhất quán của dữ liệu.
-    \item \textbf{Xây dựng khung làm việc cố định cho LLM:} Thiết lập các quy tắc, cấu trúc prompt và hệ thống workflow cứng nhằm kiểm soát hành vi của LLM, giúp AI hoạt động một cách nhất quán, chính xác và có thể dự đoán được.
-    \item \textbf{Lập kế hoạch phát triển giao diện phần mềm, nâng cao tính dễ tiếp cận:} Phân tích và thiết kế trải nghiệm người dùng (UX/UI), đảm bảo tính trực quan để người dùng ở nhiều độ tuổi và trình độ công nghệ khác nhau có thể dễ dàng tương tác.
+\vspace{0.3cm}
+\noindent\textbf{\textcolor{blue!80!black}{\faLink \ 1. Ràng buộc}}
+\begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
+    \item \textbf{Về mặt kiến trúc:} Lựa chọn mô hình \textit{Modular Monolith} để giảm thiểu chi phí quản lý và vận hành trong giai đoạn MVP, đồng thời vẫn giữ được tính phân tách cao giúp dễ dàng mở rộng sang Microservices sau này.
+    \item \textbf{Về mặt tài nguyên:} Hệ thống offload (chuyển giao) toàn bộ tải tính toán AI nặng nề sang các API của bên thứ ba (như Groq). Nhờ đó, hệ thống lõi có thể chạy cục bộ mượt mà trên phần cứng cơ bản không yêu cầu GPU.
+    \item \textbf{Về phạm vi hỗ trợ:} Ứng dụng ở giai đoạn này tập trung vào thị trường Việt Nam. Hệ thống tập trung xác định các địa điểm lưu trú trong nước, yêu cầu AI phải hỗ trợ tiếng Việt tốt và hiểu rõ ngữ cảnh văn hóa địa phương.
 \end{itemize}
 
-\subsection{Ràng buộc, giả định và tiêu chí đánh giá}
-Để đảm bảo tính khả thi trong phạm vi đồ án, hệ thống được thiết kế dựa trên các giới hạn rõ ràng:
-
-\textbf{1. Ràng buộc:}
-\begin{itemize}
-    \item \textit{Về mặt kiến trúc:} Chọn mô hình Modular Monolith để giảm thiểu chi phí quản lý vận hành cho giai đoạn MVP, nhưng vẫn giữ tính phân tách cao để dễ dàng mở rộng.
-    \item \textit{Về mặt tài nguyên:} Offload toàn bộ tải tính toán AI nặng nề sang API của bên thứ ba, do đó hệ thống có thể chạy cục bộ trên phần cứng không yêu cầu GPU.
-    \item \textit{Về phạm vi hỗ trợ:} Ứng dụng trước hết là sẽ tập trung vào người dùng ở Việt Nam, thông qua đó xác định được các địa điểm lưu trú có mặt ở Việt Nam, ứng dụng phải hỗ trợ tiếng Việt và đảm bảo AI phải hiểu ngữ cảnh tiếng Việt.
+\vspace{0.3cm}
+\noindent\textbf{\textcolor{blue!80!black}{\faLightbulb \ 2. Giả định}}
+\begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
+    \item Khả năng lập luận, phân tích ngữ nghĩa và đưa ra quyết định của Mô hình ngôn ngữ lớn là yếu tố khách quan, tính chính xác phụ thuộc vào API cung cấp chứ không bị giới hạn bởi hệ thống nội bộ.
+    \item Dữ liệu thu thập từ các nhà cung cấp bên thứ ba (Goong, SerpAPI) luôn đảm bảo độ tin cậy về mặt nội dung và ổn định về thời gian phản hồi (uptime).
 \end{itemize}
 
-\textbf{2. Giả định:}
-\begin{itemize}
-    \item Khả năng lập luận, phân tích và đưa ra giải pháp của AI là yếu tố khách quan, không phụ thuộc hệ thống.
-    \item Dữ liệu từ các nhà cung cấp bên ngoài đảm bảo độ tin cậy và thời gian phản hồi nhất định.
+\vspace{0.3cm}
+\noindent\textbf{\textcolor{blue!80!black}{\faTasks \ 3. Tiêu chí đánh giá}}
+\begin{itemize}[label=\textcolor{gray!70!black}{\faCaretRight}]
+    \item \textbf{Sự hài lòng của người dùng:} Đánh giá mức độ thoải mái, mức độ cá nhân hóa và sự hài lòng tổng thể khi người dùng trải nghiệm các tính năng tìm kiếm, trò chuyện cùng AI trên nền tảng.
+    \item \textbf{Tính hữu dụng:} Ứng dụng phải giải quyết được triệt để bài toán tìm kiếm chỗ ở. Giao diện cần trực quan, dễ thao tác và có luồng tương tác mượt mà phù hợp với nhiều nhóm đối tượng.
+    \item \textbf{Độ chính xác của thông tin:} Đảm bảo chất lượng dữ liệu trả về. Danh sách địa điểm phải sát thực tế, và đặc biệt câu trả lời phân tích chi tiết từ AI phải chuẩn xác, tuyệt đối không được xảy ra tình trạng ảo giác.
 \end{itemize}
 
-\textbf{3. Tiêu chí đánh giá:}
-\begin{itemize}
-    \item \textit{Sự hài lòng của người dùng (User Satisfaction):} Đánh giá mức độ thoải mái và hài lòng tổng thể của người dùng khi trải nghiệm các tính năng tìm kiếm và tương tác trên nền tảng.
-    \item \textit{Tính hữu ích và khả năng sử dụng (Usefulness \& Usability):} Ứng dụng phải thực sự giải quyết được bài toán tìm chỗ ở, giao diện trực quan, dễ thao tác và luồng tương tác mượt mà cho mọi đối tượng.
-    \item \textit{Tính chính xác của thông tin (Information Accuracy):} Đảm bảo chất lượng và độ tin cậy của dữ liệu trả về, bao gồm độ sát thực tế của danh sách địa điểm gợi ý và tính chuẩn xác (không bịa đặt thông tin) trong các phân tích chi tiết từ LLM.
-\end{itemize}
-
-\newpage
 
 \section{System Overview}
-SMACCO là một nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp giữa hệ thống tra cứu truyền thống và sức mạnh của Trí tuệ Nhân tạo (AI). Dự án chuyển đổi cách người dùng tương tác với thông tin du lịch thông qua giao diện hội thoại (chatbot) và công nghệ tìm kiếm theo ngữ nghĩa (semantic search).
+\textbf{Hệ thống} là nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp tra cứu truyền thống và sức mạnh Trí tuệ Nhân tạo. Dự án mang đến trải nghiệm đột phá qua giao diện hội thoại và tìm kiếm ngữ nghĩa.
 
-\subsection{List of Core Features}
-\begin{itemize}
-    \item \textbf{Tìm kiếm và Gợi ý Lưu trú (Search \& Recommendations):} Tìm kiếm đa chiều kết hợp bộ lọc truyền thống và gợi ý cá nhân hóa.
-    \item \textbf{Trợ lý Ảo AI Tích hợp RAG (AI Chatbot \& RAG):} Giao tiếp tự nhiên bằng tiếng Việt để tìm kiếm, phân tích và trích xuất thông tin thực tế từ hệ thống.
-    \item \textbf{Quản lý Cộng đồng (Reviews \& Questions):} Nền tảng chia sẻ đánh giá và hỏi đáp trực tiếp tại từng địa điểm lưu trú.
-    \item \textbf{Theo dõi Hiện diện Tại chỗ (Presence / On-site Tracking):} Xác nhận và ưu tiên thông tin từ những người dùng đang có mặt tại địa điểm.
-    \item \textbf{Đóng góp Nội dung (User Contributions \& Uploads):} Cho phép người dùng tải lên hình ảnh, thêm mới hoặc cập nhật thông tin địa điểm.
-    \item \textbf{Lưu trữ Địa điểm Yêu thích (Saved Places):} Đánh dấu và quản lý danh sách các địa điểm quan tâm.
-\end{itemize}
+\subsection{Tính Năng Cốt Lõi}
+\vspace{0.3cm}
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.6}
+    \begin{tabularx}{\textwidth}{@{} c >{\bfseries}l X @{}}
+        \toprule
+        \textcolor{blue!80!black}{\textbf{STT}} & \textcolor{blue!80!black}{\textbf{Tính Năng}} & \textcolor{blue!80!black}{\textbf{Mô Tả Ngắn}} \\
+        \midrule
+        1 & \faSearch \ Tìm kiếm và Gợi ý & Trải nghiệm tìm kiếm đa chiều kết hợp linh hoạt giữa bộ lọc và hệ thống gợi ý cá nhân hóa. \\
+        2 & \faRobot \ Trợ lý Ảo AI & Chatbot thông minh hỗ trợ tìm kiếm và chắt lọc thông tin lưu trú qua hội thoại tự nhiên. \\
+        3 & \faComments \ Quản lý Cộng đồng & Không gian tương tác, hỏi đáp và chia sẻ nhận xét trực tiếp tại trang của từng địa điểm. \\
+        4 & \faMapMarker \ Xác nhận On-site & Tính năng check-in độc đáo để xác nhận người dùng đang có mặt tại địa điểm thực tế. \\
+        5 & \faCamera \ Đóng góp Nội dung & Trao quyền cho người dùng tải lên hình ảnh và cập nhật tình trạng mới nhất của chỗ ở. \\
+        6 & \faHeart \ Lưu trữ Địa điểm & Công cụ cá nhân để đánh dấu, lưu lại và so sánh các danh sách địa điểm yêu thích. \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-\subsection{Explanation of Core Features}
-\begin{itemize}
-    \item \textbf{Tìm kiếm và Gợi ý Lưu trú:} Hệ thống tổng hợp dữ liệu từ các API bản đồ (Goong, SerpAPI) và cơ sở dữ liệu nội bộ. Người dùng có thể tìm kiếm theo tọa độ, mức giá, tiện nghi, hoặc nhận các đề xuất được hệ thống tính toán dựa trên mức độ phù hợp.
-    \item \textbf{Trợ lý Ảo AI Tích hợp RAG:} Sử dụng mô hình ngôn ngữ lớn (LLM) làm bộ định tuyến (router) để hiểu ý định người dùng (intent parsing). Khi người dùng đặt câu hỏi sâu về địa điểm, AI áp dụng kỹ thuật RAG (Retrieval-Augmented Generation) thông qua \texttt{pgvector} để trích xuất các bài đánh giá thực tế và tổng hợp thành câu trả lời chính xác, tránh hiện tượng sinh chữ ảo giác (hallucination).
-    \item \textbf{Quản lý Cộng đồng:} Mỗi địa điểm lưu trú đóng vai trò như một diễn đàn thu nhỏ. Người dùng có thể đặt câu hỏi về tiện ích, chất lượng phục vụ và nhận câu trả lời từ những khách du lịch khác. Các bài đánh giá (reviews) này sau đó trở thành nguồn dữ liệu chất lượng cao cho AI.
-    \item \textbf{Theo dõi Hiện diện Tại chỗ:} Điểm khác biệt cốt lõi là tính năng \textit{check-in} tại chỗ. Hệ thống ghi nhận trạng thái ``On-site'' của người dùng, qua đó tăng độ tin cậy và ưu tiên hiển thị các câu trả lời/đánh giá từ những người đang thực sự trải nghiệm dịch vụ.
-    \item \textbf{Đóng góp Nội dung:} Người dùng không chỉ là người tiêu thụ thông tin mà còn là người xây dựng hệ thống. Nền tảng cho phép tải lên hình ảnh thực tế và đề xuất chỉnh sửa thông tin chỗ ở, giúp dữ liệu luôn được làm mới.
-    \item \textbf{Lưu trữ Địa điểm Yêu thích:} Người dùng có thể dễ dàng lưu lại các tùy chọn tiềm năng để so sánh và ra quyết định sau này.
-\end{itemize}
+\subsection{Minh họa Tính năng}
+Thay vì tiếp cận theo hướng kỹ thuật, hệ thống được thiết kế dựa trên quá trình tối ưu hóa trải nghiệm thực tế của người dùng thông qua các tính năng sau:
 
-\subsection{Innovation Highlights}
-\begin{itemize}
-    \item \textbf{Tích hợp AI điều phối quy trình (AI-Driven Workflow):} AI không chỉ đóng vai trò sinh văn bản mà hoạt động như một cỗ máy điều phối (workflow engine). Thay vì click qua nhiều bộ lọc phức tạp, người dùng chỉ cần ra lệnh bằng tiếng Việt tự nhiên (ví dụ: ``Tìm một homestay yên tĩnh ở Đà Lạt cho gia đình''), AI sẽ tự động gọi API, tính toán, và cập nhật kết quả thẳng lên giao diện (AI-driven UI).
-    \item \textbf{Tìm kiếm Dựa trên Ngữ nghĩa (Semantic Search với Vector DB):} Việc sử dụng PostgreSQL kết hợp \texttt{pgvector} cho phép hệ thống hiểu được ý nghĩa sâu xa của các bài đánh giá. Thay vì so khớp từ khóa cứng nhắc, hệ thống có thể trả lời các câu hỏi trừu tượng dựa trên độ đo tương đồng Cosine (Cosine Similarity) của các vector nhúng (embeddings).
-    \item \textbf{Ưu tiên Trải nghiệm Thực tế (On-site Insights):} Hạn chế rủi ro từ các đánh giá ảo bằng cách gắn trọng số cao cho những tương tác của người dùng \textit{On-site}. Điều này giải quyết bài toán nhức nhối trong ngành du lịch là sự sai lệch thông tin giữa quảng cáo và thực tế.
+\vspace{0.6cm}
+\noindent\Large\textbf{\textcolor{blue!80!black}{\faMagic \ 1. Trải nghiệm Tìm kiếm Linh hoạt}}\normalsize
+
+\vspace{0.3cm}
+\noindent
+\begin{minipage}[c]{0.35\textwidth}
+Hệ thống khắc phục hạn chế của các bộ lọc tìm kiếm truyền thống bằng cách cho phép người dùng nhập trực tiếp các yêu cầu phức tạp dưới dạng ngôn ngữ tự nhiên. Ví dụ: \textit{"Tìm một homestay yên tĩnh ở Đà Lạt cho gia đình 4 người, có bếp nướng BBQ và giá dưới 2 triệu."} Thông qua khả năng phân tích ngữ nghĩa, hệ thống sẽ trích xuất chính xác các tiêu chí và trả về danh sách địa điểm phù hợp nhất.
+\end{minipage}\hfill
+\begin{minipage}[c]{0.6\textwidth}
+    \centering
+    \begin{tikzpicture}
+        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Tìm kiếm)};
+    \end{tikzpicture}
+\end{minipage}
+
+\vspace{0.8cm}
+\noindent\Large\textbf{\textcolor{teal!80!black}{\faComments \ 2. Hỏi đáp Trực tiếp cùng Trợ lý Ảo}}\normalsize
+
+\vspace{0.3cm}
+\noindent
+\begin{minipage}[c]{0.6\textwidth}
+    \centering
+    \begin{tikzpicture}
+        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Chat AI)};
+    \end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.35\textwidth}
+Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng loạt đánh giá dài, người dùng có thể đặt câu hỏi trực tiếp cho AI tại trang thông tin của điểm lưu trú. Ví dụ: \textit{"Khách sạn này ăn sáng có đa dạng không? Tốc độ mạng wifi có ổn định không?"}. Trợ lý ảo sẽ tự động phân tích các đánh giá thực tế từ cơ sở dữ liệu để đưa ra câu trả lời khách quan, ngắn gọn và bám sát thắc mắc của người dùng.
+\end{minipage}
+
+\vspace{0.8cm}
+\noindent\Large\textbf{\textcolor{orange!80!black}{\faCheckCircle \ 3. Chống Thông tin Sai lệch qua cơ chế "On-site"}}\normalsize
+
+\vspace{0.3cm}
+\noindent
+\begin{minipage}[c]{0.35\textwidth}
+Để giải quyết rủi ro sai lệch thông tin giữa quảng cáo và thực tế, hệ thống tích hợp tính năng xác thực "Check-in" dành riêng cho những khách hàng đang có mặt tại điểm lưu trú. Những hình ảnh, đánh giá hoặc câu trả lời được cung cấp bởi nhóm người dùng "On-site" này sẽ được gán nhãn xác thực và ưu tiên hiển thị, qua đó nâng cao độ tin cậy của thông tin trên nền tảng.
+\end{minipage}\hfill
+\begin{minipage}[c]{0.6\textwidth}
+    \centering
+    \begin{tikzpicture}
+        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(On-site)};
+    \end{tikzpicture}
+\end{minipage}
+
+\vspace{0.8cm}
+\noindent\Large\textbf{\textcolor{purple!80!black}{\faUsers \ 4. Tương tác Cộng đồng Trực tiếp}}\normalsize
+
+\vspace{0.3cm}
+\noindent
+\begin{minipage}[c]{0.6\textwidth}
+    \centering
+    \begin{tikzpicture}
+        \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Cộng đồng)};
+    \end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.35\textwidth}
+Mỗi địa điểm trên nền tảng được tổ chức như một diễn đàn độc lập. Người dùng có thể đặt các câu hỏi đặc thù và nhận phản hồi trực tiếp từ những du khách đã hoặc đang lưu trú tại đó. Tính năng này tạo ra một vòng lặp chia sẻ thông tin liên tục, giúp dữ liệu luôn được cập nhật và phản ánh đúng tình trạng hiện tại của điểm đến.
+\end{minipage}
+
+\vspace{0.5cm}
+\subsection{Điểm Đột Phá}
+\begin{infobox}[\faRocket \ Các điểm đổi mới nổi bật]
+\begin{itemize}[label=\textcolor{orange}{\faCheck}]
+    \item \textbf{AI-Driven Workflow:} AI không chỉ sinh chữ. Nó là "bộ định tuyến" gọi API, tính toán logic và vẽ thẳng kết quả lên UI.
+    \item \textbf{Semantic Search và Vector DB:} Khám phá chỗ ở thông qua độ tương đồng Cosine của ngữ nghĩa, vượt ra khỏi giới hạn so khớp từ khóa cứng nhắc.
+    \item \textbf{On-site Insights:} Giải quyết triệt để sự sai lệch giữa quảng cáo và thực tế bằng cách ưu tiên tương tác từ người dùng thực chứng.
 \end{itemize}
+\end{infobox}
+
+
 
 \newpage
 \section{Pattern Recognition}
+
+Để thiết kế một kiến trúc hệ thống chặt chẽ, nhóm đã tiến hành phân tích và nhận diện các hành vi lặp lại của người dùng cũng như các cấu trúc tiềm ẩn trong luồng dữ liệu thực tế.
+
+\vspace{0.4cm}
+\noindent\textcolor{blue!80!black}{\large\textbf{\faSearch \ 1. User Query Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{blue!60!black}, left=12pt, top=2pt, bottom=2pt]
+Quan sát thực tế cho thấy, dù người dùng có cách diễn đạt rất đa dạng khi tìm kiếm nơi lưu trú, các câu truy vấn này luôn xoay quanh một tập hợp các đặc trưng cốt lõi lặp lại. Những yếu tố này bao gồm các thông số định lượng như vị trí, ngân sách, loại hình lưu trú, tiện nghi, và các yếu tố định tính (yêu cầu mềm) như "yên tĩnh", "gần trung tâm" hay "phù hợp cho gia đình". Nhận diện được mẫu cấu trúc tiềm ẩn này, \textbf{quy tắc tổng quát} được rút ra là: mọi câu lệnh phức tạp đều có thể được bóc tách thành các tham số rời rạc kết hợp với ngữ nghĩa mở rộng. Quy tắc này trực tiếp định hình quyết định thiết kế hệ thống phân tích ý định (intent parsing). Thay vì cố gắng khớp chuỗi nguyên văn, kiến trúc hệ thống sử dụng mô hình ngôn ngữ để trích xuất và định tuyến các thông tin này vào một cấu trúc tham số chuẩn hóa, làm đầu vào cho các bước truy vấn tiếp theo.
+\end{tcolorbox}
+
+\vspace{0.4cm}
+\noindent\textcolor{teal!80!black}{\large\textbf{\faDatabase \ 2. Accommodation Data Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{teal!60!black}, left=12pt, top=2pt, bottom=2pt]
+Trong quá trình thu thập thông tin từ nhiều nhà cung cấp khác nhau, nhóm phát hiện ra một sự tương đồng lớn về cấu trúc dữ liệu. Dù định dạng đầu vào có khác biệt, mọi điểm lưu trú đều chia sẻ các thuộc tính chung cốt lõi như tên, tọa độ địa lý, địa chỉ, mức giá, điểm đánh giá, tiện nghi, loại hình và các bài nhận xét. Mẫu cấu trúc này chỉ ra rằng, dữ liệu đa nguồn hoàn toàn có thể được ánh xạ về một khuôn dạng chung. Dựa trên quy tắc này, nhóm đã đưa ra \textbf{quyết định thiết kế} một lược đồ dữ liệu và các đối tượng truyền tải dữ liệu (DTO) thống nhất. Mọi luồng dữ liệu từ Goong, SerpAPI hay cơ sở dữ liệu nội bộ đều phải đi qua bước chuẩn hóa này, đảm bảo hệ thống có thể xử lý và hiển thị thông tin nhất quán bất kể nguồn gốc.
+\end{tcolorbox}
+
+\vspace{0.4cm}
+\noindent\textcolor{orange!80!black}{\large\textbf{\faBalanceScale \ 3. Decision-making Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{orange!70!black}, left=12pt, top=2pt, bottom=2pt]
+Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm khi là một đường thẳng. Quan sát cho thấy, du khách thường không chọn ngay kết quả đầu tiên được đề xuất. Thay vào đó, họ có xu hướng lưu lại một vài lựa chọn nổi bật, đặt chúng lên bàn cân để so sánh các yếu tố như giá cả, vị trí và tiện ích trước khi đưa ra quyết định cuối cùng. Nhận ra mẫu hành vi vòng lặp này, \textbf{quy tắc tổng quát} được xác định là quá trình tìm kiếm luôn đi kèm với nhu cầu đối chiếu đa chiều. Từ đó, hệ thống được thiết kế bổ sung một luồng tính năng chuyên biệt cho việc đánh dấu và lưu trữ địa điểm. Điều này giúp trải nghiệm không bị gián đoạn và hỗ trợ người dùng ra quyết định một cách tự tin hơn.
+\end{tcolorbox}
+
+\vspace{0.4cm}
+\noindent\textcolor{purple!80!black}{\large\textbf{\faStar \ 4. Review và RAG Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{purple!60!black}, left=12pt, top=2pt, bottom=2pt]
+Khi đi sâu vào các câu hỏi mà người dùng thường đặt ra về một khách sạn cụ thể, một mẫu chủ đề rõ nét xuất hiện. Hầu hết các thắc mắc đều lặp lại quanh các khía cạnh: độ sạch sẽ, chất lượng mạng kết nối, mức độ tiếng ồn, vị trí thực tế so với quảng cáo và thái độ phục vụ. Từ sự hội tụ về chủ đề này, \textbf{quy tắc rút ra} là phần lớn giá trị của các bài đánh giá nằm ở việc trả lời các câu hỏi cụ thể này. Nhận thức được điều đó, thay vì để người dùng đọc toàn bộ văn bản dài, nhóm \textbf{quyết định thiết kế} tổ chức dữ liệu đánh giá thành các đoạn thông tin nhỏ (chunks) và sử dụng kỹ thuật tìm kiếm vector. Thiết kế này cho phép hệ thống tự động trích xuất đúng phần nhận xét chứa câu trả lời và tổng hợp lại cho người dùng.
+\end{tcolorbox}
+
+\vspace{0.4cm}
+\noindent\textcolor{red!80!black}{\large\textbf{\faExclamationTriangle \ 5. Failure Pattern}}
+\vspace{0.15cm}
+
+\begin{tcolorbox}[blanker, borderline west={3pt}{0pt}{red!60!black}, left=12pt, top=2pt, bottom=2pt]
+Hoạt động của các dịch vụ tích hợp bên ngoài luôn tiềm ẩn những rủi ro có tính quy luật. Quá trình kiểm thử cho thấy các lỗi thường lặp lại theo những dạng nhất định: thiếu thông tin về giá, không có điểm đánh giá, dữ liệu trả về bị trùng lặp, lỗi kết nối hoặc hoàn toàn không tìm thấy kết quả phù hợp. Mẫu lỗi này dẫn đến \textbf{quy tắc}: sự thiếu hụt hoặc sai lệch dữ liệu ngoại vi là điều tất yếu và hệ thống lõi phải có khả năng tự phục hồi. Áp dụng quy tắc này vào \textbf{quyết định thiết kế}, các cơ chế xử lý lỗi biên, khử trùng lặp (deduplication) và kịch bản dự phòng (fallback) đã được xây dựng. Khi một nhà cung cấp gặp sự cố hoặc dữ liệu không toàn vẹn, hệ thống sẽ tự động bù đắp bằng các luồng thông tin khác hoặc cấu trúc lại giao diện phù hợp mà không làm sập toàn bộ ứng dụng.
+\end{tcolorbox}
+
+\vspace{0.6cm}
+\begin{table}[h!]
+    \centering
+    \renewcommand{\arraystretch}{1.6}
+    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash\hsize=0.8\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X @{}}
+        \toprule
+        \textcolor{blue!80!black}{\textbf{\faClipboardList \ Mẫu được nhận diện}} & \textcolor{blue!80!black}{\textbf{\faLightbulb \ Quy tắc tổng quát}} & \textcolor{blue!80!black}{\textbf{\faCogs \ Quyết định thiết kế}} \\
+        \midrule
+        \textbf{User Query Pattern} \newline Đa dạng cách diễn đạt nhưng chung các tiêu chí cốt lõi. & Các yêu cầu phức tạp có thể bóc tách thành tham số và ngữ nghĩa. & Xây dựng luồng phân tích ý định để trích xuất tham số có cấu trúc. \\
+        \addlinespace
+        \textbf{Data Pattern} \newline Điểm lưu trú đa nguồn đều chung các thuộc tính cốt lõi. & Dữ liệu đa nguồn có thể được ánh xạ về một khuôn dạng chuẩn duy nhất. & Thiết kế DTO và lược đồ dữ liệu thống nhất làm đầu mối chuẩn hóa. \\
+        \addlinespace
+        \textbf{Decision-making} \newline Người dùng cân nhắc nhiều lựa chọn trước khi chốt đặt phòng. & Hành trình tìm kiếm luôn đi kèm nhu cầu đối chiếu đa chiều. & Tích hợp tính năng lưu trữ và theo dõi địa điểm song song tìm kiếm. \\
+        \addlinespace
+        \textbf{Review/RAG Pattern} \newline Thắc mắc lặp lại các chủ đề (sạch sẽ, wifi, tiếng ồn). & Giá trị của đánh giá nằm ở khả năng giải đáp các thắc mắc cụ thể này. & Chia nhỏ đánh giá thành vector để truy xuất tự động qua RAG. \\
+        \addlinespace
+        \textbf{Failure Pattern} \newline Thiếu giá, trùng lặp, lỗi dịch vụ bên thứ ba. & Lỗi ngoại vi là tất yếu, hệ thống lõi cần tự bảo vệ và phục hồi. & Xây dựng cơ chế fallback, khử trùng lặp và các kịch bản kiểm thử biên. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{\textbf{Pattern Recognition Summary}}
+\end{table}
+
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=blue!2, colframe=blue!40!white, arc=4pt, boxrule=0.5pt, left=10pt, right=10pt]
+\textbf{Tóm lại,} hệ thống không đơn thuần là một tập hợp các tính năng rời rạc được chắp vá lại với nhau. Thay vào đó, toàn bộ kiến trúc được định hình vững chắc dựa trên quá trình quan sát, khái quát hóa và vận dụng các \textbf{mẫu lặp lại (patterns)} đặc thù của bài toán lưu trú. Điều này đảm bảo nền tảng hoạt động nhất quán, dễ dàng mở rộng và thực sự giải quyết đúng những vấn đề cốt lõi của người dùng.
+\end{tcolorbox}
+
 \newpage
 \section{Abstraction}
+
 \newpage
 \section{System/Algorithm Design}
 \subsection{Biểu diễn Bài toán}
@@ -363,13 +504,13 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
     label/.style={font=\scriptsize, align=center}
 ]
 
-\node[person] (user) {Người dùng\\ (Traveler)};
+\node[person] (user) {Người dùng};
 \node[person, below=0.8cm of user] (admin) {Quản trị viên};
 
 \node[system, right=of user] (platform) {Nền tảng Khám phá\\ Chỗ ở};
 \node[external, above right=0.2cm and 2cm of platform] (firebase) {Firebase\\ Auth};
-\node[external, below=0.3cm of firebase] (groq) {Groq API\\ (LLM)};
-\node[external, below=0.3cm of groq] (maps) {Goong / OSM\\ (Bản đồ)};
+\node[external, below=0.3cm of firebase] (groq) {Groq API};
+\node[external, below=0.3cm of groq] (maps) {Goong / OSM};
 \node[external, below=0.3cm of maps] (serp) {SerpAPI};
 
 \draw[arrow] (user) -- node[above, label] {HTTPS/SSE} (platform);
@@ -404,8 +545,8 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 \node[anchor=north west, blue!70, font=\bfseries\small] at (boundary.north west) {Nền tảng Khám phá Chỗ ở};
 \end{scope}
 
-\node[container, above right=0.5cm and 1cm of boundary.center] (fe) {Frontend (SPA)\\ React + Vite + Nginx};
-\node[container, below=1cm of fe] (be) {Backend (API)\\ NestJS + Prisma};
+\node[container, above right=0.5cm and 1cm of boundary.center] (fe) {Frontend\\ React + Vite + Nginx};
+\node[container, below=1cm of fe] (be) {Backend\\ NestJS + Prisma};
 \node[database, below=1cm of be] (db) {PostgreSQL\\ 16 + pgvector};
 
 \node[external, right=2.5cm of fe] (fa) {Firebase Auth};
@@ -460,7 +601,7 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 \draw[arrow] (prisma.north) -- ++(0,0.5) -- ++(2.5,0) -- ++(0,0.3);
 \draw[arrow] (toolreg.north) -- (ai.south);
 
-\node[font=\tiny, above=0.1cm of ai] {Nhóm AI \& Tìm kiếm};
+\node[font=\tiny, above=0.1cm of ai] {Nhóm AI và Tìm kiếm};
 \node[font=\tiny, above=0.1cm of places] {Nhóm Dịch vụ lõi};
 \node[font=\tiny, above=0.1cm of contrib] {Nhóm Mở rộng};
 \end{tikzpicture}
@@ -575,10 +716,10 @@ Mô hình C4 được sử dụng để biểu diễn kiến trúc hệ thống 
 \node[dproc, below left=of normalize] (local) {Truy vấn DB nội bộ};
 \node[dproc, below right=of normalize] (external) {3 API ngoài (song song)};
 
-\node[proc, below=2cm of normalize] (merge) {Hợp nhất \& khử trùng lặp};
+\node[proc, below=2cm of normalize] (merge) {Hợp nhất và khử trùng lặp};
 \node[dec, below=of merge] (recommend) {Gợi ý?};
 
-\node[dproc, below right=of recommend] (rank) {Tính điểm \& xếp hạng};
+\node[dproc, below right=of recommend] (rank) {Tính điểm và xếp hạng};
 \node[io, below=of recommend] (output) {Danh sách địa điểm};
 
 \draw[arrow] (input) -- (normalize);
@@ -678,7 +819,7 @@ Truy vấn N+1 Prisma & Thấp & Eager loading \\
 \end{tabular}
 \end{center}
 
-\newpage
+
 \section{Implementation}
 \subsection{Từ Mô hình Thiết kế đến Phân rã Module}
 
@@ -699,7 +840,7 @@ Các module được tổ chức thành bốn nhóm:
 \hline
 Dịch vụ lõi & Users, Places, Reviews, Search, Health & Kế thừa từ core-service (NestJS) \\
 \hline
-AI \& Tìm kiếm & AI, Recommendations & Chuyển đổi từ FastAPI sang NestJS \\
+AI và Tìm kiếm & AI, Recommendations & Chuyển đổi từ FastAPI sang NestJS \\
 \hline
 Mở rộng MVP & RAG, Presence, Contributions & Phát triển mới \\
 \hline
@@ -784,7 +925,7 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
 
 Quá trình triển khai cho thấy việc chuyển đổi từ mô hình thiết kế sang mã nguồn đòi hỏi liên tục giải quyết các vấn đề thực tế: tính phi tất định của LLM, hạn chế của ORM với kiểu dữ liệu đặc thù, và đảm bảo tính nhất quán xuyên suốt các tầng. Mười hai vấn đề đã được ghi nhận với các mức độ ưu tiên khác nhau.
 
-\newpage
+
 \section{Testing}
 \subsection{Chiến lược Kiểm thử}
 
@@ -800,7 +941,7 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
 \node[layer, fill=blue!70!black!80] (fe) {Tầng 1: Kiểm thử Đơn vị Frontend};
 \node[layer, fill=blue!60, below=0.1cm of fe] (be) {Tầng 2: Kiểm thử Đơn vị Backend};
 \node[layer, fill=blue!50, below=0.1cm of be] (e2e) {Tầng 3: Kiểm thử Tích hợp Backend};
-\node[layer, fill=blue!40, below=0.1cm of e2e] (scenario) {Tầng 4: Kiểm thử Tình huống \& Giả lập};
+\node[layer, fill=blue!40, below=0.1cm of e2e] (scenario) {Tầng 4: Kiểm thử Tình huống và Giả lập};
 
 \node[right=0.5cm of fe, font=\tiny] {Vitest + Testing Library (jsdom)};
 \node[right=0.5cm of be, font=\tiny] {Jest + ts-jest, mock Prisma};
@@ -907,11 +1048,11 @@ Phân bố kiểm thử theo nhóm chức năng backend:
 \node[bar, fill=green!50, minimum width=4.5cm, right=0.3cm of l1, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {37};
 
-\node[anchor=west, below=0.2cm of l1] (l2) {AI \& NLP (Chat, Router, Workflow, Tools, Groq)};
+\node[anchor=west, below=0.2cm of l1] (l2) {AI và NLP (Chat, Router, Workflow, Tools, Groq)};
 \node[bar, fill=green!50, minimum width=5.3cm, right=0.3cm of l2, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {44};
 
-\node[anchor=west, below=0.2cm of l2] (l3) {Tìm kiếm \& Đề xuất (Search, Recommendations)};
+\node[anchor=west, below=0.2cm of l2] (l3) {Tìm kiếm và Đề xuất (Search, Recommendations)};
 \node[bar, fill=green!50, minimum width=3.6cm, right=0.3cm of l3, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {30};
 
@@ -919,7 +1060,7 @@ Phân bố kiểm thử theo nhóm chức năng backend:
 \node[bar, fill=green!50, minimum width=2.6cm, right=0.3cm of l4, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {22};
 
-\node[anchor=west, below=0.2cm of l4] (l5) {Xử lý lỗi \& Xác thực (Filter, Guard, Interceptor)};
+\node[anchor=west, below=0.2cm of l4] (l5) {Xử lý lỗi và Xác thực (Filter, Guard, Interceptor)};
 \node[bar, fill=green!50, minimum width=1.3cm, right=0.3cm of l5, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {11};
 
@@ -969,19 +1110,19 @@ Các khoảng trống kiểm thử đã được xác định:
     \item Kiểm thử người dùng (usability testing) có tổ chức.
 \end{itemize}
 
-\newpage
+
 \section{Demo}
-\newpage
+
 \section{Deployment}
-\newpage
+
 \section{Logbook: Plan and Actual Workload}
 
-\newpage
+
 \section{AI usage and declaration}
-\newpage
+
 \section{Kết luận và hướng phát triển}
 \subsection{Kết luận}
-Trong quá trình thực hiện đề tài, nhóm đã xây dựng thành công ứng dụng web toàn diện SMACCO với kiến trúc hiện đại, tích hợp các công nghệ AI tiên tiến. Hệ thống được phát triển trên nền tảng React (frontend) và NestJS (backend), kết hợp với Prisma ORM, Firebase Authentication, và các dịch vụ AI đa nền tảng (Gemini, Cloudflare AI, FreeModel).\\\\Các chức năng đã được triển khai thành công bao gồm:
+Trong quá trình thực hiện đề tài, nhóm đã xây dựng thành công ứng dụng web toàn diện với kiến trúc hiện đại, tích hợp các công nghệ AI tiên tiến. Hệ thống được phát triển trên nền tảng React (frontend) và NestJS (backend), kết hợp với Prisma ORM, Firebase Authentication, và các dịch vụ AI đa nền tảng (Gemini, Cloudflare AI, FreeModel).\\\\Các chức năng đã được triển khai thành công bao gồm:
 \begin{itemize}
     \item Chức năng tìm kiếm qua chatbot
     \item Chức năng so sánh các địa điểm lưu trú
