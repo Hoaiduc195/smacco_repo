@@ -224,14 +224,31 @@ Dự án không chỉ nhằm xây dựng một nền tảng thương mại thôn
 \subsection{Hành trình Người dùng}
 Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế hệ thống thông qua chuỗi câu hỏi dẫn dắt từ góc nhìn người dùng:
 
-\begin{tcolorbox}[colback=white, colframe=gray!30, arc=5pt, boxrule=1pt, breakable]
-\begin{description}[style=multiline, leftmargin=1cm, font=\bfseries\color{blue!70!black}]
-    \item[\faSearch] \textbf{Tìm kiếm thế nào?} Cần giao diện linh hoạt (bản đồ, lọc tiêu chí, từ khóa) kết hợp LLM để phân tích ý định thô.
-    \item[\faBalanceScale] \textbf{So sánh ra sao?} Cung cấp bảng đối chiếu tiện ích và nhận xét tổng hợp từ AI để ra quyết định khách quan.
-    \item[\faSearchPlus] \textbf{Hiểu sâu địa điểm?} AI khai thác hàng ngàn bài đánh giá, trả lời trực tiếp các câu hỏi chi tiết về wifi, bữa sáng,...
-    \item[\faCheckCircle] \textbf{Chống "ảo giác" AI?} Sử dụng dữ liệu từ người dùng "On-site" để đảm bảo tính xác thực tối đa.
-\end{description}
-\end{tcolorbox}
+\begin{itemize}[label=\textcolor{blue!70!black}{\faQuestionCircle}, leftmargin=0.5cm]
+    \item \textbf{Người dùng sẽ làm gì với ứng dụng của tôi?} \\
+    $\rightarrow$ Người dùng cần tìm địa điểm lưu trú.
+    
+    \item \textbf{Người dùng có thể tìm kiếm địa điểm lưu trú như thế nào?} \\
+    $\rightarrow$ Thiết kế giao diện tìm kiếm hoặc phương thức tìm kiếm linh hoạt.
+
+    \item \textbf{Vậy làm sao để phương thức tìm kiếm có thể cho ra kết quả tốt?} \\
+    $\rightarrow$ Chúng ta sẽ đánh giá trên các tiêu chí, như vậy chúng ta cần trích xuất ý định của người dùng.
+
+    \item \textbf{Vậy việc trích xuất nên được thực hiện thế nào?} \\
+    $\rightarrow$ Có thể cho phép người dùng chọn hoặc thông qua tác tử AI được cài đặt.
+
+    \item \textbf{Nếu người dùng sau khi đã có các địa điểm phù hợp với nhu cầu của họ, làm cách nào để hệ thống có thể giúp người dùng ra quyết định cuối cùng như thế nào?} \\
+    $\rightarrow$ Có thể cài đặt tính năng giúp người dùng so sánh các địa điểm, hỗ trợ ra quyết định cuối.
+
+    \item \textbf{Vậy nếu người dùng muốn tìm hiểu sâu hơn về một địa điểm thì sao?} \\
+    $\rightarrow$ Cài đặt tính năng AI đưa ra phân tích chi tiết về một địa điểm cụ thể, cho phép người dùng lựa chọn các tiêu chí để phân tích.
+
+    \item \textbf{Việc sử dụng LLM có thể không đạt được độ chính xác cao, liệu nguồn thông tin nào uy tín hơn không?} \\
+    $\rightarrow$ Sử dụng nguồn thông tin từ chính người dùng, có thể áp dụng chính sách 'người dùng onsite' để tăng độ tin cậy.
+
+    \item \textbf{Vậy với các tính năng như trên, có thể tối giản giao diện để người dùng có thể tương tác nhanh chóng và dễ dàng, phù hợp với nhiều người dùng ở các độ tuổi, trình độ khác nhau hay không?} \\
+    $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian, người dùng sẽ tương tác trực tiếp với LLM, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động.
+\end{itemize}
 
 \subsection{Phân rã Bài toán Tính toán}
 Từ nhu cầu thực tế, hệ thống được phân rã thành các module kỹ thuật chuyên biệt:
