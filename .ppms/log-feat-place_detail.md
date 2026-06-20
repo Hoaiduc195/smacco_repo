@@ -2,6 +2,111 @@
 
 ---
 
+## [2026-06-20 14:15] — Extensive LaTeX Report Revisions and Architectural Diagramming
+
+- **Branch**: eat/place_detail
+- **Prompt summary**: The user requested a series of comprehensive updates to the LaTeX report (
+eport.tex). This included removing unneeded sections, rewriting the entire Implementation section to be a professional narrative, adding detailed LLM Context Management explanations based on the source code, eliminating all awkward/literal English-Vietnamese translations, and generating complex TikZ architectural diagrams. Finally, the user requested a cleanup of temporary files.
+- **Changes**:
+  - Removed placeholder sections for "Workload Distribution" and "Diagramming tools".
+  - Overhauled the "Conclusion", adding professional reflections and lessons learned.
+  - Rewrote Section 8 (Implementation) to focus on team workflow, removing function-level specifics and transforming it into an architectural story.
+  - Added a subsection detailing integration challenges based on 	mp/implementation.md notes.
+  - Performed a massive terminology sweep across the entire 
+eport.tex to eliminate crude translations (e.g., changing "ảo giác" to "hiện tượng Hallucination", "tiêm phụ thuộc" to "Dependency Injection").
+  - Wrote an extremely detailed subsection on "LLM Context Management", explaining the ChatService architecture, ConversationStore sliding window memory, and dynamic context injection.
+  - Hand-coded a complex TikZ diagram illustrating the entire LLM context flow from Frontend to Backend to DB.
+  - Cleaned up the 
+eport/ directory by deleting all temporary Python scripts and text files generated during the process.
+- **Modified/Created/Deleted files**:
+  - Modified: 
+eport/report.tex, 
+eport/report.pdf (recompiled multiple times)
+  - Deleted: over 100 temporary .py, .txt, and .tex files in 
+eport/.
+- **Architecture impact**: None on the software architecture itself. Significantly improved the accuracy and professionalism of the project's documentation regarding its LLM orchestration and context management logic.
+
+## [2026-06-20 13:25] — Expand implementation reflection from all PPMS branches
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested reading additional PPMS logs from other branches and supplementing `tmp/implementation`.
+- **Changes**:
+  - Read additional PPMS branch logs including `feat/search_wf`, `feat/insight_wf`, `feat/improve_parsing`, `feat/cloudflare_int`, and `feat/better_ux` alongside previously reviewed branch context.
+  - Expanded `tmp/implementation` with cross-branch lessons about SerpAPI quota/caching, multi-provider LLM abstraction, fixture/test-mode isolation, AI workflow context retention, DTO-safe chat payload normalization, generated-link navigation, conversation ownership, UI stacking/layout issues, drag-and-drop tagging, PNG export, and metadata preservation across the search/recommendation/AI pipeline.
+- **Modified files**: `tmp/implementation`, `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — documentation-only expansion based on existing branch history.
+- **Verification**: Read back the updated middle sections of `tmp/implementation` to confirm the new cross-branch material was inserted correctly.
+
+---
+
+## [2026-06-20 13:21] — Write implementation challenges reflection
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested reading the full codebase and PPMS, then rewriting `tmp/implementation` to describe the challenges, difficulties, improvement thinking, and conclusion from the project setup process.
+- **Changes**:
+  - Reviewed the current PPMS architecture/changelog context, README, package manifests, environment examples, Docker Compose setup, Prisma schema, and related branch history.
+  - Created `tmp/implementation` as a Vietnamese reflective implementation document describing setup challenges around environment variables, Prisma migrations, external/internal place IDs, race conditions, Firebase auth, external APIs, runtime modes, AI workflows, frontend state, data reliability, and verification.
+  - Framed the document from the first-person perspective, including how the implementation thinking evolved from local debugging to clearer system boundaries and runtime policies.
+- **Modified files**: `.ppms/log-feat-place_detail.md`
+- **Created files**: `tmp/implementation`
+- **Deleted files**: —
+- **Architecture impact**: No — documentation-only addition in `tmp/`.
+- **Verification**: Read back `tmp/implementation` to confirm the file exists at the requested path and contains the rewritten Vietnamese content.
+
+---
+
+## [2026-06-20 10:16] — Translate Section 7.8 workflow diagrams to English
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested that all text in the three newly added workflow diagrams be changed to English.
+- **Changes**:
+  - Translated every node label, decision label, branch annotation, and figure caption in the Hybrid Search, AI Orchestration, and AI–Community Q&A diagrams.
+  - Kept the surrounding Vietnamese report prose unchanged.
+  - Rendered and visually inspected the translated diagrams to verify that English labels did not overflow or overlap nodes.
+- **Modified files**: `report/report.tex`, `report/report.pdf`, `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — diagram language update only.
+- **Verification**: Two successful `pdflatex -interaction=nonstopmode -halt-on-error report.tex` passes; final PDF pages 24--25 visually verified.
+
+---
+
+## [2026-06-20 10:11] — Fix arrow routing in Section 7.8 workflow diagrams
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User reported that arrows in the newly added workflow diagrams overlapped diagram nodes and requested layout corrections.
+- **Changes**:
+  - Reworked the Hybrid Search diagram into separated top and persistence lanes, increased node spacing, and wrapped the persistence label so arrows and labels no longer cover nodes.
+  - Reworked the AI orchestration diagram into three vertical layers and routed the wizard confirmation branch through an external right-side lane.
+  - Routed the Q&A UI refresh edge through an external right-side lane instead of crossing the final thread node.
+  - Rendered and visually inspected the affected PDF pages after the changes.
+- **Modified files**: `report/report.tex`, `report/report.pdf`, `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — TikZ presentation refinement only.
+- **Verification**: Two successful `pdflatex -interaction=nonstopmode -halt-on-error report.tex` passes; final PDF pages 24--25 visually verified.
+
+---
+
+## [2026-06-20 10:02] — Replace Section 7.8 with three key runtime workflows
+
+- **Branch**: `feat/place_detail`
+- **Prompt**: User requested that `report.tex` Section 7.8 retain only the most representative runtime workflows and include a diagram for each workflow.
+- **Changes**:
+  - Replaced the previous five-flow list with three system-level workflows: Hybrid Search with Lazy Place Ingestion, confirmed AI Workflow Orchestration, and asynchronous AI–Community Place Q&A.
+  - Added three dedicated TikZ diagrams showing the runtime stages, decisions, persistence boundaries, SSE output, and asynchronous Q&A branch.
+  - Fixed three pre-existing invalid LaTeX line-break sequences in the C4 context diagram that prevented `pdflatex` from reaching Section 7.8.
+  - Regenerated the PDF report after two successful LaTeX compilation passes.
+- **Modified files**: `report/report.tex`, `report/report.pdf`, `.ppms/log-feat-place_detail.md`
+- **Created files**: —
+- **Deleted files**: —
+- **Architecture impact**: No — documentation now reflects the existing runtime architecture more accurately; application behavior is unchanged.
+- **Verification**: `pdflatex -interaction=nonstopmode -halt-on-error report.tex` completed successfully twice.
+
+---
+
 ## [2026-06-19 22:53] - Completely rewrite System / Algorithm Design (Section 7) in LaTeX report
 
 - **Branch**: eat/place_detail
