@@ -2,6 +2,22 @@
 
 ---
 
+## [2026-06-19 22:53] - Completely rewrite System / Algorithm Design (Section 7) in LaTeX report
+
+- **Branch**: eat/place_detail
+- **Prompt**: User requested to completely delete and rewrite Section 7 (System / Algorithm Design) of the LaTeX report to be highly professional, deeply technical, avoid AI-like bullet points, and include extremely academic C4 and algorithm workflow diagrams using TikZ.
+- **Changes**:
+  - Deleted the old Section 7 which contained heavily bulleted lists, Mermaid-style diagrams, and less formal Vietnamese.
+  - Rewrote the text entirely into flowing, academic, and deeply explanatory prose discussing the rationale behind React, NestJS, PostgreSQL, pgvector, Mapbox, and OpenAI.
+  - Redrew the C4 Context, Container, and Component diagrams using highly styled 	ikzpicture with professional orthogonal routing.
+  - Redrew the AI Conversation workflow and Hybrid Search + RAG data flow diagrams to match IEEE/academic standards.
+  - Eliminated English-in-parentheses translations and list formats as explicitly requested.
+- **Modified files**:
+  - eport/report.tex
+- **Created files**: None
+- **Deleted files**: None
+- **Architecture Impact**: No code architecture changed. This was purely an academic documentation rewrite.
+
 ## [2026-06-18 19:51] — Rewrite Problem Analysis section in PA_and_Decomposition.md
 
 - **Branch**: `feat/place_detail`

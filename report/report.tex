@@ -1,4 +1,4 @@
-\documentclass[12pt, a4paper]{article}
+﻿\documentclass[12pt, a4paper]{article}
 \usepackage[utf8]{vietnam}
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -173,6 +173,7 @@
 
 
 \newpage
+\renewcommand{\contentsname}{Table of Contents}
 \tableofcontents
 
 \newpage
@@ -198,7 +199,7 @@
 \newpage
 \section{Idea}
 
-\subsection{Đặt vấn đề}
+\subsection{Problem Statement}
 Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn với các \textbf{điểm đau} cốt lõi:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faTimesCircle}]
@@ -212,10 +213,10 @@ Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch
 Nhóm xây dựng hệ thống tìm kiếm và gợi ý lưu trú thông minh, cho phép người dùng mô tả nhu cầu bằng \textbf{ngôn ngữ tự nhiên}. Hệ thống sẽ phân tích yêu cầu, tìm kiếm các địa điểm phù hợp, đánh giá, xếp hạng và đưa ra những gợi ý trực quan, giúp người dùng ra quyết định nhanh chóng.
 \end{infobox}
 
-\subsection{Tầm nhìn ứng dụng}
+\subsection{Application Vision}
 Dự án không chỉ nhằm xây dựng một nền tảng thương mại thông thường, mà định hình lại cách người dùng tương tác với dữ liệu. Thông qua việc ứng dụng AI và kỹ thuật \textbf{RAG}, hệ thống kỳ vọng tạo ra một tiền đề cho tương lai, nơi AI đóng vai trò như một người điều phối đáng tin cậy.
 
-\subsection{Người dùng mục tiêu}
+\subsection{Target Users}
 \begin{itemize}[label=\textcolor{cyan!70!black}{\faUserCheck}]
   \item \textbf{Khách du lịch tự túc:} Cần tìm kiếm nhanh chóng, so sánh giá để tối ưu hóa trải nghiệm.
   \item \textbf{Người dùng On-site:} Đang lưu trú tại địa điểm, sẵn sàng đóng góp thông tin thực tế và trả lời câu hỏi cộng đồng.
@@ -225,7 +226,7 @@ Dự án không chỉ nhằm xây dựng một nền tảng thương mại thôn
 
 \section{Problem Analysis}
 
-\subsection{Hành trình Người dùng}
+\subsection{User Journey}
 Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế hệ thống thông qua chuỗi câu hỏi dẫn dắt từ góc nhìn người dùng:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faQuestionCircle}, leftmargin=0.5cm]
@@ -254,7 +255,7 @@ Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế h
   $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian, người dùng sẽ tương tác trực tiếp với LLM, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động.
 \end{itemize}
 
-\subsection{Phân rã Bài toán Tính toán}
+\subsection{Computational Problem Decomposition}
 Từ nhu cầu thực tế, hệ thống được phân rã thành các module kỹ thuật chuyên biệt:
 \begin{itemize}[label=\textcolor{blue!60}{\faCogs}]
   \item \textbf{Intent Parsing:} LLM chuyển đổi ngôn ngữ tự nhiên thành JSON cấu trúc.
@@ -263,7 +264,7 @@ Từ nhu cầu thực tế, hệ thống được phân rã thành các module k
   \item \textbf{Workflow Engine:} Xây dựng khung làm việc cứng kiểm soát AI.
 \end{itemize}
 
-\subsection{Ràng buộc, Giả định và Tiêu chí}
+\subsection{Constraints, Assumptions, and Criteria}
 Để đảm bảo tính khả thi trong phạm vi đồ án, hệ thống được thiết kế và đánh giá dựa trên các khía cạnh rõ ràng sau:
 
 \vspace{0.3cm}
@@ -293,7 +294,7 @@ Từ nhu cầu thực tế, hệ thống được phân rã thành các module k
 \section{System Overview}
 \textbf{Hệ thống} là nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp tra cứu truyền thống và sức mạnh Trí tuệ Nhân tạo. Dự án mang đến trải nghiệm đột phá qua giao diện hội thoại và tìm kiếm ngữ nghĩa.
 
-\subsection{Kiến trúc tổng quan}
+\subsection{Overall Architecture}
 \noindent Hệ thống được thiết kế theo mô hình \textbf{Modular Monolith} kết hợp với cơ chế điều phối tác tử AI. 
 
 \begin{infobox}[\faQuestionCircle \ Tại sao chọn Modular Monolith?]
@@ -307,7 +308,7 @@ Lý do nhóm ưu tiên sử dụng \textbf{Modular Monolith} là nhằm giảm t
   \item \textbf{Tầng Dữ liệu:} Chịu trách nhiệm lưu trữ an toàn toàn bộ dữ liệu quan hệ của nền tảng. Đồng thời, tầng này cũng tích hợp khả năng lưu trữ và truy vấn các vector nhúng, làm cốt lõi cho tính năng tìm kiếm ngữ nghĩa và truy xuất dữ liệu tăng cường.
 \end{itemize}
 
-\subsection{Tính Năng Cốt Lõi}
+\subsection{Core Features}
 \vspace{0.3cm}
 \begin{center}
   \renewcommand{\arraystretch}{1.6}
@@ -325,7 +326,7 @@ Lý do nhóm ưu tiên sử dụng \textbf{Modular Monolith} là nhằm giảm t
   \end{tabularx}
 \end{center}
 
-\subsection{Minh họa Tính năng}
+\subsection{Feature Illustrations}
 Thay vì tiếp cận theo hướng kỹ thuật, hệ thống được thiết kế dựa trên quá trình tối ưu hóa trải nghiệm thực tế của người dùng thông qua các tính năng sau:
 
 \vspace{0.6cm}
@@ -339,7 +340,7 @@ Hệ thống khắc phục hạn chế của các bộ lọc tìm kiếm truyề
 \begin{minipage}[c]{0.6\textwidth}
   \centering
   \begin{tikzpicture}
-    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Tìm kiếm)};
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Illustration (0.6 width)\\(Search)};
   \end{tikzpicture}
 \end{minipage}
 
@@ -351,7 +352,7 @@ Hệ thống khắc phục hạn chế của các bộ lọc tìm kiếm truyề
 \begin{minipage}[c]{0.6\textwidth}
   \centering
   \begin{tikzpicture}
-    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Chat AI)};
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Illustration (0.6 width)\\(Chat AI)};
   \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.35\textwidth}
@@ -369,7 +370,7 @@ Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng 
 \begin{minipage}[c]{0.6\textwidth}
   \centering
   \begin{tikzpicture}
-    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(On-site)};
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Illustration (0.6 width)\\(On-site)};
   \end{tikzpicture}
 \end{minipage}
 
@@ -381,7 +382,7 @@ Nhằm giảm thiểu thời gian đọc và tổng hợp thông tin từ hàng 
 \begin{minipage}[c]{0.6\textwidth}
   \centering
   \begin{tikzpicture}
-    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Ảnh minh họa (0.6 width)\\(Cộng đồng)};
+    \draw[dashed, fill=gray!5, draw=gray, thick] (0,0) rectangle (9.5, 5.5) node[pos=.5, text=gray, align=center] {Illustration (0.6 width)\\(Community)};
   \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.35\textwidth}
@@ -389,7 +390,7 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 \end{minipage}
 
 \vspace{0.5cm}
-\subsection{Điểm Đột Phá}
+\subsection{Breakthrough Points}
 \begin{infobox}[\faRocket \ Các điểm đổi mới nổi bật]
 \begin{itemize}[label=\textcolor{orange}{\faCheck}]
   \item \textbf{AI-Driven Workflow:} AI không chỉ sinh chữ. Nó là "bộ định tuyến" gọi API, tính toán logic và vẽ thẳng kết quả lên UI.
@@ -414,12 +415,12 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
     error arrow/.style={-{Stealth[scale=1.2]}, line width=1.2pt, dashed, draw=red!70, rounded corners=2mm}
 }
 
-\subsection{Mục đích và phương pháp tiếp cận}
+\subsection{Purpose and Approach}
 Trong dự án này, Nhận diện mẫu đóng vai trò thiết yếu để định hình kiến trúc hệ thống. Thay vì giải quyết từng vấn đề một cách đơn lẻ, nhóm đã quan sát các trường hợp lặp lại trong quá trình vận hành, so sánh chúng, gom nhóm những điểm tương đồng và khái quát hóa thành các khuôn mẫu thiết kế hữu ích. Các phương pháp tổng quát như đối chiếu nhiều trường hợp, phân tích sự lặp lại và kiểm chứng bằng các kịch bản kiểm thử (test cases) đã được áp dụng triệt để.
 
 \noindent Việc lựa chọn cách tiếp cận này xuất phát từ đặc thù của hệ thống: phải tiếp nhận vô số câu lệnh tự nhiên đa dạng, vận hành nhiều luồng xử lý song song, tổng hợp thông tin từ nhiều nguồn và đối mặt với hàng loạt tình huống lỗi ngoại vi. Nếu xử lý từng trường hợp riêng lẻ, hệ thống sẽ trở nên rời rạc, thiếu đồng bộ và rất khó mở rộng. Nhờ đúc kết được 6 quy luật cốt lõi dưới đây, nhóm đã có cơ sở vững chắc để đưa ra các quyết định thiết kế kiến trúc chuẩn xác.
 
-\subsection{Ứng dụng tư duy nhận diện mẫu}
+\subsection{Application of Pattern Recognition Thinking}
 
 \vspace{0.2cm}
 \noindent\textcolor{blue!80!black}{\textbf{\faSearch \ 1. Nhận diện mục đích tìm kiếm}}
@@ -540,7 +541,7 @@ Trong thực tiễn, các luồng thông tin dạng ngôn ngữ tự nhiên như
         \node[common box=blue, text width=3cm, right=of pgvector] (search) {\textbf{\faSearchPlus\ Semantic Search}\\Similarity Match};
 
         \draw[main arrow] (review.east) -- (chunking.west);
-        \draw[main arrow] (chunking.east) -- node[above, font=\footnotesize]{\faBolt} (pgvector.west);
+        \draw[main arrow] (chunking.east) -- node[above, label]{\faBolt} (pgvector.west);
         \draw[main arrow] (pgvector.east) -- (search.west);
     \end{tikzpicture}
     \caption{\textbf{RAG Pattern} --- Xử lý văn bản tự do thành các khối thông tin (chunks) truy xuất được bằng vector ngữ nghĩa.}
@@ -608,7 +609,7 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
     \caption{\textbf{Workflow Tool Pattern} --- Nhận diện mẫu phụ thuộc dữ liệu bằng cách sử dụng String Template giữa các Tool.}
 \end{figure}
 
-\subsection{Tổng kết}
+\subsection{Summary}
 \vspace{0.2cm}
 
 {\renewcommand{\arraystretch}{1.6}
@@ -646,13 +647,13 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
 \newpage
 \section{Abstraction}
 
-\subsection{Vai trò của Abstraction trong kiến trúc hệ thống}
+\subsection{Role of Abstraction in System Architecture}
 
 Đây là một nền tảng lưu trú du lịch thông minh, đòi hỏi sự phối hợp liên tục giữa nhiều thành phần có độ phức tạp cao như mô hình ngôn ngữ lớn (LLM), dịch vụ bản đồ, giao tiếp dữ liệu địa điểm, cơ sở dữ liệu vector và các cơ chế xác thực. Nếu để hệ thống phụ thuộc trực tiếp vào đặc tả chi tiết của từng nhà cung cấp dịch vụ, toàn bộ kiến trúc sẽ trở nên cứng nhắc, khó mở rộng và dễ đứt gãy mỗi khi có sự thay đổi từ bên ngoài. Để giải quyết rào cản này, nhóm phát triển đã áp dụng mạnh mẽ tư duy trừu tượng hóa (Abstraction) nhằm thiết lập các lớp khái niệm ổn định, che giấu hoàn toàn các chi tiết triển khai cụ thể phía sau. Tư duy này cho phép hệ thống giao tiếp với các dịch vụ cốt lõi dựa trên chức năng thiết yếu của chúng thay vì bị trói buộc vào một công nghệ hay nhà cung cấp nhất định.
 
 
 
-\subsection{Các thành phần được trừu tượng hóa}
+\subsection{Abstracted Components}
 
 Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng hóa được áp dụng xuyên suốt trên nhiều khía cạnh khác nhau:
 
@@ -754,7 +755,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
     \caption{Trừu tượng hóa Quản lý Danh tính}
 \end{figure}
 
-\subsection{Lợi ích kiến trúc và mức độ cân bằng}
+\subsection{Architectural Benefits and Balance Level}
 
 \noindent\textbf{Gia tăng sự linh hoạt:} Việc vận dụng triệt để Abstraction mang lại sự suy giảm đáng kể mức độ phụ thuộc chéo giữa các phân hệ, tạo không gian linh hoạt tối đa để thay thế hoặc luân chuyển nhà cung cấp. Sự phân tách này giúp hệ thống trở nên dễ kiểm thử, dễ bảo trì, và mở ra tiềm năng mở rộng không giới hạn trong tương lai. Hệ quả tất yếu là rủi ro kỹ thuật giảm thiểu tối đa, đặc biệt là khi các API bên ngoài thay đổi.
 
@@ -763,285 +764,269 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
 
 \section{System / Algorithm Design}
 
-\subsection{Technical Stacks Applied}
+\subsection{Architectural Design Goals}
+Hệ thống được thiết kế nhằm mang lại trải nghiệm khám phá các địa điểm lưu trú và ẩm thực trực quan thông qua bản đồ. Ngoài việc cung cấp thông tin, nền tảng tập trung mạnh vào sự tương tác của những người dùng đã xác thực thông qua các tính năng đánh giá, hỏi đáp, đánh dấu yêu thích và đặc biệt là cơ chế xác thực vị trí vật lý. Nền tảng kết nối hài hòa giữa dữ liệu địa điểm từ các nguồn bên ngoài và dữ liệu cộng đồng được lưu trữ bền vững bên trong. Trợ lý trí tuệ nhân tạo được tích hợp sâu vào hệ thống nhằm cung cấp các tư vấn chuẩn xác mà không làm gián đoạn hoặc cản trở thao tác của người dùng. Xét trên phương diện vận hành, hệ thống phải đảm bảo khả năng triển khai và bảo trì dễ dàng, phù hợp với năng lực quản lý của một nhóm phát triển sinh viên.
 
-Để giải quyết bài toán cốt lõi của hệ thống, nhóm phát triển đã lựa chọn và áp dụng một tập hợp công nghệ chuyên biệt cho từng tầng (layer). Mỗi công nghệ được chọn không chỉ dựa trên mức độ phổ biến mà còn được cân nhắc kỹ lưỡng về vai trò kiến trúc và khả năng kết nối thống nhất với toàn hệ thống.
+Để đạt được những mục tiêu trên, nhóm quyết định áp dụng kiến trúc Modular Monolith thay vì kiến trúc Microservices. Quyết định này giúp tối giản hóa đáng kể quy trình triển khai và môi trường local development, đồng thời giữ được một ranh giới database transaction chung duy nhất. Nhờ vậy, độ phức tạp trong vận hành được giảm tải tối đa, nhưng hệ thống vẫn đảm bảo được sự tách biệt rành mạch giữa các lĩnh vực nghiệp vụ thông qua cấu trúc logic module ở backend.
 
-\begin{table}[H]
-    \centering
-    \renewcommand{\arraystretch}{1.4}
-    \begin{tabular}{|p{0.18\textwidth}|p{0.25\textwidth}|p{0.25\textwidth}|p{0.25\textwidth}|}
-        \hline
-        \rowcolor{blue!10}
-        \textbf{Layer} & \textbf{Technology} & \textbf{Role in the system} & \textbf{Design rationale} \\
-        \hline
-        \textbf{Frontend} & React, Vite, TailwindCSS & Giao diện ứng dụng trang đơn (SPA), hiển thị bản đồ, quản lý trạng thái tương tác người dùng. & Cung cấp hiệu năng render cao, trải nghiệm thời gian thực mượt mà và dễ dàng tùy biến giao diện. \\
-        \hline
-        \textbf{Backend} & NestJS (Node.js), TypeScript & REST API, SSE streaming, điều phối logic nghiệp vụ và xử lý luồng AI (Workflow Engine). & Kiến trúc module hóa của NestJS giúp dễ dàng quản lý DI (Dependency Injection) và duy trì code sạch. \\
-        \hline
-        \textbf{Database \& ORM} & PostgreSQL, pgvector, Prisma & Lưu trữ dữ liệu quan hệ (người dùng, địa điểm, đánh giá) và nhúng vector ngữ nghĩa (embeddings). & PostgreSQL đảm bảo tính toàn vẹn ACID, kết hợp pgvector đáp ứng tốt nhu cầu tìm kiếm của quy trình RAG. Prisma mang lại type-safety. \\
-        \hline
-        \textbf{AI \& LLM} & OpenAI / Gemini / Groq & Phân loại ý định, trích xuất tham số, và tổng hợp ngôn ngữ tự nhiên. & Cung cấp năng lực suy luận mạnh mẽ, linh hoạt chuyển đổi giữa các nhà cung cấp thông qua thiết kế Abstraction. \\
-        \hline
-        \textbf{Map Services} & Mapbox / Google Maps / Goong & Cung cấp dữ liệu địa điểm phong phú, tọa độ và hệ thống bản đồ trực quan. & Đa dạng hóa nguồn dữ liệu địa lý nhằm chống lại sự đứt gãy nếu một API gặp sự cố. \\
-        \hline
-        \textbf{Auth} & Firebase / Supabase & Xác thực người dùng, cấp phát và quản lý JSON Web Token (JWT). & Phân tách trách nhiệm bảo mật khỏi backend, giảm rủi ro lưu trữ mật khẩu trực tiếp. \\
-        \hline
-    \end{tabular}
-    \caption{Technical stacks applied and design rationale}
-    \label{tab:tech_stack}
-\end{table}
+\subsection{Overall Architecture}
+Hệ thống được phân tầng rõ rệt thành các lớp chuyên biệt, cấu thành một khối kiến trúc Modular Monolith hoàn chỉnh.
 
-\subsection{System Architecture Based on C4 Model}
+\textbf{Frontend:}
+Sử dụng bộ công cụ React kết hợp Vite và Tailwind CSS. Lớp này đảm nhận toàn bộ giao diện tương tác, bao gồm bản đồ tìm kiếm, thẻ thông tin địa điểm, trang chi tiết địa điểm với khu vực hỏi đáp và đánh giá. Nó cũng quản lý hiển thị trạng thái có mặt vật lý, chức năng lưu địa điểm và trang hồ sơ cá nhân.
 
-Để mô tả kiến trúc tổng thể, nhóm sử dụng Mô hình C4 (Context, Containers, Components, Code) ở ba cấp độ đầu nhằm mang lại cái nhìn từ tổng quan hệ sinh thái đến chi tiết bên trong ứng dụng.
+\textbf{Backend/Application Layer:}
+Được xây dựng trên nền tảng NestJS. Lớp này đóng vai trò trung tâm điều phối mọi luồng nghiệp vụ. Nó xác thực danh tính người dùng, điều hướng các luồng tìm kiếm, đồng bộ hóa dữ liệu địa điểm bên ngoài vào cơ sở dữ liệu nội bộ. Ngoài ra, lớp này quản lý toàn bộ vòng đời của các bài đánh giá, chuỗi hỏi đáp, điều phối các phản hồi từ trí tuệ nhân tạo, xác minh vị trí vật lý, và lưu trữ danh sách yêu thích.
 
-\subsubsection{System Context Diagram}
+\textbf{Data Layer:}
+Sử dụng hệ quản trị PostgreSQL kết hợp Prisma ORM. Đây là nơi lưu trữ bền vững mọi thông tin về người dùng, địa điểm, đánh giá, câu hỏi, câu trả lời, bản ghi trạng thái có mặt, danh sách yêu thích và cả lịch sử hội thoại của trợ lý thông minh.
 
-\textbf{Mục đích:} Thể hiện ranh giới của toàn bộ hệ thống nền tảng khám phá chỗ ở, cách nó tương tác với người dùng và các hệ thống vệ tinh bên ngoài (External Providers).
+\textbf{External Integrations:}
+Hệ thống tận dụng các dịch vụ chuyên biệt từ bên ngoài nhằm tối ưu hiệu năng: Firebase phục vụ xác thực danh tính; SerpAPI cung cấp dữ liệu tìm kiếm địa điểm; Goong đảm nhận định vị tọa độ; và mô hình LLM Groq xử lý suy luận cho trợ lý thông minh. Các lớp này tương tác chặt chẽ thông qua các giao thức mạng bảo mật, trong đó lớp Ứng dụng đóng vai trò làm lá chắn trung gian.
 
-\textbf{Các thành phần chính:} Người dùng (Users), Quản trị viên (Admins), Nền tảng cốt lõi (Core Platform), và các nhà cung cấp dịch vụ (Auth Provider, LLM Provider, Map/Places API).
-
-\begin{center}
-\begin{tikzpicture}[
-  person/.style={rectangle, rounded corners, draw=teal!80!black, fill=teal!10, minimum width=3cm, minimum height=1.2cm, align=center, font=\small\bfseries, drop shadow},
-  system/.style={rectangle, rounded corners, draw=blue!80!black, fill=blue!10, minimum width=4.5cm, minimum height=1.5cm, align=center, font=\small\bfseries, drop shadow},
-  external/.style={rectangle, rounded corners, draw=gray!80!black, fill=gray!10, minimum width=3.5cm, minimum height=1.2cm, align=center, font=\small\bfseries, drop shadow},
-  arrow/.style={->, thick, >=stealth, color=blue!70!black, line width=1pt},
-  label/.style={font=\scriptsize, align=center, fill=white, inner sep=1pt}
-]
-
-\node[system] (platform) {\faServer \ Accommodation\\Platform};
-
-\node[person, left=3.5cm of platform, yshift=1.2cm] (user) {\faUser \ User};
-\node[person, left=3.5cm of platform, yshift=-1.2cm] (admin) {\faUserSecret \ Admin};
-
-\node[external, right=3.5cm of platform, yshift=1.5cm] (firebase) {\faKey \ Auth Provider};
-\node[external, right=3.5cm of platform] (llm) {\faBrain \ LLM Provider};
-\node[external, right=3.5cm of platform, yshift=-1.5cm] (maps) {\faMap \ Map APIs};
-
-\draw[arrow] (user.east) -- ++(1,0) |- node[above, label, near end] {HTTPS/SSE} (platform.west);
-\draw[arrow] (admin.east) -- ++(1,0) |- node[below, label, near end] {HTTPS} (platform.west);
-
-\draw[arrow] (platform.east) -- ++(1,0) |- node[above, label, near end] {Auth} (firebase.west);
-\draw[arrow] (platform.east) -- node[above, label] {Inference} (llm.west);
-\draw[arrow] (platform.east) -- ++(1,0) |- node[below, label, near end] {Query} (maps.west);
-
-\begin{scope}[on background layer]
-  \node[rectangle, draw=gray!50, fill=gray!5, dashed, rounded corners, fit=(firebase) (maps), inner sep=0.4cm] (ext_group) {};
-  \node[anchor=south east, gray, font=\tiny\bfseries] at (ext_group.south east) {External Systems};
-\end{scope}
-
-\end{tikzpicture}
-\end{center}
+\subsection{C4 Level 1: System Context}
+Hệ thống phục vụ ba nhóm đối tượng chính: Khách vãng lai, Người dùng đã xác thực, và Người dùng tại chỗ. Khách vãng lai có quyền xem các thông tin địa điểm và nội dung hỏi đáp công khai. Khi đã xác thực, người dùng có thể đóng góp đánh giá, đặt câu hỏi, thảo luận, lưu địa điểm và báo cáo vị trí. Người dùng tại chỗ là những cá nhân đã được hệ thống xác minh tọa độ vật lý trùng khớp với địa điểm, giúp nâng cao độ tin cậy của các câu trả lời do họ đóng góp. Hệ thống tương tác với Firebase để xác thực, SerpAPI để tìm kiếm, Goong để xử lý tọa độ, và Groq để sinh văn bản thông minh, trong khi toàn bộ dữ liệu nội tại được lưu giữ tại PostgreSQL.
 
 \begin{figure}[H]
     \centering
-    \caption{Biểu đồ System Context (Cấp 1 - Mô hình C4)}
+    \begin{tikzpicture}[
+      node distance=1.5cm and 2cm,
+      person/.style={rectangle, rounded corners, draw=black!80, fill=gray!10, thick, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+      system/.style={rectangle, rounded corners, draw=blue!80!black, fill=blue!5, thick, minimum width=3.5cm, minimum height=5cm, align=center, font=\small\bfseries},
+      external/.style={rectangle, rounded corners, draw=black!80, fill=gray!10, dashed, thick, minimum width=3cm, minimum height=1cm, align=center, font=\small},
+      db/.style={cylinder, shape border rotate=90, aspect=0.25, draw=black!80, fill=white, thick, minimum width=2.5cm, minimum height=1.5cm, align=center, font=\small},
+      arrow/.style={-latex, thick, draw=black!80},
+      label/.style={font=\footnotesize, fill=white, inner sep=2pt}
+    ]
+    
+    \node[person] (guest) {Guest};
+    \node[person, below=0.5cm of guest] (auth) {Authenticated\User};
+    \node[person, below=0.5cm of auth] (onsite) {On-site\User};
+    
+    \node[system, right=3cm of auth] (platform) {Accommodation \& Dining\Discovery Platform};
+    
+    \node[external, right=3cm of platform, yshift=1.5cm] (firebase) {Firebase Auth};
+    \node[external, below=0.3cm of firebase] (serp) {SerpAPI};
+    \node[external, below=0.3cm of serp] (goong) {Goong};
+    \node[external, below=0.3cm of goong] (groq) {Groq LLM};
+    
+    \node[db, below=1cm of platform] (pg) {PostgreSQL};
+    
+    \draw[arrow] (guest.east) -- (guest.east -| platform.west);
+    \draw[arrow] (auth.east) -- (auth.east -| platform.west);
+    \draw[arrow] (onsite.east) -- (onsite.east -| platform.west);
+    
+    \draw[arrow] (platform.east |- firebase.west) -- (firebase.west);
+    \draw[arrow] (platform.east |- serp.west) -- (serp.west);
+    \draw[arrow] (platform.east |- goong.west) -- (goong.west);
+    \draw[arrow] (platform.east |- groq.west) -- (groq.west);
+    
+    \draw[arrow] (platform.south) -- (pg.north);
+    \end{tikzpicture}
+    \caption{Biểu đồ Ngữ cảnh Hệ thống (C4 Cấp 1)}
     \label{fig:c4_context}
 \end{figure}
 
-\subsubsection{Container Diagram}
-
-\textbf{Mục đích:} Trình bày cấu trúc vật lý/logic bên trong Nền tảng Khám phá Chỗ ở, chỉ ra các vùng chứa (containers) độc lập tạo nên toàn bộ giải pháp.
-
-\textbf{Các thành phần chính:} Web Application (React/Vite), API Application (NestJS Backend), và Database (PostgreSQL).
-
-\begin{center}
-\begin{tikzpicture}[
-  person/.style={rectangle, rounded corners, draw=teal!80!black, fill=teal!10, minimum width=2.5cm, minimum height=1cm, align=center, font=\small\bfseries, drop shadow},
-  container/.style={rectangle, rounded corners, draw=blue!80!black, fill=blue!10, minimum width=3.5cm, minimum height=1.2cm, align=center, font=\small\bfseries, drop shadow},
-  database/.style={cylinder, draw=orange!80!black, fill=orange!10, minimum width=2.5cm, minimum height=1.4cm, shape border rotate=90, align=center, font=\small\bfseries, drop shadow, aspect=0.25},
-  external/.style={rectangle, rounded corners, draw=gray!80!black, fill=gray!10, minimum width=2.5cm, minimum height=1cm, align=center, font=\small\bfseries, drop shadow},
-  arrow/.style={->, thick, >=stealth, color=blue!70!black, line width=1pt},
-  label/.style={font=\tiny, align=center, fill=white, inner sep=1pt}
-]
-
-\node[container] (be) {\faNodeJs \ API App\\ \tiny NestJS + Prisma};
-\node[container, above=1.5cm of be] (fe) {\faReact \ Web App\\ \tiny React + Vite};
-\node[database, right=2.5cm of be] (db) {\faDatabase \ Database\\ \tiny PostgreSQL};
-
-\node[person, left=2.5cm of fe] (user) {\faUser \ User};
-\node[external, right=2.5cm of fe] (fa) {\faKey \ Auth Provider};
-
-\node[external, below=1.5cm of be, xshift=-2.5cm] (llm) {\faBrain \ LLM Provider};
-\node[external, below=1.5cm of be, xshift=2.5cm] (maps) {\faMap \ Map APIs};
-
-\begin{scope}[on background layer]
-\node[rectangle, draw=blue!50, fill=blue!2, dashed, fit=(fe) (be) (db), inner sep=0.6cm, rounded corners=15pt] (boundary) {};
-\node[anchor=north west, blue!70!black, font=\bfseries\small] at (boundary.north west) {\faCloud \ Accommodation Platform};
-\end{scope}
-
-\draw[arrow] (user.east) -- (fe.west);
-\draw[arrow] (fe.south) -- node[right, label] {REST/SSE} (be.north);
-\draw[arrow] (be.east) -- node[above, label] {SQL/Vector} (db.west);
-\draw[arrow] (fe.east) -- node[above, label] {Auth} (fa.west);
-\draw[arrow] (be.south) -- ++(0,-0.5) -| node[above, label, near end] {JSON} (llm.north);
-\draw[arrow] (be.south) -- ++(0,-0.5) -| node[above, label, near end] {REST} (maps.north);
-\end{tikzpicture}
-\end{center}
+\subsection{C4 Level 2: Container Architecture}
+Hệ thống bao gồm ba container cốt lõi và các dịch vụ ngoại vi. Frontend được xây dựng bằng React và Vite, chạy trực tiếp trên trình duyệt của người dùng. Nhiệm vụ của nó là giao tiếp qua API REST định dạng JSON và đính kèm Firebase Auth Token vào các yêu cầu cần xác thực. Giao diện này kết nối trực tiếp đến Backend API, một ứng dụng NestJS tập trung toàn bộ logic nghiệp vụ, xác thực thẻ bảo mật, kết nối ngoại vi và thao tác dữ liệu. Dữ liệu được Backend API đọc ghi thông qua Database Container PostgreSQL, nơi lưu giữ chuẩn hóa toàn bộ nội dung do người dùng và trí tuệ nhân tạo tạo ra, đảm bảo tính bền vững vượt ra khỏi các kết quả tìm kiếm nhất thời.
 
 \begin{figure}[H]
     \centering
-    \caption{Biểu đồ Container (Cấp 2 - Mô hình C4)}
+    \begin{tikzpicture}[
+      node distance=1.5cm and 2.5cm,
+      container/.style={rectangle, rounded corners, draw=blue!80!black, fill=blue!5, thick, minimum width=3.5cm, minimum height=1.4cm, align=center, font=\small},
+      db/.style={cylinder, shape border rotate=90, aspect=0.25, draw=black!80, fill=white, thick, minimum width=2.5cm, minimum height=1.5cm, align=center, font=\small},
+      external/.style={rectangle, rounded corners, draw=black!80, fill=gray!10, dashed, thick, minimum width=3cm, minimum height=1.2cm, align=center, font=\small},
+      arrow/.style={-latex, thick, draw=black!80},
+      label/.style={font=\footnotesize, fill=white, inner sep=2pt}
+    ]
+    
+    \node[container] (spa) {Frontend\\(React + Vite)};
+    \node[container, below=1.5cm of spa] (api) {Backend API\\(NestJS)};
+    \node[db, right=2.5cm of api] (db) {Database\\(PostgreSQL)};
+    
+    \node[external, right=2.5cm of spa] (firebase) {External Services\\(Firebase, SerpAPI, Groq)};
+    
+    \draw[arrow] (spa.south) -- node[left, label] {REST / JSON} (api.north);
+    \draw[arrow] (api.east) -- node[above, label] {Prisma ORM} (db.west);
+    \draw[arrow] (spa.east) -- node[above, label] {SDK} (firebase.west);
+    \draw[arrow] (api.north east) to[out=45, in=270] node[right, label] {HTTPS} (firebase.south);
+    
+    \end{tikzpicture}
+    \caption{Biểu đồ Kiến trúc Container (C4 Cấp 2)}
     \label{fig:c4_container}
 \end{figure}
 
-\subsubsection{Component Diagram}
+\subsection{Backend Modular Architecture}
+Máy chủ được thiết kế bám sát các business domains thay vì chia thư mục theo technical layers thuần túy. Cách tiếp cận nguyên khối phân hệ loại bỏ hoàn toàn sự phức tạp của việc trao đổi mạng nội bộ giữa các dịch vụ phân tán, nhưng vẫn duy trì tính tổ chức cực kỳ cao cấp cho mã nguồn.
 
-\textbf{Mục đích:} Phóng to vào tầng API Application (Backend) để thấy sự phân chia trách nhiệm (Separation of Concerns) giữa các thành phần phần mềm chính.
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|p{3cm}|p{3.5cm}|p{5cm}|p{3.5cm}|}
+    \hline
+    \textbf{Business Domain} & \textbf{Modules} & \textbf{Trách nhiệm Chính} & \textbf{Dữ liệu Trọng tâm} \\
+    \hline
+    Khám phá & \texttt{search}, \texttt{places} & Điều phối truy vấn và đồng bộ hóa thông tin địa điểm. & Dữ liệu địa điểm \\
+    \hline
+    Định danh & \texttt{users}, Lớp xác thực Firebase & Quản lý hồ sơ cá nhân và kiểm chứng bảo mật. & Hồ sơ người dùng \\
+    \hline
+    Cộng đồng & \texttt{questions}, \texttt{reviews}, \texttt{presence} & Quản lý nội dung thảo luận, đánh giá và trạng thái vị trí. & Câu hỏi, Đánh giá, Trạng thái có mặt \\
+    \hline
+    Cá nhân hóa & \texttt{saved-places}, \texttt{recommendations} & Ghi nhớ sở thích và đề xuất địa điểm tương thích. & Danh sách yêu thích \\
+    \hline
+    Knowledge \& AI & \texttt{ai}, \texttt{rag} & Phân loại ý định, sinh câu trả lời và tra cứu véc tơ. & Hội thoại, Vector Embeddings \\
+    \hline
+    Infrastructure & \texttt{config}, \texttt{health}, Truy xuất DB & Quản lý cấu hình môi trường, theo dõi sức khỏe hệ thống. & Environment Variables, Database Connection \\
+    \hline
+    \end{tabular}
+    \caption{Tổ chức Business Domain tại Backend}
+    \label{tab:backend_modules}
+\end{table}
 
-\textbf{Các thành phần chính:} AI Workflow Controller, Search \& Recommendation Engine, RAG Service, và Database Service.
+\subsection{Frontend Architecture}
+Frontend đóng vai trò là tầng điều phối quy trình làm việc và tương tác. Thay vì nhồi nhét logic nghiệp vụ, giao diện chỉ gọi các dịch vụ máy chủ và phản ánh trạng thái dữ liệu. React Router quản lý điều hướng và bảo vệ các protected routes. Context API đảm trách duy trì trạng thái toàn cục như thông tin xác thực, dữ liệu bản đồ và ngữ cảnh hội thoại.
 
-\begin{center}
-\begin{tikzpicture}[
-  comp/.style={rectangle, draw=green!60!black!70, fill=green!5, minimum width=3.2cm, minimum height=1cm, align=center, font=\scriptsize\bfseries, rounded corners, drop shadow},
-  shared/.style={rectangle, draw=purple!70, fill=purple!5, minimum width=9cm, minimum height=1cm, align=center, font=\scriptsize\bfseries, rounded corners, drop shadow},
-  arrow/.style={->, thick, >=stealth, color=gray!80!black, line width=1pt},
-  label/.style={font=\tiny, fill=white, inner sep=1pt}
-]
+Trang Chủ đảm nhận việc khám phá qua bản đồ, áp dụng bộ lọc và render các thẻ địa điểm cùng điểm đánh dấu. Trang Chi tiết Địa điểm đi sâu vào thông tin không gian, hiển thị đánh giá, chuỗi hỏi đáp có gắn câu trả lời AI, nút xác nhận vị trí, nút lưu yêu thích và tích hợp luôn cửa sổ chat tư vấn chuyên biệt. Trang Đăng nhập là cửa ngõ duy nhất kết nối với hệ thống xác thực Firebase. Cuối cùng, Trang Hồ sơ cá nhân tóm tắt thông tin người dùng, trạng thái có mặt hiện tại và toàn bộ danh sách địa điểm đã lưu. Các thành phần giao diện như Bản đồ, Thẻ địa điểm, Khu vực Hỏi đáp được thiết kế độc lập, kết nối với nhau thông qua mạng lưới điều hướng và Error Boundary chặt chẽ.
 
-\node[comp] (search) {\faSearch \ Search \& Rec};
-\node[comp, left=1cm of search] (ai) {\faRobot \ AI Workflow Ctrl};
-\node[comp, right=1cm of search] (rag) {\faBook \ RAG Service};
-
-\node[shared, below=1.5cm of search] (prisma) {\faDatabase \ Prisma DB Service};
-
-\draw[arrow] (ai.east) -- node[above, label] {Invoke Tool} (search.west);
-\draw[arrow] (ai.north) -- ++(0,0.5) -| node[above, label, near start] {Context} (rag.north);
-\draw[arrow] (ai.south) -- node[left, label] {Log/History} (ai.south |- prisma.north);
-\draw[arrow] (search.south) -- node[right, label] {Query} (search.south |- prisma.north);
-\draw[arrow] (rag.south) -- node[right, label] {Vector search} (rag.south |- prisma.north);
-
-\end{tikzpicture}
-\end{center}
+\subsection{Data Architecture}
+Cơ sở dữ liệu được chuẩn hóa nghiêm ngặt. Người dùng là trung tâm sở hữu vô số đánh giá, câu hỏi, câu trả lời, bản ghi vị trí, danh sách yêu thích và lịch sử hội thoại. Tương tự, Địa điểm là điểm neo cho các đánh giá, câu hỏi, vị trí và các tham chiếu hội thoại. Một câu hỏi chứa nhiều câu trả lời; các câu trả lời từ người dùng được liên kết nhân thân rõ ràng, trong khi các phản hồi được AI ghim lại tồn tại như những câu trả lời vô danh mang cờ hiệu hệ thống. Trạng thái vị trí lưu trữ chính xác thời điểm đến và đi. Bảng SavedPlace đóng vai trò cầu nối đa chiều giữa người dùng và địa điểm. Cấu trúc này cho phép các địa điểm ngoại vi từ API nhanh chóng hóa thân thành các thực thể bền vững trong hệ thống nội tại.
 
 \begin{figure}[H]
     \centering
-    \caption{Biểu đồ Component của Backend API (Cấp 3 - Mô hình C4)}
-    \label{fig:c4_component}
+    \begin{tikzpicture}[
+      node distance=1.2cm and 2cm,
+      entity/.style={rectangle, draw=black!80, fill=white, thick, minimum width=2.5cm, minimum height=0.8cm, align=center, font=\small\bfseries},
+      arrow/.style={-latex, thick, draw=black!80},
+      label/.style={font=\footnotesize, fill=white, inner sep=2pt}
+    ]
+    
+    \node[entity] (user) {User};
+    \node[entity, right=6cm of user] (place) {Place};
+    
+    \node[entity] (saved) at (4.25, 0) {SavedPlace};
+    \node[entity] (presence) at (4.25, 1.5) {Presence};
+    \node[entity] (review) at (4.25, -1.5) {Review};
+    \node[entity] (question) at (4.25, -3) {Question};
+    \node[entity] (answer) at (4.25, -4.5) {Answer};
+    
+    \node[entity] (conv) at (-3.5, 0) {Conversation};
+    
+    \draw[arrow] (user.east) -- node[above, label] {1-N} (saved.west);
+    \draw[arrow] (place.west) -- node[above, label] {1-N} (saved.east);
+    
+    \draw[arrow] (user.east) -- node[above, label] {1-N} (presence.west);
+    \draw[arrow] (place.west) -- node[above, label] {1-N} (presence.east);
+    
+    \draw[arrow] (user.east) -- node[above, label] {1-N} (review.west);
+    \draw[arrow] (place.west) -- node[above, label] {1-N} (review.east);
+    
+    \draw[arrow] (user.east) -- node[above, label] {1-N} (question.west);
+    \draw[arrow] (place.west) -- node[above, label] {1-N} (question.east);
+    
+    \draw[arrow] (question.south) -- node[right, label] {1-N} (answer.north);
+    \draw[arrow] (user.south) |- node[above, label, pos=0.8] {1-N} (answer.west);
+    
+    \draw[arrow] (user.west) -- node[above, label] {1-N} (conv.east);
+    
+    \end{tikzpicture}
+    \caption{Sơ đồ Quan hệ Thực thể Đơn giản}
+    \label{fig:entity_relationship}
 \end{figure}
 
-\subsection{Main Algorithmic Workflows}
+\subsection{Key Runtime Workflows}
 
-Thiết kế thuật toán của hệ thống được tập trung vào việc giải quyết quy trình từ khi nhận yêu cầu thô đến lúc xuất ra kết quả tinh chỉnh. Dưới đây là các luồng làm việc (workflow) chính được thiết kế tối ưu và minh họa bằng lưu đồ phân lớp.
+\textbf{8.1 Luồng Tìm kiếm}
+Người dùng thiết lập tham số tìm kiếm, giao diện truyền yêu cầu về máy chủ. Máy chủ kích hoạt Search Module, chuyển tiếp tham số cho SerpAPI (nhà cung cấp tìm kiếm chủ lực). Dữ liệu thô thu về được hệ thống loại bỏ rác, chuẩn hóa cấu trúc và hoàn trả về giao diện để vẽ bản đồ. Quyết định kiến trúc thiết lập SerpAPI làm nguồn tìm kiếm duy nhất, trong khi Goong hoàn toàn lui về chuyên trách giải mã tọa độ. Sự rạch ròi này ngăn chặn triệt để sự chồng chéo logic khi mở rộng hệ thống tìm kiếm trong tương lai.
 
-\vspace{0.3cm}
-\noindent\textbf{1. AI Consultation Workflow (Điều phối AI linh hoạt)}
+\textbf{8.2 Luồng Đồng bộ}
+Khi truy cập trang chi tiết, giao diện kiểm tra xem mã định danh đang là chuỗi ngoài (ví dụ SerpAPI) hay UUID nội bộ. Nếu là chuỗi ngoài, máy chủ tự động khởi tạo quá trình đồng bộ, chèn địa điểm vào cơ sở dữ liệu và biến nó thành một UUID tiêu chuẩn. Từ giây phút đó, mọi dữ liệu kéo theo như đánh giá, hỏi đáp, trạng thái vị trí đều được liên kết qua UUID này. Thiết kế này tạo ra một nhịp cầu liền mạch, biến một kết quả tìm kiếm bay hơi thành một thực thể neo đậu bền vững cho các hoạt động tương tác sâu của cộng đồng.
+
+\textbf{8.3 Luồng Xác thực Vị trí}
+Người dùng nhấn nút xác nhận vị trí, trình duyệt lập tức trích xuất tọa độ GPS. Máy chủ đối chiếu khoảng cách toán học giữa tọa độ người dùng và tọa độ đích. Nếu hợp lệ, hệ thống ghi nhận trạng thái có mặt và cấp huy hiệu chứng nhận trên giao diện. Đây là một cơ chế thiết lập niềm tin cốt lõi, giúp nâng tầm giá trị của các câu trả lời do người tại chỗ cung cấp. Tuy nhiên, để bảo vệ quyền riêng tư, hệ thống luôn cho phép người dùng tự do rút lui bất kỳ lúc nào.
+
+\textbf{8.4 Luồng Hỏi đáp Tích hợp AI}
+Ngay khi người dùng đăng câu hỏi, máy chủ lưu nháp và hiển thị ngay lập tức lên màn hình mà không cần chờ đợi. Ở chế độ nền, máy chủ âm thầm thu thập toàn bộ thuộc tính, tiện ích và các trích đoạn đánh giá của địa điểm để nạp vào cụm mô hình Groq. Mô hình phân tích và sinh ra câu trả lời tự nhiên, sau đó lưu cố định vào cơ sở dữ liệu. Lợi ích khổng lồ của thiết kế bất đồng bộ này là giao diện không bao giờ bị nghẽn mạng. Trí tuệ nhân tạo và con người cùng tồn tại song song trong một không gian thảo luận duy nhất.
+
+\textbf{8.5 Luồng Lưu Trữ Địa điểm}
+Quá trình diễn ra ngắn gọn: máy chủ nhận yêu cầu và ghi chép lại mối liên kết vào bảng SavedPlace. Giao diện trang chi tiết và trang hồ sơ cập nhật tức thời. Quyết định này biến một ứng dụng tra cứu một lần thành một công cụ lập kế hoạch du lịch dài hạn mang tính cá nhân hóa cực cao.
+
+\subsection{Security and Access Control}
+Bảo mật hệ thống ủy thác cho Firebase ở client-side. Bất kỳ tác vụ cập nhật dữ liệu nào cũng phải đính kèm thẻ xác thực Firebase để NestJS xác thực qua Admin SDK. Các thao tác đọc thông tin công cộng được nới lỏng nhằm tối ưu trải nghiệm, nhưng mọi thao tác ghi, đặc biệt là quyền xóa đánh giá hay xóa câu hỏi, đều bị kiểm tra quyền sở hữu cực kỳ gắt gao. Khi một câu hỏi bị xóa, hệ thống kích hoạt cơ chế cascade delete dọn dẹp sạch sẽ các câu trả lời liên quan, đảm bảo không lưu lại rác dữ liệu. Trạng thái vị trí cũng có thể tự do xóa bỏ để bảo vệ quyền ẩn danh.
+
+\subsection{Runtime Configuration and Environment Strategy}
+Hệ thống áp dụng chiến lược Runtime Configuration thông qua Dependency Injection của NestJS để chuyển đổi mượt mà giữa môi trường Testing và Production. Việc branching logic được hạn chế tối đa; thay vào đó, toàn bộ cấu hình được trừu tượng hóa và nạp động từ các tệp \texttt{.env} tương ứng. 
+
+Đặc biệt ở chế độ Testing Mode, cơ chế phát triển được tối ưu hóa như sau:
 \begin{itemize}
-    \item \textbf{Goal:} Chuyển đổi truy vấn ngôn ngữ tự nhiên của người dùng thành kết quả hành động và phản hồi thân thiện.
-    \item \textbf{Input:} Câu chat của người dùng và ngữ cảnh hội thoại trước đó.
-    \item \textbf{Main processing steps:} Giải thuật điều phối đi qua 4 lớp nhằm đảm bảo tính tất định cho logic nghiệp vụ.
-    \item \textbf{Output:} Phản hồi dạng Markdown kèm theo dữ liệu bản đồ để frontend vẽ marker trực quan.
-    \item \textbf{Edge cases:} Nếu không trích xuất được ý định hợp lệ, hệ thống fallback về luồng \texttt{GENERAL\_CHAT} mặc định để yêu cầu người dùng làm rõ.
+    \item \textbf{Mocking External APIs:} Thay vì gửi request thực tế tốn chi phí và phụ thuộc mạng lưới, các dịch vụ ngoại vi (SerpAPI, Goong, Groq LLM) được hệ thống tự động inject các các Mock Providers trả về kết quả định trước. 
+    \item \textbf{Isolated Test Database:} Chế độ kiểm thử sử dụng một schema cơ sở dữ liệu hoàn toàn tách biệt. Dữ liệu được teardown (xóa sạch) sau mỗi chu kỳ chạy E2E Test, đảm bảo tính tất định tuyệt đối cho các kịch bản kiểm thử.
+    \item \textbf{Ngắt lưu trữ rác:} Các chức năng ghi log hội thoại AI, xác thực Firebase thực tế hay đồng bộ dữ liệu tĩnh được vô hiệu hóa hoặc thay thế bằng cơ chế nội bộ để tăng tốc độ chạy test.
 \end{itemize}
 
-\begin{center}
-\begin{tikzpicture}[
-  io/.style={ellipse, draw=blue!70!black, fill=blue!10, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\footnotesize, drop shadow},
-  llmproc/.style={rectangle, draw=purple!70!black, fill=purple!10, minimum width=4.5cm, minimum height=0.8cm, align=center, font=\footnotesize, rounded corners, drop shadow},
-  detproc/.style={rectangle, draw=green!60!black, fill=green!10, minimum width=4.5cm, minimum height=0.8cm, align=center, font=\footnotesize, rounded corners, drop shadow},
-  arrow/.style={->, thick, >=stealth, color=gray!80!black, line width=1pt},
-  dec/.style={diamond, draw=orange!80!black, fill=orange!10, minimum width=2.5cm, minimum height=1.2cm, align=center, font=\footnotesize\bfseries, drop shadow}
-]
+Cơ chế này cho phép các kỹ sư liên tục chạy unit test và e2e test ở môi trường cục bộ một cách độc lập, ổn định và không lo ngại giới hạn rate-limit của API bên ngoài.
 
-\node[io] (input) {\faCommentDots \ User Query};
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+      node distance=1.5cm and 2.5cm,
+      env/.style={rectangle, rounded corners, draw=green!60!black, fill=green!5, thick, minimum width=2.8cm, minimum height=1cm, align=center, font=\footnotesize\bfseries},
+      app/.style={rectangle, rounded corners, draw=blue!80!black, fill=blue!5, thick, minimum width=3.5cm, minimum height=3cm, align=center, font=\small\bfseries},
+      provider/.style={rectangle, draw=orange!80!black, fill=orange!5, thick, minimum width=3cm, minimum height=1.2cm, align=center, font=\footnotesize\bfseries},
+      arrow/.style={-latex, thick, draw=black!80},
+      label/.style={font=\footnotesize, fill=white, inner sep=2pt}
+    ]
+    
+    \node[env] (env_prod) {Production};
+    \node[env, below=1cm of env_prod] (env_test) {Testing Mode\\(E2E / Unit)};
+    
+    \node[app, right=3cm of env_prod, yshift=-1cm] (app) {Backend Application\\(Dependency Injection)};
+    
+    \node[provider, right=3cm of app, yshift=1cm] (real) {Real Services\\(HTTP Requests)};
+    \node[provider, right=3cm of app, yshift=-1cm] (mock) {Mock Providers\\(Local Stub Data)};
+    
+    \draw[arrow] (env_prod.east) -- node[above, label] {Load .env} (env_prod.east -| app.west);
+    \draw[arrow] (env_test.east) -- node[below, label] {Load .env.test} (env_test.east -| app.west);
+    
+    \draw[arrow, dashed] (real.west -| app.east) -- node[above, label] {Inject Real} (real.west);
+    \draw[arrow, dashed] (mock.west -| app.east) -- node[below, label] {Inject Mock} (mock.west);
+    
+    \end{tikzpicture}
+    \caption{Cơ chế Dependency Injection theo Môi trường Kiểm thử}
+    \label{fig:env_strategy}
+\end{figure}
 
-\node[llmproc, below=0.8cm of input] (route) {\faBrain \ LLM - Intent Classification};
-\node[dec, below=0.6cm of route] (decide) {Valid?};
+\subsection{Architectural Decisions and Trade-offs}
 
-\node[detproc, below=0.6cm of decide, xshift=-3cm] (genchat) {\faComment \ GENERAL\_CHAT};
-\node[detproc, below=0.6cm of decide, xshift=3cm] (workflow) {\faCog \ Workflow Engine};
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|p{3.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+    \hline
+    \textbf{Quyết định} & \textbf{Động lực} & \textbf{Lợi ích} & \textbf{Đánh đổi} \\
+    \hline
+    Modular Monolith & Cần kiểm soát ranh giới rõ ràng nhưng thiếu nguồn lực vận hành phân tán. & Dễ dàng local deployment, dùng chung một kết nối cơ sở dữ liệu. & Không thể linh hoạt thay đổi quy mô từng phân hệ một cách độc lập. \\
+    \hline
+    Giao tiếp REST JSON & Tìm kiếm tiêu chuẩn công nghiệp an toàn và phổ biến nhất. & Hệ sinh thái công cụ dồi dào, gỡ lỗi mạng cực kỳ đơn giản. & Lãng phí một phần băng thông so với cấu trúc nhị phân nguyên thủy. \\
+    \hline
+    Xác thực Firebase & Tránh rủi ro tự quản lý mật khẩu mã hóa. & Chuẩn bảo mật cực cao, rút ngắn thời gian phát triển. & Bị phụ thuộc hoàn toàn vào dịch vụ đám mây của Google. \\
+    \hline
+    Đồng bộ Địa điểm Động & Cần lưu đánh giá cho địa điểm từ API ngoài. & Biến dữ liệu tạm thời thành dữ liệu bền vững nội bộ. & Bơm một lượng dữ liệu thụ động vào cơ sở dữ liệu. \\
+    \hline
+    Sinh câu trả lời AI bất đồng bộ & Tránh tình trạng chờ đợi quá lâu khi nạp ngữ cảnh vào LLM. & Giao diện phản hồi ngay lập tức cho người hỏi. & Phải bổ sung logic làm mới giao diện sau khi tạo xong. \\
+    \hline
+    \end{tabular}
+    \caption{Các Quyết định Kiến trúc và Sự Đánh đổi}
+    \label{tab:arch_tradeoffs}
+\end{table}
 
-\node[detproc, below=0.8cm of workflow] (execute) {\faList \ Execute Tool DAG};
-\node[llmproc, below=0.8cm of execute] (compose) {\faPen \ LLM - Synthesize Response};
-\node[io, below=0.8cm of compose, xshift=-3cm] (output) {\faFile \ Markdown Response};
+\subsection{Current Limitations and Future Improvements}
+Kiến trúc bộc lộ một số giới hạn nhất định trong phạm vi đồ án hiện tại. Tính năng tinh chỉnh bộ lọc tìm kiếm nâng cao theo phân loại địa điểm vẫn đang trong giai đoạn hoàn thiện. Luồng điều hướng và giao diện chỉ đường chưa đạt được sự mượt mà tối đa. Hệ thống cũng chịu sự ràng buộc bởi các dịch vụ cung cấp dữ liệu tìm kiếm, định vị và xử lý ngôn ngữ bên ngoài. Hơn nữa, chất lượng tư vấn của AI phụ thuộc tuyến tính vào lượng dữ liệu thực tế thu thập được; do đó, cơ chế kiểm duyệt và xếp hạng bình chọn cho các câu hỏi sẽ cần được bổ sung để nâng cấp chất lượng tri thức cộng đồng.
 
-\draw[arrow] (input.south) -- (route.north);
-\draw[arrow] (route.south) -- (decide.north);
-\draw[arrow] (decide.west) -| node[above, font=\scriptsize, near start] {No} (genchat.north);
-\draw[arrow] (decide.east) -| node[above, font=\scriptsize, near start] {Yes} (workflow.north);
-\draw[arrow] (workflow.south) -- (execute.north);
-\draw[arrow] (execute.south) -- (compose.north);
-\draw[arrow] (compose.south) |- (output.east);
-\draw[arrow] (genchat.south) |- (output.west);
-
-\node[right=0.2cm of route, font=\scriptsize\bfseries, purple!80!black] {JSON Mode};
-\node[right=0.2cm of execute, font=\scriptsize\bfseries, green!60!black] {Deterministic};
-\end{tikzpicture}
-\end{center}
-
-\vspace{0.3cm}
-\noindent\textbf{2. Hybrid Search \& Ranking Workflow (Tìm kiếm lai và Xếp hạng)}
-\begin{itemize}
-    \item \textbf{Goal:} Tổng hợp điểm đến từ nhiều nguồn khác nhau và xếp hạng dựa trên tiêu chí đa chiều.
-    \item \textbf{Input:} Từ khóa tìm kiếm, bộ lọc ngân sách, hoặc giới hạn không gian (tọa độ).
-    \item \textbf{Main processing steps:} Truy vấn đa luồng từ DB và API ngoài, hợp nhất dữ liệu, tính điểm (Rating, Ngân sách, Khoảng cách) và trích xuất Top-K.
-    \item \textbf{Output:} Danh sách địa điểm đã được chuẩn hóa thống nhất cùng điểm số đề xuất.
-    \item \textbf{Edge cases:} Khử trùng lặp mềm (fuzzy match) khi tọa độ bị lệch nhẹ. Fallback bỏ qua nguồn API nếu timeout.
-\end{itemize}
-
-\begin{center}
-\begin{tikzpicture}[
-  io/.style={ellipse, draw=blue!70!black, fill=blue!10, minimum width=3cm, minimum height=0.8cm, align=center, font=\footnotesize, drop shadow},
-  proc/.style={rectangle, draw=gray!70!black, fill=gray!5, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\footnotesize, rounded corners, drop shadow},
-  dproc/.style={rectangle, draw=teal!70!black, fill=teal!10, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\footnotesize, rounded corners, drop shadow},
-  arrow/.style={->, thick, >=stealth, color=gray!80!black, line width=1pt}
-]
-
-\node[io] (input) {\faSearch \ Search Parameters};
-
-\node[proc, below=0.6cm of input] (normalize) {Normalize Parameters};
-
-\node[dproc, below=0.8cm of normalize, xshift=-2.5cm] (local) {\faDatabase \ Internal DB};
-\node[dproc, below=0.8cm of normalize, xshift=2.5cm] (external) {\faGlobe \ 3 External APIs};
-
-\node[proc, below=0.8cm of local, xshift=2.5cm] (merge) {\faObjectGroup \ Deduplication};
-\node[dproc, below=0.6cm of merge] (rank) {\faSort \ Scoring \& Ranking};
-\node[io, below=0.6cm of rank] (output) {\faList \ Top-K List};
-
-\draw[arrow] (input.south) -- (normalize.north);
-\draw[arrow] (normalize.south) -- ++(0,-0.4) -| (local.north);
-\draw[arrow] (normalize.south) -- ++(0,-0.4) -| (external.north);
-\draw[arrow] (local.south) -- ++(0,-0.4) -| (merge.north);
-\draw[arrow] (external.south) -- ++(0,-0.4) -| (merge.north);
-\draw[arrow] (merge.south) -- (rank.north);
-\draw[arrow] (rank.south) -- (output.north);
-
-\node[font=\scriptsize\bfseries, right=0.2cm of rank] {Rating, Budget, Distance};
-\end{tikzpicture}
-\end{center}
-
-\vspace{0.3cm}
-\noindent\textbf{3. RAG Workflow (Truy xuất bổ sung ngữ cảnh)}
-\begin{itemize}
-    \item \textbf{Goal:} Rút trích các tri thức ẩn từ dữ liệu dạng văn bản (như bình luận, mô tả) để đưa cho LLM tham khảo.
-    \item \textbf{Input:} Truy vấn cần phân tích sâu (ví dụ: "Có khách sạn nào yên tĩnh không?").
-    \item \textbf{Main processing steps:} Sinh embedding từ truy vấn $\to$ Tìm kiếm Cosine similarity qua \texttt{pgvector} $\to$ Tiêm (Inject) chunk ngữ cảnh vào prompt.
-    \item \textbf{Output:} Khối ngữ cảnh văn bản được nhúng chìm vào luồng hội thoại.
-    \item \textbf{Edge cases:} Nếu điểm tương đồng tối đa thấp hơn ngưỡng (threshold), hệ thống kết luận không có dữ liệu nội bộ liên quan để tránh nhiễu prompt.
-\end{itemize}
-
-\subsection{Failure Handling and Fallback Design}
-
-Một hệ thống phân tán mạnh cần có khả năng sinh tồn khi các yếu tố bên ngoài sụp đổ. Thiết kế xử lý lỗi (Failure Handling) của hệ thống xoay quanh nguyên tắc "Lỗi một phần không làm sập toàn bộ":
-
-\begin{itemize}
-    \item [\faNetworkWired] \textbf{Chuỗi dự phòng API (Fallback Chain):} Trong truy vấn bản đồ, nếu nguồn cung cấp chính bị lỗi (HTTP 500 hoặc Timeout), hệ thống lập tức nhảy sang bộ chuyển tiếp API dự phòng. 
-    \item [\faGhost] \textbf{Xử lý Dữ liệu Rỗng (Graceful Empty States):} Nếu workflow tìm kiếm trả về danh sách rỗng, LLM được thiết lập bằng System Prompt cứng để "tuyệt đối không bịa đặt địa điểm (No Hallucination)". Nó sẽ thành thực báo cáo và đưa ra gợi ý mở rộng vùng tìm kiếm.
-    \item [\faLock] \textbf{Cách ly Node Lỗi trong Workflow:} Nhờ kiến trúc chia nhỏ các công cụ (tools), nếu công cụ gợi ý sâu thất bại, hệ thống vẫn giữ nguyên được kết quả của công cụ tìm kiếm cơ bản và thông báo sự cố cục bộ đến frontend.
-\end{itemize}
-
-\subsection{Design Summary}
-
-Thiết kế System và Algorithm của dự án chứng minh rằng việc kết hợp nhiều công nghệ tiên tiến (AI, Vector DB, Map Services) không đơn thuần là quá trình nối ghép API, mà phải là nghệ thuật tổ chức hệ thống. Nhờ tuân thủ mô hình C4 để phân rã chức năng, và phân tách các workflow phức tạp thành DAG các thuật toán đơn nhiệm, dự án đạt được:
-\begin{itemize}
-    \item [\faVial] \textbf{Tính kiểm thử (Testability):} Các logic xếp hạng và khử trùng lặp có thể Unit Test độc lập.
-    \item [\faPlug] \textbf{Tính thay thế (Replaceability):} Khả năng dễ dàng cắm-rút các Provider AI hoặc Bản đồ.
-    \item [\faHeartbeat] \textbf{Tính kiên cường (Resilience):} Xử lý lỗi tinh tế giúp hệ thống không rơi vào điểm chết khi đối mặt với sự cố mạng bên ngoài.
-\end{itemize}
+\subsection{Summary}
+Kiến trúc hệ thống thể hiện sự rạch ròi tuyệt đối giữa việc render giao diện, xử lý luồng nghiệp vụ cốt lõi, lưu trữ dữ liệu bền vững và giao tiếp ngoại vi. Việc ứng dụng linh hoạt mô hình Modular Monolith giúp nhóm phát triển đạt được sự cân bằng hoàn hảo giữa tính dễ bảo trì và sự tinh giản trong vận hành. Nhờ những cơ chế đột phá như xác thực tọa độ vị trí vật lý và quy trình đồng bộ dữ liệu ngoại vi theo thời gian thực, nền tảng không chỉ là một công cụ tìm kiếm đơn thuần mà đã thực sự chuyển mình thành một mạng lưới tri thức cộng đồng an toàn, đáng tin cậy và mang đậm tính cá nhân hóa sâu sắc.
 \section{Implementation}
-\subsection{Từ Mô hình Thiết kế đến Phân rã Module}
+\subsection{From Design Model to Module Decomposition}
 
 Từ các mô hình đã xây dựng ở phần Thiết kế Hệ thống (C4 Model, ERD, sơ đồ tuần tự), nhóm tiến hành phân rã thành các module triển khai theo ba bước:
 
@@ -1069,7 +1054,7 @@ Dùng chung & PrismaService, ToolRegistry, Global Filters & Toàn cục, dùng c
 \end{tabular}
 \end{center}
 
-\subsection{Di trú Kiến trúc: Microservices $\to$ Modular Monolith}
+\subsection{Architecture Migration: Microservices $\to$ Modular Monolith}
 
 Hệ thống nguyên bản vận hành với bốn dịch vụ riêng rẽ (Nginx Gateway, Core-service, AI-service, Recommendation-service). Kiến trúc này bộc lộ các vấn đề:
 
@@ -1082,9 +1067,9 @@ Hệ thống nguyên bản vận hành với bốn dịch vụ riêng rẽ (Ngin
 
 \textbf{Giải pháp:} Hợp nhất thành một monolith dạng module NestJS duy nhất. Các lời gọi HTTP liên dịch vụ được thay thế bằng phương thức gọi trực tiếp qua dependency injection, loại bỏ Gateway Nginx trung gian.
 
-\subsection{Các Thách thức và Giải pháp}
+\subsection{Challenges and Solutions}
 
-\subsubsection{Tính phi tất định của LLM}
+\subsubsection{LLM Non-determinism}
 
 \textbf{Thách thức:} LLM sinh phản hồi không nhất quán về định dạng, dễ hallucination dữ liệu, và độ trễ khó dự đoán.
 
@@ -1098,7 +1083,7 @@ Hệ thống nguyên bản vận hành với bốn dịch vụ riêng rẽ (Ngin
 
 Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần biên dịch lại.
 
-\subsubsection{Streaming SSE qua POST}
+\subsubsection{SSE Streaming via POST}
 
 \textbf{Thách thức:} SSE chuẩn chỉ hỗ trợ GET, trong khi endpoint chat cần gửi JSON payload và token xác thực.
 
@@ -1110,7 +1095,7 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
   \item Header \texttt{X-Accel-Buffering: no} để vô hiệu hóa bộ đệm Nginx khi triển khai sau reverse proxy.
 \end{itemize}
 
-\subsubsection{Tích hợp Đa Nhà cung cấp Bản đồ}
+\subsubsection{Multi-Map Provider Integration}
 
 \textbf{Thách thức:} Mỗi API bản đồ trả về định dạng khác nhau; lỗi một nhà cung cấp không được ảnh hưởng toàn bộ tìm kiếm.
 
@@ -1121,19 +1106,19 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
   \item Chuỗi dự phòng: Goong $\to$ OSM $\to$ mảng rỗng.
 \end{itemize}
 
-\subsubsection{Vector Embedding và Prisma}
+\subsubsection{Vector Embedding and Prisma}
 
 \textbf{Thách thức:} Prisma chưa hỗ trợ nguyên sinh kiểu \texttt{vector} của PostgreSQL.
 
 \textbf{Giải pháp:} Khai báo cột \texttt{embedding} dưới dạng \texttt{Unsupported("vector")}, thao tác qua SQL thô (\texttt{\$queryRawUnsafe}).
 
-\subsubsection{Xác thực Firebase}
+\subsubsection{Firebase Authentication}
 
 \textbf{Thách thức:} Tích hợp Firebase JWT vào vòng đời NestJS guard mà không sao chép logic xác thực trên mọi controller.
 
 \textbf{Giải pháp:} Triển khai guard với \texttt{CanActivate}: trích xuất Authorization header $\to$ xác thực token qua Firebase Admin SDK $\to$ gắn decoded token vào request. Frontend Axios interceptor tự động đính kèm token.
 
-\subsection{Các Thách thức Khác}
+\subsection{Other Challenges}
 
 \textbf{Xử lý đồng thời:} Ba mẫu thiết kế được áp dụng: (1) \texttt{Promise.all} với catch riêng biệt; (2) ghi vào khóa khác nhau trong shared state để tránh race condition; (3) Active Flag pattern để tránh cập nhật state sau khi component unmount.
 
@@ -1141,13 +1126,13 @@ Lợi ích: Workflow mới có thể thêm dưới dạng JSON, không cần bi�
 
 \textbf{Quản lý bản đồ frontend:} Chuyển đổi layer bằng opacity, MarkerClusterGroup với chunkedLoading cho hiệu năng, CustomEvent thay vì prop drilling cho tích hợp AI-Search.
 
-\subsection{Kết luận}
+\subsection{Conclusion}
 
 Quá trình triển khai cho thấy việc chuyển đổi từ mô hình thiết kế sang mã nguồn đòi hỏi liên tục giải quyết các vấn đề thực tế: tính phi tất định của LLM, hạn chế của ORM với kiểu dữ liệu đặc thù, và đảm bảo tính nhất quán xuyên suốt các tầng. Mười hai vấn đề đã được ghi nhận với các mức độ ưu tiên khác nhau.
 
 
 \section{Testing}
-\subsection{Chiến lược Kiểm thử}
+\subsection{Testing Strategy}
 
 Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn vị đến tích hợp, với mục tiêu đảm bảo chất lượng cho toàn bộ hệ thống:
 
@@ -1158,15 +1143,15 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
   arrow/.style={-{Stealth[scale=1]}, thick, gray}
 ]
 
-\node[layer, fill=blue!70!black!80] (fe) {Tầng 1: Kiểm thử Đơn vị Frontend};
-\node[layer, fill=blue!60, below=0.1cm of fe] (be) {Tầng 2: Kiểm thử Đơn vị Backend};
-\node[layer, fill=blue!50, below=0.1cm of be] (e2e) {Tầng 3: Kiểm thử Tích hợp Backend};
-\node[layer, fill=blue!40, below=0.1cm of e2e] (scenario) {Tầng 4: Kiểm thử Tình huống và Giả lập};
+\node[layer, fill=blue!70!black!80] (fe) {Tier 1: Frontend Unit Testing};
+\node[layer, fill=blue!60, below=0.1cm of fe] (be) {Tier 2: Backend Unit Testing};
+\node[layer, fill=blue!50, below=0.1cm of be] (e2e) {Tier 3: Backend Integration Testing};
+\node[layer, fill=blue!40, below=0.1cm of e2e] (scenario) {Tier 4: Scenario \& Mock Testing};
 
 \node[right=0.5cm of fe, font=\tiny] {Vitest + Testing Library (jsdom)};
 \node[right=0.5cm of be, font=\tiny] {Jest + ts-jest, mock Prisma};
-\node[right=0.5cm of e2e, font=\tiny] {NestJS Testing, module thật};
-\node[right=0.5cm of scenario, font=\tiny] {Lỗi API, tải đồng thời, biên};
+\node[right=0.5cm of e2e, font=\tiny] {NestJS Testing, real module};
+\node[right=0.5cm of scenario, font=\tiny] {API errors, concurrency, edge cases};
 
 \draw[arrow] ($(fe.south)+(0,0)$) -- ($(be.north)+(0,0)$);
 \draw[arrow] ($(be.south)+(0,0)$) -- ($(e2e.north)+(0,0)$);
@@ -1176,9 +1161,9 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
 
 \textbf{Nguyên tắc:} Mock toàn bộ tầng dữ liệu và dịch vụ ngoài ở unit test; kiểm thử tích hợp sử dụng module thật với dependency injection đầy đủ. Mỗi tầng kiểm thử bổ sung và mở rộng cho tầng trước.
 
-\subsection{Phạm vi Kiểm thử}
+\subsection{Testing Scope}
 
-\subsubsection{Frontend --- Giao diện và Tương tác}
+\subsubsection{Frontend --- UI and Interaction}
 
 \begin{itemize}
   \item \textbf{Tầng dịch vụ:} Kiểm thử 12 dịch vụ frontend bao gồm API chat, tìm kiếm, địa điểm, đánh giá, hiện diện, đóng góp tệp, gợi ý, RAG, người dùng --- xác nhận mỗi service gọi đúng endpoint, xử lý đúng dữ liệu trả về và bắt lỗi HTTP.
@@ -1188,7 +1173,7 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
   \item \textbf{Trang:} Kiểm thử 5 trang: HomePage, SearchPage, PlaceDetailPage, ProfilePage, AdminPage --- xác nhận layout, điều hướng và tích hợp component.
 \end{itemize}
 
-\subsubsection{Backend --- Xử lý Nghiệp vụ và Tích hợp}
+\subsubsection{Backend --- Business Logic and Integration}
 
 \begin{itemize}
   \item \textbf{Dịch vụ (Services):} Kiểm thử 17 service backend bao phủ toàn bộ module: Người dùng (CRUD, upsert, tìm kiếm), Địa điểm (CRUD, lọc, fuzzy match), Đánh giá (CRUD, điểm số), Tìm kiếm (đa nhà cung cấp, hợp nhất, khử trùng lặp), Gợi ý (tính điểm, xếp hạng, trọng số), Hiện diện (join/leave/get, tải đồng thời), Đóng góp (tạo/lấy/cập nhật tệp), RAG (lưu/truy xuất chunk, xây dựng ngữ cảnh), Hội thoại AI (danh sách/tạo/xóa/tin nhắn), NLP (trích xuất bộ lọc từ văn bản tiếng Việt).
@@ -1197,7 +1182,7 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
   \item \textbf{Guard/Filter/Interceptor:} Kiểm thử FirebaseAuthGuard (thiếu header, sai định dạng, token không hợp lệ), AllExceptionsFilter (HttpException, lỗi không xác định), LoggingInterceptor (định nghĩa, phương thức).
 \end{itemize}
 
-\subsubsection{Các Tình huống và Giả lập Đặc thù}
+\subsubsection{Specific Scenarios and Mocking}
 
 \begin{itemize}
   \item \textbf{Giả lập lỗi nhà cung cấp ngoài:} Khi Goong API thất bại, hệ thống tự động chuyển sang OSM; khi cả hai thất bại, trả về kết quả rỗng an toàn. Một nhà cung cấp lỗi không ảnh hưởng đến kết quả từ các nhà cung cấp khác.
@@ -1207,7 +1192,7 @@ Nhóm áp dụng chiến lược kiểm thử đa tầng, bao phủ từ đơn v
   \item \textbf{Tải đồng thời:} 100 người dùng join cùng lúc vào cùng địa điểm --- kiểm tra tính toàn vẹn của cấu trúc dữ liệu.
 \end{itemize}
 
-\subsection{Kết quả Kiểm thử}
+\subsection{Testing Results}
 
 Kết quả kiểm thử tổng thể được thống kê như sau:
 
@@ -1233,9 +1218,9 @@ Kết quả kiểm thử tổng thể được thống kê như sau:
 
 % Legend
 \fill[green!70!black] (0.5,-2.8) rectangle (1.3,-2.3);
-\node at (2,-2.55) {Đạt};
+\node at (2,-2.55) {Pass};
 \fill[red!70] (3.5,-2.8) rectangle (4.3,-2.3);
-\node at (5,-2.55) {Thất bại};
+\node at (5,-2.55) {Fail};
 \end{tikzpicture}
 \end{center}
 
@@ -1250,8 +1235,8 @@ Kết quả kiểm thử tổng thể được thống kê như sau:
 \node[module, fill=green!50, below=0.15cm of fe] (be) {Backend --- 250/288 đạt (86,8\%)};
 \node[module, fill=orange!70, below=0.3cm of be] (total) {Tổng thể --- 427/476 đạt (89,7\%)};
 
-\node[right=0.2cm of fe, label] {12 dịch vụ, 3 context, 3 hooks, 5 trang, 25 component};
-\node[right=0.2cm of be, label] {17 services, 12 controllers, 10 tools, 3 guard/filter/interceptor};
+\node[right=0.2cm of fe, label] {12 services, 3 contexts, 3 hooks, 5 pages, 25 components};
+\node[right=0.2cm of be, label] {17 services, 12 controllers, 10 tools, 3 guards/filters/interceptors};
 \end{tikzpicture}
 \end{center}
 
@@ -1264,27 +1249,27 @@ Phân bố kiểm thử theo nhóm chức năng backend:
   label/.style={font=\tiny}
 ]
 
-\node[anchor=west] (l1) {Dịch vụ lõi (Users, Places, Reviews, Health)};
+\node[anchor=west] (l1) {Core Services (Users, Places, Reviews, Health)};
 \node[bar, fill=green!50, minimum width=4.5cm, right=0.3cm of l1, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {37};
 
-\node[anchor=west, below=0.2cm of l1] (l2) {AI và NLP (Chat, Router, Workflow, Tools, Groq)};
+\node[anchor=west, below=0.2cm of l1] (l2) {AI \& NLP (Chat, Router, Workflow, Tools, Groq)};
 \node[bar, fill=green!50, minimum width=5.3cm, right=0.3cm of l2, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {44};
 
-\node[anchor=west, below=0.2cm of l2] (l3) {Tìm kiếm và Đề xuất (Search, Recommendations)};
+\node[anchor=west, below=0.2cm of l2] (l3) {Search \& Recommendations (Search, Recommendations)};
 \node[bar, fill=green!50, minimum width=3.6cm, right=0.3cm of l3, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {30};
 
-\node[anchor=west, below=0.2cm of l3] (l4) {Tính năng mới (Presence, Contributions, RAG)};
+\node[anchor=west, below=0.2cm of l3] (l4) {New Features (Presence, Contributions, RAG)};
 \node[bar, fill=green!50, minimum width=2.6cm, right=0.3cm of l4, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {22};
 
-\node[anchor=west, below=0.2cm of l4] (l5) {Xử lý lỗi và Xác thực (Filter, Guard, Interceptor)};
+\node[anchor=west, below=0.2cm of l4] (l5) {Error Handling \& Auth (Filter, Guard, Interceptor)};
 \node[bar, fill=green!50, minimum width=1.3cm, right=0.3cm of l5, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {11};
 
-\node[anchor=west, below=0.2cm of l5] (l6) {Kiểm tra cấu trúc (Controller, DTO, Registry)};
+\node[anchor=west, below=0.2cm of l5] (l6) {Structural Testing (Controller, DTO, Registry)};
 \node[bar, fill=green!50, minimum width=2.2cm, right=0.3cm of l6, anchor=west] {};
 \node[right=0.1cm, font=\tiny] {18};
 \end{tikzpicture}
@@ -1308,7 +1293,7 @@ Trang (Home, Search, PlaceDetail, Profile, Admin) & 5 pages & 5/5 đạt \\
 
 \textbf{Ghi chú:} 11 ca thất bại frontend và 38 ca thất bại backend đều liên quan đến mock Firebase/Firestore chưa hoàn chỉnh --- không phải lỗi logic nghiệp vụ. Tất cả module chức năng chính đều được kiểm thử thành công.
 
-\subsection{Cải tiến Sau Kiểm thử}
+\subsection{Post-Testing Improvements}
 
 Quá trình kiểm thử đã phát hiện và dẫn đến các cải tiến sau:
 
@@ -1320,7 +1305,7 @@ Quá trình kiểm thử đã phát hiện và dẫn đến các cải tiến sa
   \item \textbf{Cải tiến NLP:} Tham số hóa 14 văn bản tiếng Việt thực tế, bao phủ đa dạng biến thể ngôn ngữ (tên tỉnh thành, loại hình, mức giá).
 \end{itemize}
 
-\subsection{Hướng Phát triển}
+\subsection{Future Development}
 
 Các khoảng trống kiểm thử đã được xác định:
 \begin{itemize}
@@ -1337,18 +1322,60 @@ Các khoảng trống kiểm thử đã được xác định:
 
 \section{Logbook: Plan and Actual Workload}
 
+\subsection{Plan Workload}
+The initial planned workload for the project was structured across six weeks, focusing on a clear progression from system design to final deployment. The plan was distributed as follows:
+\begin{itemize}
+    \item \textbf{Week 1 -- 2:} Requirement gathering, problem decomposition, and system architecture design. Prototyping UI mockups.
+    \item \textbf{Week 3:} Frontend foundation setup, integrating Mapbox/Goong maps, and implementing Firebase Authentication.
+    \item \textbf{Week 4:} Backend API construction using NestJS, database modeling with Prisma and PostgreSQL, and integration with external search APIs (SerpAPI).
+    \item \textbf{Week 5:} Implementation of AI features, including the Vector database (pgvector) setup, RAG pipeline, and AI-pinned Q\&A workflows.
+    \item \textbf{Week 6:} End-to-end testing, UI/UX refinement, bug fixing, and finalizing the project report.
+\end{itemize}
+
+\subsection{Actual Workload}
+During the implementation phase, the team encountered various technical challenges that altered the initial timeline, resulting in the actual workload diverging from the plan:
+\begin{itemize}
+    \item \textbf{Week 1 -- 2:} Architecture design took slightly longer than anticipated due to the strategic pivot from a Microservices architecture to a Modular Monolith, which required redesigning the component interactions.
+    \item \textbf{Week 3:} Frontend setup and map integration proceeded smoothly, but coordinating Firebase Authentication with protected routes required extra debugging.
+    \item \textbf{Week 4:} Database modeling was completed successfully. Integrating SerpAPI was straightforward, but data normalization for hybrid search demanded additional logic.
+    \item \textbf{Week 5:} A significant amount of unplanned time was invested in fine-tuning the RAG pipeline. Ensuring that the Groq LLM did not hallucinate place details required extensive prompt engineering and context chunking adjustments.
+    \item \textbf{Week 6:} Extensive testing was conducted, specifically mocking location data for the physical check-in feature. Report writing in LaTeX also consumed a considerable portion of the final week.
+\end{itemize}
+
+\subsection{Workload Distribution}
+100\% of the total workload is divided equally among the group members. The team worked collaboratively, with pair programming and regular syncs ensuring that no single component became a bottleneck. The table below illustrates the percentage of the total workload each group member has done, along with their estimated working hours.
+
+\vspace{0.5cm}
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{@{} c c X c c @{}}
+    \toprule
+    \textbf{No.} & \textbf{Student ID} & \textbf{Name} & \textbf{Percentage of Workload} & \textbf{Working Hours} \\
+    \midrule
+    1 & 24120033 & Đào Tiến Đạt & 20\% & 45 hours \\
+    2 & 24120040 & Dương Hoài Đức & 20\% & 45 hours \\
+    3 & 24120304 & Trần Thị Bích Hạnh & 20\% & 45 hours \\
+    4 & 24120310 & Nguyễn Đình Hiếu & 20\% & 45 hours \\
+    5 & 24120483 & Hoàng Văn Trường & 20\% & 45 hours \\
+    \bottomrule
+    \end{tabularx}
+    \caption{Group Members Workload Distribution}
+\end{table}
+
+
 
 \section{AI usage and declaration}
 
-\section{Kết luận và hướng phát triển}
-\subsection{Kết luận}
+\section{Conclusion and Future Work}
+\subsection{Conclusion}
 Trong quá trình thực hiện đề tài, nhóm đã xây dựng thành công ứng dụng web toàn diện với kiến trúc hiện đại, tích hợp các công nghệ AI tiên tiến. Hệ thống được phát triển trên nền tảng React và NestJS, kết hợp với Prisma ORM, Firebase Authentication, và các dịch vụ AI đa nền tảng (Gemini, Cloudflare AI, FreeModel).\\\\Các chức năng đã được triển khai thành công bao gồm:
 \begin{itemize}
   \item Chức năng tìm kiếm qua chatbot
   \item Chức năng so sánh các địa điểm lưu trú
   \item Chức năng trích xuất thông tin chi tiết và đánh giá của AI về một địa điểm lưu trú cụ thể
 \end{itemize}
-\subsection{Những kiến thức và kỹ năng đạt được}
+\subsection{Acquired Knowledge and Skills}
 Môn học và đồ án lần này đã mang lại cho chúng em những bài học vô cùng thực tế, giúp thu hẹp khoảng cách giữa lý thuyết và ứng dụng:
 \begin{itemize}
   \item \textbf{Vận dụng 4 trụ cột cốt lõi của Tư duy Máy tính:} Thông qua đồ án, chúng em đã làm chủ và áp dụng thành công mô hình tư duy này để giải quyết bài toán thực tế. Cụ thể, chúng em thực hiện 
@@ -1366,7 +1393,7 @@ Môn học và đồ án lần này đã mang lại cho chúng em những bài h
   \item \textbf{Tư duy Hệ thống: }Hiểu rõ bức tranh toàn cảnh về cách một hệ thống phần mềm vận hành trong thực tế (cách Frontend tương tác với Backend, cách gọi API và truy vấn dữ liệu từ Database).
 \end{itemize}
 
-\subsection{Hướng phát triển trong tương lai}
+\subsection{Future Development Directions}
 Nhằm nâng cấp và hoàn thiện dự án thành một sản phẩm có tính ứng dụng thực tế cao hơn, các mục tiêu trong tương lai bao gồm:
 \begin{itemize}
   \item \textbf{Nghiên cứu sâu về RAG và LLM: }Tối ưu hóa sâu hơn kỹ thuật Retrieval-Augmented Generation (RAG) kết hợp với các mô hình ngôn ngữ lớn (như Groq) để nâng cao độ chính xác, giảm thiểu hiện tượng "ảo tưởng" (hallucination) của Chatbot khi trả lời khách hàng.

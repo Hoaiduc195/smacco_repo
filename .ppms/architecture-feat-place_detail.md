@@ -1,6 +1,6 @@
 # Project Architecture: Accommodation Discovery Platform
 
-> Last updated: 2026-06-18 19:51
+> Last updated: 2026-06-19 22:53
 > Branch: feat/place_detail
 
 ## Overview
@@ -189,3 +189,4 @@ mono/
 - `README.md` has been rewritten to match the current codebase instead of the older simplified architecture summary.
 - The README now documents the actual frontend/backend split, AI workflow orchestration, hybrid search and place-ingestion model, major API surfaces, local development setup, and current known gaps.
 - The README now also includes a Mermaid architecture diagram that visualizes frontend, backend modules, AI orchestration, persistence, and external integrations.
+- The `report.tex` (LaTeX report) Section 7 has been completely rewritten to include deep, academic prose and highly professional TikZ diagrams reflecting the current C4 architecture, Hybrid Search, and RAG data flow.
