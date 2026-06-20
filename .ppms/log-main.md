@@ -2,6 +2,35 @@
 
 ---
 
+## [2026-06-20 22:14] — Link workspace logo to landing page
+
+- **Branch**: `main`
+- **Prompt**: Make the top-left Smacco logo return users to the landing page.
+- **Changes**:
+  - Replace the workspace navbar logo button that navigated to `/app` with a semantic React Router link to `/`.
+  - Add a regression test that verifies the brand link targets the landing route.
+- **Modified files**: `frontend/src/components/Navbar.jsx`, `.ppms/architecture-main.md`, `.ppms/log-main.md`
+- **Created files**: `frontend/src/components/Navbar.test.jsx`
+- **Deleted files**: None
+- **Architecture impact**: No — existing public and protected route structure is unchanged.
+
+---
+
+## [2026-06-20 22:10] — Fix landing guest search CTA navigation
+
+- **Branch**: `main`
+- **Prompt**: Diagnose and fix the landing-page “Bắt đầu tìm kiếm” button doing nothing for users who have never signed in.
+- **Changes**:
+  - Render the unauthenticated header CTA as a native `#signin` anchor so it scrolls to the embedded login section.
+  - Preserve React Router navigation to `/app` for authenticated users.
+  - Add a regression test for the guest CTA target and matching sign-in section.
+- **Modified files**: `frontend/src/pages/LandingPage.jsx`, `.ppms/architecture-main.md`, `.ppms/log-main.md`
+- **Created files**: `frontend/src/pages/LandingPage.test.jsx`
+- **Deleted files**: None
+- **Architecture impact**: No — the public landing route and authentication architecture are unchanged.
+
+---
+
 ## [2026-05-31 04:03] — Update data_assignment.md schema and JSON model
 
 - **Branch**: `main`

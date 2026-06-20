@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -49,15 +49,15 @@ export default function Navbar({
   return (
     <nav className={`h-16 border-b border-ink-900 bg-ink-900 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
       {/* Logo */}
-      <button
-        onClick={() => navigate('/app')}
+      <Link
+        to="/"
         className="flex items-center gap-3 flex-shrink-0">
         <img src="/favicon.svg" alt="Smacco Logo" className="w-8 h-8 object-contain transition-transform hover:scale-105" />
         <div className="hidden sm:block text-left">
           <p className="text-white font-extrabold text-lg tracking-normal leading-5 font-sans">Smacco</p>
           <p className="text-white/70 text-[10px] uppercase font-bold tracking-wide">Tìm lưu trú bằng AI</p>
         </div>
-      </button>
+      </Link>
 
       {/* Search Bar */}
       <div className="flex-1 max-w-md xl:max-w-lg hidden md:flex relative mx-auto">

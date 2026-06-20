@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-05-31 04:03
+> Last updated: 2026-06-20 22:14
 > Branch: main
 
 ## Overview
@@ -89,6 +89,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 PostgreSQL stores users, places, reviews, questions, answers, answer votes, files, chunks, conversations, messages, conversation-place references, presences, saved places, and related travel data. Vector search uses pgvector embeddings for RAG chunks.
 
 ## Completed Features
+- [x] Landing-page guest search CTA uses native in-page navigation to reach the embedded sign-in section, while authenticated users continue to enter `/app` through React Router.
 - [x] Resolved database concurrency race conditions in PlacesService.findOne by implementing optimistic concurrency catch-recovery block to handle concurrent stub creations without unique constraint errors.
 - [x] Added premium interactive fullscreen photo gallery/lightbox viewer on PlaceDetailPage.jsx with keyboard navigation, floating next/prev buttons, original link opening, and horizontal thumbnail navigation track.
 - [x] Fixed SerpAPI property details enrichment by passing mandatory 'q' parameter and computing check-in/check-out dates in the future, resolving 400 Bad Request error from SerpAPI.

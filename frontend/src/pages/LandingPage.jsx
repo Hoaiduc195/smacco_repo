@@ -149,11 +149,19 @@ export default function LandingPage() {
             <Link to="/login" className="hidden sm:inline-flex btn-secondary hover-lift-sm px-4 py-2.5">
               Đăng nhập
             </Link>
-            <Link to={currentUser ? '/app' : '#signin'} className="btn-primary hover-lift-sm shrink-0 px-3 py-2.5 sm:px-4">
-              <span className="sm:hidden">{currentUser ? 'Mở' : 'Bắt đầu'}</span>
-              <span className="hidden sm:inline">{currentUser ? 'Truy cập ứng dụng' : 'Bắt đầu tìm kiếm'}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            {currentUser ? (
+              <Link to="/app" className="btn-primary hover-lift-sm shrink-0 px-3 py-2.5 sm:px-4">
+                <span className="sm:hidden">Mở</span>
+                <span className="hidden sm:inline">Truy cập ứng dụng</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <a href="#signin" className="btn-primary hover-lift-sm shrink-0 px-3 py-2.5 sm:px-4">
+                <span className="sm:hidden">Bắt đầu</span>
+                <span className="hidden sm:inline">Bắt đầu tìm kiếm</span>
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            )}
           </div>
         </div>
       </header>
