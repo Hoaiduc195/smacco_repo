@@ -1,4 +1,4 @@
-﻿\documentclass[12pt, a4paper]{article}
+\documentclass[12pt, a4paper]{article}
 \usepackage[utf8]{vietnam}
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -458,7 +458,7 @@ Thực tế cho thấy, dù người dùng có cách diễn đạt đa dạng kh
         \draw[main arrow] (router.east) -- (w2.west);
         \draw[main arrow] (router.340) to[out=0, in=180] (w3.west);
     \end{tikzpicture}
-    \caption{\textbf{Query Pattern} --- Chuẩn hóa đa dạng câu hỏi tự nhiên thành các tham số định tuyến.}
+    \caption{\textbf{Query Pattern} --- Standardize diverse natural queries into routing parameters.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -488,7 +488,7 @@ Trong quá trình thu thập thông tin từ nhiều nguồn khác nhau, nhóm p
         \draw[main arrow] (serp.east) to[out=0, in=180] (ps.200);
         \draw[main arrow] (ps.east) -- (place.west);
     \end{tikzpicture}
-    \caption{\textbf{Data Pattern} --- Nhận diện mẫu thuộc tính từ các nguồn phân mảnh để ánh xạ về mô hình chuẩn hóa Place.}
+    \caption{\textbf{Data Pattern} --- Identify attribute patterns from fragmented sources to map into a normalized Place model.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -515,7 +515,7 @@ Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm kh
         \draw[main arrow] (tag.south) |- (analyze.west);
         \draw[main arrow, dashed] (compare.south) -- node[right, font=\scriptsize] {Change mind} (analyze.north);
     \end{tikzpicture}
-    \caption{\textbf{Decision-making Pattern} --- Khớp nối Workflow hệ thống với mẫu hành vi ra quyết định lặp lại.}
+    \caption{\textbf{Decision-making Pattern} --- Align system workflows with repetitive decision-making behavioral patterns.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -544,7 +544,7 @@ Trong thực tiễn, các luồng thông tin dạng ngôn ngữ tự nhiên như
         \draw[main arrow] (chunking.east) -- node[above, label]{\faBolt} (pgvector.west);
         \draw[main arrow] (pgvector.east) -- (search.west);
     \end{tikzpicture}
-    \caption{\textbf{RAG Pattern} --- Xử lý văn bản tự do thành các khối thông tin truy xuất được bằng vector ngữ nghĩa.}
+    \caption{\textbf{RAG Pattern} --- Process free text into information blocks retrievable by semantic vectors.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -573,7 +573,7 @@ Việc kết nối với các dịch vụ bên ngoài luôn tiềm ẩn những 
         \draw[error arrow] (goong.south) -- node[right, font=\scriptsize, text=red!80!black]{Error/Timeout} (osm.north);
         \draw[error arrow] (osm.east) -- node[above, font=\scriptsize, text=red!80!black]{Failure} (empty.west);
     \end{tikzpicture}
-    \caption{\textbf{Failure Pattern} --- Cơ chế Fallback đối phó với mẫu lỗi lặp lại từ các nhà cung cấp API ngoại vi.}
+    \caption{\textbf{Failure Pattern} --- Fallback mechanism to handle repetitive error patterns from external API providers.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -597,7 +597,7 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
         \node[data node, right=0.5cm of fetch] (d1) {\{\{NodeA.data\}\}};
         \node[data node, right=0.5cm of geocode] (d2) {\{\{NodeB.data\}\}};
 
-        \node[common box=orange, text width=4.5cm, right=1.5cm of d1, yshift=-0.9cm] (recommend) {\textbf{\faWrench\ Tool Node C}\\(in: NodeA \& NodeB)};
+        \node[common box=orange, text width=4.5cm, right=1.5cm of d1, yshift=-0.9cm] (recommend) {\textbf{\faWrench\ Tool Node C}\\in: NodeA and NodeB};
 
         % Arrows
         \draw[main arrow] (fetch.east) -- (d1.west);
@@ -606,7 +606,7 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
         \draw[main arrow] (geocode.east) -- (d2.west);
         \draw[main arrow] (d2.east) to[out=0, in=180] (recommend.200);
     \end{tikzpicture}
-    \caption{\textbf{Workflow Tool Pattern} --- Nhận diện mẫu phụ thuộc dữ liệu bằng cách sử dụng String Template giữa các Tool.}
+    \caption{\textbf{Workflow Tool Pattern} --- Identify data dependency patterns using String Templates between Tools.}
 \end{figure}
 
 \subsection{Summary}
@@ -678,7 +678,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p1.west);
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Trừu tượng hóa Mô hình ngôn ngữ lớn}
+    \caption{LLM Abstraction}
 \end{figure}
 
 \vspace{0.15cm}
@@ -704,7 +704,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p1.west);
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Trừu tượng hóa Dữ liệu Bản đồ}
+    \caption{Map Data Abstraction}
 \end{figure}
 
 \vspace{0.15cm}
@@ -728,7 +728,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p1.west);
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Trừu tượng hóa Vector Store}
+    \caption{Vector Store Abstraction}
 \end{figure}
 
 \vspace{0.15cm}
@@ -752,7 +752,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p1.west);
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Trừu tượng hóa Quản lý Danh tính}
+    \caption{Identity Management Abstraction}
 \end{figure}
 
 \subsection{Architectural Benefits and Balance Level}
@@ -803,7 +803,7 @@ Hệ thống phục vụ ba nhóm đối tượng chính: Khách vãng lai, Ngư
     \node[person, below=0.5cm of guest] (auth) {Authenticated\\User};
     \node[person, below=0.5cm of auth] (onsite) {On-site\\User};
     
-    \node[system, right=3cm of auth] (platform) {Accommodation \& Dining\\Discovery Platform};
+    \node[system, right=3cm of auth] (platform) {Accommodation and Dining\\Discovery Platform};
     
     \node[external, right=3cm of platform, yshift=1.5cm] (firebase) {Firebase Auth};
     \node[external, below=0.3cm of firebase] (serp) {SerpAPI};
@@ -823,7 +823,7 @@ Hệ thống phục vụ ba nhóm đối tượng chính: Khách vãng lai, Ngư
     
     \draw[arrow] (platform.south) -- (pg.north);
     \end{tikzpicture}
-    \caption{Biểu đồ Ngữ cảnh Hệ thống (C4 Cấp 1)}
+    \caption{System Context Diagram (C4 Level 1)}
     \label{fig:c4_context}
 \end{figure}
 
@@ -853,7 +853,7 @@ Hệ thống bao gồm ba container cốt lõi và các dịch vụ ngoại vi. 
     \draw[arrow] (api.north east) to[out=45, in=270] node[right, label] {HTTPS} (firebase.south);
     
     \end{tikzpicture}
-    \caption{Biểu đồ Kiến trúc Container (C4 Cấp 2)}
+    \caption{Container Architecture Diagram (C4 Level 2)}
     \label{fig:c4_container}
 \end{figure}
 
@@ -875,12 +875,12 @@ Máy chủ được thiết kế bám sát các business domains thay vì chia t
     \hline
     Cá nhân hóa & \texttt{saved-places}, \texttt{recommendations} & Ghi nhớ sở thích và đề xuất địa điểm tương thích. & Danh sách yêu thích \\
     \hline
-    Knowledge \& AI & \texttt{ai}, \texttt{rag} & Phân loại ý định, sinh câu trả lời và tra cứu véc tơ. & Hội thoại, Vector Embeddings \\
+    Knowledge and AI & \texttt{ai}, \texttt{rag} & Phân loại ý định, sinh câu trả lời và tra cứu véc tơ. & Hội thoại, Vector Embeddings \\
     \hline
     Infrastructure & \texttt{config}, \texttt{health}, Truy xuất DB & Quản lý cấu hình môi trường, theo dõi sức khỏe hệ thống. & Environment Variables, Database Connection \\
     \hline
     \end{tabular}
-    \caption{Tổ chức Business Domain tại Backend}
+    \caption{Backend Business Domain Organization}
     \label{tab:backend_modules}
 \end{table}
 
@@ -930,7 +930,7 @@ Cơ sở dữ liệu được chuẩn hóa nghiêm ngặt. Người dùng là tr
     \draw[arrow] (user.west) -- node[above, label] {1-N} (conv.east);
     
     \end{tikzpicture}
-    \caption{Sơ đồ Quan hệ Thực thể Đơn giản}
+    \caption{Simplified Entity-Relationship Diagram}
     \label{fig:entity_relationship}
 \end{figure}
 
@@ -1021,7 +1021,7 @@ Sau xác nhận, \textit{Workflow Engine} chạy chuỗi công cụ xác định
     \label{fig:key_workflow_ai_orchestration}
 \end{figure}
 
-\subsubsection*{Workflow 3: Q\&A Địa điểm kết hợp AI và Cộng đồng}
+\subsubsection*{Workflow 3: Hỏi đáp Địa điểm kết hợp AI và Cộng đồng}
 
 Khi người dùng đăng câu hỏi cho một địa điểm, backend xác thực người dùng, phân giải mã địa điểm về UUID nội bộ và lưu \texttt{Question}. Thread vừa tạo được trả về ngay để giao diện cập nhật mà không phải chờ mô hình ngôn ngữ. Việc sinh câu trả lời AI diễn ra bất đồng bộ ở nền: hệ thống tập hợp metadata địa điểm, tiện ích, rating và các trích đoạn review, sau đó yêu cầu LLM tạo câu trả lời dựa trên bằng chứng hiện có.
 
@@ -1062,7 +1062,7 @@ Câu trả lời AI được lưu dưới dạng \texttt{Answer} không gắn \t
         \draw[flow] (answer.south) -- (thread.north);
         \draw[flow] (immediate.east) -- ++(0.35cm,0) -| (threadlane) -- (thread.east);
     \end{tikzpicture}
-    \caption{Asynchronous Q\&A workflow combining AI answers with onsite community knowledge.}
+    \caption{Asynchronous Question and Answer workflow combining AI answers with onsite community knowledge.}
     \label{fig:key_workflow_qa}
 \end{figure}
 
@@ -1107,7 +1107,7 @@ Cơ chế này cho phép các kỹ sư liên tục chạy unit test và e2e test
     \draw[arrow, dashed] (mock.west -| app.east) -- node[below, label] {Inject Mock} (mock.west);
     
     \end{tikzpicture}
-    \caption{Cơ chế Dependency Injection theo Môi trường Kiểm thử}
+    \caption{Dependency Injection Mechanism based on Testing Environment}
     \label{fig:env_strategy}
 \end{figure}
 
@@ -1131,7 +1131,7 @@ Cơ chế này cho phép các kỹ sư liên tục chạy unit test và e2e test
     Sinh câu trả lời AI bất đồng bộ & Tránh tình trạng chờ đợi quá lâu khi nạp ngữ cảnh vào LLM. & Giao diện phản hồi ngay lập tức cho người hỏi. & Phải bổ sung logic làm mới giao diện sau khi tạo xong. \\
     \hline
     \end{tabular}
-    \caption{Các Quyết định Kiến trúc và Sự Đánh đổi}
+    \caption{Architectural Decisions and Trade-offs}
     \label{tab:arch_tradeoffs}
 \end{table}
 
@@ -1143,7 +1143,7 @@ Kiến trúc hệ thống thể hiện sự rạch ròi tuyệt đối giữa vi
 \section{Implementation}
 
 \subsection{Implementation Strategy}
-Thay vì lập trình tự phát theo từng tính năng lẻ tẻ, nhóm tiếp cận việc hiện thực hóa bằng cách bám sát luồng nghiệp vụ cốt lõi đã thiết kế. Mục tiêu đầu tiên là xây dựng nhanh một bản MVP (Minimum Viable Product) để kiểm chứng ý tưởng. Các thành phần được chia nhỏ thành những module độc lập, cho phép mỗi thành viên phát triển và kiểm thử cục bộ trước khi tích hợp vào hệ thống chung. Chiến lược này giúp nhóm kiểm soát rủi ro, đẩy nhanh tiến độ và khoanh vùng lỗi hiệu quả.
+Thay vì lập trình tự phát theo từng tính năng lẻ tẻ, nhóm tiếp cận việc hiện thực hóa bằng cách bám sát luồng nghiệp vụ cốt lõi đã thiết kế. Mục tiêu đầu tiên là xây dựng nhanh một bản MVP để kiểm chứng ý tưởng. Các thành phần được chia nhỏ thành những module độc lập, cho phép mỗi thành viên phát triển và kiểm thử cục bộ trước khi tích hợp vào hệ thống chung. Chiến lược này giúp nhóm kiểm soát rủi ro, đẩy nhanh tiến độ và khoanh vùng lỗi hiệu quả.
 
 \subsection{From Design to Implementation}
 Bản chất của quá trình triển khai là việc ánh xạ trực tiếp các quyết định từ giai đoạn thiết kế, phân rã và trừu tượng hóa thành mã nguồn thực tế (Bảng \ref{tab:design_to_impl}).
@@ -1164,12 +1164,12 @@ Bản chất của quá trình triển khai là việc ánh xạ trực tiếp c
         Tách biệt luồng AI & Triển khai luồng xử lý 4 lớp (Router $\to$ Orchestrator $\to$ Tools $\to$ Composer). & Quản lý chặt chẽ hành vi của AI, đảm bảo tính tất định và hạn chế hiện tượng Hallucination. \\
         \hline
     \end{tabularx}
-    \caption{Ánh xạ từ thiết kế sang triển khai}
+    \caption{Mapping from Design to Implementation}
     \label{tab:design_to_impl}
 \end{table}
 
 \subsection{Team Implementation Workflow}
-Để phối hợp nhịp nhàng, nhóm thiết lập một quy trình chuẩn hóa: thống nhất quy ước giao tiếp dữ liệu (API Contract) giữa các module, lập trình độc lập, kiểm thử cục bộ, và cuối cùng là tích hợp mã nguồn (Merge). Sơ đồ \ref{fig:impl_workflow} minh họa vòng lặp liên tục này, đảm bảo mỗi đoạn mã được đưa lên nhánh chính đều đã trải qua khâu kiểm chứng, giữ cho dự án luôn trong trạng thái sẵn sàng vận hành.
+Để phối hợp nhịp nhàng, nhóm thiết lập một quy trình chuẩn hóa: thống nhất giao ước API giữa các module, lập trình độc lập, kiểm thử cục bộ, và cuối cùng là tích hợp mã nguồn (Merge). Sơ đồ \ref{fig:impl_workflow} minh họa vòng lặp liên tục này, đảm bảo mỗi đoạn mã được đưa lên nhánh chính đều đã trải qua khâu kiểm chứng, giữ cho dự án luôn trong trạng thái sẵn sàng vận hành.
 
 \begin{figure}[H]
     \centering
@@ -1178,12 +1178,12 @@ Bản chất của quá trình triển khai là việc ánh xạ trực tiếp c
         box/.style={draw, rounded corners, minimum width=2.8cm, minimum height=1cm, align=center, fill=blue!5},
         arrow/.style={->, thick, >=stealth}
     ]
-        \node[box] (design) {Thiết kế hệ thống \\ \& Trừu tượng hóa};
-        \node[box, right=of design] (contract) {Thống nhất \\ API Contract};
-        \node[box, right=of contract] (dev) {Phát triển module \\ độc lập};
-        \node[box, below=of dev] (test) {Kiểm thử cục bộ \\ (API Mocking)};
-        \node[box, left=of test] (merge) {Tích hợp \\ mã nguồn};
-        \node[box, left=of merge, fill=green!10, font=\bfseries] (deploy) {Sản phẩm \\ hoàn thiện};
+        \node[box] (design) {System Design \\ and Abstraction};
+        \node[box, right=of design] (contract) {Unified \\ API Contract};
+        \node[box, right=of contract] (dev) {Independent \\ Module Dev};
+        \node[box, below=of dev] (test) {Local Testing \\ with API Mocking};
+        \node[box, left=of test] (merge) {Source Code \\ Integration};
+        \node[box, left=of merge, fill=green!10, font=\bfseries] (deploy) {Finished \\ Product};
 
         \draw[arrow] (design) -- (contract);
         \draw[arrow] (contract) -- (dev);
@@ -1191,19 +1191,19 @@ Bản chất của quá trình triển khai là việc ánh xạ trực tiếp c
         \draw[arrow] (test) -- (merge);
         \draw[arrow] (merge) -- (deploy);
         
-        \draw[->, thick, dashed] (test.south) -- ++(0,-0.4) -| node[pos=0.25, below] {Sửa lỗi \& Tinh chỉnh} (dev.south);
+        \draw[->, thick, dashed] (test.south) -- ++(0,-0.4) -| node[pos=0.25, below] {Fix and Refine} (dev.south);
     \end{tikzpicture}
-    \caption{Quy trình triển khai mã nguồn liên tục của nhóm}
+    \caption{Team's Continuous Source Code Deployment Process}
     \label{fig:impl_workflow}
 \end{figure}
 
 \subsection{Core Implemented Parts}
 Hệ thống được lắp ghép từ bốn khối thành phần chính, mỗi khối đảm nhận một mắt xích trong luồng xử lý:
 \begin{itemize}
-    \item \textbf{Giao diện người dùng (Frontend):} Cung cấp trải nghiệm tương tác bản đồ trực quan và khung chat thời gian thực, là nơi tiếp nhận ý định của người dùng.
-    \item \textbf{Xử lý nghiệp vụ (Backend Core):} Điều phối dữ liệu trung tâm, áp dụng mẫu thiết kế Dependency Injection để tăng tính tái sử dụng và dễ dàng bảo trì.
-    \item \textbf{Lưu trữ dữ liệu (Database):} Đóng vai trò xương sống cho tính năng truy xuất thông tin, lưu trữ cả dữ liệu quan hệ truyền thống lẫn các Vector Embeddings.
-    \item \textbf{Động cơ AI (AI Engine):} Trái tim của hệ thống, nơi các câu lệnh tự nhiên được phân tách ý định và chuyển hóa thành các thao tác tra cứu cụ thể trên bản đồ.
+    \item \textbf{Giao diện người dùng:} Cung cấp trải nghiệm tương tác bản đồ trực quan và khung chat thời gian thực, là nơi tiếp nhận ý định của người dùng.
+    \item \textbf{Xử lý nghiệp vụ lõi:} Điều phối dữ liệu trung tâm, áp dụng mẫu thiết kế Dependency Injection để tăng tính tái sử dụng và dễ dàng bảo trì.
+    \item \textbf{Lưu trữ dữ liệu:} Đóng vai trò xương sống cho tính năng truy xuất thông tin, lưu trữ cả dữ liệu quan hệ truyền thống lẫn các Vector Embeddings.
+    \item \textbf{Động cơ AI:} Trái tim của hệ thống, nơi các câu lệnh tự nhiên được phân tách ý định và chuyển hóa thành các thao tác tra cứu cụ thể trên bản đồ.
 \end{itemize}
 
 
@@ -1217,28 +1217,28 @@ Xây dựng một hệ thống kết hợp bản đồ số và tác tử AI đe
         \hline
         \textbf{Thách thức} & \textbf{Nguyên nhân} & \textbf{Giải pháp} & \textbf{Tác động} \\
         \hline
-        Dữ liệu từ AI thiếu nhất quán & Do tính phi tất định của các mô hình ngôn ngữ lớn (LLM). & Áp dụng định nghĩa cấu trúc nghiêm ngặt kết hợp phân tách luồng suy luận và thực thi. & Nhận diện ý định chuẩn xác, hệ thống không bị treo do lỗi phân tích cú pháp (Parsing Error). \\
+        Dữ liệu từ AI thiếu nhất quán & Do tính phi tất định của các mô hình ngôn ngữ lớn LLM. & Áp dụng định nghĩa cấu trúc nghiêm ngặt kết hợp phân tách luồng suy luận và thực thi. & Nhận diện ý định chuẩn xác, hệ thống không bị treo do lỗi phân tích cú pháp. \\
         \hline
-        Truyền tải dữ liệu thời gian thực & Giao thức Server-Sent Events (SSE) tiêu chuẩn chỉ hỗ trợ phương thức GET. & Sử dụng luồng xử lý SSE tùy chỉnh kết hợp phương thức POST để bảo mật thông tin. & Phản hồi mượt mà từng chữ nhưng vẫn đảm bảo tính an toàn dữ liệu. \\
+        Truyền tải dữ liệu thời gian thực & Giao thức streaming chat SSE tiêu chuẩn chỉ hỗ trợ phương thức GET. & Sử dụng luồng xử lý SSE tùy chỉnh kết hợp phương thức POST để bảo mật thông tin. & Phản hồi mượt mà từng chữ nhưng vẫn đảm bảo tính an toàn dữ liệu. \\
         \hline
         Dịch vụ bản đồ thiếu ổn định & API của các nhà cung cấp thỉnh thoảng bị nghẽn mạng hoặc quá tải. & Áp dụng cơ chế Fallback kết hợp xử lý bất đồng bộ. & Ứng dụng duy trì tính bền bỉ, tìm kiếm không bị gián đoạn. \\
         \hline
         Tính toán vector trên ORM & Các ORM truyền thống không hỗ trợ tốt phép toán hình học đa chiều. & Sử dụng Raw Query để can thiệp trực tiếp vào tính toán độ tương đồng. & Giữ được sức mạnh toán học của cơ sở dữ liệu chuyên dụng. \\
         \hline
     \end{tabularx}
-    \caption{Các rào cản kỹ thuật và cách giải quyết}
+    \caption{Technical Barriers and Solutions}
     \label{tab:challenges}
 \end{table}
 
-\subsection{Quản lý ngữ cảnh giao tiếp cho mô hình ngôn ngữ}
+\subsection{Communication Context Management for Language Models}
 \label{sec:llm_context}
-Để mô hình ngôn ngữ lớn (LLM) có thể thực hiện trọn vẹn vai trò của một trợ lý du lịch ảo, rào cản lớn nhất không nằm ở sức mạnh suy luận của mô hình, mà là cách thiết kế luồng cung cấp ngữ cảnh đúng, đủ và liên tục. Nhóm đã xây dựng một cơ chế quản lý ngữ cảnh đa tầng xuyên suốt từ giao diện người dùng đến máy chủ xử lý:
+For a Large Language Model (LLM) to fully perform the role of a virtual travel assistant, the biggest barrier is not the reasoning power of the model, but how to design a workflow that provides correct, sufficient, and continuous context. The team has built a multi-layered context management mechanism spanning from the user interface to the processing server:
 
 \begin{itemize}
-    \item \textbf{Đóng gói trạng thái giao diện trực tiếp:} Khi người dùng nhắn tin, dữ liệu gửi đi không chỉ là văn bản thô. Tầng giao diện tự động thu thập các địa điểm đang được chọn, luồng công việc hiện tại, và các giới hạn ngân sách. Các thông tin này được đính kèm vào khối dữ liệu tải lên. Điều này giúp LLM có khả năng "nhìn" thấy bản đồ, hiểu được người dùng đang quan tâm đến địa điểm nào mà không cần họ phải gọi tên cụ thể.
-    \item \textbf{Trích xuất ý định bằng luồng AI song song:} Thay vì sử dụng các biểu thức chính quy để bóc tách từ khóa tìm kiếm, hệ thống định hướng đầu vào bằng một lời gọi LLM phụ trợ siêu tốc. Lời gọi này có nhiệm vụ duy nhất là phân tích văn bản và trả về một cấu trúc dữ liệu JSON bao gồm: cờ xác nhận tìm kiếm, vị trí, phân loại (chỗ ở, ăn uống, tham quan) và ngân sách. Nhờ vậy, hệ thống có thể nhận diện yêu cầu di chuyển bản đồ từ những câu hội thoại tự nhiên nhất.
-    \item \textbf{Tiêm dữ liệu động chống hiện tượng Hallucination:} Để trả lời chuyên sâu về một địa điểm cụ thể, hệ thống tuyệt đối không để LLM tự suy diễn dựa trên kiến thức cũ. Dịch vụ xử lý trò chuyện sẽ tự động trích xuất từ cơ sở dữ liệu một khối thông tin chứa các dữ kiện xác thực: nguồn cung cấp, danh mục, điểm đánh giá trung bình, các tiện ích, và đặc biệt là tối đa 5 trích đoạn đánh giá thực tế nổi bật nhất. Chỉ thị gốc của hệ thống (System Prompt) được thiết lập nghiêm ngặt: yêu cầu LLM chỉ sử dụng các bằng chứng vừa được cung cấp, trả lời bằng đại từ xưng hô gần gũi ("mình" - "bạn"), và thẳng thắn từ chối nếu thông tin không đủ để đưa ra kết luận.
-    \item \textbf{Quản lý bộ nhớ hội thoại dạng cửa sổ trượt:} Nhằm tối ưu hóa giới hạn ngữ cảnh đầu vào và giảm thiểu chi phí API, lịch sử trò chuyện được kiểm soát chặt chẽ. Hệ thống duy trì một bộ nhớ đệm cục bộ với thời gian sống là 3600 giây, và tự động cắt xén chỉ giữ lại đúng 20 tin nhắn gần nhất. Đồng thời, cấu hình hệ thống cho phép đồng bộ hóa dữ liệu này vào cơ sở dữ liệu PostgreSQL một cách phi đồng bộ, đảm bảo tính liên tục của các phiên hội thoại khi tải lại trang mà không làm chậm luồng phản hồi chính.
+    \item \textbf{Direct UI State Packaging:} When a user sends a message, the data sent is not just plain text. The interface layer automatically collects the currently selected places, the current workflow, and budget limits. This information is attached to the uploaded data payload. This helps the LLM to "see" the map, understanding which place the user is interested in without them having to explicitly name it.
+    \item \textbf{Intent Extraction using Parallel AI Flow:} Instead of using regular expressions to extract search keywords, the system routes the input using an ultra-fast auxiliary LLM call. This call has a single task of parsing the text and returning a JSON data structure containing: search confirmation flag, location, category (accommodation, dining, sightseeing), and budget. Thanks to this, the system can recognize map movement requests from the most natural conversational sentences.
+    \item \textbf{Dynamic Data Injection to Prevent Hallucination:} To answer in-depth about a specific place, the system absolutely does not let the LLM deduce based on its old knowledge. The chat processing service will automatically extract from the database a block of information containing authentic facts: data source, category, average rating, amenities, and especially up to 5 most prominent actual review excerpts. The System Prompt is strictly set: requiring the LLM to use only the provided evidence, reply using a friendly tone, and frankly refuse if the information is insufficient to make a conclusion.
+    \item \textbf{Sliding Window Conversational Memory Management:} To optimize the input context limit and minimize API costs, the chat history is tightly controlled. The system maintains a local cache with a time-to-live of 3600 seconds, and automatically truncates to keep only the exactly 20 most recent messages. Simultaneously, the system configuration allows this data to be asynchronously synchronized into the PostgreSQL database, ensuring the continuity of conversational sessions upon page reload without slowing down the main response flow.
 \end{itemize}
 \begin{figure}[H]
     \centering
@@ -1252,41 +1252,41 @@ Xây dựng một hệ thống kết hợp bản đồ số và tác tử AI đe
     ]
 
     % Nodes
-    \node[box] (frontend) {\textbf{Frontend UI}\\ \scriptsize Trạng thái bản đồ};
+    \node[box] (frontend) {\textbf{Frontend UI}\\ \scriptsize Map State};
     
-    \node[box, right=of frontend] (backend) {\textbf{ChatService}\\ \scriptsize Trung tâm Điều phối};
+    \node[box, right=of frontend] (backend) {\textbf{ChatService}\\ \scriptsize Orchestration Center};
     
-    \node[llm, above=of backend] (extractor) {\textbf{Fast LLM}\\ \scriptsize Phân tích Ý định};
+    \node[llm, above=of backend] (extractor) {\textbf{Fast LLM}\\ \scriptsize Intent Analysis};
     
-    \node[db, below=of backend] (db) {\textbf{Cơ sở dữ liệu}\\ \scriptsize Dữ kiện \& Đánh giá};
+    \node[db, below=of backend] (db) {\textbf{Database}\\ \scriptsize Facts and Reviews};
     
-    \node[llm, right=of backend] (mainllm) {\textbf{Main LLM}\\ \scriptsize Sinh phản hồi};
+    \node[llm, right=of backend] (mainllm) {\textbf{Main LLM}\\ \scriptsize Response Generation};
 
-    \node[box, below=of mainllm] (memory) {\textbf{Memory Store}\\ \scriptsize Lịch sử Hội thoại};
+    \node[box, below=of mainllm] (memory) {\textbf{Memory Store}\\ \scriptsize Chat History};
 
     % Arrows
     \draw[arrow] (frontend) -- node[above, font=\scriptsize] {Message +} node[below, font=\scriptsize] {UI Context} (backend);
     
-    \draw[arrow] ([xshift=-15pt]backend.north) -- node[left, font=\scriptsize] {Văn bản thô} ([xshift=-15pt]extractor.south);
-    \draw[arrow] ([xshift=15pt]extractor.south) -- node[right, font=\scriptsize] {Cấu trúc JSON} ([xshift=15pt]backend.north);
+    \draw[arrow] ([xshift=-15pt]backend.north) -- node[left, font=\scriptsize] {Raw Text} ([xshift=-15pt]extractor.south);
+    \draw[arrow] ([xshift=15pt]extractor.south) -- node[right, font=\scriptsize] {JSON Structure} ([xshift=15pt]backend.north);
     
-    \draw[arrow] ([xshift=-15pt]backend.south) -- node[left, font=\scriptsize] {Truy vấn} ([xshift=-15pt]db.north);
-    \draw[arrow] ([xshift=15pt]db.north) -- node[right, font=\scriptsize] {Dữ liệu động} ([xshift=15pt]backend.south);
+    \draw[arrow] ([xshift=-15pt]backend.south) -- node[left, font=\scriptsize] {Query} ([xshift=-15pt]db.north);
+    \draw[arrow] ([xshift=15pt]db.north) -- node[right, font=\scriptsize] {Dynamic Data} ([xshift=15pt]backend.south);
     
-    \draw[arrow] (backend) -- node[above, font=\scriptsize] {System Prompt +} node[below, font=\scriptsize] {Lịch sử + Data} (mainllm);
+    \draw[arrow] (backend) -- node[above, font=\scriptsize] {System Prompt +} node[below, font=\scriptsize] {History + Data} (mainllm);
     
-    \draw[arrow] (backend.south east) -- node[above right, font=\scriptsize] {Đọc/Ghi} (memory.north west);
+    \draw[arrow] (backend.south east) -- node[above right, font=\scriptsize] {Read/Write} (memory.north west);
     
     \draw[dashed_arrow] (memory.west) -- node[below, font=\scriptsize] {Async Backup} (db.east);
     
-    \draw[arrow] (mainllm.north) -- ++(0,1.5) -| node[near start, above, font=\scriptsize] {Truyền phát trực tiếp (Streaming)} (frontend.north);
+    \draw[arrow] (mainllm.north) -- ++(0,1.5) -| node[near start, above, font=\scriptsize] {Live Streaming} (frontend.north);
 
     \end{tikzpicture}
-    \caption{\textbf{LLM Context Management Workflow} --- Minh họa luồng dữ liệu quản lý ngữ cảnh từ giao diện đến LLM.}
+    \caption{\textbf{LLM Context Management Workflow} --- Illustrating the context management data flow from the UI to the LLM.}
     \label{fig:llm_context_flow}
 \end{figure}
 
-Việc luân chuyển ngữ cảnh một cách khéo léo và có chủ đích này chính là chìa khóa giúp một hệ thống AI phi trạng thái trở thành một trợ lý ảo thông minh, biết nhớ bối cảnh và phản hồi sắc bén theo thời gian thực.
+This skillful and intentional flow of context is the key to turning a stateless AI system into a smart virtual assistant that remembers the context and responds sharply in real time.
 
 \subsection{Summary}
 Tóm lại, phần triển khai đã phản ánh chân thực năng lực chuyển hóa các mô hình lý thuyết trừu tượng thành một hệ thống vận hành thực tiễn. Vượt qua những rào cản về công nghệ và kiến trúc, chiến lược chia nhỏ để trị kết hợp cùng quy trình cải tiến liên tục đã giúp nhóm đúc kết thành một nền tảng vững vàng, dễ bảo trì và mở ra nhiều cơ hội nâng cấp về sau.
@@ -1306,7 +1306,7 @@ Nhóm phát triển áp dụng chiến lược kiểm thử đa tầng nghiêm n
 \node[layer, fill=blue!70!black!80] (fe) {Tier 1: Frontend Unit Testing (Vitest + Testing Library)};
 \node[layer, fill=blue!60, below=0.15cm of fe] (be) {Tier 2: Backend Unit Testing (Jest + ts-jest)};
 \node[layer, fill=blue!50, below=0.15cm of be] (e2e) {Tier 3: Backend Integration Testing (NestJS Testing Module)};
-\node[layer, fill=blue!40, below=0.15cm of e2e] (scenario) {Tier 4: Scenario \& Edge Case Testing};
+\node[layer, fill=blue!40, below=0.15cm of e2e] (scenario) {Tier 4: Scenario and Edge Case Testing};
 
 \draw[arrow] (fe.south) -- (be.north);
 \draw[arrow] (be.south) -- (e2e.north);
@@ -1333,7 +1333,7 @@ Quá trình đánh giá được thực hiện thông qua hệ thống tích h�
     \hline
     \end{tabular}
     }
-    \caption{Thống kê kết quả thực thi các bài kiểm thử}
+    \caption{Execution Results Statistics of Test Cases}
 \end{table}
 
 \begin{center}
@@ -1401,7 +1401,7 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & \\[1cm]
     \hline
     \end{tabularx}
-    \caption{Chi tiết kế hoạch phân công}
+    \caption{Detailed Assignment Plan}
 \end{table}
 
 \subsection{Actual Workload}
@@ -1423,7 +1423,7 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & \\[1cm]
     \hline
     \end{tabularx}
-    \caption{Chi tiết khối lượng công việc thực tế}
+    \caption{Actual Workload Details}
 \end{table}
 
 \subsection{Workload Distribution}
@@ -1443,7 +1443,7 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & & \\[0.5cm]
     \bottomrule
     \end{tabularx}
-    \caption{Phân bổ khối lượng công việc của các thành viên}
+    \caption{Workload Distribution among Members}
 \end{table}
 
 
@@ -1472,7 +1472,7 @@ Dưới đây là danh sách các công cụ, công nghệ và dịch vụ ngo�
     Triển khai và kiểm thử & Vercel, Docker, Postman \\
     \hline
     \end{tabularx}
-    \caption{Danh sách công cụ hỗ trợ dự án}
+    \caption{List of Project Support Tools}
 \end{table}
 
 \section{AI usage and declaration}
