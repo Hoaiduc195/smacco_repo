@@ -100,7 +100,7 @@
     \textbf{KHOA CÔNG NGHỆ THÔNG TIN} \\
     
     % 2. Chèn Logo 
-    \includegraphics[width=0.4\textwidth]{images.png} \\
+    \includegraphics[width=0.4\textwidth]{../images.png} \\
     
     % 3. Tên môn học và Đồ án
     \Large \textbf{CSC10014 - TƯ DUY TÍNH TOÁN} \\
@@ -173,11 +173,11 @@
 
 
 \newpage
-\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\contentsname}{Mục lục}
 \tableofcontents
 
 \newpage
-\section{Group Member}
+\section{Thành viên nhóm}
 
 \begin{tcolorbox}[
     colback=blue!5!white,
@@ -199,20 +199,20 @@ Các chữ số đính kèm tại các tiêu đề cấp 2 và cấp 3 trong bá
     \toprule
     \textbf{STT} & \textbf{MSSV} & \textbf{Họ và Tên} & \textbf{Vai trò / Nhiệm vụ chính} \\
     \midrule
-    1 & 24120033 & \textbf{Đào Tiến Đạt} & \\
+    1 & 24120033 & \textbf{Đào Tiến Đạt} & Hỗ trợ, Kiểm thử \\
     2 & 24120040 & \textbf{Dương Hoài Đức} & Trưởng nhóm, Lập trình viên chính \\
-    3 & 24120304 & \textbf{Trần Thị Bích Hạnh} & \\
-    4 & 24120310 & \textbf{Nguyễn Đình Hiếu} & \\
-    5 & 24120483 & \textbf{Hoàng Văn Trường} & \\
+    3 & 24120304 & \textbf{Trần Thị Bích Hạnh} & Kiểm thử, quản lý tài liệu \\
+    4 & 24120310 & \textbf{Nguyễn Đình Hiếu} & Kiểm thử, làm nội dung \\
+    5 & 24120483 & \textbf{Hoàng Văn Trường} & Kiểm thử, làm nội dung \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
 
 \newpage
-\section{Idea}
+\section{Ý tưởng}
 
-\subsection{Problem Statement}
+\subsection{Phát biểu bài toán}
 Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch không hề đơn giản. Người dùng thường phải cân nhắc nhiều yếu tố như giá cả, vị trí, tiện nghi, chất lượng dịch vụ và các đánh giá từ những khách hàng trước đó. Quá trình này vẫn còn gặp nhiều khó khăn với các \textbf{điểm đau} cốt lõi:
 
 \begin{itemize}[label=\textcolor{blue!70!black}{\faTimesCircle}]
@@ -226,10 +226,10 @@ Hiện nay, việc tìm kiếm một nơi lưu trú phù hợp khi đi du lịch
 Nhóm xây dựng hệ thống tìm kiếm và gợi ý lưu trú thông minh, cho phép người dùng mô tả nhu cầu bằng \textbf{ngôn ngữ tự nhiên}. Hệ thống sẽ phân tích yêu cầu, tìm kiếm các địa điểm phù hợp, đánh giá, xếp hạng và đưa ra những gợi ý trực quan, giúp người dùng ra quyết định nhanh chóng.
 \end{infobox}
 
-\subsection{Application Vision}
+\subsection{Tầm nhìn ứng dụng}
 Dự án không chỉ nhằm xây dựng một nền tảng thương mại thông thường, mà định hình lại cách người dùng tương tác với dữ liệu. Thông qua việc ứng dụng AI và kỹ thuật \textbf{RAG}, hệ thống kỳ vọng tạo ra một tiền đề cho tương lai, nơi AI đóng vai trò như một người điều phối đáng tin cậy.
 
-\subsection{Target Users}
+\subsection{Người dùng mục tiêu}
 \begin{itemize}[label=\textcolor{cyan!70!black}{\faUserCheck}]
   \item \textbf{Khách du lịch tự túc:} Cần tìm kiếm nhanh chóng, so sánh giá để tối ưu hóa trải nghiệm.
   \item \textbf{Người dùng On-site:} Đang lưu trú tại địa điểm, sẵn sàng đóng góp thông tin thực tế và trả lời câu hỏi cộng đồng.
@@ -237,9 +237,9 @@ Dự án không chỉ nhằm xây dựng một nền tảng thương mại thôn
 \end{itemize}
 
 
-\section{Problem Analysis}
+\section{Phân tích bài toán}
 
-\subsection[User Journey]{User Journey \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Hành trình người dùng]{Hành trình người dùng \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế hệ thống thông qua chuỗi câu hỏi dẫn dắt từ góc nhìn người dùng:
 
@@ -269,16 +269,16 @@ Thay vì tiếp cận theo hướng kỹ thuật khô khan, nhóm thiết kế h
   $\rightarrow$ Sử dụng LLM đóng vai trò điều phối trung gian, người dùng sẽ tương tác trực tiếp với LLM, LLM sẽ trích xuất ý định người dùng và tiến hành các yêu cầu một cách tự động.
 \end{itemize}
 
-\subsection{Computational Problem Decomposition}
+\subsection{Phân rã bài toán}
 Từ nhu cầu thực tế, hệ thống được phân rã thành các module kỹ thuật chuyên biệt:
 \begin{itemize}[label=\textcolor{blue!60}{\faCogs}]
   \item \textbf{Intent Parsing:} LLM chuyển đổi ngôn ngữ tự nhiên thành JSON cấu trúc.
   \item \textbf{Data Aggregation:} Truy xuất đồng thời DB nội bộ và API đối tác.
-  \item \textbf{Semantic Search:} Số hóa văn bản thành vector nhúng (với pgvector).
+  \item \textbf{Semantic Search:} Số hóa văn bản thành vector nhúng nhằm phục vụ truy vấn nhanh chóng.
   \item \textbf{Workflow Engine:} Xây dựng khung làm việc cứng kiểm soát AI.
 \end{itemize}
 
-\subsection{Constraints, Assumptions, and Criteria}
+\subsection{Ràng buộc, Giả định và Tiêu chí}
 Để đảm bảo tính khả thi trong phạm vi đồ án, hệ thống được thiết kế và đánh giá dựa trên các khía cạnh rõ ràng sau:
 
 \vspace{0.3cm}
@@ -305,10 +305,10 @@ Từ nhu cầu thực tế, hệ thống được phân rã thành các module k
 \end{itemize}
 
 
-\section{System Overview}
+\section{Tổng quan hệ thống}
 \textbf{Hệ thống} là nền tảng tìm kiếm và quản lý lưu trú thông minh, kết hợp tra cứu truyền thống và sức mạnh Trí tuệ Nhân tạo. Dự án mang đến trải nghiệm đột phá qua giao diện hội thoại và tìm kiếm ngữ nghĩa.
 
-\subsection[Overall Architecture]{Overall Architecture \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Kiến trúc tổng thể]{Kiến trúc tổng thể \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 \noindent Hệ thống được thiết kế theo mô hình \textbf{Modular Monolith} kết hợp với cơ chế điều phối tác tử AI. 
 
@@ -323,7 +323,7 @@ Lý do nhóm ưu tiên sử dụng \textbf{Modular Monolith} là nhằm giảm t
   \item \textbf{Tầng Dữ liệu:} Chịu trách nhiệm lưu trữ an toàn toàn bộ dữ liệu quan hệ của nền tảng. Đồng thời, tầng này cũng tích hợp khả năng lưu trữ và truy vấn các vector nhúng, làm cốt lõi cho tính năng tìm kiếm ngữ nghĩa và truy xuất dữ liệu tăng cường.
 \end{itemize}
 
-\subsection[Core Features]{Core Features \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Tính năng cốt lõi]{Tính năng cốt lõi \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 \vspace{0.3cm}
 \begin{center}
@@ -342,7 +342,7 @@ Lý do nhóm ưu tiên sử dụng \textbf{Modular Monolith} là nhằm giảm t
   \end{tabularx}
 \end{center}
 
-\subsection{Feature Illustrations}
+\subsection{Minh họa tính năng}
 Thay vì tiếp cận theo hướng kỹ thuật, hệ thống được thiết kế dựa trên quá trình tối ưu hóa trải nghiệm thực tế của người dùng thông qua các tính năng sau:
 
 \vspace{0.6cm}
@@ -406,7 +406,7 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 \end{minipage}
 
 \vspace{0.5cm}
-\subsection{Breakthrough Points}
+\subsection{Các điểm đột phá}
 \begin{infobox}[\faRocket \ Các điểm đổi mới nổi bật]
 \begin{itemize}[label=\textcolor{orange}{\faCheck}]
   \item \textbf{AI-Driven Workflow:} AI không chỉ sinh chữ. Nó là "Router" gọi API, tính toán logic và vẽ thẳng kết quả lên UI.
@@ -418,7 +418,7 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
 
 
 \newpage
-\section{Pattern Recognition}
+\section{Nhận diện mẫu}
 
 \tikzset{
     common box/.style={rectangle, draw=#1!50, fill=#1!5, rounded corners=3mm, align=center, minimum height=1.2cm, drop shadow={opacity=0.25, shadow xshift=2pt, shadow yshift=-2pt}, font=\small},
@@ -431,12 +431,12 @@ Mỗi địa điểm trên nền tảng được tổ chức như một diễn �
     error arrow/.style={-{Stealth[scale=1.2]}, line width=1.2pt, dashed, draw=red!70, rounded corners=2mm}
 }
 
-\subsection{Purpose and Approach}
+\subsection{Mục đích và Cách tiếp cận}
 Trong dự án này, Nhận diện mẫu đóng vai trò thiết yếu để định hình kiến trúc hệ thống. Thay vì giải quyết từng vấn đề một cách đơn lẻ, nhóm đã quan sát các trường hợp lặp lại trong quá trình vận hành, so sánh chúng, gom nhóm những điểm tương đồng và khái quát hóa thành các khuôn mẫu thiết kế hữu ích. Các phương pháp tổng quát như đối chiếu nhiều trường hợp, phân tích sự lặp lại và kiểm chứng bằng các kịch bản kiểm thử đã được áp dụng triệt để.
 
 \noindent Việc lựa chọn cách tiếp cận này xuất phát từ đặc thù của hệ thống: phải tiếp nhận vô số câu lệnh tự nhiên đa dạng, vận hành nhiều luồng xử lý song song, tổng hợp thông tin từ nhiều nguồn và đối mặt với hàng loạt tình huống lỗi ngoại vi. Nếu xử lý từng trường hợp riêng lẻ, hệ thống sẽ trở nên rời rạc, thiếu đồng bộ và rất khó mở rộng. Nhờ đúc kết được 6 quy luật cốt lõi dưới đây, nhóm đã có cơ sở vững chắc để đưa ra các quyết định thiết kế kiến trúc chuẩn xác.
 
-\subsection[Application of Pattern Recognition Thinking]{Application of Pattern Recognition Thinking \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Ứng dụng Tư duy Nhận diện mẫu]{Ứng dụng Tư duy Nhận diện mẫu \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 
 \vspace{0.2cm}
@@ -475,7 +475,7 @@ Thực tế cho thấy, dù người dùng có cách diễn đạt đa dạng kh
         \draw[main arrow] (router.east) -- (w2.west);
         \draw[main arrow] (router.340) to[out=0, in=180] (w3.west);
     \end{tikzpicture}
-    \caption{\textbf{Query Pattern} --- Standardize diverse natural queries into routing parameters.}
+    \caption{\textbf{Mẫu truy vấn} --- Chuẩn hóa các truy vấn tự nhiên đa dạng thành tham số điều hướng.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -505,7 +505,7 @@ Trong quá trình thu thập thông tin từ nhiều nguồn khác nhau, nhóm p
         \draw[main arrow] (serp.east) to[out=0, in=180] (ps.200);
         \draw[main arrow] (ps.east) -- (place.west);
     \end{tikzpicture}
-    \caption{\textbf{Data Pattern} --- Identify attribute patterns from fragmented sources to map into a normalized Place model.}
+    \caption{\textbf{Mẫu dữ liệu} --- Nhận diện các mẫu thuộc tính từ các nguồn phân mảnh để ánh xạ vào mô hình Địa điểm chuẩn hóa.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -532,7 +532,7 @@ Hành vi của người dùng trong quá trình lựa chọn chỗ ở hiếm kh
         \draw[main arrow] (tag.south) |- (analyze.west);
         \draw[main arrow, dashed] (compare.south) -- node[right, font=\scriptsize] {Change mind} (analyze.north);
     \end{tikzpicture}
-    \caption{\textbf{Decision-making Pattern} --- Align system workflows with repetitive decision-making behavioral patterns.}
+    \caption{\textbf{Mẫu ra quyết định} --- Điều chỉnh luồng hệ thống phù hợp với các mẫu hành vi ra quyết định lặp lại.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -561,7 +561,7 @@ Trong thực tiễn, các luồng thông tin dạng ngôn ngữ tự nhiên như
         \draw[main arrow] (chunking.east) -- node[above, label]{\faBolt} (pgvector.west);
         \draw[main arrow] (pgvector.east) -- (search.west);
     \end{tikzpicture}
-    \caption{\textbf{RAG Pattern} --- Process free text into information blocks retrievable by semantic vectors.}
+    \caption{\textbf{Mẫu RAG} --- Xử lý văn bản tự do thành các khối thông tin có thể truy xuất bằng vector ngữ nghĩa.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -590,7 +590,7 @@ Việc kết nối với các dịch vụ bên ngoài luôn tiềm ẩn những 
         \draw[error arrow] (goong.south) -- node[right, font=\scriptsize, text=red!80!black]{Error/Timeout} (osm.north);
         \draw[error arrow] (osm.east) -- node[above, font=\scriptsize, text=red!80!black]{Failure} (empty.west);
     \end{tikzpicture}
-    \caption{\textbf{Failure Pattern} --- Fallback mechanism to handle repetitive error patterns from external API providers.}
+    \caption{\textbf{Mẫu lỗi} --- Cơ chế dự phòng để xử lý các mẫu lỗi lặp lại từ các nhà cung cấp API bên ngoài.}
 \end{figure}
 
 \vspace{0.4cm}
@@ -623,15 +623,15 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
         \draw[main arrow] (geocode.east) -- (d2.west);
         \draw[main arrow] (d2.east) to[out=0, in=180] (recommend.200);
     \end{tikzpicture}
-    \caption{\textbf{Workflow Tool Pattern} --- Identify data dependency patterns using String Templates between Tools.}
+    \caption{\textbf{Mẫu công cụ Workflow} --- Nhận diện các mẫu phụ thuộc dữ liệu bằng cách sử dụng Chuỗi mẫu (String Templates) giữa các Công cụ.}
 \end{figure}
 
-\subsection{Summary}
+\subsection{Tổng kết}
 \vspace{0.2cm}
 
 {\renewcommand{\arraystretch}{1.6}
 \begin{xltabular}{\textwidth}{@{} >{\raggedright\arraybackslash\hsize=0.8\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X >{\raggedright\arraybackslash\hsize=1.1\hsize}X @{}}
-  \caption{\textbf{Pattern Recognition Summary}} \\
+  \caption{\textbf{Tổng kết Nhận diện mẫu}} \\
   \toprule
   \textcolor{blue!80!black}{\textbf{\faClipboardList \ Mẫu được nhận diện}} & \textcolor{blue!80!black}{\textbf{\faLightbulb \ Quy tắc tổng quát}} & \textcolor{blue!80!black}{\textbf{\faCogs \ Quyết định thiết kế}} \\
   \midrule
@@ -662,15 +662,15 @@ Các quy trình xử lý phức tạp thực chất là một chuỗi các bư�
 \noindent \textbf{Tổng kết lại,} các khuôn mẫu được nhận diện đã giúp nhóm biến những hiện tượng lặp lại trong thực tế thành các quy tắc thiết kế chuẩn mực. Hệ thống hoàn toàn không được thiết kế như một tập hợp các tính năng rời rạc, mà được tổ chức một cách có hệ thống xoay quanh chính các cấu trúc lặp lại của bài toán gốc. Việc áp dụng thành công tư duy nhận diện mẫu mang lại tác dụng to lớn: giúp toàn bộ kiến trúc trở nên nhất quán hơn, dễ dàng nâng cấp và mở rộng, tạo thuận lợi tối đa cho công tác kiểm thử, và quan trọng nhất là đáp ứng chính xác nhu cầu thực tiễn của người dùng.
 
 \newpage
-\section{Abstraction}
+\section{Trừu tượng hóa}
 
-\subsection{Role of Abstraction in System Architecture}
+\subsection{Vai trò của Trừu tượng hóa trong Kiến trúc hệ thống}
 
 Đây là một nền tảng lưu trú du lịch thông minh, đòi hỏi sự phối hợp liên tục giữa nhiều thành phần có độ phức tạp cao như mô hình ngôn ngữ lớn LLM, dịch vụ bản đồ, giao tiếp dữ liệu địa điểm, cơ sở dữ liệu vector và các cơ chế xác thực. Nếu để hệ thống phụ thuộc trực tiếp vào đặc tả chi tiết của từng nhà cung cấp dịch vụ, toàn bộ kiến trúc sẽ trở nên cứng nhắc, khó mở rộng và dễ đứt gãy mỗi khi có sự thay đổi từ bên ngoài. Để giải quyết rào cản này, nhóm phát triển đã áp dụng mạnh mẽ tư duy trừu tượng hóa nhằm thiết lập các lớp khái niệm ổn định, che giấu hoàn toàn các chi tiết triển khai cụ thể phía sau. Tư duy này cho phép hệ thống giao tiếp với các dịch vụ cốt lõi dựa trên chức năng thiết yếu của chúng thay vì bị trói buộc vào một công nghệ hay nhà cung cấp nhất định.
 
 
 
-\subsection[Abstracted Components]{Abstracted Components \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Các thành phần được Trừu tượng hóa]{Các thành phần được Trừu tượng hóa \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 
 Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng hóa được áp dụng xuyên suốt trên nhiều khía cạnh khác nhau:
@@ -696,7 +696,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p1.west);
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{LLM Abstraction}
+    \caption{Trừu tượng hóa LLM}
 \end{figure}
 
 \vspace{0.15cm}
@@ -722,7 +722,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p1.west);
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Map Data Abstraction}
+    \caption{Trừu tượng hóa Dữ liệu bản đồ}
 \end{figure}
 
 \vspace{0.15cm}
@@ -746,7 +746,7 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p1.west);
         \draw[arrow] (abs.east) -- ++(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Vector Store Abstraction}
+    \caption{Trừu tượng hóa Lưu trữ Vector}
 \end{figure}
 
 \vspace{0.15cm}
@@ -770,24 +770,24 @@ Trong quá trình xây dựng kiến trúc hệ thống, tư duy trừu tượng
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p1.west);
         \draw[arrow, <->] (abs.east) -- +(0.3,0) |- (p2.west);
     \end{tikzpicture}
-    \caption{Identity Management Abstraction}
+    \caption{Trừu tượng hóa Quản lý danh tính}
 \end{figure}
 
-\subsection{Architectural Benefits and Balance Level}
+\subsection{Lợi ích Kiến trúc và Mức độ Cân bằng}
 
 \noindent\textbf{Gia tăng sự linh hoạt:} Việc vận dụng triệt để Abstraction mang lại sự suy giảm đáng kể mức độ phụ thuộc chéo giữa các phân hệ, tạo không gian linh hoạt tối đa để thay thế hoặc luân chuyển nhà cung cấp. Sự phân tách này giúp hệ thống trở nên dễ kiểm thử, dễ bảo trì, và mở ra tiềm năng mở rộng không giới hạn trong tương lai. Hệ quả tất yếu là rủi ro kỹ thuật giảm thiểu tối đa, đặc biệt là khi các API bên ngoài thay đổi.
 
 \vspace{0.15cm}
 \noindent\textbf{Cân bằng mức độ trừu tượng:} Dù mang lại giá trị to lớn, nhóm phát triển ý thức được rằng trừu tượng hóa không phải là công cụ lạm dụng bừa bãi. Việc trừu tượng hóa quá mức sẽ biến hệ thống thành một cấu trúc mơ hồ, trong khi quá ít lại khiến logic nghiệp vụ bị gắn chặt với các nền tảng. Nhóm đã thận trọng lựa chọn điểm cân bằng: \textit{mọi lớp trừu tượng được tạo ra đều phải gắn liền với một định hướng kiến trúc rõ ràng}. Mỗi lớp trung gian chỉ tồn tại nếu nó thực sự giải quyết bài toán thay thế nhà cung cấp, chuẩn hóa dữ liệu, hoặc gia tăng khả năng mở rộng.
 
-\section{System / Algorithm Design}
+\section{Thiết kế Hệ thống / Thuật toán}
 
-\subsection{Architectural Design Goals}
+\subsection{Mục tiêu thiết kế kiến trúc}
 Hệ thống được thiết kế nhằm mang lại trải nghiệm khám phá các địa điểm lưu trú và ẩm thực trực quan thông qua bản đồ. Ngoài việc cung cấp thông tin, nền tảng tập trung mạnh vào sự tương tác của những người dùng đã xác thực thông qua các tính năng đánh giá, hỏi đáp, đánh dấu yêu thích và đặc biệt là cơ chế xác thực vị trí vật lý. Nền tảng kết nối hài hòa giữa dữ liệu địa điểm từ các nguồn bên ngoài và dữ liệu cộng đồng được lưu trữ bền vững bên trong. Trợ lý trí tuệ nhân tạo được tích hợp sâu vào hệ thống nhằm cung cấp các tư vấn chuẩn xác mà không làm gián đoạn hoặc cản trở thao tác của người dùng. Xét trên phương diện vận hành, hệ thống phải đảm bảo khả năng triển khai và bảo trì dễ dàng, phù hợp với năng lực quản lý của một nhóm phát triển sinh viên.
 
 Để đạt được những mục tiêu trên, nhóm quyết định áp dụng kiến trúc Modular Monolith thay vì kiến trúc Microservices. Quyết định này giúp tối giản hóa đáng kể quy trình triển khai và môi trường local development, đồng thời giữ được một ranh giới database transaction chung duy nhất. Nhờ vậy, độ phức tạp trong vận hành được giảm tải tối đa, nhưng hệ thống vẫn đảm bảo được sự tách biệt rành mạch giữa các lĩnh vực nghiệp vụ thông qua cấu trúc logic module ở backend.
 
-\subsection[Overall Architecture]{Overall Architecture \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Kiến trúc tổng thể]{Kiến trúc tổng thể \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Hệ thống được phân tầng rõ rệt thành các lớp chuyên biệt, cấu thành một khối kiến trúc Modular Monolith hoàn chỉnh.
 
@@ -803,7 +803,7 @@ Sử dụng hệ quản trị PostgreSQL kết hợp Prisma ORM. Đây là nơi 
 \textbf{External Integrations:}
 Hệ thống tận dụng các dịch vụ chuyên biệt từ bên ngoài nhằm tối ưu hiệu năng: Firebase phục vụ xác thực danh tính; SerpAPI cung cấp dữ liệu tìm kiếm địa điểm; Goong đảm nhận định vị tọa độ; và mô hình LLM Groq xử lý suy luận cho trợ lý thông minh. Các lớp này tương tác chặt chẽ thông qua các giao thức mạng bảo mật, trong đó lớp Ứng dụng đóng vai trò làm lá chắn trung gian.
 
-\subsection{C4 Level 1: System Context}
+\subsection{Mô hình C4 Mức 1: Ngữ cảnh hệ thống}
 Hệ thống phục vụ ba nhóm đối tượng chính: Khách vãng lai, Người dùng đã xác thực, và Người dùng tại chỗ. Khách vãng lai có quyền xem các thông tin địa điểm và nội dung hỏi đáp công khai. Khi đã xác thực, người dùng có thể đóng góp đánh giá, đặt câu hỏi, thảo luận, lưu địa điểm và báo cáo vị trí. Người dùng tại chỗ là những cá nhân đã được hệ thống xác minh tọa độ vật lý trùng khớp với địa điểm, giúp nâng cao độ tin cậy của các câu trả lời do họ đóng góp. Hệ thống tương tác với Firebase để xác thực, SerpAPI để tìm kiếm, Goong để xử lý tọa độ, và Groq để sinh văn bản thông minh, trong khi toàn bộ dữ liệu nội tại được lưu giữ tại PostgreSQL.
 
 \begin{figure}[H]
@@ -842,11 +842,11 @@ Hệ thống phục vụ ba nhóm đối tượng chính: Khách vãng lai, Ngư
     
     \draw[arrow] (platform.south) -- (pg.north);
     \end{tikzpicture}
-    \caption{System Context Diagram (C4 Level 1)}
+    \caption{Sơ đồ Ngữ cảnh Hệ thống (C4 Mức 1)}
     \label{fig:c4_context}
 \end{figure}
 
-\subsection{C4 Level 2: Container Architecture}
+\subsection{Mô hình C4 Mức 2: Kiến trúc Container}
 Hệ thống bao gồm ba container cốt lõi và các dịch vụ ngoại vi. Frontend được xây dựng bằng React và Vite, chạy trực tiếp trên trình duyệt của người dùng. Nhiệm vụ của nó là giao tiếp qua API REST định dạng JSON và đính kèm Firebase Auth Token vào các yêu cầu cần xác thực. Giao diện này kết nối trực tiếp đến Backend API, một ứng dụng NestJS tập trung toàn bộ logic nghiệp vụ, xác thực thẻ bảo mật, kết nối ngoại vi và thao tác dữ liệu. Dữ liệu được Backend API đọc ghi thông qua Database Container PostgreSQL, nơi lưu giữ chuẩn hóa toàn bộ nội dung do người dùng và trí tuệ nhân tạo tạo ra, đảm bảo tính bền vững vượt ra khỏi các kết quả tìm kiếm nhất thời.
 
 \begin{figure}[H]
@@ -872,11 +872,11 @@ Hệ thống bao gồm ba container cốt lõi và các dịch vụ ngoại vi. 
     \draw[arrow] (api.north east) to[out=45, in=270] node[right, label] {HTTPS} (firebase.south);
     
     \end{tikzpicture}
-    \caption{Container Architecture Diagram (C4 Level 2)}
+    \caption{Sơ đồ Kiến trúc Container (C4 Mức 2)}
     \label{fig:c4_container}
 \end{figure}
 
-\subsection[Backend Modular Architecture]{Backend Modular Architecture \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Kiến trúc Modular Backend]{Kiến trúc Modular Backend \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Máy chủ được thiết kế bám sát các business domains thay vì chia thư mục theo technical layers thuần túy. Cách tiếp cận nguyên khối phân hệ loại bỏ hoàn toàn sự phức tạp của việc trao đổi mạng nội bộ giữa các dịch vụ phân tán, nhưng vẫn duy trì tính tổ chức cực kỳ cao cấp cho mã nguồn.
 
@@ -900,16 +900,16 @@ Máy chủ được thiết kế bám sát các business domains thay vì chia t
     Infrastructure & \texttt{config}, \texttt{health}, Truy xuất DB & Quản lý cấu hình môi trường, theo dõi sức khỏe hệ thống. & Environment Variables, Database Connection \\
     \hline
     \end{tabular}
-    \caption{Backend Business Domain Organization}
+    \caption{Tổ chức Domain nghiệp vụ Backend}
     \label{tab:backend_modules}
 \end{table}
 
-\subsection{Frontend Architecture}
+\subsection{Kiến trúc Frontend}
 Frontend đóng vai trò là tầng điều phối quy trình làm việc và tương tác. Thay vì nhồi nhét logic nghiệp vụ, giao diện chỉ gọi các dịch vụ máy chủ và phản ánh trạng thái dữ liệu. React Router quản lý điều hướng và bảo vệ các protected routes. Context API đảm trách duy trì trạng thái toàn cục như thông tin xác thực, dữ liệu bản đồ và ngữ cảnh hội thoại.
 
 Trang Chủ đảm nhận việc khám phá qua bản đồ, áp dụng bộ lọc và render các thẻ địa điểm cùng điểm đánh dấu. Trang Chi tiết Địa điểm đi sâu vào thông tin không gian, hiển thị đánh giá, chuỗi hỏi đáp có gắn câu trả lời AI, nút xác nhận vị trí, nút lưu yêu thích và tích hợp luôn cửa sổ chat tư vấn chuyên biệt. Trang Đăng nhập là cửa ngõ duy nhất kết nối với hệ thống xác thực Firebase. Cuối cùng, Trang Hồ sơ cá nhân tóm tắt thông tin người dùng, trạng thái có mặt hiện tại và toàn bộ danh sách địa điểm đã lưu. Các thành phần giao diện như Bản đồ, Thẻ địa điểm, Khu vực Hỏi đáp được thiết kế độc lập, kết nối với nhau thông qua mạng lưới điều hướng và Error Boundary chặt chẽ.
 
-\subsection[Data Architecture]{Data Architecture \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Kiến trúc Dữ liệu]{Kiến trúc Dữ liệu \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Cơ sở dữ liệu được chuẩn hóa nghiêm ngặt. Người dùng là trung tâm sở hữu vô số đánh giá, câu hỏi, câu trả lời, bản ghi vị trí, danh sách yêu thích và lịch sử hội thoại. Tương tự, Địa điểm là điểm neo cho các đánh giá, câu hỏi, vị trí và các tham chiếu hội thoại. Một câu hỏi chứa nhiều câu trả lời; các câu trả lời từ người dùng được liên kết nhân thân rõ ràng, trong khi các phản hồi được AI ghim lại tồn tại như những câu trả lời vô danh mang cờ hiệu hệ thống. Trạng thái vị trí lưu trữ chính xác thời điểm đến và đi. Bảng SavedPlace đóng vai trò cầu nối đa chiều giữa người dùng và địa điểm. Cấu trúc này cho phép các địa điểm ngoại vi từ API nhanh chóng hóa thân thành các thực thể bền vững trong hệ thống nội tại.
 
@@ -951,11 +951,11 @@ Cơ sở dữ liệu được chuẩn hóa nghiêm ngặt. Người dùng là tr
     \draw[arrow] (user.west) -- node[above, label] {1-N} (conv.east);
     
     \end{tikzpicture}
-    \caption{Simplified Entity-Relationship Diagram}
+    \caption{Sơ đồ Thực thể - Liên kết giản lược}
     \label{fig:entity_relationship}
 \end{figure}
 
-\subsection[Key Runtime Workflows]{Key Runtime Workflows \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Các luồng xử lý Runtime chính]{Các luồng xử lý Runtime chính (Key Runtime Workflows) \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 
 Trong số các luồng vận hành của hệ thống, ba workflow dưới đây thể hiện rõ nhất đóng góp về kiến trúc, xử lý dữ liệu và tích hợp trí tuệ nhân tạo. Các luồng hoạt động khác, dù có đóng góp vào kiến trúc hệ thống, nhưng nhóm sẽ không trình bày do độ phức tạp của các luồng đó không cao.
@@ -996,7 +996,7 @@ Kết quả bên ngoài chưa được ghi ngay vào PostgreSQL. Chỉ khi ngư�
         \draw[flow] (resolve.east) -- node[above, note, text width=1.45cm, align=center] {create or\\reuse} (db.west);
         \draw[branch] (interact.south) -- ++(0,-0.45) node[below, note] {No: keep transient result};
     \end{tikzpicture}
-    \caption{Hybrid Search workflow with on-demand place ingestion.}
+    \caption{Luồng Tìm kiếm kết hợp tích hợp cập nhật địa điểm theo yêu cầu.}
     \label{fig:key_workflow_hybrid_search}
 \end{figure}
 
@@ -1039,7 +1039,7 @@ Sau xác nhận, \textit{Workflow Engine} chạy chuỗi công cụ xác định
         \draw[flow] (composer.west) -- (sse.east);
         \draw[flow] (sse.west) -- (ui.east);
     \end{tikzpicture}
-    \caption{AI orchestration workflow using the Router--Confirmation--Engine--Composer model.}
+    \caption{Luồng điều phối AI sử dụng mô hình Router--Confirmation--Engine--Composer.}
     \label{fig:key_workflow_ai_orchestration}
 \end{figure}
 
@@ -1084,14 +1084,14 @@ Câu trả lời AI được lưu dưới dạng \texttt{Answer} không gắn \t
         \draw[flow] (answer.south) -- (thread.north);
         \draw[flow] (immediate.east) -- ++(0.35cm,0) -| (threadlane) -- (thread.east);
     \end{tikzpicture}
-    \caption{Asynchronous Question and Answer workflow combining AI answers with onsite community knowledge.}
+    \caption{Luồng Hỏi - Đáp bất đồng bộ kết hợp câu trả lời từ AI với kiến thức của cộng đồng tại chỗ.}
     \label{fig:key_workflow_qa}
 \end{figure}
 
-\subsection{Security and Access Control}
+\subsection{Bảo mật và Kiểm soát truy cập}
 Bảo mật hệ thống ủy thác cho Firebase ở client-side. Bất kỳ tác vụ cập nhật dữ liệu nào cũng phải đính kèm thẻ xác thực Firebase để NestJS xác thực qua Admin SDK. Các thao tác đọc thông tin công cộng được nới lỏng nhằm tối ưu trải nghiệm, nhưng mọi thao tác ghi, đặc biệt là quyền xóa đánh giá hay xóa câu hỏi, đều bị kiểm tra quyền sở hữu cực kỳ gắt gao. Khi một câu hỏi bị xóa, hệ thống kích hoạt cơ chế cascade delete dọn dẹp sạch sẽ các câu trả lời liên quan, đảm bảo không lưu lại rác dữ liệu. Trạng thái vị trí cũng có thể tự do xóa bỏ để bảo vệ quyền ẩn danh.
 
-\subsection[Runtime Configuration and Environment Strategy]{Runtime Configuration and Environment Strategy \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Cấu hình Runtime và Chiến lược Môi trường]{Cấu hình Runtime và Chiến lược Môi trường \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Hệ thống áp dụng chiến lược Runtime Configuration thông qua Dependency Injection của NestJS để chuyển đổi mượt mà giữa môi trường Testing và Production. Việc branching logic được hạn chế tối đa; thay vào đó, toàn bộ cấu hình được trừu tượng hóa và nạp động từ các tệp \texttt{.env} tương ứng. 
 
@@ -1130,11 +1130,11 @@ Cơ chế này cho phép các kỹ sư liên tục chạy unit test và e2e test
     \draw[arrow, dashed] (mock.west -| app.east) -- node[below, label] {Inject Mock} (mock.west);
     
     \end{tikzpicture}
-    \caption{Dependency Injection Mechanism based on Testing Environment}
+    \caption{Cơ chế Dependency Injection dựa trên môi trường Kiểm thử}
     \label{fig:env_strategy}
 \end{figure}
 
-\subsection[Architectural Decisions and Trade-offs]{Architectural Decisions and Trade-offs \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Quyết định Kiến trúc và Đánh đổi]{Các Quyết định Kiến trúc và Đánh đổi (Trade-offs) \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 
 \begin{table}[H]
@@ -1155,21 +1155,21 @@ Cơ chế này cho phép các kỹ sư liên tục chạy unit test và e2e test
     Sinh câu trả lời AI bất đồng bộ & Tránh tình trạng chờ đợi quá lâu khi nạp ngữ cảnh vào LLM. & Giao diện phản hồi ngay lập tức cho người hỏi. & Phải bổ sung logic làm mới giao diện sau khi tạo xong. \\
     \hline
     \end{tabular}
-    \caption{Architectural Decisions and Trade-offs}
+    \caption{Các quyết định kiến trúc và Sự đánh đổi}
     \label{tab:arch_tradeoffs}
 \end{table}
 
-\subsection{Current Limitations and Future Improvements}
+\subsection{Hạn chế hiện tại và Hướng cải tiến tương lai}
 Kiến trúc bộc lộ một số giới hạn nhất định trong phạm vi đồ án hiện tại. Tính năng tinh chỉnh bộ lọc tìm kiếm nâng cao theo phân loại địa điểm vẫn đang trong giai đoạn hoàn thiện. Luồng điều hướng và giao diện chỉ đường chưa đạt được sự mượt mà tối đa. Hệ thống cũng chịu sự ràng buộc bởi các dịch vụ cung cấp dữ liệu tìm kiếm, định vị và xử lý ngôn ngữ bên ngoài. Hơn nữa, chất lượng tư vấn của AI phụ thuộc tuyến tính vào lượng dữ liệu thực tế thu thập được; do đó, cơ chế kiểm duyệt và xếp hạng bình chọn cho các câu hỏi sẽ cần được bổ sung để nâng cấp chất lượng tri thức cộng đồng.
 
-\subsection{Summary}
+\subsection{Tổng kết}
 Kiến trúc hệ thống thể hiện sự rạch ròi tuyệt đối giữa việc render giao diện, xử lý luồng nghiệp vụ cốt lõi, lưu trữ dữ liệu bền vững và giao tiếp ngoại vi. Việc ứng dụng linh hoạt mô hình Modular Monolith giúp nhóm phát triển đạt được sự cân bằng hoàn hảo giữa tính dễ bảo trì và sự tinh giản trong vận hành. Nhờ những cơ chế đột phá như xác thực tọa độ vị trí vật lý và quy trình đồng bộ dữ liệu ngoại vi theo thời gian thực, nền tảng không chỉ là một công cụ tìm kiếm đơn thuần mà đã thực sự chuyển mình thành một mạng lưới tri thức cộng đồng an toàn, đáng tin cậy và mang đậm tính cá nhân hóa sâu sắc.
-\section{Implementation}
+\section{Triển khai}
 
-\subsection{Implementation Strategy}
+\subsection{Chiến lược Triển khai}
 Thay vì lập trình tự phát theo từng tính năng lẻ tẻ, nhóm tiếp cận việc hiện thực hóa bằng cách bám sát luồng nghiệp vụ cốt lõi đã thiết kế. Mục tiêu đầu tiên là xây dựng nhanh một bản MVP để kiểm chứng ý tưởng. Các thành phần được chia nhỏ thành những module độc lập, cho phép mỗi thành viên phát triển và kiểm thử cục bộ trước khi tích hợp vào hệ thống chung. Chiến lược này giúp nhóm kiểm soát rủi ro, đẩy nhanh tiến độ và khoanh vùng lỗi hiệu quả.
 
-\subsection{From Design to Implementation}
+\subsection{Từ thiết kế đến triển khai}
 Bản chất của quá trình triển khai là việc ánh xạ trực tiếp các quyết định từ giai đoạn thiết kế, phân rã và trừu tượng hóa thành mã nguồn thực tế (Bảng \ref{tab:design_to_impl}).
 
 \begin{table}[H]
@@ -1188,11 +1188,11 @@ Bản chất của quá trình triển khai là việc ánh xạ trực tiếp c
         Tách biệt luồng AI & Triển khai luồng xử lý 4 lớp (Router $\to$ Orchestrator $\to$ Tools $\to$ Composer). & Quản lý chặt chẽ hành vi của AI, đảm bảo tính tất định và hạn chế hiện tượng Hallucination. \\
         \hline
     \end{tabularx}
-    \caption{Mapping from Design to Implementation}
+    \caption{Ánh xạ từ Thiết kế đến Triển khai}
     \label{tab:design_to_impl}
 \end{table}
 
-\subsection[Team Implementation Workflow]{Team Implementation Workflow \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Quy trình triển khai của nhóm]{Quy trình triển khai của nhóm \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Để phối hợp nhịp nhàng, nhóm thiết lập một quy trình chuẩn hóa: thống nhất giao ước API giữa các module, lập trình độc lập, kiểm thử cục bộ, và cuối cùng là tích hợp mã nguồn (Merge). Sơ đồ \ref{fig:impl_workflow} minh họa vòng lặp liên tục này, đảm bảo mỗi đoạn mã được đưa lên nhánh chính đều đã trải qua khâu kiểm chứng, giữ cho dự án luôn trong trạng thái sẵn sàng vận hành.
 
@@ -1218,21 +1218,27 @@ Bản chất của quá trình triển khai là việc ánh xạ trực tiếp c
         
         \draw[->, thick, dashed] (test.south) -- ++(0,-0.4) -| node[pos=0.25, below] {Fix and Refine} (dev.south);
     \end{tikzpicture}
-    \caption{Team's Continuous Source Code Deployment Process}
+    \caption{Quy trình triển khai mã nguồn liên tục của nhóm}
     \label{fig:impl_workflow}
 \end{figure}
 
-\subsection{Core Implemented Parts}
+\subsection{Các thành phần cốt lõi đã triển khai}
 Hệ thống được lắp ghép từ bốn khối thành phần chính, mỗi khối đảm nhận một mắt xích trong luồng xử lý:
 \begin{itemize}
     \item \textbf{Giao diện người dùng:} Cung cấp trải nghiệm tương tác bản đồ trực quan và khung chat thời gian thực, là nơi tiếp nhận ý định của người dùng.
     \item \textbf{Xử lý nghiệp vụ lõi:} Điều phối dữ liệu trung tâm, áp dụng mẫu thiết kế Dependency Injection để tăng tính tái sử dụng và dễ dàng bảo trì.
-    \item \textbf{Lưu trữ dữ liệu:} Đóng vai trò xương sống cho tính năng truy xuất thông tin, lưu trữ cả dữ liệu quan hệ truyền thống lẫn các Vector Embeddings.
-    \item \textbf{Động cơ AI:} Trái tim của hệ thống, nơi các câu lệnh tự nhiên được phân tách ý định và chuyển hóa thành các thao tác tra cứu cụ thể trên bản đồ.
+    \item \textbf{Tích hợp cơ sở dữ liệu:} Đóng vai trò xương sống cho tính năng truy xuất thông tin, lưu trữ cả dữ liệu quan hệ truyền thống lẫn các Vector Embeddings.
+    \item \textbf{Hệ thống workflow AI:} Trái tim của hệ thống và đóng vai trò là nhân tố suy luận chính của hệ thống.
 \end{itemize}
 
+\subsection{Những tính năng đang phát triển}
+Bên cạnh các thành phần đã hoàn thiện, hệ thống vẫn đang tiếp tục phát triển và hoàn thiện một số tính năng nâng cao sau:
+\begin{itemize}
+    \item \textbf{Truy vấn ngữ nghĩa dựa trên Text Embeddings:} Áp dụng kỹ thuật embedding đối với các thông tin dạng văn bản để lưu trữ dưới dạng vector nhúng. Tính năng này được xây dựng nhằm phục vụ và tối ưu hóa các thao tác truy vấn thông minh dựa trên ngữ nghĩa thay vì chỉ khớp từ khóa.
+    \item \textbf{Xác thực người dùng Onsite:} Cơ chế xác nhận người dùng đang thực sự có mặt tại địa điểm (onsite) để tăng độ tin cậy cho các dữ liệu đóng góp. Tính năng này hiện tại vẫn đang trong giai đoạn phát triển và tinh chỉnh.
+\end{itemize}
 
-\subsection{Technical Challenges and Solutions}
+\subsection{Thách thức kỹ thuật và Giải pháp}
 Xây dựng một hệ thống kết hợp bản đồ số và tác tử AI đem lại nhiều bài toán hóc búa. Bảng \ref{tab:challenges} đúc kết những thách thức cốt lõi và cách nhóm tháo gỡ vấn đề.
 
 \begin{table}[H]
@@ -1251,20 +1257,20 @@ Xây dựng một hệ thống kết hợp bản đồ số và tác tử AI đe
         Tính toán vector trên ORM & Các ORM truyền thống không hỗ trợ tốt phép toán hình học đa chiều. & Sử dụng Raw Query để can thiệp trực tiếp vào tính toán độ tương đồng. & Giữ được sức mạnh toán học của cơ sở dữ liệu chuyên dụng. \\
         \hline
     \end{tabularx}
-    \caption{Technical Barriers and Solutions}
+    \caption{Các rào cản kỹ thuật và Giải pháp}
     \label{tab:challenges}
 \end{table}
 
-\subsection[Communication Context Management for Language Models]{Communication Context Management for Language Models \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Quản lý Context cho Mô hình ngôn ngữ]{Quản lý Context giao tiếp cho Mô hình ngôn ngữ \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 \label{sec:llm_context}
-For a Large Language Model (LLM) to fully perform the role of a virtual travel assistant, the biggest barrier is not the reasoning power of the model, but how to design a workflow that provides correct, sufficient, and continuous context. The team has built a multi-layered context management mechanism spanning from the user interface to the processing server:
+Để một Mô hình ngôn ngữ lớn (LLM) có thể thực hiện trọn vẹn vai trò của một trợ lý du lịch ảo, rào cản lớn nhất không phải là khả năng suy luận của mô hình, mà là cách thiết kế luồng xử lý để cung cấp ngữ cảnh đúng, đủ và liên tục. Nhóm đã xây dựng một cơ chế quản lý ngữ cảnh đa tầng trải dài từ giao diện người dùng đến máy chủ xử lý:
 
 \begin{itemize}
-    \item \textbf{Direct UI State Packaging:} When a user sends a message, the data sent is not just plain text. The interface layer automatically collects the currently selected places, the current workflow, and budget limits. This information is attached to the uploaded data payload. This helps the LLM to "see" the map, understanding which place the user is interested in without them having to explicitly name it.
-    \item \textbf{Intent Extraction using Parallel AI Flow:} Instead of using regular expressions to extract search keywords, the system routes the input using an ultra-fast auxiliary LLM call. This call has a single task of parsing the text and returning a JSON data structure containing: search confirmation flag, location, category (accommodation, dining, sightseeing), and budget. Thanks to this, the system can recognize map movement requests from the most natural conversational sentences.
-    \item \textbf{Dynamic Data Injection to Prevent Hallucination:} To answer in-depth about a specific place, the system absolutely does not let the LLM deduce based on its old knowledge. The chat processing service will automatically extract from the database a block of information containing authentic facts: data source, category, average rating, amenities, and especially up to 5 most prominent actual review excerpts. The System Prompt is strictly set: requiring the LLM to use only the provided evidence, reply using a friendly tone, and frankly refuse if the information is insufficient to make a conclusion.
-    \item \textbf{Sliding Window Conversational Memory Management:} To optimize the input context limit and minimize API costs, the chat history is tightly controlled. The system maintains a local cache with a time-to-live of 3600 seconds, and automatically truncates to keep only the exactly 20 most recent messages. Simultaneously, the system configuration allows this data to be asynchronously synchronized into the PostgreSQL database, ensuring the continuity of conversational sessions upon page reload without slowing down the main response flow.
+    \item \textbf{Đóng gói trực tiếp trạng thái giao diện:} Khi người dùng gửi một tin nhắn, dữ liệu được gửi đi không chỉ là văn bản thuần túy. Lớp giao diện sẽ tự động thu thập thông tin các địa điểm đang được chọn, luồng công việc hiện tại và giới hạn ngân sách. Thông tin này được đính kèm vào gói dữ liệu gửi lên. Điều này giúp LLM "nhìn thấy" bản đồ, hiểu được người dùng đang quan tâm đến địa điểm nào mà không cần họ phải nhắc tên trực tiếp.
+    \item \textbf{Trích xuất ý định bằng luồng AI song song:} Thay vì sử dụng biểu thức chính quy để trích xuất từ khóa tìm kiếm, hệ thống điều hướng dữ liệu đầu vào bằng một lệnh gọi LLM phụ trợ siêu tốc. Lệnh gọi này có duy nhất một nhiệm vụ là phân tích văn bản và trả về cấu trúc dữ liệu JSON chứa: cờ xác nhận tìm kiếm, vị trí, danh mục (chỗ ở, ăn uống, tham quan) và ngân sách. Nhờ đó, hệ thống có thể nhận diện các yêu cầu di chuyển bản đồ từ những câu giao tiếp tự nhiên nhất.
+    \item \textbf{Bơm dữ liệu động để ngăn chặn hallucination:} Để trả lời chuyên sâu về một địa điểm cụ thể, hệ thống tuyệt đối không để LLM suy luận dựa trên kiến thức cũ của nó. Dịch vụ xử lý chat sẽ tự động trích xuất từ cơ sở dữ liệu một khối thông tin chứa các dữ kiện xác thực: nguồn dữ liệu, danh mục, điểm đánh giá trung bình, tiện ích và đặc biệt là tối đa 5 trích đoạn đánh giá thực tế nổi bật nhất. System Prompt được thiết lập nghiêm ngặt: yêu cầu LLM chỉ sử dụng các bằng chứng được cung cấp, trả lời bằng giọng điệu thân thiện và thẳng thắn từ chối nếu thông tin không đủ để đưa ra kết luận.
+    \item \textbf{Quản lý bộ nhớ hội thoại theo cơ chế Cửa sổ trượt:} Để tối ưu hóa giới hạn ngữ cảnh đầu vào và giảm thiểu chi phí API, lịch sử chat được kiểm soát chặt chẽ. Hệ thống duy trì một bộ nhớ đệm cục bộ (local cache) với thời gian sống (time-to-live) là 3600 giây và tự động cắt xén để chỉ giữ lại chính xác 20 tin nhắn gần nhất. Đồng thời, cấu hình hệ thống cho phép dữ liệu này được đồng bộ hóa bất đồng bộ (asynchronous) vào cơ sở dữ liệu PostgreSQL, đảm bảo tính liên tục của các phiên hội thoại khi tải lại trang mà không làm chậm luồng phản hồi chính.
 \end{itemize}
 \begin{figure}[H]
     \centering
@@ -1308,18 +1314,16 @@ For a Large Language Model (LLM) to fully perform the role of a virtual travel a
     \draw[arrow] (mainllm.north) -- ++(0,1.5) -| node[near start, above, font=\scriptsize] {Live Streaming} (frontend.north);
 
     \end{tikzpicture}
-    \caption{\textbf{LLM Context Management Workflow} --- Illustrating the context management data flow from the UI to the LLM.}
+    \caption{\textbf{Luồng Quản lý Context LLM} --- Minh họa luồng dữ liệu quản lý ngữ cảnh từ giao diện người dùng (UI) đến LLM.}
     \label{fig:llm_context_flow}
 \end{figure}
 
-This skillful and intentional flow of context is the key to turning a stateless AI system into a smart virtual assistant that remembers the context and responds sharply in real time.
-
-\subsection{Summary}
+\subsection{Tổng kết}
 Tóm lại, phần triển khai đã phản ánh chân thực năng lực chuyển hóa các mô hình lý thuyết trừu tượng thành một hệ thống vận hành thực tiễn. Vượt qua những rào cản về công nghệ và kiến trúc, chiến lược chia nhỏ để trị kết hợp cùng quy trình cải tiến liên tục đã giúp nhóm đúc kết thành một nền tảng vững vàng, dễ bảo trì và mở ra nhiều cơ hội nâng cấp về sau.
 
-\section{Testing}
+\section{Kiểm thử}
 
-\subsection{Testing Strategy and Methodology}
+\subsection{Chiến lược và Phương pháp Kiểm thử}
 Nhóm phát triển áp dụng chiến lược kiểm thử đa tầng nghiêm ngặt, bao phủ từ các đơn vị mã nguồn nhỏ nhất cho đến tích hợp toàn hệ thống. Mục tiêu cốt lõi không chỉ là phát hiện lỗi sớm mà còn đảm bảo kiến trúc hệ thống không bị suy thoái trong quá trình bảo trì và mở rộng.
 
 \begin{center}
@@ -1343,7 +1347,7 @@ Nhóm phát triển áp dụng chiến lược kiểm thử đa tầng nghiêm n
 \textbf{Nguyên tắc thiết kế Test:}
 Toàn bộ tầng dữ liệu và các dịch vụ ngoại vi (Firebase, Groq, SerpAPI) đều được giả lập hoàn toàn trong các bài kiểm thử đơn vị, nhằm đảm bảo tính độc lập và tốc độ thực thi. Ngược lại, kiểm thử tích hợp sử dụng chính cơ chế Dependency Injection của NestJS để liên kết các module thật, đảm bảo dữ liệu luân chuyển nhất quán qua toàn bộ vòng đời của một yêu cầu mạng.
 
-\subsection{Execution Results and Statistics}
+\subsection{Kết quả thực thi và Thống kê}
 Quá trình đánh giá được thực hiện thông qua hệ thống tích hợp liên tục cục bộ vào ngày 19/06/2026. Kết quả thống kê chi tiết cho thấy tỷ lệ hoàn thành ở mức rất cao so với độ phức tạp của một hệ thống nguyên khối phân hệ:
 
 \begin{table}[H]
@@ -1359,7 +1363,7 @@ Quá trình đánh giá được thực hiện thông qua hệ thống tích h�
     \hline
     \end{tabular}
     }
-    \caption{Execution Results Statistics of Test Cases}
+    \caption{Thống kê kết quả thực thi các Test Cases}
 \end{table}
 
 \begin{center}
@@ -1383,7 +1387,7 @@ Quá trình đánh giá được thực hiện thông qua hệ thống tích h�
 \end{tikzpicture}
 \end{center}
 
-\subsection{Quality Assurance and Deep Dive Evaluation}
+\subsection{Đảm bảo chất lượng và Đánh giá chuyên sâu}
 Qua đánh giá tổng thể kể trên, chất lượng hiện tại của nền tảng được đánh giá rất tích cực, tuy nhiên vẫn tồn tại một số nợ kỹ thuật cần được giải quyết triệt để.
 
 \subsubsection{Điểm mạnh}
@@ -1405,9 +1409,9 @@ Toàn bộ các ca thất bại hiện tại (33 lỗi ở backend và 11 lỗi 
 \textbf{Kết luận rà soát:} 
 Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện cao, sẵn sàng cho việc đóng gói và triển khai thực tế. Việc dọn dẹp các ca thất bại không đòi hỏi thiết kế lại thuật toán, mà thuần túy là quá trình đồng bộ hóa cấu hình môi trường kiểm thử với cấu trúc mã nguồn đã được nâng cấp.
 
-\section{Logbook: Plan and Actual Workload}
+\section{Nhật ký dự án: Kế hoạch và Phân bổ công việc}
 
-\subsection{Detail of Plan Workload}
+\subsection{Chi tiết kế hoạch công việc}
 \renewcommand{\arraystretch}{1.5}
 \begin{table}[H]
     \centering
@@ -1427,10 +1431,10 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & Thực hiện các nội dung trình bày, kiểm thử hệ thống \\[1cm]
     \hline
     \end{tabularx}
-    \caption{Detailed Assignment Plan}
+    \caption{Kế hoạch phân công chi tiết}
 \end{table}
 
-\subsection{Actual Workload}
+\subsection{Khối lượng công việc thực tế}
 \renewcommand{\arraystretch}{1.5}
 \begin{table}[H]
     \centering
@@ -1449,10 +1453,10 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & Thực hiện các nội dung trình bày (làm slides, viết báo cáo,...) , kiểm thử hệ thống \\[1cm]
     \hline
     \end{tabularx}
-    \caption{Actual Workload Details}
+    \caption{Chi tiết khối lượng công việc thực tế}
 \end{table}
 
-\subsection{Workload Distribution}
+\subsection{Phân bổ công việc}
 
 \vspace{0.5cm}
 \renewcommand{\arraystretch}{1.5}
@@ -1469,12 +1473,12 @@ Hệ thống lõi hoạt động ổn định và có mức độ hoàn thiện 
     5 & 24120483 & Hoàng Văn Trường & 80\% & 50 \\[0.5cm]
     \bottomrule
     \end{tabularx}
-    \caption{Workload Distribution among Members}
+    \caption{Phân bổ công việc giữa các thành viên}
 \end{table}
 
 
 
-\subsection[List of tools used]{List of tools used \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
+\subsection[Danh sách công cụ đã sử dụng]{Danh sách công cụ đã sử dụng \,{\normalfont\small\textcolor{cyan!70!black}{[2]}}}
 
 Dưới đây là danh sách các công cụ, công nghệ và dịch vụ ngoại vi đã được sử dụng trong suốt quá trình thiết kế, phát triển và kiểm thử dự án:
 
@@ -1499,19 +1503,19 @@ Dưới đây là danh sách các công cụ, công nghệ và dịch vụ ngo�
     Triển khai và kiểm thử & Vercel, Docker, Postman \\
     \hline
     \end{tabularx}
-    \caption{List of Project Support Tools}
+    \caption{Danh sách công cụ hỗ trợ dự án}
 \end{table}
 
-\section{AI usage and declaration}
+\section{Khai báo sử dụng AI}
 
-\section{Conclusion and Future Work}
+\section{Kết luận và Hướng phát triển tương lai}
 
-\subsection{Conclusion}
+\subsection{Kết luận}
 Nhìn lại toàn bộ hành trình thực hiện đồ án, nhóm đã nghiên cứu, thiết kế và phát triển thành công một hệ thống tìm kiếm và gợi ý địa điểm lưu trú tích hợp Trí tuệ Nhân tạo. Khởi điểm từ việc áp dụng bốn trụ cột của Tư duy Máy tính để phân rã bài toán, nhóm đã chuyển hóa thành công các yêu cầu trừu tượng thành một hệ thống thực tế hoàn chỉnh. Việc áp dụng kiến trúc Modular Monolith kết hợp cùng các công nghệ hiện đại như NestJS, React, cơ sở dữ liệu vector pgvector, và hệ thống truy xuất thông tin RAG thông qua Groq LLM đã chứng minh được tính hiệu quả và khả năng mở rộng của nền tảng. 
 
 Sản phẩm cuối cùng không chỉ đáp ứng các chức năng cốt lõi đã đề ra---như tìm kiếm bằng ngôn ngữ tự nhiên, so sánh địa điểm và trích xuất thông tin tự động---mà còn đảm bảo tính nhất quán về mặt kiến trúc phần mềm và quy trình kiểm thử.
 
-\subsection{Team Reflections and Lessons Learned}
+\subsection{Suy ngẫm của nhóm và Bài học kinh nghiệm}
 Đồ án này là một thách thức lớn nhưng đồng thời cũng là một cơ hội quý báu để các thành viên trong nhóm cọ xát với môi trường phát triển phần mềm chuyên nghiệp. Từ quá trình thực tiễn, nhóm đã đúc kết được nhiều bài học sâu sắc:
 
 \begin{itemize}
@@ -1522,7 +1526,7 @@ Sản phẩm cuối cùng không chỉ đáp ứng các chức năng cốt lõi 
 
 Nhận xét chung về cá nhân và tập thể, mặc dù dự án vẫn còn một số điểm có thể tối ưu hóa thêm về mặt hiệu năng xử lý song song, nhưng kết quả đạt được đã vượt qua sự kỳ vọng ban đầu. Qua đồ án này, mỗi cá nhân trong nhóm đều đã tự nâng tầm tư duy hệ thống và hoàn thiện kỹ năng giải quyết bài toán cốt lõi.
 
-\subsection{Future Development Directions}
+\subsection{Định hướng phát triển tương lai}
 Để phát triển dự án từ một nguyên mẫu thành một sản phẩm thương mại hoàn chỉnh, nhóm đề xuất các hướng cải tiến sau:
 \begin{itemize}
     \item \textbf{Cải tiến mô hình RAG và Fine-tuning LLM:} Tối ưu hóa chiến lược truy xuất Semantic Search, áp dụng các kỹ thuật phân mảnh văn bản thông minh hơn và tiến tới fine-tune một mô hình LLM chuyên biệt cho lĩnh vực du lịch nhằm tăng tốc độ phản hồi.
@@ -1531,3 +1535,8 @@ Nhận xét chung về cá nhân và tập thể, mặc dù dự án vẫn còn 
 \end{itemize}
 
 \end{document}
+
+
+
+
+
