@@ -6,5 +6,6 @@ export default registerAs('app', () => {
     port: isNaN(port) ? 3001 : port,
     environment: process.env.NODE_ENV || 'development',
     publicBaseUrl: process.env.APP_PUBLIC_BASE_URL || '',
+    corsOrigins: process.env.CORS_ORIGINS || 'http://localhost:3000',
   };
 });

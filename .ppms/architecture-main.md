@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-06-20 22:14
+> Last updated: 2026-07-22 14:52
 > Branch: main
 
 ## Overview
@@ -25,6 +25,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 ### Frontend
 - **Framework**: React 18 + Vite 7 + Tailwind CSS 3.4.
 - **Routing**: `react-router-dom` v6 with public intro/auth routes and protected application routes.
+- **Delivery**: Route-level `React.lazy`/`Suspense` splitting keeps a persistent protected provider shell while deferring the Mapbox workspace bundle until an authenticated map route is opened.
 - **State Management**: React Context API (`AuthContext`, `TravelDataContext`, `ConversationContext`).
 - **Pages**:
   - `LandingPage` — Public SaaS-style overview page at `/` in natural Vietnamese focused on AI-assisted accommodation discovery, social proof, feature benefits, alternating product sections, Before/During/After/In-between workflow, interactive prompt demo, trust/security, testimonials, FAQ, final CTA, and embedded Firebase login.
@@ -47,6 +48,7 @@ A modular monolith web application for discovering accommodations, dining spots,
 ### Backend
 - **Framework**: NestJS with module-based organization.
 - **Module structure**: `ai`, `search`, `places`, `recommendations`, `reviews`, `users`, `presence`, `rag`, `contributions`, `health`, `saved-places`, `questions`.
+- **Security boundaries**: CORS uses an environment-driven allowlist, Swagger is disabled in production, and all image-upload routes require Firebase authentication plus image type and 5 MB size validation.
 - **AI Orchestration**: `ai/orchestration` contains router, workflow engine, response composer, and shared tools under `src/common/tools/`. The Groq task router and response composer both receive bounded recent conversation history; history is compacted before LLM calls so follow-up questions retain context without sending unbounded chat logs.
 - **Search Answer Synthesis**: Search workflows now pass raw results through `SearchResultContextBuilder` before response composition, giving the LLM a concise objective summary with result count, rating/review/price/amenity coverage, limitations, and top candidates.
 - **Place AI Context**: Place-detail AI chat can use cached Google reviews as hidden context. The backend refreshes at most 10 Google reviews from the first SerpAPI review response only when missing or older than 90 days, while visible review endpoints continue to exclude Google-sourced reviews.
@@ -82,13 +84,16 @@ A modular monolith web application for discovering accommodations, dining spots,
 | GET    | `/search`                     | Search with ranking / recommendation       | Config |
 | GET    | `/places/:id`                 | Place detail                               | No   |
 | POST   | `/api/v1/contributions/files` | Upload contributed file                    | Yes  |
+| POST   | `/api/v1/upload/*`             | Upload validated avatar/place/post images  | Yes  |
 | GET    | `/api/v1/contributions/files` | List contributed files                     | Yes  |
 | GET    | `/api/docs`                   | Swagger UI                                 | No   |
 
 ## Database Schema
-PostgreSQL stores users, places, reviews, questions, answers, answer votes, files, chunks, conversations, messages, conversation-place references, presences, saved places, and related travel data. Vector search uses pgvector embeddings for RAG chunks.
+PostgreSQL stores users, places, reviews, questions, answers, answer votes, files, chunks, conversations, messages, conversation-place references, presences, saved places, and related travel data. The schema is pgvector-ready, but `RagService` currently uses recent-chunk fallback retrieval; embedding generation and vector similarity search remain roadmap work.
 
 ## Completed Features
+- [x] Portfolio-readiness pass with recruiter-first documentation, interactive labelled landing demo data, GitHub Actions quality gates, reproducible Docker installs, secret-safe Docker contexts, restored ESLint checks, and 83 passing tests.
+- [x] Route-level frontend code splitting reduced initial JavaScript by approximately 71% and defers the Mapbox vendor chunk until protected map routes are opened.
 - [x] Landing-page guest search CTA uses native in-page navigation to reach the embedded sign-in section, while authenticated users continue to enter `/app` through React Router.
 - [x] Resolved database concurrency race conditions in PlacesService.findOne by implementing optimistic concurrency catch-recovery block to handle concurrent stub creations without unique constraint errors.
 - [x] Added premium interactive fullscreen photo gallery/lightbox viewer on PlaceDetailPage.jsx with keyboard navigation, floating next/prev buttons, original link opening, and horizontal thumbnail navigation track.
@@ -123,7 +128,7 @@ PostgreSQL stores users, places, reviews, questions, answers, answer votes, file
 - [x] User profile page.
 
 ## In-Progress Features
-- [ ] Continue polishing responsive UI and bundle code splitting for large frontend chunks.
+- [ ] Resolve the remaining non-blocking lint warnings, add deterministic browser E2E coverage, and continue responsive UI polishing.
 
 ## Directory Structure
 
@@ -198,7 +203,7 @@ mono/
 - [x] User profile page.
 
 ## In-Progress Features
-- [ ] Continue polishing responsive UI and bundle code splitting for large frontend chunks.
+- [ ] Resolve the remaining non-blocking lint warnings, add deterministic browser E2E coverage, and continue responsive UI polishing.
 
 ## Directory Structure
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-const PLACE_LINK_REGEX = /\[([^\]]+)\]\(place:([^\)]+)\)/g;
+const PLACE_LINK_REGEX = /\[([^\]]+)\]\(place:([^)]+)\)/g;
 
 function stripMarkdownPlaceLinks(value: any): string {
   return String(value || '').replace(PLACE_LINK_REGEX, '$1').trim();

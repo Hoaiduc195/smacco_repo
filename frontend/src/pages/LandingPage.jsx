@@ -89,6 +89,7 @@ export default function LandingPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [prompt, setPrompt] = useState('Tìm homestay yên tĩnh ở Đà Lạt, có bàn làm việc, bếp nhỏ và đường rộng dễ đón xe, ngân sách dưới 1.200.000đ/đêm');
+  const [showDemoResults, setShowDemoResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -126,7 +127,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="page-shell overflow-hidden">
+    <div className="page-shell overflow-x-hidden">
       <header className="sticky top-0 z-50 border-b border-ink-900 bg-ink-900/90 shadow-soft backdrop-blur-2xl">
         <div className="section-shell flex h-20 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3 hover-lift-sm" aria-label="Smacco home">
@@ -386,15 +387,50 @@ export default function LandingPage() {
                 className="mt-3 min-h-32 w-full rounded-2xl border border-base-200 bg-white/90 p-4 text-sm font-semibold leading-7 text-ink-900 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
               />
               <div className="mt-4 flex flex-wrap gap-3">
-                <button type="button" className="btn-primary hover-lift-sm">
+                <button
+                  type="button"
+                  className="btn-primary hover-lift-sm"
+                  onClick={() => setShowDemoResults(true)}
+                >
                   Tạo danh sách gợi ý
                   <Sparkles className="h-4 w-4" />
                 </button>
-                <button type="button" className="btn-secondary hover-lift-sm">
-                  Định vị trên bản đồ
-                  <MapPin className="h-4 w-4" />
-                </button>
+                {currentUser ? (
+                  <Link to="/app" className="btn-secondary hover-lift-sm">
+                    Mở bản đồ đầy đủ
+                    <MapPin className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <a href="#signin" className="btn-secondary hover-lift-sm">
+                    Mở bản đồ đầy đủ
+                    <MapPin className="h-4 w-4" />
+                  </a>
+                )}
               </div>
+              {showDemoResults && (
+                <div aria-live="polite" className="mt-5 rounded-2xl border border-primary-100 bg-primary-50/70 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-black text-ink-900">Kết quả minh họa</p>
+                    <span className="text-xs font-bold text-primary-700">Dữ liệu mẫu — không phải kết quả đặt phòng trực tiếp</span>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    {mockPlaces.map(([name, description, rating, price], index) => (
+                      <article key={name} className="rounded-xl border border-base-200 bg-white p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-black text-ink-900">{index + 1}. {name}</p>
+                            <p className="mt-1 text-xs leading-5 text-ink-500">{description}</p>
+                          </div>
+                          <div className="shrink-0 text-right text-xs font-bold text-ink-700">
+                            <p>★ {rating}</p>
+                            <p className="mt-1 text-primary-700">{price}</p>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>

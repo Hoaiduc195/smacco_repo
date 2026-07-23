@@ -2,6 +2,25 @@
 
 ---
 
+## [2026-07-22 14:52] — Prepare Smacco for portfolio and CV review
+
+- **Branch**: `main`
+- **Prompt**: Optimize the codebase so the project is credible, secure, measurable, and easy to present on a CV.
+- **Changes**:
+  - Added route-level lazy loading with an accessible loading state and persistent protected context providers, reducing initial JavaScript by approximately 71%.
+  - Turned the landing prompt mockup into a tested, clearly labelled interactive demo and linked guests to the authenticated map entry.
+  - Protected upload endpoints with Firebase authentication, 5 MB limits, image MIME validation, server-controlled extensions, and non-leaking client errors.
+  - Added allowlisted CORS configuration, production-gated Swagger, ESLint configurations, non-mutating lint scripts, GitHub Actions CI with critical production advisory checks, lockfile-based Docker installs, and secret-safe Docker contexts.
+  - Applied non-breaking dependency audit fixes, removing all critical production dependency advisories; remaining advisories require planned major framework upgrades.
+  - Added an English-first portfolio summary, product screenshot, verified engineering highlights, metrics, and reviewer commands to the root README.
+  - Added three regression tests; the repository now passes 27 frontend and 56 backend tests.
+- **Modified files**: `README.md`, `backend/.env.example`, `backend/Dockerfile`, `backend/package.json`, `backend/package-lock.json`, `backend/src/config/app.config.ts`, `backend/src/main.ts`, `backend/src/modules/ai/place-comparison-results.service.ts`, `backend/src/modules/ai/place-insight-results.service.ts`, `backend/src/modules/upload/upload.controller.ts`, `backend/src/modules/upload/upload.service.ts`, `backend/tsconfig.spec.json`, `frontend/Dockerfile`, `frontend/package.json`, `frontend/package-lock.json`, `frontend/src/App.jsx`, `frontend/src/components/chat/PlaceComparisonResult.jsx`, `frontend/src/pages/LandingPage.jsx`, `frontend/src/pages/LandingPage.test.jsx`, `frontend/vite.config.js`, `.ppms/architecture-main.md`, `.ppms/log-main.md`
+- **Created files**: `.github/workflows/ci.yml`, `backend/.dockerignore`, `backend/.eslintrc.cjs`, `backend/src/modules/upload/upload.controller.spec.ts`, `frontend/.dockerignore`, `frontend/.eslintrc.cjs`, `frontend/src/components/RouteLoadingFallback.jsx`, `frontend/src/components/RouteLoadingFallback.test.jsx`
+- **Deleted files**: None
+- **Architecture impact**: Yes — protected routes now share a persistent lazy-loaded provider shell; CI and production security boundaries are documented as first-class system concerns.
+
+---
+
 ## [2026-06-20 22:14] — Link workspace logo to landing page
 
 - **Branch**: `main`

@@ -8,7 +8,7 @@ COPY package.json package-lock.json* ./
 # Make Prisma schema available for postinstall hooks (prisma generate)
 COPY prisma ./prisma
 
-RUN npm install
+RUN npm ci
 
 # Copy full source
 COPY . .

@@ -1,6 +1,6 @@
 import { AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 
-const PLACE_LINK_REGEX = /\[([^\]]+)\]\(place:([^\)]+)\)/g;
+const PLACE_LINK_REGEX = /\[([^\]]+)\]\(place:([^)]+)\)/g;
 
 function stripMarkdownPlaceLinks(value) {
   return String(value || '').replace(PLACE_LINK_REGEX, '$1').trim();

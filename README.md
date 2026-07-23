@@ -1,5 +1,54 @@
 # Smacco Mono
 
+> A production-style, AI-assisted travel discovery platform that combines natural-language search, an interactive map workspace, place-level community features, and streaming recommendations.
+
+![Smacco map search workspace](report/assets/search_example.png)
+
+## Portfolio Snapshot
+
+Smacco demonstrates end-to-end product engineering rather than a standalone UI: a React client, a modular NestJS API, PostgreSQL persistence through Prisma, Firebase authentication, multi-provider place search, and workflow-based AI orchestration are shipped together as one reproducible repository.
+
+### Engineering Highlights
+
+- **AI orchestration with deterministic tools** — routes user intent into search, comparison, insight, and recommendation workflows, then streams composed results to the browser over SSE.
+- **Hybrid place discovery** — combines local data with Goong, OpenStreetMap, and SerpAPI sources while persisting external places only when users interact with them.
+- **Location-aware social features** — supports saved places, reviews, place Q&A, and proximity-checked onsite presence.
+- **Security boundaries** — Firebase-protected write flows, allowlisted CORS origins, production-gated Swagger docs, and authenticated image uploads with type and 5 MB size limits.
+- **Reproducible quality gates** — GitHub Actions runs lint, unit tests, Prisma validation, and production builds for both applications.
+
+### Measured Improvements
+
+| Metric | Before portfolio pass | Current |
+| --- | ---: | ---: |
+| Initial frontend JavaScript, minified | 2.74 MB | ~720 KB |
+| Initial frontend JavaScript, gzip | 786 KB | ~229 KB |
+| Route delivery | One eager bundle | Lazy route chunks; Mapbox deferred |
+| Automated tests | 80 passing | 83 passing |
+| Pull-request automation | None | Frontend + backend CI |
+
+The initial JavaScript payload is approximately **71% smaller** after route-level lazy loading and dependency-aware chunking. The map vendor bundle is downloaded only when the authenticated map experience is opened.
+
+### Recruiter Quick Review
+
+```bash
+# Frontend
+cd frontend
+npm ci
+npm run lint
+npm test
+npm run build
+
+# Backend
+cd ../backend
+npm ci
+npm run lint
+npm test -- --runInBand
+npx prisma validate
+npm run build
+```
+
+The complete setup guide, architecture, API inventory, environment reference, and operational notes continue below. The interface and detailed product documentation are in Vietnamese because the product targets Vietnamese travel scenarios; this portfolio summary is intentionally English-first for fast technical review.
+
 Smacco là một nền tảng khám phá chỗ ở và địa điểm ăn uống, kết hợp bản đồ, tìm kiếm hybrid, AI assistant theo workflow, cộng đồng hỏi đáp theo từng địa điểm, review, lưu địa điểm yêu thích, và trạng thái onsite/check-in theo vị trí thực tế.
 
 Repository này là một monorepo nhỏ gồm:
@@ -11,6 +60,7 @@ README này được viết lại theo codebase hiện tại, không theo mô t�
 
 ## Table Of Contents
 
+- [Portfolio Snapshot](#portfolio-snapshot)
 - [What This Project Does](#what-this-project-does)
 - [Architecture Diagram](#architecture-diagram)
 - [Architecture At A Glance](#architecture-at-a-glance)
@@ -250,7 +300,7 @@ Frontend còn có wizard/confirmation flow trước khi thực thi một số wo
 | Backend | NestJS 10 | modular monolith |
 | ORM | Prisma 7.6 | PostgreSQL access |
 | Database | PostgreSQL 16 | local dev often via Docker |
-| Vector storage | pgvector | for RAG chunks |
+| Vector storage | pgvector-ready schema | embedding generation and similarity retrieval remain roadmap work |
 | AI providers | Groq, Cloudflare AI, OpenAI-compatible, Gemini | selected via runtime config |
 | Search | SerpAPI | accommodation discovery |
 | Geocoding | Goong | anchor/location lookup |
@@ -322,17 +372,17 @@ Chạy riêng cho từng app:
 
 ```bash
 cd frontend
-npm install
+npm ci
 ```
 
 ```bash
 cd backend
-npm install
+npm ci
 ```
 
 ## Environment Variables
 
-Project này không có một tài liệu `.env` hoàn chỉnh trong root, nên phần dưới đây là checklist thực tế từ codebase. Bạn sẽ cần kiểm tra thêm các file trong `backend/src/config/` và `frontend/src/services/firebase.js` nếu đang cấu hình từ đầu.
+Các file `backend/.env.example` và `frontend/.env.example` là điểm bắt đầu an toàn. Sao chép file tương ứng thành `.env`, điền giá trị thật ở máy local, và không commit secrets.
 
 ### Backend
 
@@ -345,6 +395,7 @@ Nhóm biến quan trọng:
 | `PORT` | cổng backend, mặc định `3001` |
 | `DATABASE_URL` | kết nối PostgreSQL cho Prisma |
 | `NODE_ENV` | môi trường runtime |
+| `CORS_ORIGINS` | danh sách browser origin được phép, phân tách bằng dấu phẩy |
 | `SERPAPI_API_KEY` | search provider chính cho accommodation |
 | `FIREBASE_PROJECT_ID` | Firebase Admin validation |
 | `FIREBASE_CLIENT_EMAIL` | Firebase Admin service account |
@@ -369,6 +420,7 @@ Nhóm biến quan trọng:
 PORT=3001
 DATABASE_URL=postgresql://postgres:postgres@localhost:5433/smacco_db?schema=public
 NODE_ENV=development
+CORS_ORIGINS=http://localhost:3000
 SERPAPI_API_KEY=your_serpapi_key
 FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_CLIENT_EMAIL=your_service_account_email
@@ -508,7 +560,7 @@ Các route chính nằm trong `frontend/src/App.jsx`:
 | `search` | search orchestration và provider integration |
 | `ai` | router, workflow engine, LLM composition, conversations |
 | `recommendations` | ranking và scoring |
-| `rag` | chunk storage và retrieval-related capabilities |
+| `rag` | chunk storage with recent-chunk fallback retrieval; vector similarity is not yet implemented |
 | `presence` | onsite check-in / check-out |
 | `questions` | place Q&A threads + AI pinned answers |
 | `saved-places` | bookmark/save place flows |
@@ -519,9 +571,9 @@ Các route chính nằm trong `frontend/src/App.jsx`:
 ### Runtime behavior
 
 - Global API prefix: `/api/v1`
-- Swagger docs: `/api/docs`
+- Swagger docs: `/api/docs` trong môi trường không phải production
 - Validation pipe bật global với `whitelist`, `forbidNonWhitelisted`, `transform`
-- CORS đang bật toàn cục
+- CORS chỉ chấp nhận các origin trong `CORS_ORIGINS`
 
 ### Authentication model
 
@@ -554,7 +606,7 @@ backend/prisma/schema.prisma
 | `Message` | messages trong conversation |
 | `PlaceComparisonResult` | comparison payload được persist |
 | `File` | uploaded/contributed file metadata |
-| `Chunk` | RAG chunk + vector embedding |
+| `Chunk` | RAG chunk with an optional vector field reserved for future embedding retrieval |
 
 ### Why `PlaceSource` matters
 
@@ -811,6 +863,10 @@ Project đã có hardening cho việc parse non-JSON responses, nhưng các exte
 - `TravelDataContext` vẫn còn dấu vết flow kiểu Firestore legacy song song với backend Postgres-first.
 - API read cho Q&A là public, nhưng UI `QASection` hiện vẫn ẩn hoàn toàn nếu chưa đăng nhập.
 - Search hiện còn nhiều heuristic và runtime toggles; khi debug hãy xem cả runtime config lẫn module search.
+- `RagService` hiện dùng recent-chunk fallback; embedding generation và pgvector similarity search vẫn là roadmap, không phải feature production hoàn chỉnh.
+- Lint đã hoạt động và không còn errors, nhưng vẫn còn 24 frontend warnings và 4 backend warnings cần xử lý có chủ đích.
+- Chưa có browser E2E deterministic; CI hiện chạy lint, 83 unit/component tests, Prisma validation, production builds và chặn critical production dependency advisories.
+- Sau các non-breaking audit fixes, production dependencies vẫn còn 1 high advisory ở frontend và 4 high advisories ở backend; các fix còn lại yêu cầu major framework upgrades và cần một migration pass riêng.
 
 Nếu bạn định tiếp tục phát triển project này, nơi nên đọc đầu tiên là:
 

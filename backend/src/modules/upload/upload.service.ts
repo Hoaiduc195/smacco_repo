@@ -2,7 +2,13 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import * as path from 'path';
+
+const EXTENSION_BY_MIME_TYPE: Readonly<Record<string, string>> = Object.freeze({
+  'image/gif': '.gif',
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+});
 
 @Injectable()
 export class UploadService {
@@ -37,7 +43,10 @@ export class UploadService {
       throw new BadRequestException('No file provided');
     }
 
-    const fileExt = path.extname(file.originalname);
+    const fileExt = EXTENSION_BY_MIME_TYPE[file.mimetype];
+    if (!fileExt) {
+      throw new BadRequestException('Unsupported image type');
+    }
     const uniqueId = uuidv4();
     const fileName = `${folder}/${uniqueId}${fileExt}`;
 
@@ -57,8 +66,9 @@ export class UploadService {
 
       return `${baseUrl}/${fileName}`;
     } catch (error) {
-      this.logger.error(`Error uploading file to R2: ${error.message}`, error.stack);
-      throw new BadRequestException(`Failed to upload file to Cloudflare R2: ${error.message}`);
+      const uploadError = error instanceof Error ? error : new Error('Unknown upload error');
+      this.logger.error(`Error uploading file to R2: ${uploadError.message}`, uploadError.stack);
+      throw new BadRequestException('Unable to upload the image. Please try again.');
     }
   }
 }
