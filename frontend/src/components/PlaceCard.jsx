@@ -206,12 +206,12 @@ export default function PlaceCard({
   const renderCardContent = ({ hidden = false } = {}) => (
     <>
       <div className={`flex gap-3 ${hidden ? 'pointer-events-none opacity-0' : ''}`}>
-        <div className="relative w-20 h-20 rounded-2xl flex-shrink-0 overflow-hidden border border-white/70 shadow-inner bg-base-100">
+        <div className="relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-xl border border-base-200 bg-base-100 shadow-inner">
           {displayImg ? (
             <img
               src={displayImg}
               alt={place.name}
-              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+              className="h-full w-full object-cover transition duration-300 hover:saturate-110"
               loading="lazy"
               referrerPolicy="no-referrer"
             />
@@ -253,7 +253,7 @@ export default function PlaceCard({
             }}
             className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition ${
               isSaved
-                ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                ? 'border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100'
                 : 'border-base-200 text-ink-700 hover:bg-base-50'
             }`}
           >
@@ -270,7 +270,7 @@ export default function PlaceCard({
             }}
             className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition ${
               isPersistSaved
-                ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+                ? 'border-primary-200 text-primary-700 bg-primary-50 hover:bg-primary-100'
                 : 'border-base-200 text-ink-700 hover:bg-base-50'
             }`}
           >
@@ -299,7 +299,7 @@ export default function PlaceCard({
               if (onNavigate) onNavigate();
               else if (onShowDetails) onShowDetails();
             }}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-primary-200 bg-white text-primary-700 hover:bg-primary-50 transition"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-primary-500 bg-primary-500 text-white hover:bg-primary-600 transition"
           >
             <span>Chi tiết</span>
           </button>
@@ -311,7 +311,7 @@ export default function PlaceCard({
   return (
     <>
     <div
-      className={`relative w-full cursor-grab text-left p-3 rounded-3xl border transition flex flex-col gap-3 animate-card-enter active:cursor-grabbing ${
+      className={`relative w-full cursor-grab text-left p-3 rounded-2xl border transition duration-200 flex flex-col gap-3 animate-card-enter active:cursor-grabbing ${
         isDragging
           ? 'scale-[0.985] border-dashed border-slate-300 bg-slate-100 shadow-inner ring-0'
           : isSelected ? 'border-primary-400 bg-white shadow-soft ring-4 ring-primary-100' : 'border-base-200 bg-white/[0.92] hover:border-primary-200 hover:bg-base-50 hover:shadow-soft'
@@ -379,7 +379,7 @@ export default function PlaceCard({
           transform: `translate3d(${Math.round(dragGhost.x - dragGhost.offsetX)}px, ${Math.round(dragGhost.y - dragGhost.offsetY - (dragGhost.absorbing ? 0 : 10))}px, 0) rotate(${dragGhost.tilt.toFixed(2)}deg) scale(${dragGhost.absorbing ? '0.18' : '1.035'})`,
         }}
       >
-        <div className="place-card-drag-overlay-inner flex w-full flex-col gap-3 rounded-3xl border border-primary-200 bg-white p-3 text-left">
+        <div className="place-card-drag-overlay-inner flex w-full flex-col gap-3 rounded-2xl border border-primary-200 bg-white p-3 text-left">
           {renderCardContent()}
         </div>
       </div>,

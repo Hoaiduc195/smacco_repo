@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AlertCircle, BarChart3, Bookmark, Compass, Lightbulb, MapPin, Route, Navigation, Search } from 'lucide-react';
+import { AlertCircle, BarChart3, Bookmark, Compass, Lightbulb, MapPin, Route, Navigation, Search, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import MapComponent from '../components/MapComponent';
 import LeftContextPanel from '../components/LeftContextPanel';
@@ -995,10 +995,12 @@ export default function HomePage() {
                 <p className="text-xs font-semibold">{error}</p>
               </div>
               <button
+                type="button"
                 onClick={() => setError('')}
-                className="text-red-700 hover:text-red-900 font-bold text-sm leading-none"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-rose-700 transition hover:bg-rose-100 hover:text-rose-900"
+                aria-label="Đóng thông báo lỗi"
               >
-                ✕
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
           )}

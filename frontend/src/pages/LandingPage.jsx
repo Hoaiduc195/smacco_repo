@@ -126,21 +126,33 @@ export default function LandingPage() {
     }
   };
 
+  const handleHeroSearch = (event) => {
+    event.preventDefault();
+    setShowDemoResults(true);
+    document.querySelector('#demo')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
-    <div className="page-shell overflow-x-hidden">
-      <header className="sticky top-0 z-50 border-b border-ink-900 bg-ink-900/90 shadow-soft backdrop-blur-2xl">
-        <div className="section-shell flex h-20 items-center justify-between gap-4">
+    <div className="page-shell overflow-x-clip">
+      <a
+        href="#main-content"
+        className="fixed left-4 top-3 z-[100] -translate-y-24 rounded-lg bg-ink-900 px-4 py-3 text-sm font-bold text-white shadow-card transition focus:translate-y-0"
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+      <header className="sticky top-0 z-50 border-b border-base-200/80 bg-white/85 backdrop-blur-2xl">
+        <div className="section-shell flex h-20 items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-3 hover-lift-sm" aria-label="Smacco home">
             <img src="/favicon.svg" alt="Smacco Logo" className="h-8 w-8 object-contain transition-transform hover:scale-105" />
             <span>
-              <span className="block text-lg font-black leading-5 text-white">Smacco</span>
-              <span className="hidden text-xs font-bold uppercase tracking-wide text-white/70 sm:block">Tìm kiếm chỗ ở bằng AI</span>
+              <span className="block text-lg font-black leading-5 text-ink-900">Smacco</span>
+              <span className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-ink-500 sm:block">AI travel intelligence</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-ink-800 bg-ink-950/70 p-1 shadow-soft backdrop-blur xl:flex" aria-label="Primary navigation">
+          <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
             {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-bold text-slate-300 transition-all duration-200 hover:-translate-y-0.5 hover:bg-ink-800 hover:text-white">
+              <a key={link.href} href={link.href} className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm font-bold text-ink-500 transition duration-200 hover:bg-base-100 hover:text-ink-900">
                 {link.label}
               </a>
             ))}
@@ -167,41 +179,52 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
-        <section className="relative border-b border-base-200/70">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_18%,rgba(47,183,156,0.22),transparent_28rem),radial-gradient(circle_at_85%_12%,rgba(249,115,22,0.18),transparent_26rem)]" />
-          <div className="section-shell grid min-h-[calc(100vh-5rem)] items-center gap-12 py-12 lg:grid-cols-[0.92fr_1.08fr]">
+      <main id="main-content">
+        <section className="relative border-b border-base-200/70 bg-white">
+          <div className="absolute inset-0 -z-0 bg-[radial-gradient(circle_at_8%_18%,rgba(236,72,153,0.12),transparent_26rem),radial-gradient(circle_at_86%_4%,rgba(24,24,27,0.09),transparent_28rem)]" />
+          <div className="section-shell relative z-10 grid min-h-[calc(100svh-5rem)] items-center gap-12 py-14 lg:grid-cols-[0.88fr_1.12fr] lg:py-20">
             <div className="max-w-3xl">
               <div className="badge-soft mb-5">
                 <Sparkles className="h-3.5 w-3.5" />
-                Trợ lý AI hỗ trợ quyết định lưu trú tối ưu
+                Không gian lập kế hoạch lưu trú thế hệ mới
               </div>
               <h1 className="heading-xl">
-                Chọn nơi ở vừa vặn với trải nghiệm, không chỉ khớp thời gian trống.
+                Chỗ ở đúng gu. <span className="text-primary-600">Hành trình đúng nhịp.</span>
               </h1>
-              <p className="body-muted mt-6 max-w-2xl text-base sm:text-lg">
-                Smacco tích hợp tìm kiếm hội thoại bằng AI, bản đồ so sánh trực quan, hỏi đáp thực chứng và phản hồi cộng đồng — giúp bạn tìm ra lựa chọn tối ưu mà không cần mở hàng chục tab trình duyệt.
+              <p className="body-muted mt-6 max-w-xl text-base sm:text-lg">
+                Nói cho Smacco biết bạn muốn chuyến đi cảm thấy như thế nào. AI sẽ biến ý tưởng đó thành một shortlist rõ ràng, có bản đồ và lý do xếp hạng.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a href="#signin" className="btn-primary hover-lift-sm min-h-[3.25rem]">
-                  Lên kế hoạch ngay
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-                <a href="#demo" className="btn-secondary hover-lift-sm min-h-[3.25rem]">
-                  Trải nghiệm thử
-                  <Search className="h-4 w-4" />
-                </a>
-              </div>
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                {[
-                  ['Thực chứng', 'Đánh giá, Hỏi & Đáp, Check-in'],
-                  ['Không gian', 'Trợ lý AI, Bản đồ, Địa điểm lưu'],
-                  ['Độ tương thích', 'Tối ưu hóa theo nhu cầu thực'],
-                ].map(([label, value]) => (
-                  <div key={label} className="surface-panel hover-lift-sm p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-primary-700">{label}</p>
-                    <p className="mt-2 text-sm font-bold text-ink-700">{value}</p>
+
+              <form onSubmit={handleHeroSearch} className="mt-8 rounded-2xl border border-base-200 bg-white p-2 shadow-card">
+                <label htmlFor="hero-prompt" className="sr-only">Mô tả chuyến đi của bạn</label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="relative min-w-0 flex-1">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-500" aria-hidden="true" />
+                    <input
+                      id="hero-prompt"
+                      value={prompt}
+                      onChange={(event) => setPrompt(event.target.value)}
+                      className="h-14 w-full rounded-xl border-0 bg-transparent pl-12 pr-3 text-sm font-medium text-ink-900 outline-none placeholder:text-ink-500 focus:ring-0"
+                      placeholder="Cuối tuần yên tĩnh ở Đà Lạt, có góc làm việc..."
+                    />
                   </div>
+                  <button type="submit" className="btn-primary min-h-14 shrink-0 px-6">
+                    Khám phá với AI
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-ink-500">Gợi ý</span>
+                {['Workation Đà Lạt', 'Family trip Đà Nẵng', 'Cuối tuần Sài Gòn'].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setPrompt(suggestion)}
+                    className="cursor-pointer rounded-full border border-base-200 bg-white px-3 py-2 text-xs font-bold text-ink-700 transition duration-200 hover:border-primary-300 hover:text-primary-700"
+                  >
+                    {suggestion}
+                  </button>
                 ))}
               </div>
             </div>
@@ -223,7 +246,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="grid min-h-[31rem] bg-base-50 lg:grid-cols-[1fr_20rem]">
-                    <div className="group relative overflow-hidden bg-[linear-gradient(135deg,#d6f4ec_0%,#fbf8f3_48%,#ffedd5_100%)]">
+                    <div className="group relative overflow-hidden bg-[linear-gradient(135deg,#fce7f3_0%,#fafafa_48%,#e4e4e7_100%)]">
                       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(34,28,23,0.06)_1px,transparent_1px),linear-gradient(rgba(34,28,23,0.06)_1px,transparent_1px)] bg-[size:44px_44px]" />
                       <div className="absolute left-10 top-12 h-28 w-44 rounded-[42%] bg-white/70 shadow-soft transition-all duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:rotate-1 group-hover:shadow-card" />
                       <div className="absolute bottom-10 right-8 h-36 w-52 rounded-[45%] bg-primary-100/70 shadow-soft transition-all duration-300 group-hover:-translate-y-2 group-hover:translate-x-1 group-hover:shadow-card" />
@@ -422,7 +445,10 @@ export default function LandingPage() {
                             <p className="mt-1 text-xs leading-5 text-ink-500">{description}</p>
                           </div>
                           <div className="shrink-0 text-right text-xs font-bold text-ink-700">
-                            <p>★ {rating}</p>
+                            <p className="inline-flex items-center gap-1">
+                              <Star className="h-3.5 w-3.5 fill-primary-500 text-primary-500" aria-hidden="true" />
+                              {rating}
+                            </p>
                             <p className="mt-1 text-primary-700">{price}</p>
                           </div>
                         </div>

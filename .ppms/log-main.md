@@ -2,6 +2,24 @@
 
 ---
 
+## [2026-07-23 11:55] — Redesign the frontend for portfolio presentation
+
+- **Branch**: `main`
+- **Prompt**: Use `.opencode/skills/ui-ux-pro-max` to make the frontend look substantially better.
+- **Changes**:
+  - Generated and persisted the Smacco design system, defining an editorial ink/zinc visual language with one pink conversion accent and restrained glass surfaces.
+  - Reworked the landing header and hero around the product's main interaction: a natural-language accommodation prompt that reveals the existing illustrative shortlist.
+  - Unified Tailwind aliases, global surfaces, buttons, inputs, typography, shadows, scrollbars, workspace rail, and map overlays around the new visual system.
+  - Refined the authenticated navbar and place cards, made workspace search available at mobile sizes, clarified the primary detail action, and replaced the text-only error dismiss glyph with a Lucide icon.
+  - Added a keyboard skip link, global focus-visible treatment, reduced-motion support, semantic account disclosure state, and restored visible Mapbox attribution.
+  - Added regression coverage for the search-first hero and accessible account disclosure.
+- **Modified files**: `frontend/tailwind.config.js`, `frontend/src/index.css`, `frontend/src/pages/LandingPage.jsx`, `frontend/src/pages/LandingPage.test.jsx`, `frontend/src/pages/HomePage.jsx`, `frontend/src/components/Navbar.jsx`, `frontend/src/components/Navbar.test.jsx`, `frontend/src/components/PlaceCard.jsx`, `.ppms/architecture-main.md`, `.ppms/log-main.md`
+- **Created files**: `design-system/smacco/MASTER.md`
+- **Deleted files**: None
+- **Architecture impact**: Yes — the frontend now has a documented design-system source of truth and shared semantic UI primitives; route, data, auth, map, drag/drop, and event contracts remain unchanged.
+
+---
+
 ## [2026-07-22 14:52] — Prepare Smacco for portfolio and CV review
 
 - **Branch**: `main`

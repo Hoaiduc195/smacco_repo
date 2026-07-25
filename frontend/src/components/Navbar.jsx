@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, LogOut } from 'lucide-react';
+import { ChevronDown, LogOut, Search, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Navbar({ 
@@ -47,11 +47,11 @@ export default function Navbar({
   const userName = currentUser?.displayName || userEmail.split('@')[0] || 'Người dùng';
 
   return (
-    <nav className={`h-16 border-b border-ink-900 bg-ink-900 flex items-center px-3 sm:px-6 gap-3 sm:gap-6 z-40 shadow-soft ${className}`}>
+    <nav className={`h-16 border-b border-white/10 bg-ink-950/95 flex items-center px-3 sm:px-5 gap-2 sm:gap-5 z-40 shadow-card backdrop-blur-xl ${className}`} aria-label="Điều hướng ứng dụng">
       {/* Logo */}
       <Link
         to="/"
-        className="flex items-center gap-3 flex-shrink-0">
+        className="flex min-h-11 items-center gap-3 flex-shrink-0 rounded-lg">
         <img src="/favicon.svg" alt="Smacco Logo" className="w-8 h-8 object-contain transition-transform hover:scale-105" />
         <div className="hidden sm:block text-left">
           <p className="text-white font-extrabold text-lg tracking-normal leading-5 font-sans">Smacco</p>
@@ -60,11 +60,13 @@ export default function Navbar({
       </Link>
 
       {/* Search Bar */}
-      <div className="flex-1 max-w-md xl:max-w-lg hidden md:flex relative mx-auto">
+      <div className="relative mx-auto flex min-w-0 flex-1 md:max-w-xl">
         <form onSubmit={handleSearch} className="w-full">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-500" aria-hidden="true" />
+            <label htmlFor="workspace-search" className="sr-only">Tìm kiếm địa điểm hoặc lịch trình</label>
             <input
+              id="workspace-search"
               type="text"
               placeholder="Tìm homestay, khách sạn hoặc lịch trình..."
               value={localSearchQuery}
@@ -73,7 +75,7 @@ export default function Navbar({
                 setLocalSearchQuery(nextValue);
                 onSearchInputChange?.(nextValue);
               }}
-              className="w-full h-11 rounded-2xl border border-ink-700 bg-white px-4 pl-10 pr-4 text-xs text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-900/20 shadow-soft"
+              className="h-11 w-full rounded-xl border border-white/10 bg-white/95 px-3 pl-10 text-xs font-medium text-ink-900 shadow-soft outline-none transition duration-200 placeholder:text-ink-500 focus:border-primary-400 focus:ring-4 focus:ring-primary-500/20"
             />
           </div>
         </form>
@@ -86,47 +88,54 @@ export default function Navbar({
       {/* User Menu */}
       <div className="relative">
         <button
+          type="button"
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="flex items-center gap-2 px-2.5 h-10 w-10 sm:w-52 rounded-2xl border border-base-200 bg-white hover:bg-primary-50 text-slate-900 transition-colors shadow-soft select-none flex-shrink-0"
+          className="flex h-11 w-11 flex-shrink-0 cursor-pointer select-none items-center gap-2 rounded-xl border border-white/10 bg-white/10 px-2 text-white shadow-soft transition duration-200 hover:bg-white/15 sm:w-48"
+          aria-label="Mở menu tài khoản"
+          aria-expanded={showUserMenu}
+          aria-controls="account-menu"
         >
           {currentUser?.photoURL ? (
             <img
               src={currentUser.photoURL}
               alt="Google Profile"
-              className="w-7 h-7 rounded-full object-cover border border-base-200 shadow-sm shrink-0"
+              className="h-7 w-7 shrink-0 rounded-lg border border-white/20 object-cover shadow-sm"
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-7 h-7 bg-slate-50 border border-base-200 rounded-full flex items-center justify-center shadow-sm shrink-0 text-[10px] font-black text-ink-700 uppercase">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white text-[10px] font-black uppercase text-ink-900 shadow-sm">
               {userName.slice(0, 1)}
             </div>
           )}
-          <span className="text-xs font-bold hidden sm:inline text-slate-900 truncate flex-1 text-left">{userName}</span>
+          <span className="hidden flex-1 truncate text-left text-xs font-bold text-white sm:inline">{userName}</span>
+          <ChevronDown className={`hidden h-3.5 w-3.5 text-white/60 transition sm:block ${showUserMenu ? 'rotate-180' : ''}`} aria-hidden="true" />
         </button>
 
         {/* Dropdown Menu (Light theme popover below the dark navbar) */}
         {showUserMenu && (
-          <div className="absolute right-0 mt-2 w-52 sm:w-full map-surface py-2 z-50">
+          <div id="account-menu" role="group" aria-label="Tài khoản" className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-base-200 bg-white py-2 shadow-card">
             <div className="px-4 py-2 border-b border-gray-100">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500 truncate">{userEmail}</p>
             </div>
 
               <button
+                type="button"
                 onClick={() => {
                   navigate('/profile');
                   setShowUserMenu(false);
                 }}
-                className="w-full flex items-center px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                className="flex min-h-11 w-full cursor-pointer items-center px-4 py-2 text-left text-sm text-ink-700 transition hover:bg-primary-50 hover:text-primary-700"
               >
                 <User className="w-4 h-4 mr-2" />
                 Trang cá nhân
               </button>
 
               <button
+                type="button"
                 onClick={handleLogout}
               disabled={isLoggingOut}
-              className="w-full flex items-center px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex min-h-11 w-full cursor-pointer items-center px-4 py-2 text-left text-sm text-ink-700 transition hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LogOut className="w-4 h-4 mr-2" />
               {isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}

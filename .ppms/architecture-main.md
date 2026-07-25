@@ -1,6 +1,6 @@
 # Project Architecture: Smacco — Smart Travel & Accommodation Platform
 
-> Last updated: 2026-07-22 14:52
+> Last updated: 2026-07-23 11:55
 > Branch: main
 
 ## Overview
@@ -24,11 +24,12 @@ A modular monolith web application for discovering accommodations, dining spots,
 
 ### Frontend
 - **Framework**: React 18 + Vite 7 + Tailwind CSS 3.4.
+- **Visual system**: The canonical UI direction is documented in `design-system/smacco/MASTER.md`. Shared Tailwind aliases and CSS primitives implement an editorial ink/zinc palette with a focused pink CTA, restrained glass surfaces, compact radii, DM Sans fallbacks for Satoshi/General Sans, visible keyboard focus, and reduced-motion behavior.
 - **Routing**: `react-router-dom` v6 with public intro/auth routes and protected application routes.
 - **Delivery**: Route-level `React.lazy`/`Suspense` splitting keeps a persistent protected provider shell while deferring the Mapbox workspace bundle until an authenticated map route is opened.
 - **State Management**: React Context API (`AuthContext`, `TravelDataContext`, `ConversationContext`).
 - **Pages**:
-  - `LandingPage` — Public SaaS-style overview page at `/` in natural Vietnamese focused on AI-assisted accommodation discovery, social proof, feature benefits, alternating product sections, Before/During/After/In-between workflow, interactive prompt demo, trust/security, testimonials, FAQ, final CTA, and embedded Firebase login.
+  - `LandingPage` — Public search-first marketplace page at `/` in natural Vietnamese. Its hero prompt is the primary product interaction and feeds the existing sample shortlist; the page also includes social proof, benefits, workflow, trust/security, testimonials, FAQ, and embedded Firebase login.
   - `HomePage` — Protected map-based discovery app at `/app`.
   - `PlaceDetailPage` — Protected place info, reviews, Q&A, and place-specific chat.
   - `LoginPage` — Legacy Firebase login route at `/login`, redirects to `/app` after success.
@@ -36,8 +37,8 @@ A modular monolith web application for discovering accommodations, dining spots,
 - **Components**:
   - `ChatWidget` — AI chat with SSE streaming.
   - `MapComponent` — Mapbox GL map with markers, clustering, route display, POI support, and OSM/CARTO raster fallback when no Mapbox token is configured.
-  - `Navbar` — Authenticated app navigation, search filters, user menu, logout, and Smacco branding.
-  - `PlaceCard` — Place summary card.
+  - `Navbar` — Authenticated ink/glass app navigation with a responsive search field, accessible account disclosure, logout, and Smacco branding.
+  - `PlaceCard` — Image-forward place summary card shared by search and saved-place panels, with a clear pink detail action and preserved drag/tag/save/directions behavior.
   - `PlaceChatPanel` — Place-scoped AI chat panel.
   - `QASection` — Questions & Answers section.
   - `SidebarOverlay` — Mobile-friendly sidebar overlay.
